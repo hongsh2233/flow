@@ -22,8 +22,12 @@ git push -u origin main
 
 또는 `scripts/git-init.ps1` 실행 후 위 커밋/원격/푸시만 진행.
 
-## 로컬 실행
+## 로컬 실행 (BO·FE·DB 모두 jurin-i 안에 있음)
 
-- **Web**: `cd apps/web && npm install && npm run dev`
-- **Admin**: `cd apps/admin` 후 `pip install -r requirements.txt`, `.env` 설정(PostgreSQL: DB_HOST, DB_PORT=5432, DB_NAME=stock_bo), `uvicorn app.main:app --reload`
-- **DB**: `cd apps/admin && docker-compose up -d` (PostgreSQL 16, 포트 5432)
+| 순서 | 대상 | 위치 | 실행 |
+|------|------|------|------|
+| 1 | **DB** | `apps/admin/` | `docker-compose up -d` (PostgreSQL 5432) |
+| 2 | **BO** (백오피스) | `apps/admin/` | venv 활성화 → `.env` 설정 → `uvicorn app.main:app --reload --port 8080` |
+| 3 | **FE** (프론트) | `apps/web/` | `npm install` → `npm run dev` (http://localhost:3000) |
+
+상세: **RUN.md** 참고.
