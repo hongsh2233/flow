@@ -93,7 +93,13 @@ if os.path.exists("dashboard/static"):
 
 # 데이터베이스 초기화: 서버 시작 시 테이블 생성
 # models.py에 정의된 모든 모델의 테이블이 자동으로 생성됩니다.
-models.Base.metadata.create_all(bind=engine)
+# 연결 실패 시에도 서버는 시작되도록 예외 처리
+try:
+    models.Base.metadata.create_all(bind=engine)
+    print("✅ 데이터베이스 테이블 생성 완료")
+except Exception as e:
+    print(f"⚠️ 데이터베이스 연결 실패: {e}")
+    print("💡 PostgreSQL 서버가 실행 중인지 확인하세요: docker-compose up -d db")
 
 
 def run_migrations():
