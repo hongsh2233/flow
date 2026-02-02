@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}금융위원회 데이터 확인 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .tab-container {
+    margin-top: 20px;
+  }
+
+  /* 2단계 하위 탭 스타일 - 작은 탭 형태 */
+  .tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 5px 5px 0 5px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tab-button {
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s;
+    margin-right: 3px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+  }
+
+  .tab-button:hover {
+    background: #f1f3f5;
+    color: #495057;
+  }
+
+  .tab-button.active {
+    background: #f8f9fa;
+    color: #2c3e50;
+    border-bottom-color: #2c3e50;
+    font-weight: 600;
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #2c3e50;
+  }
+
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tab-section {
+    margin-bottom: 30px;
+  }
+
+  .tab-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .tab-section-header h3 {
+    color: #2c3e50;
+    margin: 0;
+    flex: 1;
+  }
+
+  .data-table-container {
+    margin-top: 20px;
+    background: white;
+    /* border: 1px solid #dee2e6; */
+    /* border-radius: 4px; */
+    overflow-x: auto;
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+  }
+
+  .data-table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table thead {
+    background: #3498db;
+    color: white;
+  }
+
+  .data-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #2980b9;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #dee2e6;
+    white-space: nowrap;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f8f9fa;
+  }
+
+  .data-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .loading {
+    padding: 40px;
+    text-align: center;
+    color: #3498db;
+    font-style: italic;
+  }
+
+  .error {
+    padding: 15px;
+    color: #721c24;
+    background: #f8d7da;
+    border-radius: 4px;
+    margin-top: 15px;
+  }
+
+  .empty-message {
+    padding: 40px;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+  }
+
+  /* 아코디언 스타일 */
+  .accordion {
+    margin-top: 20px;
+  }
+
+  .accordion-item {
+    margin-bottom: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    background: #f8f9fa;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .accordion-header:hover {
+    background: #e9ecef;
+  }
+
+  .accordion-header.active {
+    background: #e7f3ff;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .accordion-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+  }
+
+  .accordion-icon {
+    font-size: 12px;
+    color: #6c757d;
+    transition: transform 0.3s;
+  }
+
+  .accordion-header.active .accordion-icon {
+    transform: rotate(180deg);
+  }
+
+  .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .accordion-content.active {
+    max-height: 5000px;
+    transition: max-height 0.5s ease-in;
+  }
+
+  .accordion-body {
+    padding: 20px;
+  }
+
+  /* 반응형 */
+  .data-table-container {
+    overflow-x: auto;
+  }
+
+  .btn-fetch {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .btn-fetch:hover {
+    background: #2980b9;
+  }
+
+  .btn-fetch:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+  }
+
+  /* 페이징 스타일 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pagination button {
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+    transition: all 0.2s;
+  }
+
+  .pagination button:hover:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #3498db;
+    color: #3498db;
+  }
+
+  .pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pagination button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+
+  .pagination-info {
+    margin: 0 10px;
+    color: #6c757d;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    .tab-button {
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+
+    .data-table {
+      font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 8px;
+    }
+
+    .pagination {
+      gap: 3px;
+    }
+
+    .pagination button {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">🏛️ 금융위원회 데이터</h2>
+      <p style="color: #666; margin: 0;">
+        금융위원회에서 제공하는 공시 데이터를 확인할 수 있습니다.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button id="btn-manual-collect" class="btn-fetch" onclick="manualCollectData()" style="background: #27ae60;">
+        🔄 데이터 수동 수집
+      </button>
+      <a href="/admin/finance-data" style="padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
+        📈 한국거래소 데이터 보기
+      </a>
+    </div>
+  </div>
+
+  <!-- 하위 탭 버튼 -->
+  <div class="tab-buttons">
+    <button class="tab-button active" onclick="switchTab('mktcap')">
+      💰 시가총액 200
+    </button>
+    <button class="tab-button" onclick="switchTab('rising-stocks')">
+      📈 상승종목
+    </button>
+    <button class="tab-button" onclick="switchTab('right-schedule')">
+      📅 주식권리일정정보
+    </button>
+    <button class="tab-button" onclick="switchTab('fina-stat')">
+      📊 재무제표
+    </button>
+  </div>
+
+  <!-- 시가총액 200 탭 -->
+  <div id="tab-mktcap" class="tab-content active">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>시가총액 상위 200종목</h3>
+        <div style="display: flex; gap: 10px;">
+          <button id="btn-mktcap-collect" class="btn-fetch" onclick="collectMktcapData()" style="background: #27ae60;">
+            🔄 시가총액 데이터 수집
+          </button>
+          <button id="btn-delete-all-data-mktcap" class="btn-fetch" onclick="deleteAllFscData()" style="background: #e74c3c;">
+            🗑️ 전체 데이터 삭제
+          </button>
+        </div>
+      </div>
+      <div id="mktcap-data" class="data-table-container" style="display: block;"></div>
+    </div>
+  </div>
+
+  <!-- 상승종목 탭 -->
+  <div id="tab-rising-stocks" class="tab-content">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>상승종목</h3>
+        <div style="display: flex; gap: 10px;">
+          <button id="btn-rising-stocks-collect" class="btn-fetch" onclick="collectRisingStocks()" style="background: #27ae60;">
+            🔄 상승종목 수집
+          </button>
+          <button id="btn-delete-all-data" class="btn-fetch" onclick="deleteAllFscData()" style="background: #e74c3c;">
+            🗑️ 전체 데이터 삭제
+          </button>
+        </div>
+      </div>
+      <div id="rising-stocks-data" class="data-table-container" style="display: block;"></div>
+    </div>
+  </div>
+
+  <!-- 주식권리일정정보 탭 (권리행사사유별일정조회 API-OA-20.1) -->
+  <div id="tab-right-schedule" class="tab-content">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>권리행사사유별일정조회</h3>
+      </div>
+      <p style="color: #666; margin-bottom: 15px;">
+        주식발행회사명 또는 법인등록번호로 권리행사일정을 조회합니다. 전체 호출 후 최신일 기준 20건만 표시됩니다.
+      </p>
+      <div class="right-schedule-form" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">주식발행회사명 또는 법인등록번호</label>
+          <input type="text" id="right-schedule-query" placeholder="예: CJ씨푸드, 삼성전자 또는 1101110215578" style="width: 280px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div>
+          <button type="button" class="btn-fetch" id="btn-right-schedule-fetch" onclick="fetchRightScheduleData()">조회</button>
+        </div>
+      </div>
+      <div id="right-schedule-data" class="data-table-container"></div>
+    </div>
+  </div>
+
+  <!-- 재무제표 탭 (GetFinaStatInfoService_V2: 요약/재무상태표/손익계산서) -->
+  <div id="tab-fina-stat" class="tab-content">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>재무제표 조회</h3>
+      </div>
+      <p style="color: #666; margin-bottom: 15px;">
+        법인등록번호·사업연도로 요약재무제표, 재무상태표, 손익계산서를 조회합니다. 조회할 항목을 체크한 뒤 조회하세요.
+      </p>
+      <div class="right-schedule-form" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">법인등록번호</label>
+          <input type="text" id="fina-stat-crno" placeholder="예: 1101110215578" maxlength="13" style="width: 160px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">사업연도</label>
+          <input type="text" id="fina-stat-biz-year" placeholder="예: 2024" maxlength="4" style="width: 80px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="fina-stat-type-summ" value="summ"> 요약재무제표
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="fina-stat-type-bs" value="bs"> 재무상태표
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="fina-stat-type-inco" value="inco"> 손익계산서
+          </label>
+        </div>
+        <div>
+          <button type="button" class="btn-fetch" id="btn-fina-stat-fetch">조회</button>
+        </div>
+      </div>
+      <div id="fina-stat-data" class="data-table-container"></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/finance_data2.js"></script>
+{% endblock %}
+

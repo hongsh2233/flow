@@ -1,0 +1,245 @@
+<style>
+  /* 폰트 로드 - 한글 폰트 (Pretendard) */
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+  
+  /* 폰트 변수 정의 */
+  :root {
+    --font-family-base: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 
+                       'Apple SD Gothic Neo', 'Segoe UI', 'Malgun Gothic', 
+                       'Helvetica Neue', sans-serif;
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 15px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-2xl: 20px;
+    --font-size-3xl: 24px;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --line-height-base: 1.5;
+  }
+  
+  /* 공통 기본 스타일 */
+  body {
+    display: flex;
+    margin: 0;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-base);
+    background: #f4f7f6;
+    height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* 입력 요소 폰트 상속 */
+  input, textarea, select, button {
+    font-family: inherit;
+  }
+
+  /* 사이드바 스타일 */
+  .sidebar {
+    width: 250px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px 0;
+  }
+
+  .sidebar h2 {
+    text-align: center;
+    font-size: var(--font-size-2xl);
+    margin-bottom: 30px;
+    color: #ecf0f1;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .menu-item {
+    padding: 15px 25px;
+    color: #bdc3c7;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    font-size: var(--font-size-base);
+  }
+
+  .menu-icon {
+    font-size: var(--font-size-xl);
+    width: 24px;
+    text-align: center;
+    filter: brightness(1.1);
+  }
+
+  .menu-item:hover,
+  .menu-item.active {
+    background: #34495e;
+    color: white;
+    padding-left: 30px;
+  }
+
+  .menu-item.active {
+    background-color: #3498db;
+    font-weight: var(--font-weight-semibold);
+    box-shadow: inset 3px 0 0 #ffffff;
+  }
+
+  .menu-item.active .menu-icon {
+    transform: scale(1.1);
+  }
+
+  /* 메인 콘텐츠 스타일 */
+  .main-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+  }
+
+  /* 카드 스타일 */
+  .card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+  }
+
+  /* 테이블 스타일 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+
+  th,
+  td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+  }
+
+  th {
+    background: #f8f9fa;
+    color: #333;
+  }
+
+  /* 버튼 기본 스타일 */
+  button,
+  .btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+  }
+
+  .btn-primary {
+    background: #3498db;
+    color: white;
+  }
+
+  .btn-danger {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .btn-success {
+    background: #27ae60;
+    color: white;
+  }
+
+  /* 입력 필드 기본 스타일 */
+  input,
+  select,
+  textarea {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: var(--font-size-sm);
+  }
+
+  /* 헤더 스타일 */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .logout-btn {
+    padding: 8px 16px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* 배지 스타일 */
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* 로딩 오버레이 스타일 */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .loading-overlay.active {
+    display: flex;
+  }
+
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+  }
+
+  .loading-text {
+    color: white;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* 폼 제출 시 버튼 비활성화 */
+  form.submitting button[type="submit"],
+  form.submitting .btn-submit {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+</style>
+

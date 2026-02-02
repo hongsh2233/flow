@@ -1,0 +1,217 @@
+.login__wrap {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+    padding: var(--spacing-lg);
+}
+
+.login__wrap::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: pulse 15s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.1) rotate(180deg);
+        opacity: 0.8;
+    }
+}
+
+.login__content {
+    background-color: var(--bg-primary);
+    padding: var(--spacing-2xl);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xl);
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login__message {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: var(--spacing-sm);
+    letter-spacing: -0.02em;
+}
+
+.login__button_group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.btn_google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: 16px 24px;
+    background-color: #ffffff;
+    color: #374151;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn_google::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn_google:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn_google:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-color-dark);
+}
+
+.btn_google:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn_google img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.btn_google span {
+    position: relative;
+    z-index: 1;
+}
+
+.btn_naver {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: 16px 24px;
+    background-color: #03C75A;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn_naver::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn_naver:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn_naver:hover {
+    background-color: #02b350;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn_naver:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn_naver span:first-child {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.btn_naver span:last-child {
+    position: relative;
+    z-index: 1;
+}
+
+/* 다크모드 대응 */
+html.dark .login__wrap {
+    background: linear-gradient(135deg, #1a1b1e 0%, #2d1b3d 100%);
+}
+
+html.dark .login__content {
+    background-color: var(--bg-primary);
+    border-color: rgba(255, 255, 255, 0.05);
+}

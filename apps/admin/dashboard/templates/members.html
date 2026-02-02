@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}회원 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .badge-active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .badge-blocked {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .status-btn {
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+    border: 1px solid;
+  }
+
+  .btn-block {
+    color: #e74c3c;
+    border-color: #e74c3c;
+  }
+
+  .btn-activate {
+    color: #2ecc71;
+    border-color: #2ecc71;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="margin-top: 0; color: #2c3e50">👥 소셜 로그인 회원 관리</h2>
+  <p style="color: #666">
+    구글/네이버 소셜 로그인 회원들의 활동 상태를 모니터링하고 관리할 수 있습니다.
+  </p>
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0" />
+
+  {% if members|length == 0 %}
+  <p style="text-align: center; color: #999; padding: 40px 0;">
+    등록된 회원이 없습니다.
+  </p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>프로필</th>
+        <th>이름/닉네임</th>
+        <th>이메일</th>
+        <th>로그인 방식</th>
+        <th>가입일</th>
+        <th>게시글/댓글</th>
+        <th>상태</th>
+        <th>관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in members %}
+      <tr>
+        <td style="text-align: center;">
+          {% if m.profile_image %}
+            <img 
+              src="{{ m.profile_image }}" 
+              alt="프로필" 
+              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"
+              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27%3E%3Crect fill=%27%23f3f4f6%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27%23666%27 font-size=%2714%27%3E👤%3C/text%3E%3C/svg%3E'"
+            />
+          {% else %}
+            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #f3f4f6; display: inline-flex; align-items: center; justify-content: center; font-size: 20px;">
+              👤
+            </div>
+          {% endif %}
+        </td>
+        <td>
+          <div style="font-weight: bold; margin-bottom: 2px;">{{ m.nickname if m.nickname else m.name }}</div>
+          {% if m.nickname and m.nickname != m.name %}
+          <div style="font-size: 12px; color: #666;">{{ m.name }}</div>
+          {% endif %}
+        </td>
+        <td>{{ m.email }}</td>
+        <td>
+          {% if m.provider == 'google' %}
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            <img src="https://www.google.com/favicon.ico" alt="구글" style="width: 16px; height: 16px;" />
+            <span style="color: #4285F4; font-weight: 500;">구글</span>
+          </span>
+          {% elif m.provider == 'naver' %}
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            <span style="background: #03C75A; color: white; width: 18px; height: 18px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">N</span>
+            <span style="color: #03C75A; font-weight: 500;">네이버</span>
+          </span>
+          {% else %}
+          <span style="color: #666;">{{ m.provider }}</span>
+          {% endif %}
+        </td>
+        <td>{{ m.join_date }}</td>
+        <td>📄 {{ m.posts }} / 💬 {{ m.comments }}</td>
+        <td>
+          <span
+            class="badge {{ 'badge-active' if m.status == 'active' else 'badge-blocked' }}"
+          >
+            {{ '활동중' if m.status == 'active' else '정지됨' }}
+          </span>
+        </td>
+        <td>
+          <a
+            href="/admin/members/status/{{ m.id }}"
+            class="status-btn {{ 'btn-block' if m.status == 'active' else 'btn-activate' }}"
+            onclick="return confirm('상태를 변경하시겠습니까?')"
+          >
+            {{ '계정 정지' if m.status == 'active' else '정지 해제' }}
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

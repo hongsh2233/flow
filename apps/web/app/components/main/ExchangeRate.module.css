@@ -1,0 +1,92 @@
+.exchange__wrap {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 16px auto;
+  border: 1px solid var(--border-color);
+  gap: 12px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.exchange__header {
+  width: 100%;
+}
+
+.exchange__title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exchange__list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.exchange__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-color);
+  flex-direction: column;
+}
+
+.exchange__itemContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 6px;
+}
+
+.exchange__itemTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exchange__itemValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exchange__itemChange {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 한국 증시 관례: 상승 빨간색, 하락 파란색 */
+/* .exchange__item.up .exchange__itemValue, */
+.exchange__item.up .exchange__itemChange {
+  color: #dc3545; /* 빨간색 - 상승 */
+}
+
+/* .exchange__item.down .exchange__itemValue, */
+.exchange__item.down .exchange__itemChange {
+  color: #0063f5; /* 파란색 - 하락 */
+}
+
+.exchange__loading,
+.exchange__error,
+.exchange__empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-second);
+  font-size: 14px;
+}
+
+.exchange__error {
+  color: #dc3545;
+}

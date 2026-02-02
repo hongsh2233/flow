@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block title %}{{ banner_name }} 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+
+  .section h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  .add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .form-group label {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 14px;
+  }
+
+  .form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .form-group input[type="file"] {
+    padding: 8px;
+  }
+
+  .image-preview {
+    width: 100%;
+    max-width: 400px;
+    height: 200px;
+    object-fit: contain;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    margin-top: 10px;
+    display: none;
+  }
+
+  .image-preview.show {
+    display: block;
+  }
+
+  .btn-upload {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .btn-upload:hover {
+    background: #2980b9;
+  }
+
+  .btn-add {
+    padding: 12px 30px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    align-self: flex-start;
+  }
+
+  .btn-add:hover {
+    background: #229954;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .table th,
+  .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .table tr:hover {
+    background: #f8f9fa;
+  }
+
+  .banner-image {
+    width: 150px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+  }
+
+  .btn-edit,
+  .btn-del {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    margin-right: 5px;
+  }
+
+  .btn-edit {
+    background: #3498db;
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background: #2980b9;
+  }
+
+  .btn-del {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .btn-del:hover {
+    background: #c0392b;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+  }
+
+  .empty-state p {
+    font-size: 16px;
+    margin: 10px 0;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+
+  .upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .upload-area:hover {
+    border-color: #3498db;
+    background: #f0f7ff;
+  }
+
+  .upload-area.dragover {
+    border-color: #3498db;
+    background: #e3f2fd;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <a href="/admin/main" class="back-link">← 메인 페이지 설정으로 돌아가기</a>
+  <h1>{{ banner_name }} 관리</h1>
+  <p style="color: #666; margin-bottom: 30px;">
+    {{ banner_name }}를 등록하고 관리할 수 있습니다. 이미지, 링크, 대체 텍스트를 설정할 수 있습니다.
+  </p>
+
+  <!-- 배너 추가 섹션 -->
+  <div class="section">
+    <h3>배너 추가</h3>
+    <form method="POST" action="/admin/banners/add" class="add-form" id="bannerForm" enctype="multipart/form-data">
+      <input type="hidden" name="banner_type" value="{{ banner_type }}" />
+      
+      <div class="form-group">
+        <label>이미지 *</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageFile').click()">
+          <p style="margin: 0; color: #666;">이미지를 클릭하거나 드래그하여 업로드</p>
+          <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">최대 5MB, JPG, PNG, GIF</p>
+        </div>
+        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display: none;" onchange="handleFileSelect(event)" />
+        <input type="hidden" id="imageUrl" name="image_url" required />
+        <img id="imagePreview" class="image-preview" alt="미리보기" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>링크 URL</label>
+          <input type="url" name="link_url" placeholder="https://example.com" />
+        </div>
+        <div class="form-group">
+          <label>대체 텍스트 (Alt Text)</label>
+          <input type="text" name="alt_text" placeholder="이미지 설명" maxlength="200" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn-add" id="submitBtn">배너 추가</button>
+    </form>
+  </div>
+
+  <!-- 배너 목록 섹션 -->
+  <div class="section">
+    <h3>배너 목록 ({{ banners|length }}개)</h3>
+    {% if banners %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>순서</th>
+          <th>이미지</th>
+          <th>링크 URL</th>
+          <th>대체 텍스트</th>
+          <th>상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for banner in banners %}
+        <tr>
+          <td>{{ banner.order_index + 1 }}</td>
+          <td>
+            <img src="{{ banner.image_url }}" alt="{{ banner.alt_text or '배너 이미지' }}" class="banner-image" />
+          </td>
+          <td>
+            {% if banner.link_url %}
+              <a href="{{ banner.link_url }}" target="_blank" style="color: #3498db; text-decoration: none;">
+                {{ banner.link_url[:50] }}{% if banner.link_url|length > 50 %}...{% endif %}
+              </a>
+            {% else %}
+              <span style="color: #999;">없음</span>
+            {% endif %}
+          </td>
+          <td>{{ banner.alt_text or '-' }}</td>
+          <td>
+            <span class="status-badge {% if banner.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">
+              {% if banner.is_active == 'active' %}활성{% else %}비활성{% endif %}
+            </span>
+          </td>
+          <td>
+            <button class="btn-edit" onclick="editBanner({{ banner.id }}, '{{ banner.image_url|replace("'", "\\'") }}', '{{ banner.link_url|replace("'", "\\'") }}', '{{ banner.alt_text|replace("'", "\\'") }}', '{{ banner.is_active }}')">수정</button>
+            <a href="/admin/banners/delete/{{ banner.id }}" class="btn-del" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>등록된 배너가 없습니다.</p>
+      <p>위의 폼을 사용하여 배너를 추가해주세요.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+    <h3 style="margin-top: 0;">배너 수정</h3>
+    <form method="POST" action="/admin/banners/update/" id="editForm" enctype="multipart/form-data">
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>이미지 *</label>
+        <div class="upload-area" onclick="document.getElementById('editImageFile').click()">
+          <p style="margin: 0; color: #666;">이미지를 클릭하여 변경</p>
+        </div>
+        <input type="file" id="editImageFile" name="image_file" accept="image/*" style="display: none;" onchange="handleEditFileSelect(event)" />
+        <input type="hidden" id="editImageUrl" name="image_url" required />
+        <img id="editImagePreview" class="image-preview" alt="미리보기" />
+        <p id="currentImageText" style="font-size: 12px; color: #666; margin-top: 5px;"></p>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>링크 URL</label>
+        <input type="url" id="editLinkUrl" name="link_url" placeholder="https://example.com" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>대체 텍스트 (Alt Text)</label>
+        <input type="text" id="editAltText" name="alt_text" placeholder="이미지 설명" maxlength="200" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>상태</label>
+        <select id="editIsActive" name="is_active" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" onclick="closeEditModal()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">취소</button>
+        <button type="submit" id="editSubmitBtn" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentEditBannerId = null;
+let isUploading = false;
+
+// 폼 제출 검증
+document.getElementById('bannerForm').addEventListener('submit', function(e) {
+  const imageUrl = document.getElementById('imageUrl').value;
+  const imageFile = document.getElementById('imageFile').files[0];
+  
+  // 이미지 파일도 없고 imageUrl도 없으면 에러
+  if (!imageFile && !imageUrl) {
+    e.preventDefault();
+    alert('이미지를 추가해주세요.');
+    return false;
+  }
+  
+  // 이미지 업로드 중이면 에러
+  if (isUploading) {
+    e.preventDefault();
+    alert('이미지 업로드 중입니다. 잠시 후 다시 시도해주세요.');
+    return false;
+  }
+  
+  return true;
+});
+
+// 수정 폼 제출 검증
+document.getElementById('editForm').addEventListener('submit', function(e) {
+  const imageUrl = document.getElementById('editImageUrl').value;
+  if (!imageUrl) {
+    e.preventDefault();
+    alert('이미지를 먼저 업로드해주세요.');
+    return false;
+  }
+  if (isUploading) {
+    e.preventDefault();
+    alert('이미지 업로드 중입니다. 잠시 후 다시 시도해주세요.');
+    return false;
+  }
+  return true;
+});
+
+// 파일 선택 핸들러
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 파일 크기 체크 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('파일 크기는 5MB 이하여야 합니다.');
+    return;
+  }
+
+  // 이미지 미리보기
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.src = e.target.result;
+    preview.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+
+  // 서버에 업로드
+  uploadImage(file, 'imageUrl', 'imagePreview');
+}
+
+function handleEditFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('파일 크기는 5MB 이하여야 합니다.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('editImagePreview');
+    preview.src = e.target.result;
+    preview.classList.add('show');
+    document.getElementById('currentImageText').textContent = '';
+  };
+  reader.readAsDataURL(file);
+
+  uploadImage(file, 'editImageUrl', 'editImagePreview');
+}
+
+// 이미지 업로드
+async function uploadImage(file, urlInputId, previewId) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  isUploading = true;
+
+  // 어떤 폼의 버튼인지 확인
+  const isEditForm = urlInputId === 'editImageUrl';
+  const submitBtn = isEditForm ? document.getElementById('editSubmitBtn') : document.getElementById('submitBtn');
+  const originalText = isEditForm ? '저장' : '배너 추가';
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '업로드 중...';
+  }
+
+  try {
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || '이미지 업로드 실패');
+    }
+
+    const data = await response.json();
+    document.getElementById(urlInputId).value = data.url;
+
+    // 업로드 성공 표시
+    const preview = document.getElementById(previewId);
+    if (preview) {
+      preview.style.borderColor = '#27ae60';
+    }
+  } catch (error) {
+    alert('이미지 업로드 중 오류가 발생했습니다: ' + error.message);
+    // 에러 시 기존 값 유지 (수정 폼의 경우)
+    if (!isEditForm) {
+      document.getElementById(urlInputId).value = '';
+    }
+  } finally {
+    isUploading = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+}
+
+// 드래그 앤 드롭
+const uploadArea = document.getElementById('uploadArea');
+if (uploadArea) {
+  uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+  });
+
+  uploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+  });
+
+  uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      document.getElementById('imageFile').files = e.dataTransfer.files;
+      handleFileSelect({ target: { files: [file] } });
+    }
+  });
+}
+
+// 배너 수정
+function editBanner(id, imageUrl, linkUrl, altText, isActive) {
+  currentEditBannerId = id;
+  document.getElementById('editForm').action = `/admin/banners/update/${id}`;
+  document.getElementById('editImageUrl').value = imageUrl;
+  document.getElementById('editLinkUrl').value = linkUrl || '';
+  document.getElementById('editAltText').value = altText || '';
+  document.getElementById('editIsActive').value = isActive;
+  
+  const preview = document.getElementById('editImagePreview');
+  preview.src = imageUrl;
+  preview.classList.add('show');
+  document.getElementById('currentImageText').textContent = '현재 이미지: ' + imageUrl;
+  
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  currentEditBannerId = null;
+  document.getElementById('editImagePreview').classList.remove('show');
+  document.getElementById('editImageFile').value = '';
+}
+</script>
+{% endblock %}
+

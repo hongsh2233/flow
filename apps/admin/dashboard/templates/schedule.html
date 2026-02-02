@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}일정 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .flex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-sync {
+    padding: 10px 20px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .badge-manual {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .badge-api {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .add-form input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 10px;
+  }
+
+  .btn-add {
+    padding: 10px 25px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* 수정 모달 스타일 */
+  #editModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 400px;
+  }
+
+  .modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+  }
+
+  .btn-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card flex-header">
+  <h3>📅 일정 관리 및 공휴일 동기화</h3>
+  <form action="/admin/schedule/sync-api" method="post">
+    <button type="submit" class="btn-sync">🔄 공휴일 불러오기</button>
+  </form>
+</div>
+
+{% if request.query_params.get('success') == 'true' %}
+<div class="card" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #155724;">✅ 공휴일 동기화 완료</strong>
+  <p style="color: #155724; margin: 5px 0 0 0;">
+    추가: {{ request.query_params.get('added', '0') }}개, 
+    건너뜀: {{ request.query_params.get('skipped', '0') }}개
+  </p>
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') == 'no_data' %}
+<div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #721c24;">⚠️ 공휴일 데이터를 가져올 수 없습니다.</strong>
+  {% if request.query_params.get('reason') == 'no_api_key' %}
+  <p style="color: #721c24; margin: 5px 0 0 0;">
+    <strong>API 키가 설정되지 않았습니다.</strong><br>
+    .env 파일에 <code>DATA_GO_KR_API_KEY=your_api_key</code>를 추가해주세요.
+  </p>
+  {% else %}
+  <p style="color: #721c24; margin: 5px 0 0 0;">
+    API 키를 확인하거나 서버 로그를 확인해주세요.<br>
+    <small>가능한 원인: API 키 오류, 네트워크 오류, API 서버 점검</small>
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h4>➕ 새 일정 등록</h4>
+  <form action="/admin/schedule/add" method="post" class="add-form">
+    <input type="date" name="date" required />
+    <input
+    type="text"
+    name="subject"
+    placeholder="일정 제목을 입력하세요"
+    style="width: 300px"
+    required
+  />
+    <input
+      type="text"
+      name="content"
+      placeholder="일정 내용을 입력하세요 (선택사항)"
+      style="width: 300px"
+    />
+    <button type="submit" class="btn-add">추가</button>
+  </form>
+</div>
+
+<div class="card">
+  <h4>📋 일정 리스트</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>날짜</th>
+        <th>구분</th>
+        <th>일정 제목</th>
+        <th>일정 내용</th>
+        <th>관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in schedules %}
+      <tr>
+        <td style="font-weight: bold">{{ s.date }}</td>
+        <td>
+          <span
+            class="badge {{ 'badge-api' if s.type == 'api' else 'badge-manual' }}"
+            >{{ 'API' if s.type == 'api' else '수동' }}</span
+          >
+        </td>
+        <td>{{ s.subject }}</td>
+        <td>{{ s.content }}</td>
+        <td>
+          <button
+            onclick="openEditModal('{{ s.id }}', '{{ s.date }}', '{{ s.subject }}', '{{ s.content }}')"
+            style="
+              color: #3498db;
+              background: none;
+              border: none;
+              cursor: pointer;
+              padding: 0;
+              font-size: 14px;
+              margin-right: 10px;
+            "
+          >
+            수정
+          </button>
+          <a
+            href="/admin/schedule/delete/{{ s.id }}"
+            style="color: #e74c3c; text-decoration: none; font-size: 14px"
+            onclick="return confirm('삭제하시겠습니까?')"
+            >삭제</a
+          >
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div id="editModal">
+  <div class="modal-content">
+    <h3>📝 일정 수정</h3>
+    <form action="/admin/schedule/update" method="post">
+      <input type="hidden" name="sch_id" id="edit_id" />
+      <label>날짜</label>
+      <input type="date" name="date" id="edit_date" required />
+      <label>제목</label>
+      <input type="text" name="subject" id="edit_subject" required />
+      <label>내용</label>
+      <input type="text" name="content" id="edit_content" required />
+      <div class="btn-group">
+        <button
+          type="button"
+          onclick="closeEditModal()"
+          style="padding: 10px; border: none; cursor: pointer"
+        >
+          취소
+        </button>
+        <button type="submit" class="btn-add">수정 완료</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openEditModal(id, date, subject, content) {
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_date").value = date;
+    document.getElementById("edit_subject").value = subject;
+    document.getElementById("edit_content").value = content;
+    document.getElementById("editModal").style.display = "flex";
+  }
+
+  function closeEditModal() {
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  window.onclick = function (event) {
+    let modal = document.getElementById("editModal");
+    if (event.target == modal) closeEditModal();
+  };
+</script>
+{% endblock %}

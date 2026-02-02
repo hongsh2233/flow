@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}네이버 증권 랭킹 데이터 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .tab-container {
+    margin-top: 20px;
+  }
+
+  .tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 5px 5px 0 5px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tab-button {
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s;
+    margin-right: 3px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+  }
+
+  .tab-button:hover {
+    background: #f1f3f5;
+    color: #495057;
+  }
+
+  .tab-button.active {
+    background: #f8f9fa;
+    color: #2c3e50;
+    border-bottom-color: #2c3e50;
+    font-weight: 600;
+  }
+
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sub-tab-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .sub-tab-button {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #495057;
+    transition: all 0.2s;
+  }
+
+  .sub-tab-button:hover {
+    background: #e9ecef;
+  }
+
+  .sub-tab-button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+
+  .time-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .time-selector select {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+  }
+
+  .data-table-container {
+    margin-top: 20px;
+    background: white;
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .data-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .data-table tr:hover {
+    background: #f8f9fa;
+  }
+
+  .data-table .rank {
+    text-align: center;
+    font-weight: 600;
+    color: #3498db;
+  }
+
+  .data-table .stock-name {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  .data-table .price {
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .data-table .change.up {
+    color: #e74c3c;
+    font-weight: 600;
+  }
+
+  .data-table .change.down {
+    color: #3498db;
+    font-weight: 600;
+  }
+
+  .data-table .volume,
+  .data-table .amount {
+    text-align: right;
+  }
+
+  .info-box {
+    background: #e8f4f8;
+    border-left: 4px solid #3498db;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+
+  .info-box p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #2c3e50;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">📊 네이버 증권 랭킹 데이터</h2>
+      <p style="color: #666; margin: 0;">
+        네이버 증권에서 수집한 거래량 상위, 거래대금 상위, 검색 상위 데이터를 확인할 수 있습니다.
+      </p>
+    </div>
+  </div>
+
+  <!-- 메인 탭 버튼 -->
+  <div class="tab-buttons">
+    <button class="tab-button active" onclick="switchMainTab('volume')">
+      📈 거래량 상위
+    </button>
+    <button class="tab-button" onclick="switchMainTab('amount')">
+      💰 거래대금 상위
+    </button>
+    <button class="tab-button" onclick="switchMainTab('search')">
+      🔍 검색 상위
+    </button>
+  </div>
+
+  <!-- 거래량 상위 탭 -->
+  <div id="tab-volume" class="tab-content active">
+    <div class="sub-tab-buttons">
+      <button class="sub-tab-button active" onclick="switchSubTab('volume', 'kospi')">코스피</button>
+      <button class="sub-tab-button" onclick="switchSubTab('volume', 'kosdaq')">코스닥</button>
+      <button class="sub-tab-button" onclick="switchSubTab('volume', 'all')">전체</button>
+    </div>
+    <div class="time-selector">
+      <label>수집 시간대:</label>
+      <select id="volume-time-selector" onchange="loadRankingData('volume', 'kospi')">
+        <option value="">최신 데이터</option>
+      </select>
+    </div>
+    <div id="volume-content"></div>
+  </div>
+
+  <!-- 거래대금 상위 탭 -->
+  <div id="tab-amount" class="tab-content">
+    <div class="sub-tab-buttons">
+      <button class="sub-tab-button active" onclick="switchSubTab('amount', 'kospi')">코스피</button>
+      <button class="sub-tab-button" onclick="switchSubTab('amount', 'kosdaq')">코스닥</button>
+      <button class="sub-tab-button" onclick="switchSubTab('amount', 'all')">전체</button>
+    </div>
+    <div class="time-selector">
+      <label>수집 시간대:</label>
+      <select id="amount-time-selector" onchange="loadRankingData('amount', 'kospi')">
+        <option value="">최신 데이터</option>
+      </select>
+    </div>
+    <div id="amount-content"></div>
+  </div>
+
+  <!-- 검색 상위 탭 -->
+  <div id="tab-search" class="tab-content">
+    <div class="time-selector">
+      <label>수집 시간대:</label>
+      <select id="search-time-selector" onchange="loadRankingData('search', 'all')">
+        <option value="">최신 데이터</option>
+      </select>
+    </div>
+    <div id="search-content"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let currentMainTab = 'volume';
+  let currentSubTab = {
+    volume: 'kospi',
+    amount: 'kospi',
+    search: 'all'
+  };
+
+  function switchMainTab(tab) {
+    // 탭 버튼 활성화
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // 탭 컨텐츠 표시
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+
+    currentMainTab = tab;
+    loadRankingData(tab, currentSubTab[tab]);
+  }
+
+  function switchSubTab(mainTab, subTab) {
+    // 서브 탭 버튼 활성화
+    const container = document.querySelector(`#tab-${mainTab} .sub-tab-buttons`);
+    container.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    currentSubTab[mainTab] = subTab;
+    loadRankingData(mainTab, subTab);
+  }
+
+  async function loadTimeOptions(rankingType, marketType) {
+    try {
+      const response = await fetch(`/api/naver-ranking-times?ranking_type=${rankingType}&market_type=${marketType}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const selector = document.getElementById(`${rankingType}-time-selector`);
+        if (selector) {
+          // 기존 옵션 유지 (최신 데이터 옵션)
+          const firstOption = selector.options[0];
+          selector.innerHTML = '';
+          selector.appendChild(firstOption);
+          
+          result.data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.collected_time;
+            option.textContent = `${item.collected_time} (${item.latest_collected_at ? new Date(item.latest_collected_at).toLocaleString('ko-KR') : ''})`;
+            selector.appendChild(option);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('수집 시간대 목록 로드 오류:', error);
+    }
+  }
+
+  async function loadRankingData(rankingType, marketType) {
+    const contentDiv = document.getElementById(`${rankingType}-content`);
+    contentDiv.innerHTML = '<div class="loading">데이터 로딩 중...</div>';
+
+    try {
+      const timeSelector = document.getElementById(`${rankingType}-time-selector`);
+      const collectedTime = timeSelector ? timeSelector.value : null;
+
+      const response = await fetch(
+        `/api/naver-ranking-data?ranking_type=${rankingType}&market_type=${marketType}&collected_time=${collectedTime || ''}&limit=50`
+      );
+      const result = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        // 시간대 옵션 로드
+        await loadTimeOptions(rankingType, marketType);
+
+        // 테이블 생성
+        let html = `
+          <div class="info-box">
+            <p><strong>수집 시간:</strong> ${result.collected_time || '최신'} | <strong>총 ${result.count}건</strong></p>
+          </div>
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="rank">순위</th>
+                  <th>종목명</th>
+                  <th class="price">현재가</th>
+                  <th class="change">전일대비</th>
+                  <th class="change">등락률</th>
+                  ${rankingType !== 'search' ? '<th class="volume">거래량</th>' : ''}
+                  ${rankingType !== 'search' ? '<th class="amount">거래대금</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        result.data.forEach(item => {
+          const changeClass = item.change_percent && item.change_percent.startsWith('-') ? 'down' : 
+                             item.change_percent && item.change_percent.startsWith('+') ? 'up' : '';
+          
+          html += `
+            <tr>
+              <td class="rank">${item.rank}</td>
+              <td class="stock-name">${item.stock_name} (${item.stock_code})</td>
+              <td class="price">${item.current_price ? Number(item.current_price).toLocaleString('ko-KR') : '-'}</td>
+              <td class="change ${changeClass}">${item.change || '-'}</td>
+              <td class="change ${changeClass}">${item.change_percent || '-'}</td>
+              ${rankingType !== 'search' ? `<td class="volume">${item.volume ? Number(item.volume).toLocaleString('ko-KR') : '-'}</td>` : ''}
+              ${rankingType !== 'search' ? `<td class="amount">${item.amount ? Number(item.amount).toLocaleString('ko-KR') : '-'}</td>` : ''}
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        contentDiv.innerHTML = html;
+      } else {
+        contentDiv.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <p>데이터가 없습니다.</p>
+            <p style="font-size: 12px; color: #999; margin-top: 8px;">
+              스케줄러가 11시, 16시, 21시에 자동으로 데이터를 수집합니다.
+            </p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('데이터 로드 오류:', error);
+      contentDiv.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">❌</div>
+          <p>데이터를 불러오는 중 오류가 발생했습니다.</p>
+          <p style="font-size: 12px; color: #999; margin-top: 8px;">${error.message}</p>
+        </div>
+      `;
+    }
+  }
+
+  // 페이지 로드 시 초기 데이터 로드
+  document.addEventListener('DOMContentLoaded', () => {
+    loadRankingData('volume', 'kospi');
+  });
+</script>
+{% endblock %}
+

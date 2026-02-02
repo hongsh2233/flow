@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+
+{% block title %}게시글 수정 - {{ board.name }} - BO System{% endblock %}
+
+{% block extra_styles %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+  .form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  /* Quill 에디터 스타일 */
+  #editor {
+    min-height: 300px;
+    background: white;
+  }
+
+  .ql-container {
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .btn-cancel {
+    padding: 10px 20px;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-submit {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .btn-cancel:hover {
+    background: #7f8c8d;
+  }
+
+  .btn-submit:hover {
+    background: #2980b9;
+  }
+
+  .board-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  /* 파일 첨부 영역 */
+  .file-upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .file-upload-area:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+  }
+
+  .file-upload-area.dragover {
+    border-color: #3498db;
+    background: #e8f4fd;
+  }
+
+  .file-list {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  .file-item-name {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .file-item-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .file-item-remove:hover {
+    background: #c0392b;
+  }
+
+  .file-input-hidden {
+    display: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/admin/board/{{ board.id }}/post/{{ post.id }}" class="btn-back">← 게시글 보기로</a>
+
+<div class="form-container">
+  <div class="board-info">
+    <strong>게시판:</strong> {{ board.name }} ({{ board.id }})
+  </div>
+
+  <h2 style="margin-top: 0">✏️ 게시글 수정</h2>
+
+  <form id="postForm" action="/admin/board/{{ board.id }}/post/{{ post.id }}/edit" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="title">제목 *</label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        value="{{ post.title }}"
+        required
+        maxlength="255"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="content">내용 *</label>
+      <div id="editor"></div>
+      <textarea id="content" name="content" style="display: none;"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label style="display: flex; align-items: center; cursor: pointer;">
+        <input type="checkbox" id="is_secret" name="is_secret" value="true" {% if post.is_secret == "true" %}checked{% endif %} style="width: auto; margin-right: 8px; cursor: pointer;">
+        <span>🔒 비밀글</span>
+      </label>
+      <input type="hidden" name="is_secret" value="false">
+    </div>
+
+    <div class="form-group">
+      <label>파일 첨부</label>
+      <div class="file-upload-area" id="fileUploadArea">
+        <p style="margin: 0; color: #666;">📎 파일을 드래그하거나 클릭하여 첨부하세요</p>
+        <input type="file" id="fileInput" name="files" multiple class="file-input-hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+      </div>
+      <div class="file-list" id="fileList" style="display: none;"></div>
+    </div>
+
+    <div class="btn-group">
+      <a href="/admin/board/{{ board.id }}/post/{{ post.id }}" class="btn-cancel">취소</a>
+      <button type="submit" class="btn-submit">수정 완료</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+  // Quill 에디터 초기화
+  const quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: {
+        container: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          [{ 'color': [] }, { 'background': [] }],
+          ['link', 'image'],
+          ['clean']
+        ],
+        handlers: {
+          'image': imageHandler
+        }
+      }
+    },
+    placeholder: '게시글 내용을 입력하세요...'
+  });
+
+  // 기존 content를 에디터에 로드
+  const existingContent = {{ post.content | tojson | safe }};
+  if (existingContent) {
+    quill.root.innerHTML = existingContent;
+  }
+
+  // 이미지 업로드 핸들러
+  async function imageHandler() {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      // 파일 크기 체크 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        // 로딩 표시
+        const range = quill.getSelection();
+        const index = range ? range.index : quill.getLength();
+        quill.insertText(index, '이미지 업로드 중...', 'user');
+        quill.setSelection(index + 12, 0);
+
+        // 서버에 이미지 업로드
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('이미지 업로드 실패');
+        }
+
+        const data = await response.json();
+        const imageUrl = data.url;
+
+        // 업로드 중 텍스트 제거
+        quill.deleteText(index, 12);
+        
+        // 이미지 삽입
+        quill.insertEmbed(index, 'image', imageUrl);
+      } catch (error) {
+        alert('이미지 업로드 중 오류가 발생했습니다: ' + error.message);
+        // 업로드 중 텍스트 제거
+        const range = quill.getSelection();
+        if (range) {
+          quill.deleteText(range.index - 12, 12);
+        }
+      }
+    };
+  }
+
+  // 에디터 내용을 textarea에 동기화
+  const form = document.getElementById('postForm');
+  const contentInput = document.getElementById('content');
+  
+  form.addEventListener('submit', function(e) {
+    // 에디터 내용 가져오기
+    const editorContent = quill.root.innerHTML;
+    
+    // 에디터가 비어있는지 확인 (텍스트만 추출)
+    const textContent = quill.getText().trim();
+    if (!textContent) {
+      e.preventDefault();
+      alert('내용을 입력해주세요.');
+      return false;
+    }
+    
+    // HTML 내용을 textarea에 저장
+    contentInput.value = editorContent;
+    
+    // 제목 확인
+    const titleInput = document.getElementById('title');
+    if (!titleInput.value.trim()) {
+      e.preventDefault();
+      alert('제목을 입력해주세요.');
+      return false;
+    }
+    
+    // 비밀글 체크박스 처리
+    const isSecretCheckbox = document.getElementById('is_secret');
+    const isSecretHidden = document.querySelector('input[name="is_secret"][type="hidden"]');
+    if (isSecretCheckbox && isSecretCheckbox.checked) {
+      isSecretHidden.value = 'true';
+    } else {
+      isSecretHidden.value = 'false';
+    }
+  });
+
+  // 파일 업로드 기능
+  const fileUploadArea = document.getElementById('fileUploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  let selectedFiles = [];
+
+  // 파일 업로드 영역 클릭
+  fileUploadArea.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // 드래그 앤 드롭
+  fileUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.add('dragover');
+  });
+
+  fileUploadArea.addEventListener('dragleave', () => {
+    fileUploadArea.classList.remove('dragover');
+  });
+
+  fileUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+  });
+
+  // 파일 선택
+  fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    addFiles(files);
+  });
+
+  // 파일 추가
+  function addFiles(files) {
+    files.forEach(file => {
+      selectedFiles.push(file);
+      displayFile(file);
+    });
+    updateFileInput();
+  }
+
+  // 파일 표시
+  function displayFile(file) {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-item';
+    fileItem.dataset.filename = file.name;
+    
+    fileItem.innerHTML = `
+      <span class="file-item-name">📎 ${file.name}</span>
+      <button type="button" class="file-item-remove" onclick="removeFile('${file.name}')">제거</button>
+    `;
+    
+    fileList.appendChild(fileItem);
+    fileList.style.display = 'block';
+  }
+
+  // 파일 제거
+  window.removeFile = function(filename) {
+    selectedFiles = selectedFiles.filter(f => f.name !== filename);
+    const fileItem = fileList.querySelector(`[data-filename="${filename}"]`);
+    if (fileItem) {
+      fileItem.remove();
+    }
+    if (selectedFiles.length === 0) {
+      fileList.style.display = 'none';
+    }
+    updateFileInput();
+  };
+
+  // 파일 input 업데이트
+  function updateFileInput() {
+    const dt = new DataTransfer();
+    selectedFiles.forEach(file => {
+      dt.items.add(file);
+    });
+    fileInput.files = dt.files;
+  }
+</script>
+{% endblock %}

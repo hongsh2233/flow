@@ -1,0 +1,417 @@
+{% extends "base.html" %} {% block title %}{{ board.name }}{% endblock %} {%
+block extra_styles %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+  .board-container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+  .board-header {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .board-header h2 {
+    margin: 0;
+    color: #333;
+  }
+
+  /* 방명록 입력 폼 스타일 */
+  .guest-form-box {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+  .form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .form-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .form-textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: none;
+  }
+  .submit-btn {
+    width: 100%;
+    padding: 10px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  /* Quill 에디터 스타일 */
+  #guestbook-editor {
+    min-height: 200px;
+    background: white;
+    margin-bottom: 10px;
+  }
+
+
+  /* 수정/삭제 버튼 */
+  .post-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+  }
+  .btn-edit, .btn-delete {
+    padding: 5px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-edit {
+    background: #3498db;
+    color: white;
+  }
+  .btn-delete {
+    background: #e74c3c;
+    color: white;
+  }
+
+  /* 목록 스타일 */
+  .post-list {
+    border-top: 1px solid #eee;
+  }
+  .post-item {
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  /* 방명록 내용 표시 */
+  .guest-content {
+    font-size: 1rem;
+    color: #444;
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+  
+  .guest-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .meta {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 5px;
+  }
+  .author {
+    font-weight: bold;
+    color: #000;
+    margin-right: 5px;
+  }
+
+  /* 일반 게시판 제목 링크 */
+  .normal-link {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    font-size: 1.1rem;
+  }
+  .normal-link:hover {
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .new-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: #e74c3c;
+    vertical-align: middle;
+  }
+
+  /* 첨부 파일 스타일 */
+  .attachments {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+  }
+
+  .attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .attachment-icon {
+    font-size: 20px;
+  }
+
+  .attachment-link {
+    flex: 1;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9rem;
+  }
+
+  .attachment-link:hover {
+    color: #3498db;
+    text-decoration: underline;
+  }
+
+  .attachment-size {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  /* 이미지 미리보기 */
+  .content-images {
+    margin-top: 15px;
+  }
+
+  .content-images img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 5px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="board-container">
+  <a href="/boards" style="text-decoration: none; color: #666"
+    >&larr; 목록으로</a
+  >
+
+  <div class="board-header">
+    <div>
+      <h2>{{ board.name }}</h2>
+      <small style="color: #777"> (Type: {{ board.type }}) </small>
+    </div>
+
+    {% if board.type not in ['guestbook', 'guest'] %}
+    <a
+      href="/board/{{ board.id }}/write"
+      style="
+        background: #333;
+        color: white;
+        padding: 8px 15px;
+        text-decoration: none;
+        border-radius: 4px;
+      "
+      >글쓰기</a
+    >
+    {% endif %}
+  </div>
+
+  {% if board.type in ['guestbook', 'guest'] and is_admin %}
+  <div class="guest-form-box">    
+    <form id="guestbookForm" action="/board/write" method="post">
+      <input type="hidden" name="board_id" value="{{ board.id }}" />
+      <div style="margin-bottom: 15px;">
+        <label for="title" style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">제목</label>
+        <input 
+          type="text" 
+          id="title" 
+          name="title" 
+          class="form-input" 
+          placeholder="제목을 입력하세요 (선택사항 - 비워두면 내용의 앞부분이 제목으로 사용됩니다)" 
+          maxlength="255"
+          style="width: 100%;"
+        />
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="guestbook-editor" style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">내용</label>
+      </div>
+      <input type="hidden" id="content" name="content" />
+      <div id="guestbook-editor"></div>
+      <button type="submit" class="submit-btn" style="margin-top: 15px;">등록하기</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="post-list">
+    {% if posts_with_attachments %} {% for item in posts_with_attachments %}
+    {% set post = item.post %}
+    {% set attachments = item.attachments %}
+    <div class="post-item">
+      {% if board.type in ['guestbook', 'guest'] %}
+      <div class="meta">
+        {% set author_display = post.author.split('@')[0] if '@' in (post.author or '') else (post.author or '익명') %}
+        <span class="author">👤 {{ author_display }}</span>
+        <span
+          >{{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else
+          '' }}</span
+        >
+        {% if is_admin %}
+        <div class="post-actions">
+          <button class="btn-edit" onclick="editPost({{ post.id }}, '{{ board.id }}')">수정</button>
+          <button class="btn-delete" onclick="deletePost({{ post.id }}, '{{ board.id }}')">삭제</button>
+        </div>
+        {% endif %}
+      </div>
+      {% if post.title and post.title.strip() %}
+      <div style="font-weight: 600; font-size: 1.1rem; color: #333; margin-bottom: 8px; margin-top: 5px;">
+        {{ post.title }}
+      </div>
+      {% endif %}
+      <div class="guest-content">{{ item.cleaned_content | safe if item.cleaned_content else (post.content | safe) }}</div>
+
+      {% else %}
+      <div class="meta">
+        <span class="author">{{ item.formatted_author or post.author }}</span> |
+        <span
+          >{{ post.created_at.strftime('%Y-%m-%d') if post.created_at else ''
+          }}</span
+        >
+      </div>
+      <a href="/board/{{ board.id }}/post/{{ post.id }}" class="normal-link">
+        {{ post.title }}
+      </a>
+      {% if item.is_new %}
+      <span class="new-badge">NEW</span>
+      {% endif %}
+      {% endif %}
+      
+      <!-- 첨부 파일 표시 -->
+      {% if attachments %}
+      <div class="attachments">
+        <div class="attachments-list">
+          {% for file in attachments %}
+            {% if file.type and file.type.startswith('image/') %}
+              <!-- 이미지는 content에 이미 포함되어 있을 수 있으므로 표시하지 않음 -->
+            {% else %}
+              <!-- 일반 파일은 다운로드 링크로 표시 -->
+              <div class="attachment-item">
+                <span class="attachment-icon">📎</span>
+                <a href="{{ file.path }}" class="attachment-link" download="{{ file.filename }}" target="_blank">
+                  {{ file.filename }}
+                </a>
+                {% if file.formatted_size %}
+                <span class="attachment-size">{{ file.formatted_size }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %} {% else %}
+    <div style="padding: 50px; text-align: center; color: #999">
+      등록된 글이 없습니다.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if board.type in ['guestbook', 'guest'] %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+  // Quill 에디터 초기화
+  const quill = new Quill('#guestbook-editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link', 'image'],
+        ['clean']
+      ]
+    }
+  });
+
+  // 이미지 업로드 핸들러
+  quill.getModule('toolbar').addHandler('image', function() {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+    
+    input.onchange = async function() {
+      const file = input.files[0];
+      if (!file) return;
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error('이미지 업로드 실패');
+        }
+        
+        const data = await response.json();
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', data.url);
+        quill.setSelection(range.index + 1);
+      } catch (error) {
+        alert('이미지 업로드 중 오류가 발생했습니다.');
+        console.error(error);
+      }
+    };
+  });
+
+  // 폼 제출 처리
+  document.getElementById('guestbookForm').addEventListener('submit', function(e) {
+    const content = quill.root.innerHTML;
+    if (content === '<p><br></p>' || content.trim() === '') {
+      e.preventDefault();
+      alert('내용을 입력해주세요.');
+      return false;
+    }
+    
+    document.getElementById('content').value = content;
+  });
+
+  // 수정 기능
+  function editPost(postId, boardId) {
+    window.location.href = `/board/${boardId}/post/${postId}/edit`;
+  }
+
+  // 삭제 기능
+  function deletePost(postId, boardId) {
+    if (confirm('이 글을 삭제하시겠습니까?')) {
+      window.location.href = `/board/${boardId}/post/${postId}/delete`;
+    }
+  }
+</script>
+{% endif %}
+
+{% endblock %}

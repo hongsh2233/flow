@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}BO System{% endblock %}</title>
+    {% include "base_styles.html" %}
+    {% block extra_styles %}{% endblock %}
+  </head>
+  <body>
+    {% if active_page is not none %}
+    {% include "sidebar.html" %}
+    {% endif %}
+    <div class="main-content" {% if active_page is none %}style="margin-left: 0; width: 100%;"{% endif %}>
+      {% if active_page is not none and admin_email %}
+      <div class="header">
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 18px; font-weight: 500;">
+            환영합니다, <b>{{ admin_email }}</b> 관리자님
+          </span>
+          <span id="sessionInfo" style="margin-top: 4px; font-size: 12px; color: #666;">
+            로그인 시간: - / 남은 시간: -
+          </span>
+        </div>
+        <a href="/logout" class="logout-btn">로그아웃</a>
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+    
+    <!-- 공통 로딩 오버레이 -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">처리 중...</div>
+    </div>
+    <!-- 세션 만료/연장 모달 -->
+    <div id="sessionTimeoutModal" class="loading-overlay" style="display: none; align-items: center; justify-content: center;">
+      <div style="background: #fff; padding: 24px 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 380px; width: 100%; text-align: center;">
+        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 18px; color: #2c3e50;">세션 만료 안내</h3>
+        <p id="sessionTimeoutMessage" style="margin: 0 0 6px; font-size: 14px; color: #555;">
+          일정 시간 동안 활동이 없어 곧 로그아웃 됩니다.
+        </p>
+        <p id="sessionTimeoutCountdown" style="margin: 0 0 14px; font-size: 13px; color: #e74c3c; font-weight: 600;">
+          10초 후 자동 로그아웃 됩니다.
+        </p>
+        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 6px; align-items: center;">
+          <button id="sessionExtendBtn" style="padding: 8px 14px; border-radius: 6px; border: none; background: #3498db; color: #fff; cursor: pointer; font-size: 14px;">
+            로그인 연장
+          </button>
+          <button id="sessionLogoutBtn" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+            <span>로그아웃</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    {% block extra_scripts %}{% endblock %}
+    
+    <!-- 공통 폼 제출 로딩 및 세션 관리 스크립트 -->
+    <script>
+      // 로딩 오버레이 표시 함수
+      function showLoading(text = '처리 중...') {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+          const loadingText = loadingOverlay.querySelector('.loading-text');
+          if (loadingText) {
+            loadingText.textContent = text;
+          }
+          loadingOverlay.classList.add('active');
+        }
+      }
+
+      // 로딩 오버레이 숨기기 함수
+      function hideLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+          loadingOverlay.classList.remove('active');
+        }
+      }
+
+      // 모든 폼에 로딩 화면 적용 + 세션 관리
+      document.addEventListener('DOMContentLoaded', function() {
+        // ------------------------------
+        // 폼/삭제 링크 로딩 처리
+        // ------------------------------
+        const forms = document.querySelectorAll('form[method="post"]');
+        
+        forms.forEach(form => {
+          form.addEventListener('submit', function(e) {
+            // 폼 유효성 검사 통과 후에만 로딩 표시
+            if (form.checkValidity()) {
+              // 폼에 submitting 클래스 추가 (버튼 비활성화)
+              form.classList.add('submitting');
+              
+              // 로딩 텍스트 설정 (폼의 submit 버튼 텍스트 기반)
+              const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+              let loadingText = '처리 중...';
+              
+              if (submitBtn) {
+                const btnText = submitBtn.textContent || submitBtn.value || '';
+                // 버튼 텍스트에서 액션 추출
+                if (btnText.includes('생성')) loadingText = '게시판 생성 중...';
+                else if (btnText.includes('수정')) loadingText = '수정 중...';
+                else if (btnText.includes('작성')) loadingText = '작성 중...';
+                else if (btnText.includes('추가')) loadingText = '추가 중...';
+                else if (btnText.includes('등록')) loadingText = '등록 중...';
+                else if (btnText.includes('동기화')) loadingText = '동기화 중...';
+                else loadingText = '처리 중...';
+              }
+              
+              showLoading(loadingText);
+            }
+          });
+        });
+
+        // 삭제 링크에도 로딩 적용
+        const deleteLinks = document.querySelectorAll('a[href*="/delete"]');
+        deleteLinks.forEach(link => {
+          const originalOnclick = link.getAttribute('onclick');
+          const originalHref = link.getAttribute('href');
+          
+          // onclick을 재정의하여 confirm 후 로딩 표시
+          link.setAttribute('onclick', '');
+          link.addEventListener('click', function(e) {
+            // confirm이 있는 경우
+            if (originalOnclick && originalOnclick.includes('confirm')) {
+              // confirm 실행
+              const confirmMessage = originalOnclick.match(/confirm\(['"](.*?)['"]\)/);
+              if (confirmMessage) {
+                const confirmed = confirm(confirmMessage[1]);
+                if (confirmed) {
+                  // 확인을 누른 경우에만 로딩 표시 및 이동
+                  showLoading('삭제 중...');
+                  window.location.href = originalHref;
+                  e.preventDefault();
+                  return false;
+                } else {
+                  // 취소를 누른 경우
+                  e.preventDefault();
+                  return false;
+                }
+              }
+            } else {
+              // confirm이 없는 경우 바로 로딩 표시
+              showLoading('삭제 중...');
+            }
+          });
+        });
+
+        // ------------------------------
+        // 세션 타이머 / 자동 로그아웃 처리
+        // ------------------------------
+        // 로그인된 관리자 페이지에서만 동작 (상단 헤더/로그아웃 버튼 존재 여부로 판단)
+        const hasAdminHeader = document.querySelector('.header .logout-btn');
+        if (!hasAdminHeader) {
+          return;
+        }
+
+        const INACTIVITY_LIMIT_MIN = 10; // 10분 무활동 시 경고
+        const SESSION_LIMIT_MIN = 30;    // 로그인 후 30분마다 연장 여부 확인
+        const CHECK_INTERVAL_MS = 30 * 1000; // 30초마다 체크
+        const MODAL_COUNTDOWN_SEC = 10;      // 모달에서 10초 카운트다운
+
+        let lastActivity = Date.now();
+        let loginStart = Number(sessionStorage.getItem('boLoginStart') || Date.now());
+        sessionStorage.setItem('boLoginStart', String(loginStart));
+
+        let modalVisible = false;
+        let modalReason = null; // 'inactivity' | 'session'
+        let countdownTimer = null;
+        let countdownRemaining = MODAL_COUNTDOWN_SEC;
+
+        const sessionModal = document.getElementById('sessionTimeoutModal');
+        const sessionMsg = document.getElementById('sessionTimeoutMessage');
+        const sessionCountdown = document.getElementById('sessionTimeoutCountdown');
+        const extendBtn = document.getElementById('sessionExtendBtn');
+        const logoutBtn = document.getElementById('sessionLogoutBtn');
+        const sessionInfo = document.getElementById('sessionInfo');
+
+        function pad(num) {
+          return num < 10 ? '0' + num : '' + num;
+        }
+
+        function formatTime(date) {
+          const d = new Date(date);
+          return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+
+        function formatDuration(ms) {
+          if (ms <= 0) return '00:00';
+          const totalSec = Math.floor(ms / 1000);
+          const min = Math.floor(totalSec / 60);
+          const sec = totalSec % 60;
+          return pad(min) + ':' + pad(sec);
+        }
+
+        function updateActivity() {
+          lastActivity = Date.now();
+        }
+
+        // 사용자 활동 이벤트 감지
+        ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(function(evt) {
+          window.addEventListener(evt, updateActivity, { passive: true });
+        });
+
+        function hideSessionModal() {
+          modalVisible = false;
+          modalReason = null;
+          if (sessionModal) {
+            sessionModal.style.display = 'none';
+          }
+          if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+          }
+        }
+
+        function startCountdown() {
+          countdownRemaining = MODAL_COUNTDOWN_SEC;
+          if (sessionCountdown) {
+            sessionCountdown.textContent = countdownRemaining + '초 후 자동 로그아웃 됩니다.';
+          }
+          countdownTimer = setInterval(function() {
+            countdownRemaining -= 1;
+            if (countdownRemaining <= 0) {
+              clearInterval(countdownTimer);
+              countdownTimer = null;
+              window.location.href = '/logout';
+              return;
+            }
+            if (sessionCountdown) {
+              sessionCountdown.textContent = countdownRemaining + '초 후 자동 로그아웃 됩니다.';
+            }
+          }, 1000);
+        }
+
+        function showSessionModal(reason) {
+          if (!sessionModal || modalVisible) return;
+          modalVisible = true;
+          modalReason = reason;
+
+          if (reason === 'inactivity') {
+            if (sessionMsg) {
+              sessionMsg.textContent = '10분 동안 활동이 없어 곧 로그아웃 됩니다. 로그인을 연장하시겠습니까?';
+            }
+          } else if (reason === 'session') {
+            if (sessionMsg) {
+              sessionMsg.textContent = '로그인 후 30분이 경과했습니다. 계속 사용하시려면 로그인 연장을 선택해주세요.';
+            }
+          }
+
+          sessionModal.style.display = 'flex';
+          startCountdown();
+        }
+
+        async function requestExtendLogin() {
+          try {
+            const res = await fetch('/login/extend', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              credentials: 'same-origin'
+            });
+            if (!res.ok) {
+              window.location.href = '/logout';
+              return;
+            }
+            const data = await res.json();
+            if (!data.success) {
+              window.location.href = '/logout';
+              return;
+            }
+            // 세션이 연장되었으므로 기준 시점 재설정
+            loginStart = Date.now();
+            sessionStorage.setItem('boLoginStart', String(loginStart));
+            lastActivity = Date.now();
+            hideSessionModal();
+          } catch (e) {
+            // 오류 시 안전하게 로그아웃 처리
+            window.location.href = '/logout';
+          }
+        }
+
+        if (extendBtn) {
+          extendBtn.addEventListener('click', function() {
+            requestExtendLogin();
+          });
+        }
+
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function() {
+            window.location.href = '/logout';
+          });
+        }
+
+        // 헤더에 로그인 시간 / 남은 시간 표시
+        setInterval(function() {
+          if (!sessionInfo) return;
+          const now = Date.now();
+          const elapsedMs = now - loginStart;
+          const remainingMs = SESSION_LIMIT_MIN * 60 * 1000 - elapsedMs;
+          const loginTimeStr = formatTime(loginStart);
+          const remainingStr = formatDuration(remainingMs);
+          sessionInfo.textContent = '로그인 시간: ' + loginTimeStr + ' / 남은 시간: ' + remainingStr;
+        }, 1000);
+
+        // 주기적으로 세션 상태 체크
+        setInterval(function() {
+          const now = Date.now();
+          const inactiveMinutes = (now - lastActivity) / (60 * 1000);
+          const sessionMinutes = (now - loginStart) / (60 * 1000);
+
+          if (!modalVisible) {
+            // 10분 무활동 시 경고 모달
+            if (inactiveMinutes >= INACTIVITY_LIMIT_MIN) {
+              showSessionModal('inactivity');
+              return;
+            }
+
+            // 로그인 후 30분 경과 시 연장 여부 확인
+            if (sessionMinutes >= SESSION_LIMIT_MIN) {
+              showSessionModal('session');
+              return;
+            }
+          }
+        }, CHECK_INTERVAL_MS);
+      });
+    </script>
+  </body>
+</html>
+

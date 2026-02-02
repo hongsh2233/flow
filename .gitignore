@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env (민감정보 제외)
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# --- Web (Next.js) ---
+node_modules/
+.pnp
+.pnp.*
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# --- Admin (Python) ---
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# --- Packages ---
+packages/*/node_modules/
+
+# --- Uploads (admin) - 선택적 제외
+# apps/admin/uploads/
+
+# Misc
+*.pem
+.DS_Store

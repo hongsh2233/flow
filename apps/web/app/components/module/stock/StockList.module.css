@@ -1,0 +1,209 @@
+.stock__wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
+}
+
+.stock__items {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color-light);
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.stock__items:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: var(--border-color);
+}
+
+/* [중요] TSX에서 styles.up, styles.down으로 참조할 수 있도록 클래스 명시 */
+.up {
+}
+.down {
+}
+
+/* 상승(Red)일 때 가격 영역 색상 */
+.stock__items.up .value__area {
+  color: var(--color-stock-up);
+}
+
+/* 하락(Blue)일 때 가격 영역 색상 */
+.stock__items.down .value__area {
+  color: var(--color-stock-down);
+}
+
+.stock__items .title__area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  align-items: flex-start;
+  width: 70%;
+}
+
+.stock__items .title__area .name {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.stock__items .title__area .code {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.value__area {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.value__area .price {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+/* 즐겨찾기 버튼 영역 스타일 */
+.favoritor {
+  display: flex;
+  align-items: center;
+}
+
+.favoritor_active {
+  /* 활성화 시 스타일 필요하면 추가 */
+}
+
+.no__data {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--border-color);
+}
+
+/* 모달 스타일 */
+.modal__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+}
+
+.modal__content {
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.modal__close:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.modal__body {
+  padding: var(--spacing-md);
+}
+
+.modal__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modal__table tr {
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.modal__table tr:last-child {
+  border-bottom: none;
+}
+
+.modal__label {
+  padding: 12px 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+  background-color: var(--bg-secondary);
+  width: 30%;
+  vertical-align: middle;
+}
+
+.modal__value {
+  padding: 12px 15px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  vertical-align: middle;
+}

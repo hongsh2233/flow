@@ -1,0 +1,224 @@
+.postDetail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+.error p {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.backLink {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+.backLink:hover {
+  background: #2980b9;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background 0.2s, background-color 0.3s ease, color 0.3s ease;
+}
+
+.backButton:hover {
+  background: var(--bg-tertiary);
+}
+
+.boardName {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.titleSection {
+  margin-bottom: 30px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0 0 15px 0;
+  line-height: 1.4;
+}
+
+.meta {
+  display: flex;
+  gap: 15px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.meta span {
+  display: flex;
+  align-items: center;
+}
+
+.content {
+  min-height: 200px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  margin-bottom: 30px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.content :global(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 15px 0;
+}
+
+.content :global(p) {
+  margin-bottom: 15px;
+}
+
+.content :global(h1),
+.content :global(h2),
+.content :global(h3),
+.content :global(h4),
+.content :global(h5),
+.content :global(h6) {
+  margin-top: 25px;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.attachments {
+  margin-top: 30px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.attachments h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 15px 0;
+}
+
+.attachmentList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attachmentItem {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.attachmentItem:last-child {
+  border-bottom: none;
+}
+
+.attachmentLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3498db;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.attachmentLink:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.fileSize {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.footer {
+  /* margin-top: 40px; */
+  /* padding-top: 20px; */
+  /* border-top: 1px solid var(--border-color); */
+  text-align: center;
+}
+
+.listButton {
+  display: inline-block;
+  padding: 8px 20px;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.listButton:hover {
+  background: #2980b9;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .postDetail {
+    padding: 15px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .meta {
+    font-size: 12px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 50px;
+  }
+}

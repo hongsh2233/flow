@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}프로필 설정 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+
+  .section h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  .add-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .add-form input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .add-form input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .add-form input[type="url"] {
+    flex: 2;
+    min-width: 300px;
+  }
+
+  .btn-add {
+    padding: 10px 25px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .btn-add:hover {
+    background: #2980b9;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .table th,
+  .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .table tr:hover {
+    background: #f8f9fa;
+  }
+
+  .char-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+  }
+
+  .char-name {
+    font-size: 18px;
+    margin-right: 10px;
+  }
+
+  .btn-edit,
+  .btn-del {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    margin-right: 5px;
+  }
+
+  .btn-edit {
+    background: #27ae60;
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background: #229954;
+  }
+
+  .btn-del {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .btn-del:hover {
+    background: #c0392b;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .count-info {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+
+  .warning {
+    color: #856404;
+    background: #fff3cd;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border-left: 4px solid #ffc107;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="color: #2c3e50; margin-top: 0">🎨 프로필 설정 관리</h2>
+  <p style="color: #666">
+    소셜 로그인 시 회원에게 자동으로 할당되는 캐릭터와 닉네임 생성을 위한 설정을 관리합니다.
+  </p>
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0" />
+
+  <!-- 캐릭터 관리 섹션 -->
+  <div class="section">
+    <h3>🦁 캐릭터 관리 (최대 15개)</h3>
+    <div class="count-info">
+      현재 등록된 캐릭터: <strong>{{ characters|length }}개</strong> / 최대 15개
+    </div>
+    
+    <div class="warning">
+      <strong>⚠️ 주의:</strong> 캐릭터를 삭제하거나 비활성화하면, 기존 회원의 프로필에 영향을 줄 수 있습니다.
+    </div>
+
+    <!-- 캐릭터 추가 폼 -->
+    <form method="POST" action="/admin/profile/character/add" class="add-form">
+      <input type="text" name="name" placeholder="캐릭터 이름 (예: 🐂 황소)" required />
+      <input type="text" name="image_url" placeholder="프로필 이미지 URL (예: /static/image/characters/bull.png)" required />
+      <button type="submit" class="btn-add">캐릭터 추가</button>
+    </form>
+
+    <!-- 캐릭터 목록 -->
+    {% if characters %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>순서</th>
+          <th>프로필 이미지</th>
+          <th>이름</th>
+          <th>이미지 URL</th>
+          <th>상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for char in characters %}
+        <tr>
+          <td>{{ char.order_index }}</td>
+          <td>
+            {% if char.image_url %}
+            <img src="{{ char.image_url }}" alt="{{ char.name }}" class="char-image" 
+                 onerror="this.src='/image/icon/icon_account.svg'" />
+            {% else %}
+            <span>이미지 없음</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="char-name">{{ char.name }}</span>
+          </td>
+          <td style="font-size: 12px; color: #666; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+            {{ char.image_url }}
+          </td>
+          <td>
+            <span class="status-badge {% if char.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">
+              {% if char.is_active == 'active' %}활성{% else %}비활성{% endif %}
+            </span>
+          </td>
+          <td>
+            <button onclick="editCharacter({{ char.id }}, '{{ char.name }}', '{{ char.image_url }}', '{{ char.is_active }}')" 
+                    class="btn-edit">수정</button>
+            <a href="/admin/profile/character/delete/{{ char.id }}" 
+               class="btn-del" 
+               onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 40px;">등록된 캐릭터가 없습니다.</p>
+    {% endif %}
+  </div>
+
+  <!-- 주식 단어 관리 섹션 -->
+  <div class="section">
+    <h3>📈 주식 관련 단어 관리 (최대 120개)</h3>
+    <div class="count-info">
+      현재 등록된 단어: <strong>{{ stock_words|length }}개</strong> / 최대 120개
+    </div>
+
+    <!-- 단어 추가 폼 -->
+    <form method="POST" action="/admin/profile/stock-word/add" class="add-form">
+      <input type="text" name="word" placeholder="주식 관련 단어 (예: 투자자, 거래자)" required 
+             maxlength="50" />
+      <button type="submit" class="btn-add">단어 추가</button>
+    </form>
+
+    <!-- 단어 목록 -->
+    {% if stock_words %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>순서</th>
+          <th>단어</th>
+          <th>상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for word in stock_words %}
+        <tr>
+          <td>{{ word.order_index }}</td>
+          <td><strong>{{ word.word }}</strong></td>
+          <td>
+            <span class="status-badge {% if word.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">
+              {% if word.is_active == 'active' %}활성{% else %}비활성{% endif %}
+            </span>
+          </td>
+          <td>
+            <button onclick="editWord({{ word.id }}, '{{ word.word }}', '{{ word.is_active }}')" 
+                    class="btn-edit">수정</button>
+            <a href="/admin/profile/stock-word/delete/{{ word.id }}" 
+               class="btn-del" 
+               onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 40px;">등록된 단어가 없습니다.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 캐릭터 수정 모달 -->
+<div id="editCharModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
+    <h3 style="margin-top: 0">캐릭터 수정</h3>
+    <form method="POST" id="editCharForm">
+      <div style="margin-bottom: 15px;">
+        <label>캐릭터 이름:</label>
+        <input type="text" name="name" id="editCharName" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;" />
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label>이미지 URL:</label>
+        <input type="text" name="image_url" id="editCharImageUrl" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;" />
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label>상태:</label>
+        <select name="is_active" id="editCharStatus" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <div style="text-align: right;">
+        <button type="button" onclick="closeCharModal()" style="padding: 8px 20px; margin-right: 10px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+        <button type="submit" style="padding: 8px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 단어 수정 모달 -->
+<div id="editWordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px;">
+    <h3 style="margin-top: 0">단어 수정</h3>
+    <form method="POST" id="editWordForm">
+      <div style="margin-bottom: 15px;">
+        <label>단어:</label>
+        <input type="text" name="word" id="editWordWord" required maxlength="50" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;" />
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label>상태:</label>
+        <select name="is_active" id="editWordStatus" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <div style="text-align: right;">
+        <button type="button" onclick="closeWordModal()" style="padding: 8px 20px; margin-right: 10px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+        <button type="submit" style="padding: 8px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentCharId = null;
+let currentWordId = null;
+
+function editCharacter(id, name, imageUrl, status) {
+  currentCharId = id;
+  document.getElementById('editCharName').value = name;
+  document.getElementById('editCharImageUrl').value = imageUrl;
+  document.getElementById('editCharStatus').value = status;
+  document.getElementById('editCharForm').action = `/admin/profile/character/update/${id}`;
+  document.getElementById('editCharModal').style.display = 'block';
+}
+
+function closeCharModal() {
+  document.getElementById('editCharModal').style.display = 'none';
+  currentCharId = null;
+}
+
+function editWord(id, word, status) {
+  currentWordId = id;
+  document.getElementById('editWordWord').value = word;
+  document.getElementById('editWordStatus').value = status;
+  document.getElementById('editWordForm').action = `/admin/profile/stock-word/update/${id}`;
+  document.getElementById('editWordModal').style.display = 'block';
+}
+
+function closeWordModal() {
+  document.getElementById('editWordModal').style.display = 'none';
+  currentWordId = null;
+}
+
+// 모달 외부 클릭 시 닫기
+window.onclick = function(event) {
+  const charModal = document.getElementById('editCharModal');
+  const wordModal = document.getElementById('editWordModal');
+  if (event.target == charModal) {
+    closeCharModal();
+  }
+  if (event.target == wordModal) {
+    closeWordModal();
+  }
+}
+</script>
+{% endblock %}
+

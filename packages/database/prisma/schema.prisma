@@ -1,0 +1,98 @@
+// Jurin-i Monorepo - PostgreSQL 스키마 (Prisma)
+// apps/web에서 사용. admin은 SQLAlchemy 사용.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 공통 스키마: admin(백오피스)과 동일한 테이블 정의
+// 웹 앱에서 Prisma Client로 조회 시 사용
+
+model AdminUser {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique @db.VarChar(100)
+  name            String?  @db.VarChar(50)
+  hashed_password String?  @db.VarChar(255)
+  created_at      DateTime @default(now())
+}
+
+model Member {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique @db.VarChar(100)
+  name           String   @db.VarChar(50)
+  nickname       String?  @db.VarChar(50)
+  profile_image  String?  @db.VarChar(500)
+  provider       String   @db.VarChar(20)
+  provider_id    String   @db.VarChar(255)
+  status         String   @default("active") @db.VarChar(20)
+  favorite_stocks String?  @db.Text
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+
+model Board {
+  id         String   @id @db.VarChar(20)
+  name       String   @db.VarChar(100)
+  type       String   @db.VarChar(20)
+  auth       String   @default("all") @db.VarChar(20)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  posts      Post[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  board_id  String   @db.VarChar(20)
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  author    String?  @db.VarChar(100)
+  views     Int      @default(0)
+  is_secret String   @default("false") @db.VarChar(20)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  board     Board    @relation(fields: [board_id], references: [id])
+}
+
+model Schedule {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @db.Date
+  subject    String   @db.VarChar(255)
+  content    String?  @db.VarChar(500)
+  type       String   @default("manual") @db.VarChar(20)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model MainPageItem {
+  id                Int     @id @default(autoincrement())
+  name              String  @unique @db.VarChar(50)
+  component_key     String  @unique @db.VarChar(50)
+  order_index       Int     @default(0)
+  is_visible        String  @default("visible") @db.VarChar(20)
+  start_date        String? @db.VarChar(16)
+  end_date          String? @db.VarChar(16)
+  repeat_type       String  @default("none") @db.VarChar(20)
+  repeat_days       String? @db.VarChar(20)
+  repeat_start_time String? @db.VarChar(5)
+  repeat_end_time   String? @db.VarChar(5)
+  repeat_next_day   String  @default("false") @db.VarChar(5)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+}
+
+model Banner {
+  id         Int      @id @default(autoincrement())
+  type       String   @db.VarChar(20)
+  image_url  String   @db.VarChar(500)
+  link_url   String?  @db.VarChar(500)
+  alt_text   String?  @db.VarChar(200)
+  order_index Int     @default(0)
+  is_active  String   @default("active") @db.VarChar(20)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}

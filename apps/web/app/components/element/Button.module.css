@@ -1,0 +1,10 @@
+.btn-single-favoritor {
+  font-size: 20px;
+}
+.btn-single-favoritor.favorite_btn {
+  color: #ccc;
+}
+
+.btn-single-favoritor.active {
+  color: #ffc107;
+}

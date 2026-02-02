@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}{{ board.name }} 게시글 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .board-header {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+  }
+
+  .board-header h2 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+  }
+
+  .board-info {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .type-korean {
+    background: #e8f4fd;
+    color: #2980b9;
+  }
+
+  .type-guest {
+    background: #fef9e7;
+    color: #f1c40f;
+  }
+
+  .btn-back {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #95a5a6;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+
+  .btn-back:hover {
+    background: #7f8c8d;
+  }
+
+  .btn-write {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-write:hover {
+    background: #2980b9;
+  }
+
+  .posts-section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .posts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .empty-posts {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+  }
+
+  .empty-posts h3 {
+    color: #95a5a6;
+    margin-bottom: 10px;
+  }
+
+  .post-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .post-item:hover {
+    background: #f8f9fa;
+  }
+
+  .post-item:last-child {
+    border-bottom: none;
+  }
+
+  .post-info {
+    flex: 1;
+  }
+
+  .post-title {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 16px;
+  }
+
+  .post-meta {
+    font-size: 12px;
+    color: #95a5a6;
+    display: flex;
+    gap: 15px;
+  }
+
+  .post-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-edit {
+    padding: 5px 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  .btn-delete {
+    padding: 5px 12px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  .btn-edit:hover {
+    background: #2980b9;
+  }
+
+  .btn-delete:hover {
+    background: #c0392b;
+  }
+
+  /* 전체선택/선택삭제 */
+  .post-select {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .post-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+
+  .bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  .bulk-actions .btn-delete {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #2c3e50;
+    user-select: none;
+  }
+
+  .new-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: #e74c3c;
+    vertical-align: middle;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/admin/board" class="btn-back">← 게시판 관리로 돌아가기</a>
+
+<div class="board-header">
+  <h2>📋 {{ board.name }} - 게시글 관리</h2>
+  <div class="board-info">
+    <span class="badge {{ 'type-korean' if board.type == 'korean' else 'type-guest' }}">
+      {{ '일반형' if board.type == 'korean' else '방명록' }}
+    </span>
+    <span style="color: #7f8c8d; font-size: 12px;">게시판 ID: {{ board.id }}</span>
+  </div>
+</div>
+
+<div class="posts-section">
+  <div class="posts-header">
+    <h3 style="margin: 0">게시글 목록</h3>
+    <a href="/admin/board/{{ board.id }}/write" class="btn-write">✏️ 새 글 작성</a>
+  </div>
+
+  {% if posts %}
+  <form id="bulkDeleteForm" action="/admin/board/{{ board.id }}/posts/delete" method="post">
+    <div class="bulk-actions">
+      <label class="select-all">
+        <input id="selectAllPosts" type="checkbox" class="post-checkbox" />
+        전체 선택
+      </label>
+      <button type="submit" class="btn-delete" id="bulkDeleteBtn" disabled>
+        선택 삭제
+      </button>
+      <span style="font-size: 12px; color: #95a5a6;">
+        선택된 게시글만 삭제됩니다.
+      </span>
+    </div>
+
+    <div>
+      {% for post in posts %}
+      <div class="post-item">
+        <div class="post-select">
+          <input
+            type="checkbox"
+            name="post_ids"
+            value="{{ post.id }}"
+            class="post-checkbox postCheckbox"
+            aria-label="게시글 선택"
+          />
+          <div class="post-info">
+            <div class="post-title">
+              <a
+                href="/admin/board/{{ board.id }}/post/{{ post.id }}"
+                style="color: #2c3e50; text-decoration: none;"
+              >
+                {% if post.is_secret == "true" %}
+                  🔒 비밀글
+                {% else %}
+                  {{ post.title }}
+                {% endif %}
+              </a>
+              {% if new_post_ids and (post.id in new_post_ids) %}
+              <span class="new-badge">NEW</span>
+              {% endif %}
+            </div>
+            <div class="post-meta">
+              <span>작성자: {{ post.author or '관리자' }}</span>
+              <span>작성일: {{ post.created_at }}</span>
+              <span>조회수: {{ post.views or 0 }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-actions">
+          <a href="/admin/board/{{ board.id }}/post/{{ post.id }}" class="btn-edit" style="background: #27ae60;">보기</a>
+          <a href="/admin/board/{{ board.id }}/post/{{ post.id }}/edit" class="btn-edit">수정</a>
+          <a
+            href="/admin/board/{{ board.id }}/post/{{ post.id }}/delete"
+            class="btn-delete"
+            onclick="return confirm('이 게시글을 삭제하시겠습니까?')"
+          >삭제</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </form>
+  {% else %}
+  <div class="empty-posts">
+    <h3>📭 게시글이 없습니다</h3>
+    <p>첫 번째 게시글을 작성해보세요!</p>
+    <a href="/admin/board/{{ board.id }}/write" class="btn-write" style="margin-top: 15px;">✏️ 첫 글 작성하기</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    const selectAll = document.getElementById("selectAllPosts");
+    const form = document.getElementById("bulkDeleteForm");
+    const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+
+    function getChecks() {
+      return Array.from(document.querySelectorAll(".postCheckbox"));
+    }
+
+    function syncButtonState() {
+      if (!bulkDeleteBtn) return;
+      const checks = getChecks();
+      const checkedCount = checks.filter((c) => c.checked).length;
+      bulkDeleteBtn.disabled = checkedCount === 0;
+      bulkDeleteBtn.textContent = checkedCount === 0 ? "선택 삭제" : `선택 삭제 (${checkedCount})`;
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener("change", () => {
+        const checks = getChecks();
+        checks.forEach((c) => (c.checked = selectAll.checked));
+        syncButtonState();
+      });
+    }
+
+    document.addEventListener("change", (e) => {
+      const target = e.target;
+      if (!target || !target.classList || !target.classList.contains("postCheckbox")) return;
+
+      const checks = getChecks();
+      const checkedCount = checks.filter((c) => c.checked).length;
+      if (selectAll) {
+        selectAll.checked = checkedCount > 0 && checkedCount === checks.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+      }
+      syncButtonState();
+    });
+
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        const checks = getChecks();
+        const checkedCount = checks.filter((c) => c.checked).length;
+        if (checkedCount === 0) {
+          e.preventDefault();
+          return;
+        }
+        if (!confirm(`선택한 ${checkedCount}개의 게시글을 삭제하시겠습니까?`)) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    syncButtonState();
+  })();
+</script>
+{% endblock %}
+

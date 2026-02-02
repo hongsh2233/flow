@@ -1,0 +1,25 @@
+.loading,
+.error,
+.empty {
+  padding: var(--spacing-2xl) var(--spacing-md);
+  text-align: center;
+  font-size: 14px;
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-primary);
+}
+
+.loading {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color-light);
+}
+
+.error {
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+  background-color: #ffebee;
+}
+
+.empty {
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+}

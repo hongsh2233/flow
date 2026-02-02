@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #3498db;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-card.board {
+    border-left-color: #3498db;
+  }
+
+  .stat-card.member {
+    border-left-color: #27ae60;
+  }
+
+  .stat-card.schedule {
+    border-left-color: #e74c3c;
+  }
+
+  .stat-card.data {
+    border-left-color: #f39c12;
+  }
+
+  .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .stat-card-title {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .stat-card-icon {
+    font-size: 32px;
+    opacity: 0.8;
+  }
+
+  .stat-card-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+  .stat-card-description {
+    font-size: 12px;
+    color: #95a5a6;
+    margin-top: 8px;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .chart-card {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .chart-card h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 18px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  .menu-stats {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+
+  .menu-stats h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  .menu-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .menu-stat-item {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  .menu-stat-label {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 8px;
+  }
+
+  .menu-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  @media (max-width: 768px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="card">
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">📊 대시보드</h2>
+      <p style="color: #666; margin: 0;">
+        시스템 전반의 통계와 현황을 한눈에 확인할 수 있습니다.
+      </p>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="stats-grid">
+      <!-- 게시판 통계 -->
+      <div class="stat-card board">
+        <div class="stat-card-header">
+          <p class="stat-card-title">게시판</p>
+          <div class="stat-card-icon">📝</div>
+        </div>
+        <p class="stat-card-value">{{ stats.total_boards }}</p>
+        <p class="stat-card-description">게시판 {{ stats.total_posts }}개, 조회수 {{ "{:,}".format(stats.total_views) }}회</p>
+      </div>
+
+      <!-- 회원 통계 -->
+      <div class="stat-card member">
+        <div class="stat-card-header">
+          <p class="stat-card-title">회원</p>
+          <div class="stat-card-icon">👥</div>
+        </div>
+        <p class="stat-card-value">{{ stats.total_members }}</p>
+        <p class="stat-card-description">활성 회원 {{ stats.active_members }}명</p>
+      </div>
+
+      <!-- 일정 통계 -->
+      <div class="stat-card schedule">
+        <div class="stat-card-header">
+          <p class="stat-card-title">일정</p>
+          <div class="stat-card-icon">🗓️</div>
+        </div>
+        <p class="stat-card-value">{{ stats.total_schedules }}</p>
+        <p class="stat-card-description">예정된 일정 {{ stats.upcoming_schedules }}개</p>
+      </div>
+
+      <!-- 금융 데이터 통계 -->
+      <div class="stat-card data">
+        <div class="stat-card-header">
+          <p class="stat-card-title">금융 데이터</p>
+          <div class="stat-card-icon">📊</div>
+        </div>
+        <p class="stat-card-value">{{ stats.krx_data_count + stats.fsc_data_count }}</p>
+        <p class="stat-card-description">KRX {{ stats.krx_data_count }}건, FSC {{ stats.fsc_data_count }}건</p>
+      </div>
+    </div>
+
+    <!-- 메뉴별 통계 -->
+    <div class="menu-stats">
+      <h3>📋 메뉴별 통계</h3>
+      <div class="menu-stats-grid">
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">게시판</div>
+          <div class="menu-stat-value">{{ stats.total_boards }}</div>
+        </div>
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">게시글</div>
+          <div class="menu-stat-value">{{ stats.total_posts }}</div>
+        </div>
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">총 조회수</div>
+          <div class="menu-stat-value">{{ "{:,}".format(stats.total_views) }}</div>
+        </div>
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">회원</div>
+          <div class="menu-stat-value">{{ stats.total_members }}</div>
+        </div>
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">일정</div>
+          <div class="menu-stat-value">{{ stats.total_schedules }}</div>
+        </div>
+        <div class="menu-stat-item">
+          <div class="menu-stat-label">관리자</div>
+          <div class="menu-stat-value">{{ stats.total_admins }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 그래프 섹션 -->
+    <div class="charts-grid">
+      <!-- 게시글 작성 통계 -->
+      <div class="chart-card">
+        <h3>📈 최근 7일 게시글 작성 통계</h3>
+        <div class="chart-container">
+          <canvas id="postChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 조회수 통계 -->
+      <div class="chart-card">
+        <h3>👀 최근 7일 조회수 통계</h3>
+        <div class="chart-container">
+          <canvas id="viewChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // 게시글 작성 통계 그래프
+  const postCtx = document.getElementById('postChart').getContext('2d');
+  const postData = {
+    labels: {{ post_stats|map(attribute='date')|list|tojson }},
+    datasets: [{
+      label: '게시글 수',
+      data: {{ post_stats|map(attribute='count')|list|tojson }},
+      backgroundColor: 'rgba(52, 152, 219, 0.2)',
+      borderColor: 'rgba(52, 152, 219, 1)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4
+    }]
+  };
+
+  new Chart(postCtx, {
+    type: 'line',
+    data: postData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
+
+  // 조회수 통계 그래프
+  const viewCtx = document.getElementById('viewChart').getContext('2d');
+  const viewData = {
+    labels: {{ view_stats|map(attribute='date')|list|tojson }},
+    datasets: [{
+      label: '조회수',
+      data: {{ view_stats|map(attribute='views')|list|tojson }},
+      backgroundColor: 'rgba(231, 76, 60, 0.2)',
+      borderColor: 'rgba(231, 76, 60, 1)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4
+    }]
+  };
+
+  new Chart(viewCtx, {
+    type: 'line',
+    data: viewData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

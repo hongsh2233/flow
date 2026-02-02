@@ -1,0 +1,121 @@
+{% extends "base.html" %} {% block title %}{{ post.title }} - {{ board.name }}{%
+endblock %} {% block content %}
+<div
+  style="
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+  "
+>
+  <div
+    style="
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    "
+  >
+    <h4 style="color: #666; margin: 0">{{ board.name }}</h4>
+    <h1 style="margin: 10px 0; color: #333">{{ post.title }}</h1>
+    <div style="font-size: 0.9rem; color: #888">
+      <span>작성자: {{ formatted_author or post.author or '익명' }}</span> |
+      <span
+        >날짜: {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at
+        else '' }}</span
+      >
+      |
+      <span>조회: {{ post.views }}</span>
+    </div>
+  </div>
+
+  <div
+    id="post-content"
+    style="
+      min-height: 200px;
+      line-height: 1.6;
+      color: #444;
+    "
+  >
+    {{ post.content | safe }}
+  </div>
+
+  <!-- 첨부 파일 영역 -->
+  {% if attachments %}
+  <div id="attachments" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+    <div class="attachments-list">
+      {% for file in attachments %}
+        {% if file.type and file.type.startswith('image/') %}
+          <!-- 이미지는 content에 이미 포함되어 있을 수 있으므로 표시하지 않음 -->
+        {% else %}
+          <!-- 일반 파일은 다운로드 링크로 표시 -->
+          <div class="attachment-item">
+            <span style="font-size: 20px;">📎</span>
+            <a href="{{ file.path }}" class="attachment-link" download="{{ file.filename }}" target="_blank">
+              {{ file.filename }}
+            </a>
+            {% if file.formatted_size %}
+            <span class="attachment-size">{{ file.formatted_size }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="margin-top: 30px; text-align: center">
+    <a
+      href="/board/{{ board.id }}"
+      style="
+        display: inline-block;
+        padding: 10px 30px;
+        background: #eee;
+        color: #333;
+        text-decoration: none;
+        border-radius: 4px;
+      "
+      >목록으로</a
+    >
+  </div>
+</div>
+
+<style>
+  .attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .attachment-link {
+    flex: 1;
+    text-decoration: none;
+    color: #333;
+  }
+
+  .attachment-link:hover {
+    color: #3498db;
+    text-decoration: underline;
+  }
+
+  .attachment-size {
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  #post-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
+
+{% endblock %}

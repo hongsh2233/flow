@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - {{ board.name }} - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .post-container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .post-header {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
+
+  .post-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0 0 15px 0;
+  }
+
+  .post-meta {
+    display: flex;
+    gap: 20px;
+    color: #7f8c8d;
+    font-size: 14px;
+  }
+
+  /* [수정] 본문 스타일 */
+  .post-content {
+    padding: 20px 0;
+    line-height: 1.8;
+    color: #34495e;
+    word-wrap: break-word;
+    min-height: 200px;
+  }
+  
+  /* [수정] 에디터 이미지 반응형 처리 */
+  .post-content img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .post-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+  }
+
+  .btn-back {
+    background: #95a5a6;
+    color: white;
+  }
+
+  .btn-edit {
+    background: #3498db;
+    color: white;
+  }
+  
+  .btn-delete {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .board-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  /* [추가] 첨부파일 스타일 */
+  .attachments-area {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+  }
+  
+  .attachment-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #495057;
+    font-size: 14px;
+  }
+
+  .attachment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .attachment-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .attachment-link {
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+  }
+
+  .file-size {
+    color: #888;
+    font-size: 12px;
+    margin-left: 5px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/admin/board/{{ board.id }}/posts" class="btn-back" style="margin-bottom: 20px;">← 게시글 목록으로</a>
+
+<div class="post-container">
+  <div class="board-info">
+    <strong>게시판:</strong> {{ board.name }} ({{ board.id }})
+  </div>
+
+  <div class="post-header">
+    <h1 class="post-title">{{ post.title }}</h1>
+    <div class="post-meta">
+      <span>작성자: {{ formatted_author or post.author }}</span>
+      <span>작성일: {{ post.created_at.strftime('%Y-%m-%d %H:%M') if post.created_at else '' }}</span>
+      {% if post.updated_at and post.updated_at != post.created_at %}
+      <span>수정일: {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      {% endif %}
+      <span>조회수: {{ post.views }}</span>
+    </div>
+  </div>
+
+  <div class="post-content">{{ post.content | safe }}</div>
+
+  {% if attachments and attachments|length > 0 %}
+  <div class="attachments-area">
+    <div class="attachment-title">📎 첨부파일</div>
+    <ul class="attachment-list">
+      {% for file in attachments %}
+      <li class="attachment-item">
+        <span>📄</span>
+        <a href="{{ file.path }}" class="attachment-link" download="{{ file.filename }}" target="_blank">
+          {{ file.filename }}
+        </a>
+        {% if file.formatted_size %}
+        <span class="file-size">({{ file.formatted_size }})</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="post-actions">
+    <a href="/admin/board/{{ board.id }}/posts" class="btn btn-back">목록</a>
+    <a href="/admin/board/{{ board.id }}/post/{{ post.id }}/edit" class="btn btn-edit">수정</a>
+    <a 
+      href="/admin/board/{{ board.id }}/post/{{ post.id }}/delete" 
+      class="btn btn-delete"
+      onclick="return confirm('이 게시글을 삭제하시겠습니까?')"
+    >삭제</a>
+  </div>
+</div>
+{% endblock %}

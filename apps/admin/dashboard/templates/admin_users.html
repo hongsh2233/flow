@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .add-form input,
+  .pwd-form input {
+    padding: 8px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .btn-add,
+  .btn-pwd {
+    padding: 8px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-del {
+    color: #e74c3c;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .pwd-section {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px dashed #eee;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <h3>👥 신규 관리자 추가</h3>
+  <form action="/admin/users/add" method="post" class="add-form">
+    <input type="text" name="name" placeholder="이름" required />
+    <input
+      type="email"
+      name="email"
+      placeholder="이메일 아이디"
+      required
+    />
+    <input
+      type="password"
+      name="password"
+      placeholder="비밀번호"
+      required
+    />
+    <button type="submit" class="btn-add">추가하기</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>📋 관리자 목록</h3>
+  <form id="userForm" action="/admin/users/change-password" method="post">
+    <table>
+      <thead>
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              id="selectAll"
+              onclick="toggleSelectAll(this)"
+            />
+          </th>
+          <th>이름</th>
+          <th>이메일</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <input
+              type="checkbox"
+              name="selected_emails"
+              value="{{ u.email }}"
+              onclick="updateVisibility()"
+            />
+          </td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            {% if u.email != admin_email %}
+            <a
+              href="/admin/users/delete/{{ u.email }}"
+              class="btn-del"
+              onclick="return confirm('삭제하시겠습니까?')"
+              >삭제</a
+            >
+            {% else %}
+            <span style="color: #aaa">삭제불가(본인)</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div id="pwdSection" class="pwd-section">
+      <h4>🔒 선택한 관리자 비밀번호 변경</h4>
+      <div class="pwd-form">
+        <input
+          type="password"
+          name="new_password"
+          placeholder="새 비밀번호 입력"
+          id="newPwdInput"
+        />
+        <button
+          type="submit"
+          class="btn-pwd"
+          onclick="return validatePwd()"
+        >
+          변경 적용
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // 전체 선택/해제
+  function toggleSelectAll(source) {
+    const checkboxes = document.getElementsByName("selected_emails");
+    for (let i = 0; i < checkboxes.length; i++) {
+      checkboxes[i].checked = source.checked;
+    }
+    updateVisibility();
+  }
+
+  // 체크박스 상태에 따라 변경 폼 노출 여부 결정
+  function updateVisibility() {
+    const checkboxes = document.getElementsByName("selected_emails");
+    const pwdSection = document.getElementById("pwdSection");
+    let anyChecked = false;
+    for (let i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i].checked) {
+        anyChecked = true;
+        break;
+      }
+    }
+    pwdSection.style.display = anyChecked ? "block" : "none";
+  }
+
+  // 유효성 검사
+  function validatePwd() {
+    const pwd = document.getElementById("newPwdInput").value;
+    if (!pwd) {
+      alert("변경할 비밀번호를 입력해주세요.");
+      return false;
+    }
+    return confirm("선택한 관리자들의 비밀번호를 변경하시겠습니까?");
+  }
+</script>
+{% endblock %}
