@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Form, Request, Depends, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import Optional
 import os
@@ -121,17 +121,173 @@ async def admin_main_page(
 @router.get("/admin/settings", response_class=HTMLResponse)
 async def admin_settings_page(
     request: Request,
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """설정 페이지"""
+    """설정 페이지 (하단 메뉴 설정 포함)"""
     if not user:
         return RedirectResponse(url="/")
-    
+
+    nav_items = (
+        db.query(models.NavMenuItem)
+        .options(joinedload(models.NavMenuItem.tabs))
+        .order_by(models.NavMenuItem.order_index)
+        .all()
+    )
+    boards = db.query(models.Board).order_by(models.Board.id).all()
+
     return templates.TemplateResponse("settings.html", {
         "request": request,
         "admin_email": ADMIN_EMAIL,
-        "active_page": "settings"
+        "active_page": "settings",
+        "nav_items": nav_items,
+        "boards": boards,
     })
+
+
+# ==================== 하단 메뉴 설정 CRUD ====================
+
+@router.post("/admin/settings/nav-menu/add")
+async def nav_menu_add(
+    label: str = Form(...),
+    icon: str = Form("icon_home"),
+    link_type: str = Form("page"),
+    link_value: str = Form(...),
+    match_paths: str = Form(""),
+    order_index: int = Form(0),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """하단 메뉴 항목 추가"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    item = models.NavMenuItem(
+        label=label.strip(),
+        icon=icon.strip() or "icon_home",
+        link_type=link_type.strip() or "page",
+        link_value=link_value.strip(),
+        match_paths=match_paths.strip() or None,
+        order_index=order_index,
+        is_visible="visible",
+    )
+    db.add(item)
+    db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+@router.post("/admin/settings/nav-menu/update/{item_id}")
+async def nav_menu_update(
+    item_id: int,
+    label: str = Form(...),
+    icon: str = Form("icon_home"),
+    link_type: str = Form("page"),
+    link_value: str = Form(...),
+    match_paths: str = Form(""),
+    order_index: int = Form(0),
+    is_visible: str = Form("visible"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """하단 메뉴 항목 수정"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    item = db.query(models.NavMenuItem).filter(models.NavMenuItem.id == item_id).first()
+    if not item:
+        return HTMLResponse("<script>alert('항목을 찾을 수 없습니다.'); location.href='/admin/settings';</script>")
+    item.label = label.strip()
+    item.icon = icon.strip() or "icon_home"
+    item.link_type = link_type.strip() or "page"
+    item.link_value = link_value.strip()
+    item.match_paths = match_paths.strip() or None
+    item.order_index = order_index
+    item.is_visible = is_visible
+    db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+@router.get("/admin/settings/nav-menu/delete/{item_id}")
+async def nav_menu_delete(
+    item_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """하단 메뉴 항목 삭제 (하위 탭도 함께 삭제)"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    item = db.query(models.NavMenuItem).filter(models.NavMenuItem.id == item_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+# ==================== 서브 메뉴/탭 CRUD ====================
+
+@router.post("/admin/settings/nav-menu/{item_id}/tab/add")
+async def nav_menu_tab_add(
+    item_id: int,
+    label: str = Form(...),
+    link_value: str = Form(...),
+    order_index: int = Form(0),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """메뉴별 서브 메뉴(탭) 추가"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    item = db.query(models.NavMenuItem).filter(models.NavMenuItem.id == item_id).first()
+    if not item:
+        return HTMLResponse("<script>alert('메뉴를 찾을 수 없습니다.'); location.href='/admin/settings';</script>")
+    tab = models.NavMenuTab(
+        nav_menu_item_id=item_id,
+        label=label.strip(),
+        link_value=link_value.strip(),
+        order_index=order_index,
+        is_visible="visible",
+    )
+    db.add(tab)
+    db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+@router.post("/admin/settings/nav-menu/tab/update/{tab_id}")
+async def nav_menu_tab_update(
+    tab_id: int,
+    label: str = Form(...),
+    link_value: str = Form(...),
+    order_index: int = Form(0),
+    is_visible: str = Form("visible"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """서브 메뉴(탭) 수정"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    tab = db.query(models.NavMenuTab).filter(models.NavMenuTab.id == tab_id).first()
+    if not tab:
+        return HTMLResponse("<script>alert('탭을 찾을 수 없습니다.'); location.href='/admin/settings';</script>")
+    tab.label = label.strip()
+    tab.link_value = link_value.strip()
+    tab.order_index = order_index
+    tab.is_visible = is_visible
+    db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
+
+
+@router.get("/admin/settings/nav-menu/tab/delete/{tab_id}")
+async def nav_menu_tab_delete(
+    tab_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """서브 메뉴(탭) 삭제"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    tab = db.query(models.NavMenuTab).filter(models.NavMenuTab.id == tab_id).first()
+    if tab:
+        db.delete(tab)
+        db.commit()
+    return RedirectResponse(url="/admin/settings", status_code=303)
 
 
 @router.post("/admin/main/update-visibility")

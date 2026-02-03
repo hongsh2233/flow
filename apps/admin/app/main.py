@@ -205,6 +205,24 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 네이버 랭킹 메인 페이지 항목 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.init_nav_menu_items import run_migration as init_nav_menu_migration
+        from app.database import SessionLocal
+        db = SessionLocal()
+        init_nav_menu_migration(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ 하단 메뉴 초기 데이터 삽입 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.init_nav_menu_tabs import run_migration as init_nav_menu_tabs_migration
+        from app.database import SessionLocal
+        db = SessionLocal()
+        init_nav_menu_tabs_migration(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ 메뉴 탭 초기 데이터 삽입 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

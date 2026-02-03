@@ -6,7 +6,37 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.engine.database import Base
 
-__all__ = ["Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post", "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member", "Character", "StockWord", "MainPageItem", "Banner", "NaverStockRanking"]
+class NavMenuItem(Base):
+    """웹 앱 하단/헤더 메뉴 항목 (설정 페이지에서 관리)"""
+    __tablename__ = "nav_menu_items"
+    id = Column(Integer, primary_key=True, index=True)
+    label = Column(String(50), nullable=False)
+    icon = Column(String(50), nullable=False, default="icon_home")
+    link_type = Column(String(20), nullable=False, default="page")  # 'page' | 'board'
+    link_value = Column(String(255), nullable=False)  # path (e.g. /news) or board_id (e.g. B001)
+    match_paths = Column(String(500), nullable=True)  # comma-separated paths for active state
+    order_index = Column(Integer, nullable=False, default=0)
+    is_visible = Column(String(20), default="visible")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    tabs = relationship("NavMenuTab", back_populates="nav_menu_item", order_by="NavMenuTab.order_index", cascade="all, delete-orphan")
+
+
+class NavMenuTab(Base):
+    """메뉴별 서브 메뉴/탭 (하위 탭 설정)"""
+    __tablename__ = "nav_menu_tabs"
+    id = Column(Integer, primary_key=True, index=True)
+    nav_menu_item_id = Column(Integer, ForeignKey("nav_menu_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    label = Column(String(50), nullable=False)
+    link_value = Column(String(255), nullable=False)  # path (e.g. /news, /report)
+    order_index = Column(Integer, nullable=False, default=0)
+    is_visible = Column(String(20), default="visible")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    nav_menu_item = relationship("NavMenuItem", back_populates="tabs")
+
+
+__all__ = ["Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post", "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member", "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking"]
 
 
 class CollectedData(Base):

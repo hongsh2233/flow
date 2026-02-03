@@ -6,7 +6,7 @@ REST API 라우터 - 프론트엔드용
 게시판 및 일정 관리 등은 JWT 토큰 또는 API Key를 통해 인증합니다.
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import distinct, cast, Integer, Float, func
 from typing import Optional
 from datetime import datetime, date
@@ -707,6 +707,46 @@ async def get_main_page_config(
         message="메인 페이지 설정을 조회했습니다.",
         items=item_list,
     )
+
+
+# =========================================================
+# 하단/헤더 메뉴 API (웹 앱용)
+# =========================================================
+
+@router.get("/api/nav-menu")
+async def get_nav_menu(db: Session = Depends(get_db)):
+    """
+    웹 앱 하단·헤더 메뉴 목록 조회 (서브 메뉴/탭 포함)
+    
+    노출 가능(is_visible='visible')한 항목만 order_index 순으로 반환합니다.
+    인증 없이 호출 가능합니다.
+    """
+    items = (
+        db.query(models.NavMenuItem)
+        .options(joinedload(models.NavMenuItem.tabs))
+        .filter(models.NavMenuItem.is_visible == "visible")
+        .order_by(models.NavMenuItem.order_index)
+        .all()
+    )
+    result = []
+    for item in items:
+        link = item.link_value
+        if item.link_type == "board":
+            link = f"/news?board={item.link_value}" if item.link_value else "/news"
+        tabs_list = []
+        if hasattr(item, "tabs") and item.tabs:
+            for t in sorted(item.tabs, key=lambda x: x.order_index):
+                if t.is_visible == "visible":
+                    tabs_list.append({"label": t.label, "href": t.link_value})
+        result.append({
+            "id": item.id,
+            "name": item.label,
+            "icon": item.icon,
+            "link": link,
+            "matchPaths": [p.strip() for p in (item.match_paths or "").split(",") if p.strip()] or [link],
+            "tabs": tabs_list,
+        })
+    return {"success": True, "data": result}
 
 
 # =========================================================

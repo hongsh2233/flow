@@ -18,11 +18,13 @@ from app.engine.models import (
     StockWord,
     MainPageItem,
     Banner,
+    NavMenuItem,
+    NavMenuTab,
     NaverStockRanking,
 )
 
 __all__ = [
     "Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
-    "Character", "StockWord", "MainPageItem", "Banner", "NaverStockRanking",
+    "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
 ]

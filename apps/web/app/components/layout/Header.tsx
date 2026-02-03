@@ -1,12 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import styles from './BottomNav.module.css'
 import IconButton from '../element/IconButton'
+import { fetchNavMenu } from '@/lib/services/navMenuService'
 
-const navList = [
+const DEFAULT_NAV_LIST = [
   { name: '홈', icon: 'icon_home', link: '/' },
   { name: '증시일정', icon: 'icon_calendar', link: '/schedule' },
   { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
@@ -18,6 +19,13 @@ export default function Header() {
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const [navList, setNavList] = useState<Array<{ name: string; icon: string; link: string }>>(DEFAULT_NAV_LIST)
+
+  useEffect(() => {
+    fetchNavMenu().then((items) => {
+      setNavList(items.map((item) => ({ name: item.name, icon: item.icon, link: item.link })))
+    })
+  }, [])
 
   // 1. 로그인 페이지는 아예 헤더 숨김
   if (pathname === '/login') return null
@@ -25,8 +33,9 @@ export default function Header() {
   // 2. 메인 페이지 여부 확인 변수
   const isMain = pathname === '/'
 
-  // 3. 네비게이션 타이틀 로직 (메인이 아닐 때 사용)
+  // 3. 네비게이션 타이틀 로직 (메인이 아닐 때 사용) - 경로 일치 또는 matchPaths 포함
   const currentNav = navList.find((nav) => nav.link === pathname)
+    ?? navList.find((nav) => pathname.startsWith(nav.link) && nav.link !== '/')
   const subPageTitle = currentNav?.name || '증시 정보'
 
   const handleBack = () => router.back()
