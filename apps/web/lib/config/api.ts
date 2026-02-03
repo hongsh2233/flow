@@ -28,17 +28,22 @@ export function getImageUrl(imageUrl: string | null | undefined): string {
     return imageUrl
   }
 
-  // If starts with /, it's already a root-relative path, return as is
+  // Remove trailing slash from API_BASE_URL if present
+  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
+
+  // /uploads/ 경로는 Admin 서버에서 제공되므로 API_BASE_URL을 붙임
+  if (imageUrl.startsWith('/uploads/')) {
+    return `${baseUrl}${imageUrl}`
+  }
+
+  // If starts with /, it's already a root-relative path for Web static files
   if (imageUrl.startsWith('/')) {
     return imageUrl
   }
 
   // Otherwise, prepend API_BASE_URL for relative paths
-  // Remove trailing slash from API_BASE_URL if present
-  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
-  // Ensure imageUrl starts with / if it doesn't
-  const path = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`
-  
+  const path = `/${imageUrl}`
+
   return `${baseUrl}${path}`
 }
 

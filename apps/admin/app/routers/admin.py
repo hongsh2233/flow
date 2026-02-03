@@ -227,6 +227,7 @@ async def nav_menu_delete(
 async def nav_menu_tab_add(
     item_id: int,
     label: str = Form(...),
+    link_type: str = Form("page"),
     link_value: str = Form(...),
     order_index: int = Form(0),
     user=Depends(get_current_user),
@@ -241,6 +242,7 @@ async def nav_menu_tab_add(
     tab = models.NavMenuTab(
         nav_menu_item_id=item_id,
         label=label.strip(),
+        link_type=link_type.strip() or "page",
         link_value=link_value.strip(),
         order_index=order_index,
         is_visible="visible",
@@ -254,6 +256,7 @@ async def nav_menu_tab_add(
 async def nav_menu_tab_update(
     tab_id: int,
     label: str = Form(...),
+    link_type: str = Form("page"),
     link_value: str = Form(...),
     order_index: int = Form(0),
     is_visible: str = Form("visible"),
@@ -267,6 +270,7 @@ async def nav_menu_tab_update(
     if not tab:
         return HTMLResponse("<script>alert('탭을 찾을 수 없습니다.'); location.href='/admin/settings';</script>")
     tab.label = label.strip()
+    tab.link_type = link_type.strip() or "page"
     tab.link_value = link_value.strip()
     tab.order_index = order_index
     tab.is_visible = is_visible

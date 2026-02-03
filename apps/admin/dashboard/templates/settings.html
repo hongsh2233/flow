@@ -58,6 +58,8 @@
 
   .badge-page { background: #3498db; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
   .badge-board { background: #27ae60; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .badge-page-sm { background: #3498db; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+  .badge-board-sm { background: #27ae60; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
 
   .form-row {
     display: flex;
@@ -219,7 +221,7 @@
                 <tr>
                   <th style="width: 60px;">순서</th>
                   <th>탭명</th>
-                  <th>경로</th>
+                  <th>연결</th>
                   <th style="width: 120px;">관리</th>
                 </tr>
               </thead>
@@ -228,9 +230,15 @@
                 <tr data-tab-id="{{ tab.id }}">
                   <td>{{ tab.order_index }}</td>
                   <td>{{ tab.label }}</td>
-                  <td>{{ tab.link_value }}</td>
                   <td>
-                    <a href="#" class="btn btn-secondary btn-sm" onclick="openTabEditForm({{ tab.id }}, '{{ tab.label|e }}', '{{ tab.link_value|e }}', {{ tab.order_index }}); return false;">수정</a>
+                    {% if tab.link_type == 'board' %}
+                      <span class="badge-board-sm">게시판</span> {{ tab.link_value }}
+                    {% else %}
+                      <span class="badge-page-sm">페이지</span> {{ tab.link_value }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a href="#" class="btn btn-secondary btn-sm" onclick="openTabEditForm({{ tab.id }}, '{{ tab.label|e }}', '{{ tab.link_type or 'page'|e }}', '{{ tab.link_value|e }}', {{ tab.order_index }}); return false;">수정</a>
                     <a href="/admin/settings/nav-menu/tab/delete/{{ tab.id }}" class="btn btn-danger btn-sm" onclick="return confirm('이 탭을 삭제할까요?');">삭제</a>
                   </td>
                 </tr>
@@ -239,19 +247,38 @@
                     <form method="post" action="/admin/settings/nav-menu/tab/update/{{ tab.id }}" id="tabEditForm-{{ tab.id }}">
                       <div class="form-row">
                         <div class="field-group"><label>탭명 *</label><input type="text" name="label" value="{{ tab.label }}" required maxlength="50" /></div>
-                        <div class="field-group wide"><label>경로 *</label>
+                        <div class="field-group">
+                          <label>연결 유형</label>
+                          <select class="tab-edit-link-type" data-tab-id="{{ tab.id }}" name="link_type">
+                            <option value="page" {{ 'selected' if tab.link_type != 'board' else '' }}>페이지</option>
+                            <option value="board" {{ 'selected' if tab.link_type == 'board' else '' }}>게시판</option>
+                          </select>
+                        </div>
+                        <div class="field-group wide tab-edit-page-wrap" data-tab-id="{{ tab.id }}" {{ 'style=display:none;' if tab.link_type == 'board' else '' }}>
+                          <label>페이지 경로 *</label>
                           <select class="tab-edit-link-select" data-tab-id="{{ tab.id }}">
                             <option value="/news" {{ 'selected' if tab.link_value == '/news' else '' }}>/news</option>
                             <option value="/report" {{ 'selected' if tab.link_value == '/report' else '' }}>/report</option>
                             <option value="/global" {{ 'selected' if tab.link_value == '/global' else '' }}>/global</option>
                             <option value="/disclosure" {{ 'selected' if tab.link_value == '/disclosure' else '' }}>/disclosure</option>
                             <option value="/setting" {{ 'selected' if tab.link_value == '/setting' else '' }}>/setting</option>
+                            <option value="/schedule" {{ 'selected' if tab.link_value == '/schedule' else '' }}>/schedule</option>
+                            <option value="/stock_info" {{ 'selected' if tab.link_value == '/stock_info' else '' }}>/stock_info</option>
                             <option value="/" {{ 'selected' if tab.link_value == '/' else '' }}>/</option>
-                            <option value="__custom__" {{ 'selected' if tab.link_value not in ['/news','/report','/global','/disclosure','/setting','/'] else '' }}>직접 입력</option>
+                            <option value="__custom__" {{ 'selected' if tab.link_type != 'board' and tab.link_value not in ['/news','/report','/global','/disclosure','/setting','/schedule','/stock_info','/'] else '' }}>직접 입력</option>
                           </select>
-                          <input type="text" class="tab-edit-link-custom {{ 'hide' if tab.link_value in ['/news','/report','/global','/disclosure','/setting','/'] else '' }}" data-tab-id="{{ tab.id }}" placeholder="/path" value="{{ tab.link_value if tab.link_value not in ['/news','/report','/global','/disclosure','/setting','/'] else '' }}" style="min-width: 160px;" />
-                          <input type="hidden" name="link_value" class="tab-edit-link-value" data-tab-id="{{ tab.id }}" value="{{ tab.link_value }}" />
+                          <input type="text" class="tab-edit-link-custom {{ 'hide' if tab.link_type == 'board' or tab.link_value in ['/news','/report','/global','/disclosure','/setting','/schedule','/stock_info','/'] else '' }}" data-tab-id="{{ tab.id }}" placeholder="/path" value="{{ tab.link_value if tab.link_type != 'board' and tab.link_value not in ['/news','/report','/global','/disclosure','/setting','/schedule','/stock_info','/'] else '' }}" style="min-width: 160px;" />
                         </div>
+                        <div class="field-group wide tab-edit-board-wrap" data-tab-id="{{ tab.id }}" {{ '' if tab.link_type == 'board' else 'style=display:none;' }}>
+                          <label>게시판 선택 *</label>
+                          <select class="tab-edit-board-select" data-tab-id="{{ tab.id }}">
+                            <option value="">-- 게시판 선택 --</option>
+                            {% for b in boards %}
+                            <option value="{{ b.id }}" {{ 'selected' if tab.link_type == 'board' and tab.link_value == b.id else '' }}>{{ b.name }} ({{ b.id }})</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <input type="hidden" name="link_value" class="tab-edit-link-value" data-tab-id="{{ tab.id }}" value="{{ tab.link_value }}" />
                         <div class="field-group"><label>순서</label><input type="number" name="order_index" value="{{ tab.order_index }}" min="0" style="width: 70px;" /></div>
                         <div class="field-group" style="align-self: flex-end;">
                           <button type="submit" class="btn btn-primary btn-sm">저장</button>
@@ -272,19 +299,38 @@
               <form method="post" action="/admin/settings/nav-menu/{{ item.id }}/tab/add" class="tab-add-form-el" data-item-id="{{ item.id }}">
                 <div class="form-row">
                   <div class="field-group"><label>탭명 *</label><input type="text" name="label" required placeholder="예: 시황" maxlength="50" /></div>
-                  <div class="field-group wide"><label>경로 *</label>
+                  <div class="field-group">
+                    <label>연결 유형</label>
+                    <select class="tab-add-link-type" data-item-id="{{ item.id }}" name="link_type">
+                      <option value="page">페이지</option>
+                      <option value="board">게시판</option>
+                    </select>
+                  </div>
+                  <div class="field-group wide tab-add-page-wrap" data-item-id="{{ item.id }}">
+                    <label>페이지 경로 *</label>
                     <select class="tab-add-link-select" data-item-id="{{ item.id }}">
                       <option value="/news">/news</option>
                       <option value="/report">/report</option>
                       <option value="/global">/global</option>
                       <option value="/disclosure">/disclosure</option>
                       <option value="/setting">/setting</option>
+                      <option value="/schedule">/schedule</option>
+                      <option value="/stock_info">/stock_info</option>
                       <option value="/">/</option>
                       <option value="__custom__">직접 입력</option>
                     </select>
                     <input type="text" class="tab-add-link-custom hide" placeholder="/custom-path" style="min-width: 180px;" />
-                    <input type="hidden" name="link_value" class="tab-add-link-value" value="/news" />
                   </div>
+                  <div class="field-group wide tab-add-board-wrap hide" data-item-id="{{ item.id }}">
+                    <label>게시판 선택 *</label>
+                    <select class="tab-add-board-select" data-item-id="{{ item.id }}">
+                      <option value="">-- 게시판 선택 --</option>
+                      {% for b in boards %}
+                      <option value="{{ b.id }}">{{ b.name }} ({{ b.id }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <input type="hidden" name="link_value" class="tab-add-link-value" data-item-id="{{ item.id }}" value="/news" />
                   <div class="field-group"><label>순서</label><input type="number" name="order_index" value="{{ item.tabs|length if item.tabs else 0 }}" min="0" style="width: 70px;" /></div>
                   <div class="field-group" style="align-self: flex-end;"><button type="submit" class="btn btn-primary btn-sm">탭 추가</button></div>
                 </div>
@@ -569,20 +615,39 @@
   };
 
   // ----- 탭 수정 폼 표시/숨김 -----
-  window.openTabEditForm = function(tabId, label, linkValue, orderIndex) {
+  window.openTabEditForm = function(tabId, label, linkType, linkValue, orderIndex) {
     var row = document.getElementById('tab-edit-row-' + tabId);
     if (row) row.style.display = '';
     var form = document.getElementById('tabEditForm-' + tabId);
     if (form) {
       form.querySelector('input[name="label"]').value = label;
       form.querySelector('input[name="order_index"]').value = orderIndex;
+
+      var linkTypeSelect = form.querySelector('.tab-edit-link-type');
+      var pageWrap = form.querySelector('.tab-edit-page-wrap');
+      var boardWrap = form.querySelector('.tab-edit-board-wrap');
       var sel = form.querySelector('.tab-edit-link-select');
       var custom = form.querySelector('.tab-edit-link-custom');
+      var boardSel = form.querySelector('.tab-edit-board-select');
       var hidden = form.querySelector('.tab-edit-link-value');
-      if (sel && hidden) {
-        var opt = sel.querySelector('option[value="' + linkValue + '"]');
-        if (opt) { sel.value = linkValue; if (custom) custom.classList.add('hide'); hidden.value = linkValue; }
-        else { sel.value = '__custom__'; if (custom) { custom.classList.remove('hide'); custom.value = linkValue; } hidden.value = linkValue; }
+
+      // 연결 유형 설정
+      if (linkTypeSelect) linkTypeSelect.value = linkType || 'page';
+
+      // 표시 전환
+      if (linkType === 'board') {
+        if (pageWrap) pageWrap.style.display = 'none';
+        if (boardWrap) boardWrap.style.display = '';
+        if (boardSel) boardSel.value = linkValue;
+        if (hidden) hidden.value = linkValue;
+      } else {
+        if (pageWrap) pageWrap.style.display = '';
+        if (boardWrap) boardWrap.style.display = 'none';
+        if (sel && hidden) {
+          var opt = sel.querySelector('option[value="' + linkValue + '"]');
+          if (opt) { sel.value = linkValue; if (custom) custom.classList.add('hide'); hidden.value = linkValue; }
+          else { sel.value = '__custom__'; if (custom) { custom.classList.remove('hide'); custom.value = linkValue; } hidden.value = linkValue; }
+        }
       }
     }
   };
@@ -590,6 +655,28 @@
     var row = document.getElementById('tab-edit-row-' + tabId);
     if (row) row.style.display = 'none';
   };
+
+  // 탭 수정 폼: 연결 유형 전환
+  document.querySelectorAll('.tab-edit-link-type').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var tabId = this.getAttribute('data-tab-id');
+      var pageWrap = document.querySelector('.tab-edit-page-wrap[data-tab-id="' + tabId + '"]');
+      var boardWrap = document.querySelector('.tab-edit-board-wrap[data-tab-id="' + tabId + '"]');
+      var hidden = document.querySelector('.tab-edit-link-value[data-tab-id="' + tabId + '"]');
+      var linkSel = document.querySelector('.tab-edit-link-select[data-tab-id="' + tabId + '"]');
+      var boardSel = document.querySelector('.tab-edit-board-select[data-tab-id="' + tabId + '"]');
+
+      if (this.value === 'board') {
+        if (pageWrap) pageWrap.style.display = 'none';
+        if (boardWrap) boardWrap.style.display = '';
+        if (hidden && boardSel) hidden.value = boardSel.value || '';
+      } else {
+        if (pageWrap) pageWrap.style.display = '';
+        if (boardWrap) boardWrap.style.display = 'none';
+        if (hidden && linkSel) hidden.value = linkSel.value === '__custom__' ? '' : linkSel.value;
+      }
+    });
+  });
 
   // 탭 수정 폼: select/직접입력 전환 및 hidden 동기화
   document.querySelectorAll('.tab-edit-link-select').forEach(function(sel) {
@@ -612,16 +699,59 @@
       if (hidden) hidden.value = this.value.trim() || '';
     });
   });
+  document.querySelectorAll('.tab-edit-board-select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var tabId = this.getAttribute('data-tab-id');
+      var hidden = document.querySelector('.tab-edit-link-value[data-tab-id="' + tabId + '"]');
+      if (hidden) hidden.value = this.value;
+    });
+  });
   document.querySelectorAll('form[id^="tabEditForm-"]').forEach(function(form) {
     form.addEventListener('submit', function() {
       var tabId = form.id.replace('tabEditForm-', '');
+      var linkType = form.querySelector('.tab-edit-link-type');
       var sel = form.querySelector('.tab-edit-link-select');
       var custom = form.querySelector('.tab-edit-link-custom');
+      var boardSel = form.querySelector('.tab-edit-board-select');
       var hidden = form.querySelector('.tab-edit-link-value');
-      if (sel && hidden) {
+
+      if (linkType && linkType.value === 'board') {
+        if (hidden && boardSel) hidden.value = boardSel.value;
+      } else if (sel && hidden) {
         if (sel.value === '__custom__' && custom) hidden.value = custom.value.trim() || hidden.value;
         else if (sel.value !== '__custom__') hidden.value = sel.value;
       }
+    });
+  });
+
+  // 탭 추가 폼: 연결 유형 전환
+  document.querySelectorAll('.tab-add-link-type').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var itemId = this.getAttribute('data-item-id');
+      var pageWrap = document.querySelector('.tab-add-page-wrap[data-item-id="' + itemId + '"]');
+      var boardWrap = document.querySelector('.tab-add-board-wrap[data-item-id="' + itemId + '"]');
+      var hidden = document.querySelector('.tab-add-link-value[data-item-id="' + itemId + '"]');
+      var linkSel = document.querySelector('.tab-add-link-select[data-item-id="' + itemId + '"]');
+      var boardSel = document.querySelector('.tab-add-board-select[data-item-id="' + itemId + '"]');
+
+      if (this.value === 'board') {
+        if (pageWrap) pageWrap.classList.add('hide');
+        if (boardWrap) boardWrap.classList.remove('hide');
+        if (hidden && boardSel) hidden.value = boardSel.value || '';
+      } else {
+        if (pageWrap) pageWrap.classList.remove('hide');
+        if (boardWrap) boardWrap.classList.add('hide');
+        if (hidden && linkSel) hidden.value = linkSel.value === '__custom__' ? '' : linkSel.value;
+      }
+    });
+  });
+
+  // 탭 추가 폼: 게시판 선택 변경 시 hidden 동기화
+  document.querySelectorAll('.tab-add-board-select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var itemId = this.getAttribute('data-item-id');
+      var hidden = document.querySelector('.tab-add-link-value[data-item-id="' + itemId + '"]');
+      if (hidden) hidden.value = this.value;
     });
   });
 
@@ -630,33 +760,61 @@
     var itemId = sel.getAttribute('data-item-id');
     var wrap = sel.closest('.tab-add-form');
     var custom = wrap ? wrap.querySelector('.tab-add-link-custom') : null;
-    var hidden = wrap ? wrap.querySelector('.tab-add-link-value') : null;
+    var hidden = wrap ? wrap.querySelector('.tab-add-link-value[data-item-id="' + itemId + '"]') : null;
     sel.addEventListener('change', function() {
       if (this.value === '__custom__') {
         if (custom) custom.classList.remove('hide');
-        if (hidden) hidden.removeAttribute('name');
+        if (hidden) hidden.value = '';
       } else {
         if (custom) custom.classList.add('hide');
-        if (hidden) { hidden.setAttribute('name', 'link_value'); hidden.value = this.value; }
+        if (hidden) hidden.value = this.value;
       }
     });
   });
+  document.querySelectorAll('.tab-add-link-custom').forEach(function(inp) {
+    inp.addEventListener('input', function() {
+      var wrap = this.closest('.tab-add-form');
+      var form = wrap ? wrap.querySelector('form') : null;
+      var itemId = form ? form.getAttribute('data-item-id') : null;
+      if (!itemId) {
+        // fallback
+        var hiddenEl = wrap ? wrap.querySelector('.tab-add-link-value') : null;
+        if (hiddenEl) hiddenEl.value = this.value.trim();
+      } else {
+        var hidden = document.querySelector('.tab-add-link-value[data-item-id="' + itemId + '"]');
+        if (hidden) hidden.value = this.value.trim();
+      }
+    });
+  });
+
   document.querySelectorAll('.tab-add-form-el').forEach(function(form) {
-    form.addEventListener('submit', function() {
-      var wrap = form.closest('.tab-add-form');
-      var sel = wrap ? wrap.querySelector('.tab-add-link-select') : null;
-      var custom = wrap ? wrap.querySelector('.tab-add-link-custom') : null;
-      var hidden = wrap ? wrap.querySelector('.tab-add-link-value') : null;
-      if (sel && hidden) {
-        if (sel.value === '__custom__' && custom && custom.value.trim()) {
-          hidden.setAttribute('name', 'link_value');
-          hidden.value = custom.value.trim();
-        } else if (sel.value !== '__custom__') {
-          hidden.setAttribute('name', 'link_value');
-          hidden.value = sel.value;
-        } else if (sel.value === '__custom__') {
-          alert('경로를 입력하거나 목록에서 선택하세요.');
+    form.addEventListener('submit', function(e) {
+      var itemId = form.getAttribute('data-item-id');
+      var linkTypeSel = document.querySelector('.tab-add-link-type[data-item-id="' + itemId + '"]');
+      var sel = document.querySelector('.tab-add-link-select[data-item-id="' + itemId + '"]');
+      var custom = form.querySelector('.tab-add-link-custom');
+      var boardSel = document.querySelector('.tab-add-board-select[data-item-id="' + itemId + '"]');
+      var hidden = document.querySelector('.tab-add-link-value[data-item-id="' + itemId + '"]');
+
+      var linkType = linkTypeSel ? linkTypeSel.value : 'page';
+
+      if (linkType === 'board') {
+        if (!boardSel || !boardSel.value) {
+          alert('게시판을 선택하세요.');
+          e.preventDefault();
           return false;
+        }
+        if (hidden) hidden.value = boardSel.value;
+      } else {
+        if (sel && sel.value === '__custom__') {
+          if (!custom || !custom.value.trim()) {
+            alert('경로를 입력하거나 목록에서 선택하세요.');
+            e.preventDefault();
+            return false;
+          }
+          if (hidden) hidden.value = custom.value.trim();
+        } else if (sel && sel.value !== '__custom__') {
+          if (hidden) hidden.value = sel.value;
         }
       }
     });
