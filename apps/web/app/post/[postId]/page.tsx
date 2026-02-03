@@ -29,7 +29,7 @@ function processContentImages(content: string, baseUrl: string): string {
   )
 }
 
-interface PostDetail extends Post {
+interface PostDetail extends Omit<Post, 'views'> {
   board?: {
     id: string
     name: string

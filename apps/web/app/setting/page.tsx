@@ -166,7 +166,7 @@ export default function SettingPage() {
           image: character.image,
         })
       } else {
-        alert(result.detail || '프로필 이미지 변경에 실패했습니다.')
+        alert(result.message ?? result.error ?? '프로필 이미지 변경에 실패했습니다.')
       }
     } catch (error) {
       console.error('프로필 이미지 변경 오류:', error)
@@ -261,7 +261,7 @@ export default function SettingPage() {
         // 메인 페이지로 이동
         router.push('/')
       } else {
-        alert(result.detail || '회원 탈퇴에 실패했습니다.')
+        alert(result.message ?? result.error ?? '회원 탈퇴에 실패했습니다.')
       }
     } catch (error) {
       console.error('회원 탈퇴 오류:', error)

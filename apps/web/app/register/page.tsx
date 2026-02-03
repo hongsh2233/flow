@@ -164,7 +164,7 @@ function RegisterForm() {
           router.replace('/')
         }
       } else {
-        alert(result.detail || '처리 중 오류가 발생했습니다.')
+        alert(result.message ?? result.error ?? '처리 중 오류가 발생했습니다.')
       }
     } catch (error) {
       console.error('처리 오류:', error)

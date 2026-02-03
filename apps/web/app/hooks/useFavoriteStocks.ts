@@ -59,8 +59,8 @@ export function useFavoriteStocks() {
     const fltRt = Number(item.flt_rt || 0)
     return {
       ...item, // 원본 데이터의 모든 필드 포함
-      name: item.itms_nm,
-      code: item.srtn_cd,
+      name: item.itms_nm ?? '',
+      code: item.srtn_cd ?? '',
       price: price.toLocaleString(),
       percent: `${fltRt > 0 ? '+' : ''}${fltRt}%`,
     }
@@ -78,7 +78,7 @@ export function useFavoriteStocks() {
       if (result.success && result.data) {
         setFavCodes(result.data.favorite_stocks)
       } else {
-        console.error('관심종목 조회 실패:', result.detail)
+        console.error('관심종목 조회 실패:', result.message ?? result.error)
         setFavCodes([])
       }
     } catch (error) {
@@ -126,7 +126,7 @@ export function useFavoriteStocks() {
     }
 
     return allStockData
-      .filter((item) => favCodes.has(item.srtn_cd))
+      .filter((item) => item.srtn_cd && favCodes.has(item.srtn_cd))
       .map(mapToStockItem)
   }, [allStockData, favCodes, mapToStockItem])
 

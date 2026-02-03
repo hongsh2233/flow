@@ -73,6 +73,10 @@ export interface Board {
   name: string
   type: string
   description?: string
+  auth?: string
+  created_at?: string
+  updated_at?: string
+  post_count?: number
 }
 
 /**
@@ -131,20 +135,18 @@ export interface CollectedData {
 }
 
 /**
- * 우측 일정 아이템 타입
+ * 우측 일정 아이템 타입 (권리행사일정 API 응답 - 동적 키 지원)
  */
-export interface RightScheduleItem {
-  date: string
-  subject: string
+export interface RightScheduleItem extends Record<string, string | undefined> {
+  date?: string
+  subject?: string
   content?: string
 }
 
 /**
  * 재무제표 타입
  */
-export interface FinaStatType {
-  [key: string]: any
-}
+export type FinaStatType = 'summ' | 'bs' | 'inco'
 
 /**
  * 휴일 타입

@@ -86,7 +86,7 @@ export default function StockList({
       if (result.success && result.data) {
         setInternalFavs(new Set(result.data.favorite_stocks))
       } else {
-        console.error('관심종목 조회 실패:', result.detail)
+        console.error('관심종목 조회 실패:', result.message ?? result.error)
         setInternalFavs(new Set())
       }
     } catch (error) {
@@ -157,7 +157,7 @@ export default function StockList({
           setInternalFavs(new Set(result.data.favorite_stocks))
           window.dispatchEvent(new Event('favoritesUpdated'))
         } else {
-          alert(result.detail || '관심종목 삭제에 실패했습니다.')
+          alert(result.message ?? result.error ?? '관심종목 삭제에 실패했습니다.')
         }
       } else {
         // 추가 (최대 5개 제한 확인)
@@ -171,7 +171,7 @@ export default function StockList({
           setInternalFavs(new Set(result.data.favorite_stocks))
           window.dispatchEvent(new Event('favoritesUpdated'))
         } else {
-          alert(result.detail || '관심종목 추가에 실패했습니다.')
+          alert(result.message ?? result.error ?? '관심종목 추가에 실패했습니다.')
         }
       }
     } catch (error) {
