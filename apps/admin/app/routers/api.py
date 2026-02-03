@@ -717,9 +717,11 @@ async def get_main_page_config(
 async def get_nav_menu(db: Session = Depends(get_db)):
     """
     웹 앱 하단·헤더 메뉴 목록 조회 (서브 메뉴/탭 포함)
-    
+
     노출 가능(is_visible='visible')한 항목만 order_index 순으로 반환합니다.
     인증 없이 호출 가능합니다.
+
+    각 탭의 link_type이 'board'인 경우 href는 /news?board={board_id} 형태로 변환됩니다.
     """
     items = (
         db.query(models.NavMenuItem)
@@ -737,12 +739,24 @@ async def get_nav_menu(db: Session = Depends(get_db)):
         if hasattr(item, "tabs") and item.tabs:
             for t in sorted(item.tabs, key=lambda x: x.order_index):
                 if t.is_visible == "visible":
-                    tabs_list.append({"label": t.label, "href": t.link_value})
+                    tab_link_type = getattr(t, "link_type", "page") or "page"
+                    tab_href = t.link_value
+                    # 게시판 연결인 경우 URL 변환
+                    if tab_link_type == "board":
+                        tab_href = f"/news?board={t.link_value}" if t.link_value else "/news"
+                    tabs_list.append({
+                        "label": t.label,
+                        "href": tab_href,
+                        "linkType": tab_link_type,
+                        "linkValue": t.link_value,
+                    })
         result.append({
             "id": item.id,
             "name": item.label,
             "icon": item.icon,
             "link": link,
+            "linkType": item.link_type,
+            "linkValue": item.link_value,
             "matchPaths": [p.strip() for p in (item.match_paths or "").split(",") if p.strip()] or [link],
             "tabs": tabs_list,
         })

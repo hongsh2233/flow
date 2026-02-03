@@ -223,6 +223,15 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 메뉴 탭 초기 데이터 삽입 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_tab_link_type_column import run_migration as add_tab_link_type_migration
+        from app.database import SessionLocal
+        db = SessionLocal()
+        add_tab_link_type_migration(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ 탭 link_type 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

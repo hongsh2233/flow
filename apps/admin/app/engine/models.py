@@ -28,7 +28,8 @@ class NavMenuTab(Base):
     id = Column(Integer, primary_key=True, index=True)
     nav_menu_item_id = Column(Integer, ForeignKey("nav_menu_items.id", ondelete="CASCADE"), nullable=False, index=True)
     label = Column(String(50), nullable=False)
-    link_value = Column(String(255), nullable=False)  # path (e.g. /news, /report)
+    link_type = Column(String(20), nullable=False, default="page")  # 'page' | 'board'
+    link_value = Column(String(255), nullable=False)  # path (e.g. /news, /report) or board_id (e.g. B001)
     order_index = Column(Integer, nullable=False, default=0)
     is_visible = Column(String(20), default="visible")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
