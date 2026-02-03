@@ -23,18 +23,23 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 프로젝트 루트 디렉토리 찾기 (app 디렉토리의 부모)
+# 프로젝트 디렉토리: admin (BASE_DIR), 모노레포 루트 (ROOT)
 BASE_DIR = Path(__file__).resolve().parent.parent
+ROOT = BASE_DIR.parent.parent  # jurin-i 루트
+ENV_LOCAL_ROOT = ROOT / ".env.local"
 ENV_FILE = BASE_DIR / ".env"
 
-# .env 파일 로드 (명시적 경로 지정)
+# 1) 루트 .env.local 먼저 로드 (web + admin 공용)
+if ENV_LOCAL_ROOT.exists():
+    load_dotenv(dotenv_path=ENV_LOCAL_ROOT)
+    print(f".env.local 로드 완료 (루트): {ENV_LOCAL_ROOT}")
+# 2) admin/.env 있으면 로드 (admin 전용, 루트에 없는 값 보충)
 if ENV_FILE.exists():
     load_dotenv(dotenv_path=ENV_FILE)
-    print(f".env 파일 로드 완료: {ENV_FILE}")
-else:
-    # .env 파일이 없으면 기본 위치에서 시도
+    print(f".env 로드 완료 (admin): {ENV_FILE}")
+if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
     load_dotenv()
-    print(f".env 파일을 찾을 수 없습니다. 기본 위치에서 시도합니다.")
+    print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
 
 # 관리자 계정 설정
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")  # 초기 관리자 이메일

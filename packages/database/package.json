@@ -4,11 +4,12 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "db:generate": "node scripts/load-env.js generate",
+    "db:push": "node scripts/load-env.js db push",
+    "db:migrate": "node scripts/load-env.js migrate dev"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "prisma": "^6.0.0"
   },
   "dependencies": {

@@ -18,14 +18,21 @@ from typing import Optional
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
+from pathlib import Path
 from app.database import get_db
 from app import models
 from app.utils import verify_token
 
-load_dotenv()
+# 루트 .env.local 우선 로드 (config/engine과 동일)
+_root = Path(__file__).resolve().parent.parent.parent.parent  # jurin-i 루트
+_env_local = _root / ".env.local"
+if _env_local.exists():
+    load_dotenv(dotenv_path=_env_local)
+else:
+    load_dotenv()
 
-# --- 사용자 지정 시크릿 키 설정 ---
-API_SECRET_KEY = "1978022019820308200705092018111420220303"
+# --- API 시크릿 키 (프론트엔드 NEXT_PUBLIC_X_API_KEY와 동일 값, 루트 .env.local에서 공유) ---
+API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY", "1978022019820308200705092018111420220303")
 
 # 기존 설정들...
 AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")

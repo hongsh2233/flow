@@ -51,39 +51,61 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-### 2) 환경 변수 (.env)
+### 2) 환경 변수
 
-`apps/admin/.env` 파일을 만들고 아래처럼 설정 (DB는 1번에서 띄운 경우):
+**방법 A – 루트 `.env.local` 한 곳에서 사용 (권장)**  
+`jurin-i/.env.local` 파일 하나에 web·admin 공용 변수를 넣으면 두 앱 모두에서 사용합니다.
+
+- **web**: Next.js가 루트 `.env.local`을 자동 로드
+- **admin**: Python이 루트 `.env.local`을 먼저 읽고, 없으면 `apps/admin/.env` 사용
+
+루트 `.env.local` 예시 (BO용 추가 변수):
 
 ```env
+# DB (1번에서 docker-compose로 띄운 경우)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=stock_bo
 DB_USER=postgres
 DB_PASSWORD=postgres_password
 
+# Admin 인증
 ADMIN_EMAIL=admin@example.com
 ADMIN_PW=원하는비밀번호
 SECRET_TOKEN=아무랜덤문자열
 JWT_SECRET_KEY=아무랜덤문자열
 DATA_GO_KR_API_KEY=공공데이터API키
+
+# Web과 공유 (FE ↔ BO API 키)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_X_API_KEY=1978022019820308200705092018111420220303
 ```
 
-`.env.example`을 복사해서 쓰면 됩니다: `copy .env.example .env`
+**방법 B – admin만 별도 .env**  
+`apps/admin/.env`만 쓰려면 `copy .env.example .env` 후 위와 같이 설정합니다.
 
-### 3) 서버 실행
+### 3) 서버 실행 (Windows)
+
+**CMD:**
 
 ```powershell
 cd C:\Users\T51\Desktop\jurin-i\apps\admin
-.\venv\Scripts\activate
-set PYTHONPATH=.
-uvicorn app.main:app --reload --port 8080
+.\run.bat
 ```
 
-또는 `run.bat` 사용 (가상환경 활성화 후):
+**PowerShell:**
 
 ```powershell
-.\run.bat
+cd C:\Users\T51\Desktop\jurin-i\apps\admin
+.\run.ps1
+```
+
+직접 실행할 때:
+
+```powershell
+.\venv\Scripts\activate
+$env:PYTHONPATH = "."   # PowerShell
+uvicorn app.main:app --reload --port 8080
 ```
 
 - 백오피스 UI: **http://localhost:8080**
@@ -102,16 +124,16 @@ cd C:\Users\T51\Desktop\jurin-i\apps\web
 npm install
 ```
 
-### 2) 환경 변수 (.env.local)
+### 2) 환경 변수
 
-BO API 주소를 알려주기 위해 `apps/web/.env.local` 생성:
+**루트 `.env.local` 사용 시** (권장): `jurin-i/.env.local`에 아래가 있으면 web·admin 공용으로 사용됩니다.
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 NEXT_PUBLIC_X_API_KEY=1978022019820308200705092018111420220303
 ```
 
-(API 키는 BO 쪽과 맞추면 됩니다.)
+(API 키는 BO와 동일하게 맞추면 됩니다. 루트에 두면 두 앱 모두에서 사용 가능합니다.)
 
 ### 3) 개발 서버 실행
 

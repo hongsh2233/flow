@@ -212,30 +212,35 @@ def init_admin_user():
     
     환경 변수에 관리자 이메일과 비밀번호가 설정되어 있고,
     해당 이메일의 관리자가 없을 경우 자동으로 생성합니다.
+    DB 연결 실패 시에도 앱은 시작되도록 예외 처리합니다.
     """
-    db = next(get_db())
     try:
-        if ADMIN_EMAIL and ADMIN_PW:
-            existing_user = db.query(models.AdminUser).filter(
-                models.AdminUser.email == ADMIN_EMAIL
-            ).first()
-            
-            if not existing_user:
-                # 보안: 관리자 이메일은 콘솔에 출력하지 않음
-                print(f"⚠️ 초기 관리자 계정 생성 중")
-                hashed_pw = utils.get_password_hash(ADMIN_PW)
-                new_admin = models.AdminUser(
-                    email=ADMIN_EMAIL,
-                    name="최고관리자",
-                    hashed_password=hashed_pw
-                )
-                db.add(new_admin)
-                db.commit()
-                print("✅ 초기 관리자 생성 완료")
+        db = next(get_db())
+        try:
+            if ADMIN_EMAIL and ADMIN_PW:
+                existing_user = db.query(models.AdminUser).filter(
+                    models.AdminUser.email == ADMIN_EMAIL
+                ).first()
+                
+                if not existing_user:
+                    # 보안: 관리자 이메일은 콘솔에 출력하지 않음
+                    print(f"⚠️ 초기 관리자 계정 생성 중")
+                    hashed_pw = utils.get_password_hash(ADMIN_PW)
+                    new_admin = models.AdminUser(
+                        email=ADMIN_EMAIL,
+                        name="최고관리자",
+                        hashed_password=hashed_pw
+                    )
+                    db.add(new_admin)
+                    db.commit()
+                    print("✅ 초기 관리자 생성 완료")
+        except Exception as e:
+            print(f"❌ 초기 관리자 생성 실패: {e}")
+        finally:
+            db.close()
     except Exception as e:
-        print(f"❌ 초기 관리자 생성 실패: {e}")
-    finally:
-        db.close()
+        print(f"⚠️ DB 연결 실패 (로그인/관리자 초기화 불가): {e}")
+        print("💡 .env.local 의 DB_HOST(호스트만), DB_PORT, DATABASE_URL, SSL(sslmode=require) 확인")
 
 
 # 서버 시작 시 초기화 작업 실행
