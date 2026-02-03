@@ -31,24 +31,88 @@ if not _env_local.exists() and not _env_file.exists():
     load_dotenv()
 
 # 환경 변수에서 DB 접속 정보 가져오기 (PostgreSQL 기본값)
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "stock_bo")
+# 빈 문자열 체크: 환경 변수가 빈 문자열로 설정되어 있으면 기본값 사용
+def get_env_or_default(key: str, default: str) -> str:
+    """환경 변수를 가져오되, 빈 문자열이면 기본값 반환"""
+    value = os.getenv(key, default)
+    return value if value and value.strip() else default
+
+DB_USER = get_env_or_default("DB_USER", "postgres")
+DB_PASSWORD = get_env_or_default("DB_PASSWORD", "")
+DB_HOST = get_env_or_default("DB_HOST", "localhost")
+DB_PORT = get_env_or_default("DB_PORT", "5432")
+DB_NAME = get_env_or_default("DB_NAME", "stock_bo")
+
+# 포트 번호 유효성 검증
+try:
+    int(DB_PORT)  # 포트가 숫자인지 확인
+except ValueError:
+    print(f"⚠️ 경고: DB_PORT가 유효하지 않습니다 ('{DB_PORT}'). 기본값 '5432'를 사용합니다.")
+    DB_PORT = "5432"
 
 # PostgreSQL 연결 URL
 # 형식: postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}
 # Railway 공개 호스트(rlwy.net)는 SSL 필요
 _raw_url = os.getenv("DATABASE_URL")
-if _raw_url:
+if _raw_url and _raw_url.strip():
     # DATABASE_URL이 postgresql:// 이면 psycopg2용으로 변환
     if _raw_url.startswith("postgresql://") and "+" not in _raw_url.split("?")[0]:
         _raw_url = _raw_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    SQLALCHEMY_DATABASE_URL = _raw_url
+    
+    # Railway DATABASE_URL 검증 및 수정: 포트가 없거나 빈 문자열인 경우 처리
+    try:
+        from urllib.parse import urlparse, urlunparse, quote_plus
+        
+        parsed = urlparse(_raw_url)
+        netloc = parsed.netloc
+        
+        # netloc에서 호스트와 포트 분리
+        # 형식: user:pass@host:port 또는 host:port
+        if '@' in netloc:
+            # user:pass@host:port 형식
+            auth_part, host_port = netloc.rsplit('@', 1)
+        else:
+            # host:port 형식
+            auth_part = None
+            host_port = netloc
+        
+        # 호스트와 포트 분리
+        port_fixed = False
+        if ':' in host_port:
+            host, port = host_port.rsplit(':', 1)
+            # 포트가 빈 문자열이거나 숫자가 아니면 기본 포트 사용
+            if not port or not port.strip() or not port.isdigit():
+                port = DB_PORT
+                port_fixed = True
+        else:
+            # 포트가 없는 경우 기본 포트 추가
+            host = host_port
+            port = DB_PORT
+            port_fixed = True
+        
+        # 포트가 수정되었으면 URL 재구성
+        if port_fixed:
+            if auth_part:
+                new_netloc = f"{auth_part}@{host}:{port}"
+            else:
+                new_netloc = f"{host}:{port}"
+            parsed = parsed._replace(netloc=new_netloc)
+            _raw_url = urlunparse(parsed)
+            print(f"⚠️ 경고: DATABASE_URL에 포트가 없어서 기본 포트({port})를 추가했습니다.")
+        
+        # Railway URL인 경우 SSL 모드 추가 (없으면)
+        if ("rlwy.net" in _raw_url or "railway.app" in _raw_url) and "sslmode=" not in _raw_url:
+            separator = "&" if "?" in _raw_url else "?"
+            _raw_url = f"{_raw_url}{separator}sslmode=require"
+        
+        SQLALCHEMY_DATABASE_URL = _raw_url
+    except Exception as e:
+        print(f"⚠️ 경고: DATABASE_URL 파싱 중 오류 ({e}). DB_* 변수를 사용합니다.")
+        _base = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        SQLALCHEMY_DATABASE_URL = f"{_base}?sslmode=require" if "rlwy.net" in str(DB_HOST) or "railway.app" in str(DB_HOST) else _base
 else:
     _base = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    SQLALCHEMY_DATABASE_URL = f"{_base}?sslmode=require" if "rlwy.net" in str(DB_HOST) else _base
+    SQLALCHEMY_DATABASE_URL = f"{_base}?sslmode=require" if "rlwy.net" in str(DB_HOST) or "railway.app" in str(DB_HOST) else _base
 
 # 데이터베이스 엔진 생성
 engine = create_engine(
