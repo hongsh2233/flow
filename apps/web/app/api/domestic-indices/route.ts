@@ -1,5 +1,5 @@
 // app/api/domestic-indices/route.ts
-// 국내지수(코스피/코스닥)는 Vercel에서 Yahoo Finance 직접 호출 시 오류가 있을 수 있어
+// 국내지수(코스피/코스닥)는 Yahoo Finance 직접 호출 시 오류가 있을 수 있어
 // stock-bo 백엔드를 경유해 조회합니다.
 import { NextRequest, NextResponse } from 'next/server'
 import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'

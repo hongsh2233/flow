@@ -2,14 +2,14 @@ import NextAuth, { type AuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import NaverProvider from 'next-auth/providers/naver'
 
-// Vercel 배포 시 동적 렌더링 강제 (인증 API 캐싱 방지)
+// Railway 배포 시 동적 렌더링 강제 (인증 API 캐싱 방지)
 export const dynamic = 'force-dynamic'
 
 // NEXTAUTH_SECRET 미설정 시 경고 로그
 if (!process.env.NEXTAUTH_SECRET) {
   console.error(
     '[NextAuth] NEXTAUTH_SECRET 환경변수가 설정되지 않았습니다. ' +
-      'Vercel Dashboard > Settings > Environment Variables에서 NEXTAUTH_SECRET을 추가해주세요. ' +
+      'Railway 대시보드 > Web 서비스 > Variables에서 NEXTAUTH_SECRET을 추가해주세요. ' +
       '터미널에서 `openssl rand -base64 32` 명령으로 생성할 수 있습니다.'
   )
 }

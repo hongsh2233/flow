@@ -59,10 +59,10 @@ export function useFavoriteStocks() {
     const fltRt = Number(item.flt_rt || 0)
     return {
       ...item, // 원본 데이터의 모든 필드 포함
-      name: item.itms_nm ?? '',
-      code: item.srtn_cd ?? '',
-      price: price.toLocaleString(),
-      percent: `${fltRt > 0 ? '+' : ''}${fltRt}%`,
+      name: item.itms_nm ?? '-',
+      code: item.srtn_cd ?? '-',
+      price: price > 0 ? price.toLocaleString() : '-',
+      percent: fltRt !== 0 ? `${fltRt > 0 ? '+' : ''}${fltRt}%` : '-',
     }
   }, [])
 
@@ -93,11 +93,17 @@ export function useFavoriteStocks() {
       setIsLoading(true)
       try {
         const response = await fetchFscStockPrice({ limit: 1000 })
-        if (response.success && response.data) {
+        if (response.success && response.data && response.data.length > 0) {
           setAllStockData(response.data)
+        } else {
+          // 실패 시 빈 배열로 설정 (에러 메시지는 콘솔에만 출력)
+          console.warn('FSC 주식시세 데이터가 없습니다:', response.message || '알 수 없는 오류')
+          setAllStockData([])
         }
       } catch (error) {
         console.error('주식 데이터 로딩 실패:', error)
+        // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
+        setAllStockData([])
       } finally {
         setIsLoading(false)
       }

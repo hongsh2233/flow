@@ -9,7 +9,7 @@
 NEXT_PUBLIC_USE_MOCK_DATA=false
 NEXT_PUBLIC_API_BASE_URL=https://stock-bo-production.up.railway.app
 
-# NextAuth (Vercel 배포 시 필수)
+# NextAuth (Railway 배포 시 필수)
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=랜덤문자열_32자이상
 
@@ -25,22 +25,24 @@ NEXT_PUBLIC_X_API_KEY=...
 
 - `NEXT_PUBLIC_USE_MOCK_DATA`: 목업 데이터 사용 여부 (true/false)
 - `NEXT_PUBLIC_API_BASE_URL`: 실제 API 서버 URL
-- `NEXTAUTH_URL`: NextAuth 기준 URL (로컬: `http://localhost:3000`, Vercel: `https://your-app.vercel.app`)
+- `NEXTAUTH_URL`: NextAuth 기준 URL (로컬: `http://localhost:3000`, Railway: `https://your-app.railway.app`)
 - `NEXTAUTH_SECRET`: 세션/토큰 암호화용 비밀키 (32자 이상 랜덤 문자열 권장)
 
-## Vercel 배포 시 (CLIENT_FETCH_ERROR 해결)
+## Railway 배포 시 (CLIENT_FETCH_ERROR 해결)
 
-Vercel 대시보드 → 프로젝트 → **Settings** → **Environment Variables**에서 다음을 반드시 설정하세요:
+Railway 대시보드 → Web 서비스 → **Variables** 탭에서 다음을 반드시 설정하세요:
 
 | 변수명 | 값 | 설명 |
 |--------|-----|------|
-| `NEXTAUTH_URL` | `https://your-app.vercel.app` | 배포된 사이트 URL (프리뷰는 해당 프리뷰 URL) |
+| `NEXTAUTH_URL` | `https://your-app.railway.app` | Railway가 제공하는 배포된 사이트 URL |
 | `NEXTAUTH_SECRET` | 32자 이상 랜덤 문자열 | `openssl rand -base64 32` 로 생성 가능 |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://admin-service.railway.app` | Admin 서비스의 Railway URL |
 
-- `NEXTAUTH_URL`을 설정하지 않으면 Vercel이 `VERCEL_URL`을 쓰지만, NextAuth는 `NEXTAUTH_URL`을 권장합니다.
+- `NEXTAUTH_URL`은 Railway가 자동으로 제공하는 `RAILWAY_PUBLIC_DOMAIN` 환경 변수를 사용하거나, 커스텀 도메인을 설정한 경우 해당 URL을 사용하세요.
 - `NEXTAUTH_SECRET`이 없으면 프로덕션에서 세션/쿠키 서명이 실패해 `/api/auth/session` 호출 시 오류가 납니다.
+- `NEXT_PUBLIC_API_BASE_URL`은 Admin 서비스의 Railway URL을 설정해야 합니다.
 
-설정 후 **Redeploy** 한 번 해주세요.
+설정 후 서비스를 재배포하세요.
 
 ## 주의사항
 

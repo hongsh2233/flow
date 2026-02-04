@@ -7,21 +7,17 @@ import type { ApiResponse, MainPageConfigResponse } from '@/lib/types/api'
 
 /**
  * 메인 페이지 설정 조회
+ * Next.js API route를 통해 admin 서버로 프록시
  * @returns 메인 페이지 설정 응답
  */
 export async function getMainPageConfig(): Promise<ApiResponse<MainPageConfigResponse>> {
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-
-    if (API_SECRET_KEY) {
-      headers['X-API-KEY'] = API_SECRET_KEY
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/main-page-config`, {
+    // Next.js API route를 통해 호출 (CORS 문제 방지)
+    const response = await fetch('/api/main-page-config', {
       method: 'GET',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       cache: 'no-store',
     })
 
@@ -32,10 +28,30 @@ export async function getMainPageConfig(): Promise<ApiResponse<MainPageConfigRes
         success: false,
         message: '메인 페이지 설정을 불러올 수 없습니다.',
         error: errorText,
+        data: {
+          success: false,
+          message: '메인 페이지 설정을 불러올 수 없습니다.',
+          items: [],
+        },
       }
     }
 
     const data: MainPageConfigResponse = await response.json()
+    
+    // API route가 실패한 경우 처리
+    if (data.success === false) {
+      return {
+        success: false,
+        message: data.message || '메인 페이지 설정을 불러올 수 없습니다.',
+        error: data.message,
+        data: {
+          success: false,
+          message: data.message || '메인 페이지 설정을 불러올 수 없습니다.',
+          items: [],
+        },
+      }
+    }
+
     return {
       success: data.success,
       message: data.message,
@@ -47,6 +63,11 @@ export async function getMainPageConfig(): Promise<ApiResponse<MainPageConfigRes
       success: false,
       message: error instanceof Error ? error.message : '메인 페이지 설정 조회 중 오류가 발생했습니다.',
       error: error instanceof Error ? error.message : 'Unknown error',
+      data: {
+        success: false,
+        message: error instanceof Error ? error.message : '메인 페이지 설정 조회 중 오류가 발생했습니다.',
+        items: [],
+      },
     }
   }
 }

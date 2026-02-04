@@ -183,11 +183,17 @@ export default function MainPage() {
       setIsLoadingConfig(true)
       try {
         const result = await getMainPageConfig()
-        if (result.success && result.data) {
-          setMainPageItems(result.data.items || [])
+        if (result.success && result.data && result.data.items) {
+          setMainPageItems(result.data.items)
+        } else {
+          // 실패 시 빈 배열로 설정 (에러 메시지는 콘솔에만 출력)
+          console.warn('메인 페이지 설정을 불러올 수 없습니다:', result.message || '알 수 없는 오류')
+          setMainPageItems([])
         }
       } catch (error) {
         console.error('메인 페이지 설정 로딩 실패:', error)
+        // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
+        setMainPageItems([])
       } finally {
         setIsLoadingConfig(false)
       }

@@ -27,7 +27,7 @@ interface ForeignIndicesResponse {
 }
 
 /**
- * 해외지수는 Vercel에서 Yahoo Finance 직접 호출 시 CORS/차단 이슈가 있을 수 있어
+ * 해외지수는 Yahoo Finance 직접 호출 시 CORS/차단 이슈가 있을 수 있어
  * stock-bo 백엔드를 경유해 조회합니다.
  */
 export async function GET(_request: NextRequest) {

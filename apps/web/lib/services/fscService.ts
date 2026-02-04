@@ -18,6 +18,7 @@ export interface FetchFscStockPriceParams {
 
 /**
  * FSC 주식시세 조회
+ * Next.js API route를 통해 admin 서버로 프록시
  */
 export async function fetchFscStockPrice(
   params: FetchFscStockPriceParams = {}
@@ -30,17 +31,21 @@ export async function fetchFscStockPrice(
       }
     })
 
+    // Next.js API route를 통해 호출 (CORS 문제 방지)
     const response = await fetch(
-      `${API_BASE_URL}/api/fsc-stock-price?${searchParams.toString()}`,
+      `/api/fsc-stock-price?${searchParams.toString()}`,
       {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         cache: 'no-store',
       }
     )
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
+      console.error('FSC 주식시세 조회 실패:', response.status, errorText)
       return {
         success: false,
         message: 'FSC 주식시세를 불러올 수 없습니다.',
@@ -50,6 +55,16 @@ export async function fetchFscStockPrice(
     }
 
     const data = await response.json()
+    // API route가 반환하는 형식에 맞게 처리
+    if (data.success === false) {
+      return {
+        success: false,
+        message: data.message || 'FSC 주식시세를 불러올 수 없습니다.',
+        error: data.error,
+        data: [],
+      }
+    }
+
     const items = data.data ?? (Array.isArray(data) ? data : [])
     return { success: true, data: items }
   } catch (error) {

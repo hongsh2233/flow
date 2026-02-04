@@ -44,8 +44,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -55,8 +53,14 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on Railway
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+이 프로젝트는 Railway에 배포됩니다. 배포 가이드는 프로젝트 루트의 [RAILWAY_DEPLOY.md](../../RAILWAY_DEPLOY.md)를 참고하세요.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Railway 배포 요약
+
+1. Railway 프로젝트 생성
+2. PostgreSQL 데이터베이스 추가
+3. Admin 서비스 추가 (Root Directory: `apps/admin`)
+4. Web 서비스 추가 (Root Directory: `apps/web`)
+5. 환경 변수 설정 (자세한 내용은 [README_ENV.md](./README_ENV.md) 참고)
