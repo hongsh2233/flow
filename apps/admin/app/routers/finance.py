@@ -236,6 +236,17 @@ async def manual_collect_yahoo_indices(
     now = datetime.now(kst)
 
     try:
+        # 너무 잦은 수동 수집 방지(레이트리밋 회피): 같은 그룹을 30초 내 재호출하면 차단
+        from app.models import YahooIndexSnapshot
+        recent = db.query(func.max(YahooIndexSnapshot.collected_at)).filter(
+            YahooIndexSnapshot.group == ("kr" if group == "kr" else "us" if group == "us" else YahooIndexSnapshot.group)
+        ).scalar()
+        if recent and (now - recent).total_seconds() < 30:
+            return JSONResponse(
+                {"success": False, "message": "너무 자주 호출했습니다. 30초 후 다시 시도하세요."},
+                status_code=429,
+            )
+
         indices = []
         if group in ["kr", "all"]:
             indices.extend(DEFAULT_KR_INDICES)

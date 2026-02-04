@@ -94,15 +94,39 @@ async def _fetch_one_index(client: httpx.AsyncClient, idx: YahooIndexDef) -> dic
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{idx.symbol}"
         params = {"interval": "1d", "range": "5d"}
-        res = await client.get(url, params=params, timeout=10.0)
-        if res.status_code >= 400:
+        # Yahoo는 429(rate limit)가 자주 발생하므로, 짧은 backoff 재시도
+        last_status = None
+        for attempt in range(3):
+            res = await client.get(url, params=params, timeout=10.0)
+            last_status = res.status_code
+
+            if res.status_code == 429:
+                # Retry-After가 있으면 우선 사용, 없으면 지수 backoff
+                retry_after = res.headers.get("Retry-After")
+                try:
+                    sleep_s = float(retry_after) if retry_after else (1.0 * (2 ** attempt))
+                except Exception:
+                    sleep_s = (1.0 * (2 ** attempt))
+                # 약간의 지터(동시 요청 완화)
+                sleep_s = min(10.0, sleep_s + (0.2 * attempt))
+                await asyncio.sleep(sleep_s)
+                continue
+
+            # 5xx는 재시도, 그 외 4xx는 즉시 실패
+            if 500 <= res.status_code <= 599:
+                await asyncio.sleep(min(5.0, 0.5 * (2 ** attempt)))
+                continue
+
+            break
+
+        if last_status and last_status >= 400:
             return {
                 "ok": False,
                 "group": idx.group,
                 "symbol": idx.symbol,
                 "name": idx.name,
                 "market": idx.market,
-                "error": f"http_{res.status_code}",
+                "error": f"http_{last_status}",
             }
 
         data = res.json()

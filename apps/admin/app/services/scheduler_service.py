@@ -730,24 +730,88 @@ class YahooIndexScheduler:
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
 
         # US: 06:20, 00:00, 02:00, 04:00 (KST)
-        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=6, minute=20, timezone=self.kst),
-                               id="yahoo_us_0620", name="Yahoo US Indices (06:20)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=0, minute=0, timezone=self.kst),
-                               id="yahoo_us_0000", name="Yahoo US Indices (00:00)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=2, minute=0, timezone=self.kst),
-                               id="yahoo_us_0200", name="Yahoo US Indices (02:00)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=4, minute=0, timezone=self.kst),
-                               id="yahoo_us_0400", name="Yahoo US Indices (04:00)", replace_existing=True)
+        self.scheduler.add_job(
+            collect_yahoo_us_indices,
+            CronTrigger(hour=6, minute=20, timezone=self.kst),
+            id="yahoo_us_0620",
+            name="Yahoo US Indices (06:20)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_us_indices,
+            CronTrigger(hour=0, minute=0, timezone=self.kst),
+            id="yahoo_us_0000",
+            name="Yahoo US Indices (00:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_us_indices,
+            CronTrigger(hour=2, minute=0, timezone=self.kst),
+            id="yahoo_us_0200",
+            name="Yahoo US Indices (02:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_us_indices,
+            CronTrigger(hour=4, minute=0, timezone=self.kst),
+            id="yahoo_us_0400",
+            name="Yahoo US Indices (04:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
 
         # KR: 09:20, 11:00, 13:00, 15:30 (KST)
-        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=9, minute=20, timezone=self.kst),
-                               id="yahoo_kr_0920", name="Yahoo KR Indices (09:20)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=11, minute=0, timezone=self.kst),
-                               id="yahoo_kr_1100", name="Yahoo KR Indices (11:00)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=13, minute=0, timezone=self.kst),
-                               id="yahoo_kr_1300", name="Yahoo KR Indices (13:00)", replace_existing=True)
-        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=15, minute=30, timezone=self.kst),
-                               id="yahoo_kr_1530", name="Yahoo KR Indices (15:30)", replace_existing=True)
+        self.scheduler.add_job(
+            collect_yahoo_kr_indices,
+            CronTrigger(hour=9, minute=20, timezone=self.kst),
+            id="yahoo_kr_0920",
+            name="Yahoo KR Indices (09:20)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_kr_indices,
+            CronTrigger(hour=11, minute=0, timezone=self.kst),
+            id="yahoo_kr_1100",
+            name="Yahoo KR Indices (11:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_kr_indices,
+            CronTrigger(hour=13, minute=0, timezone=self.kst),
+            id="yahoo_kr_1300",
+            name="Yahoo KR Indices (13:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_kr_indices,
+            CronTrigger(hour=15, minute=30, timezone=self.kst),
+            id="yahoo_kr_1530",
+            name="Yahoo KR Indices (15:30)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
 
         self.scheduler.start()
         print("✅ Yahoo 지수 수집 스케줄러 시작")
