@@ -11,11 +11,25 @@ try {
   const rootEnvLocalAlt = path.resolve(process.cwd(), ".env.local");
   
   // 파일이 존재하는 경우에만 로드
+  let loaded = false;
   if (fs.existsSync(rootEnvLocal)) {
-    dotenv.config({ path: rootEnvLocal });
+    dotenv.config({ path: rootEnvLocal, override: false });
+    loaded = true;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[next.config] 루트 .env.local 로드됨: ${rootEnvLocal}`);
+    }
   }
   if (fs.existsSync(rootEnvLocalAlt)) {
-    dotenv.config({ path: rootEnvLocalAlt });
+    dotenv.config({ path: rootEnvLocalAlt, override: false });
+    loaded = true;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[next.config] 로컬 .env.local 로드됨: ${rootEnvLocalAlt}`);
+    }
+  }
+  
+  // 디버깅: NEXT_PUBLIC_X_API_KEY 로드 확인 (개발 환경에서만)
+  if (process.env.NODE_ENV !== 'production' && !loaded) {
+    console.warn("[next.config] .env.local 파일을 찾을 수 없습니다. Next.js 기본 환경 변수 로딩을 사용합니다.");
   }
 } catch (error) {
   // dotenv가 설치되지 않은 경우 무시 (Next.js가 기본적으로 .env.local을 로드함)

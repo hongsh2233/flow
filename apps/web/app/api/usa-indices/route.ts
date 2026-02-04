@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
+import { API_BASE_URL } from '@/lib/config/api'
 
 interface UsaIndex {
   name: string
@@ -32,11 +32,16 @@ interface ForeignIndicesResponse {
  */
 export async function GET(_request: NextRequest) {
   try {
+    // API route에서는 런타임에 환경 변수를 직접 읽어야 함
+    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
-    if (API_SECRET_KEY) {
-      headers['X-API-KEY'] = API_SECRET_KEY
+    if (apiSecretKey) {
+      headers['X-API-KEY'] = apiSecretKey
+    } else {
+      console.warn('[해외지수 API] NEXT_PUBLIC_X_API_KEY가 설정되지 않았습니다.')
     }
 
     const response = await fetch(`${API_BASE_URL}/api/foreign-indices`, {
