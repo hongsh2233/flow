@@ -9,8 +9,8 @@ from datetime import timedelta, datetime
 
 from app import models, utils
 from app.database import get_db
-from app.dependencies import get_current_user, AUTH_COOKIE_NAME, SECRET_TOKEN
-from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS
+from app.dependencies import get_current_user, AUTH_COOKIE_NAME
+from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
@@ -89,6 +89,16 @@ async def read_root(user=Depends(get_current_user)):
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """로그인 화면"""
+    # SECRET_TOKEN이 없으면 로그인 불가
+    if not SECRET_TOKEN:
+        return HTMLResponse("""
+        <div style="width: 350px; margin: 100px auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px;">
+            <h2 style="text-align: center; color: #d32f2f;">오류</h2>
+            <p>SECRET_TOKEN이 설정되지 않았습니다. 서버 관리자에게 문의하세요.</p>
+        </div>
+        """, status_code=500)
+    
+    # 이미 로그인된 경우 대시보드로 리다이렉트
     if request.cookies.get(AUTH_COOKIE_NAME) == SECRET_TOKEN:
         return RedirectResponse(url="/admin/dashboard")
     return """

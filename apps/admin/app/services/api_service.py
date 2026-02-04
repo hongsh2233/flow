@@ -94,7 +94,7 @@ class KrxApiService:
             endpoint: API 엔드포인트 경로 (예: '/idx/kospi_dd_trd')
             bas_dd: 기준일자 (YYYYMMDD 형식, None이면 오늘 날짜부터 조회)
             db: 데이터베이스 세션 (제공되면 DB 조회/저장 수행)
-            data_type: 데이터 타입 ('kospi', 'kosdaq', 'etf')
+            data_type: 데이터 타입 ('kospi', 'kosdaq')
 
         Returns:
             List: 지수 데이터 리스트 (OutBlock_1 내부 데이터)
@@ -232,20 +232,6 @@ class KrxApiService:
         kosdaq_data = await self.fetch_kosdaq_index(bas_dd, db)
         return {"kospi": kospi_data, "kosdaq": kosdaq_data}
 
-    async def fetch_etf_data(self, bas_dd: Optional[str] = None, db: Optional[Session] = None) -> List:
-        """
-        ETF 일별매매정보 조회
-
-        ETF(상장지수펀드)의 매매정보를 조회합니다. ('10년01월04일 데이터부터 제공)
-
-        Args:
-            bas_dd: 기준일자 (YYYYMMDD 형식, None이면 오늘 날짜부터 조회)
-            db: 데이터베이스 세션 (제공되면 DB 조회/저장 수행)
-
-        Returns:
-            List: ETF 매매정보 데이터 리스트
-        """
-        return await self._fetch_krx_data("/etp/etf_bydd_trd", bas_dd, db, "etf")
 
 krx_api_service = KrxApiService()
 

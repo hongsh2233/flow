@@ -61,30 +61,9 @@ async def get_krx_market(request: Request, bas_dd: str = None, user=Depends(get_
     })
 
 
-@router.get("/api/krx-etf")
-async def get_krx_etf(request: Request, bas_dd: str = None, force_refresh: bool = False, user=Depends(get_current_user), db: Session = Depends(get_db)):
-    """한국거래소 ETF 일별매매정보 조회
-
-    Args:
-        bas_dd: 기준일자 (YYYYMMDD)
-        force_refresh: True이면 DB 캐시를 무시하고 API에서 강제로 다시 조회
-    """
-    if not user:
-        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
-
-    # force_refresh가 True이면 DB에서 ETF 데이터 삭제
-    if force_refresh:
-        deleted_count = db.query(KrxData).filter(KrxData.data_type == 'etf').delete()
-        db.commit()
-        print(f"🔄 ETF 데이터 캐시 {deleted_count}건 삭제됨 - API에서 재조회")
-
-    data = await krx_api_service.fetch_etf_data(bas_dd, db)
-    return JSONResponse(data)
-
-
 @router.get("/api/krx-dates")
 async def get_krx_dates(data_type: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
-    """날짜별 목록 조회 (data_type: kospi, kosdaq, etf, market)"""
+    """날짜별 목록 조회 (data_type: kospi, kosdaq, market)"""
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
 
@@ -119,9 +98,6 @@ async def get_krx_data_by_date(data_type: str, bas_dd: str, user=Depends(get_cur
         return JSONResponse(data)
     elif data_type == "kosdaq":
         data = await krx_api_service.fetch_kosdaq_index(bas_dd, db)
-        return JSONResponse(data)
-    elif data_type == "etf":
-        data = await krx_api_service.fetch_etf_data(bas_dd, db)
         return JSONResponse(data)
     else:
         return JSONResponse({"error": "잘못된 data_type입니다."}, status_code=400)

@@ -36,9 +36,11 @@ API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY", "1978022019820308200705
 
 # 기존 설정들...
 AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")
-SECRET_TOKEN = os.environ.get("SECRET_TOKEN")
 MEMBER_COOKIE_NAME = "member_session"
 security = HTTPBearer()
+
+# SECRET_TOKEN은 config에서 가져오기 (기본값 생성 로직 포함)
+from app.config import SECRET_TOKEN
 
 # --- 신규: 시크릿 키 검증 함수 (프론트엔드 API용) ---
 async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KEY")):
@@ -60,11 +62,6 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KE
         )
     return x_api_key
 
-# 인증 설정
-AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")  # 관리자 인증 쿠키 이름
-SECRET_TOKEN = os.environ.get("SECRET_TOKEN")  # 세션 인증 토큰
-MEMBER_COOKIE_NAME = "member_session"  # 회원 인증 쿠키 이름
-
 # Bearer 토큰 스키마 (JWT 인증용)
 security = HTTPBearer()
 
@@ -81,6 +78,10 @@ async def get_current_user(request: Request):
     Returns:
         str: 세션 ID (인증 성공 시), None (인증 실패 시)
     """
+    # SECRET_TOKEN이 없으면 인증 실패
+    if not SECRET_TOKEN:
+        return None
+    
     session_id = request.cookies.get(AUTH_COOKIE_NAME)
     if not session_id or session_id != SECRET_TOKEN:
         return None
