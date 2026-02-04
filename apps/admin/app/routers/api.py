@@ -12,6 +12,7 @@ from typing import Optional
 from datetime import datetime, date
 import json
 import asyncio
+import time
 import httpx
 
 from app.database import get_db
@@ -824,6 +825,51 @@ async def get_banners(
 
 
 # =========================================================
+# Yahoo Finance 공통: 캐시 + 요청 제한
+# =========================================================
+
+# 인메모리 캐시 (key → {data, expires})
+_yahoo_cache: dict = {}
+_YAHOO_CACHE_TTL = 300  # 5분
+
+_YAHOO_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
+
+
+def _get_cached(key: str):
+    entry = _yahoo_cache.get(key)
+    if entry and entry["expires"] > time.time():
+        return entry["data"]
+    return None
+
+
+def _set_cached(key: str, data):
+    _yahoo_cache[key] = {"data": data, "expires": time.time() + _YAHOO_CACHE_TTL}
+
+
+async def _yahoo_fetch_with_retry(
+    client: httpx.AsyncClient, url: str, params: dict, max_retries: int = 3
+):
+    """Yahoo Finance API 호출 (429 시 지수 백오프 재시도)"""
+    for attempt in range(max_retries):
+        resp = await client.get(
+            url, params=params, headers=_YAHOO_HEADERS, timeout=10.0
+        )
+        if resp.status_code == 429:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            await asyncio.sleep(wait)
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    # 마지막 시도에서도 429면 예외
+    resp.raise_for_status()
+    return None
+
+
+# =========================================================
 # 국내지수 API (Yahoo Finance 프록시 - 코스피/코스닥)
 # =========================================================
 
@@ -841,15 +887,17 @@ async def get_domestic_indices(
     Yahoo Finance API를 통해 국내 지수(코스피, 코스닥) 데이터를 조회합니다.
     프론트엔드 StockIndex(국내지수) 컴포넌트에서 사용합니다.
     """
+    cached = _get_cached("domestic-indices")
+    if cached is not None:
+        return cached
+
     async def fetch_one(client: httpx.AsyncClient, item: dict):
         try:
             symbol = item["symbol"]
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
             params = {"interval": "1d", "range": "1d"}
-            response = await client.get(url, params=params, timeout=10.0)
-            response.raise_for_status()
-            data = response.json()
-            if "chart" not in data or "result" not in data["chart"] or not data["chart"]["result"]:
+            data = await _yahoo_fetch_with_retry(client, url, params)
+            if not data or "chart" not in data or "result" not in data["chart"] or not data["chart"]["result"]:
                 return None
             result = data["chart"]["result"][0]
             meta = result.get("meta", {})
@@ -870,8 +918,11 @@ async def get_domestic_indices(
             return None
 
     async with httpx.AsyncClient() as client:
-        tasks = [fetch_one(client, item) for item in DOMESTIC_INDICES]
-        results = await asyncio.gather(*tasks)
+        # 순차 호출 (Yahoo rate limit 방지)
+        results = []
+        for item in DOMESTIC_INDICES:
+            results.append(await fetch_one(client, item))
+            await asyncio.sleep(0.3)
 
     valid = [r for r in results if r is not None]
     timestamp = ""
@@ -886,11 +937,13 @@ async def get_domestic_indices(
         for r in valid:
             r.pop("timestamp", None)
 
-    return {
+    result = {
         "success": True,
         "data": valid,
         "timestamp": timestamp,
     }
+    _set_cached("domestic-indices", result)
+    return result
 
 
 # =========================================================
@@ -903,8 +956,11 @@ async def get_foreign_indices(
 ):
     """
     Yahoo Finance API를 통해 해외지수 데이터를 조회합니다.
-    12개 주요 지수를 병렬로 조회하여 반환합니다.
+    12개 주요 지수를 순차 조회하여 반환합니다 (rate limit 방지).
     """
+    cached = _get_cached("foreign-indices")
+    if cached is not None:
+        return cached
 
     # 12개 주요 해외지수 심볼
     indices = [
@@ -926,39 +982,31 @@ async def get_foreign_indices(
         """개별 지수 데이터를 Yahoo Finance에서 조회"""
         try:
             symbol = index["symbol"]
-            # Yahoo Finance API URL (v8 chart API)
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
             params = {
                 "interval": "1d",
-                "range": "5d"  # 최근 5일 데이터
+                "range": "5d"
             }
 
-            response = await client.get(url, params=params, timeout=10.0)
-            response.raise_for_status()
-            data = response.json()
+            data = await _yahoo_fetch_with_retry(client, url, params)
 
-            # 응답 데이터 파싱
-            if "chart" in data and "result" in data["chart"] and data["chart"]["result"]:
+            if data and "chart" in data and "result" in data["chart"] and data["chart"]["result"]:
                 result = data["chart"]["result"][0]
                 meta = result.get("meta", {})
                 quote = result.get("indicators", {}).get("quote", [{}])[0]
                 timestamps = result.get("timestamp", [])
 
-                # 최신 데이터 추출
                 if timestamps and quote.get("close"):
                     latest_idx = -1
                     latest_price = quote["close"][latest_idx]
 
-                    # None 값 처리 (마지막 값이 None인 경우 이전 값 찾기)
                     while latest_price is None and abs(latest_idx) <= len(quote["close"]):
                         latest_idx -= 1
                         latest_price = quote["close"][latest_idx] if abs(latest_idx) <= len(quote["close"]) else None
 
-                    # 전일 종가 (변화율 계산용)
                     prev_idx = latest_idx - 1
                     prev_price = quote["close"][prev_idx] if abs(prev_idx) <= len(quote["close"]) else latest_price
 
-                    # None 값 처리
                     while prev_price is None and abs(prev_idx) <= len(quote["close"]):
                         prev_idx -= 1
                         prev_price = quote["close"][prev_idx] if abs(prev_idx) <= len(quote["close"]) else None
@@ -979,7 +1027,6 @@ async def get_foreign_indices(
                             "timestamp": timestamps[latest_idx] if timestamps else None
                         }
 
-            # 데이터 파싱 실패 시 기본값 반환
             return {
                 "symbol": index["symbol"],
                 "name": index["name"],
@@ -1011,16 +1058,26 @@ async def get_foreign_indices(
                 "error": str(e)
             }
 
-    # 병렬 조회 실행
+    # 소규모 배치로 나눠서 호출 (4개씩, 배치 간 0.5초 대기)
     async with httpx.AsyncClient() as client:
-        tasks = [fetch_index_data(client, index) for index in indices]
-        results = await asyncio.gather(*tasks)
+        results = []
+        batch_size = 4
+        for i in range(0, len(indices), batch_size):
+            batch = indices[i:i + batch_size]
+            batch_results = await asyncio.gather(
+                *[fetch_index_data(client, idx) for idx in batch]
+            )
+            results.extend(batch_results)
+            if i + batch_size < len(indices):
+                await asyncio.sleep(0.5)
 
-    return {
+    result = {
         "success": True,
         "data": results,
         "count": len(results)
     }
+    _set_cached("foreign-indices", result)
+    return result
 
 
 # =========================================================
