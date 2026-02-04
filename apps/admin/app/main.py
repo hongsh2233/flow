@@ -22,7 +22,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler
 
 # 라우터 import
 from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api
@@ -46,12 +46,14 @@ async def lifespan(app: FastAPI):
     fsc_scheduler.start()
     krx_scheduler.start()
     naver_ranking_scheduler.start()
+    yahoo_index_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
     fsc_scheduler.shutdown()
     krx_scheduler.shutdown()
     naver_ranking_scheduler.shutdown()
+    yahoo_index_scheduler.shutdown()
 
 
 # FastAPI 앱 생성
@@ -231,6 +233,15 @@ def run_migrations():
         db.close()
     except Exception as e:
         print(f"⚠️ 탭 link_type 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_yahoo_indices_tables import run_migration as add_yahoo_indices_tables
+        from app.database import SessionLocal
+        db = SessionLocal()
+        add_yahoo_indices_tables(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ Yahoo 지수 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():

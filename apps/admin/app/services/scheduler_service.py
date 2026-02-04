@@ -21,6 +21,12 @@ from sqlalchemy import func
 from app.database import SessionLocal
 from app.services.api_service import fsc_api_service, krx_api_service
 from app.services.naver_finance_service import naver_finance_service
+from app.services.yahoo_index_service import (
+    fetch_indices,
+    upsert_indices_to_db,
+    DEFAULT_US_INDICES,
+    DEFAULT_KR_INDICES,
+)
 from app.models import FscStockPrice, FscRisingStock, KrxData
 
 
@@ -651,6 +657,112 @@ class NaverRankingScheduler:
             self.scheduler.shutdown()
             self.scheduler = None
             print("✅ 네이버 증권 랭킹 데이터 수집 스케줄러 종료")
+
+
+# =========================================================
+# Yahoo Finance 지수 수집 스케줄러
+# =========================================================
+
+async def collect_yahoo_us_indices():
+    """
+    Yahoo Finance 미국증시 지수 수집/저장
+    - 06:20 / 00:00 / 02:00 / 04:00 (KST)
+    - 수집 시점의 값으로 일별 최종값 upsert + 7일 유지
+    """
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n🌐 Yahoo(US) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        items = await fetch_indices(DEFAULT_US_INDICES)
+        if items:
+            upsert_indices_to_db(db, items, collected_at=now, keep_days=7)
+            print(f"✅ Yahoo(US) 지수 저장 완료: {len(items)}개")
+        else:
+            print("⚠️ Yahoo(US) 지수 수집 결과 없음")
+    except Exception as e:
+        print(f"❌ Yahoo(US) 지수 수집 오류: {e}")
+    finally:
+        db.close()
+
+
+async def collect_yahoo_kr_indices():
+    """
+    Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
+    - 09:20 / 11:00 / 13:00 / 15:30 (KST)
+    - 기존 데이터를 덮어쓰되, 날짜별 마지막 값 유지 (date+symbol upsert)
+    - 최대 7일만 보관
+    - 주말/공휴일은 건너뜀
+    """
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n🇰🇷 Yahoo(KR) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: Yahoo(KR) 지수 수집 건너뜀")
+        return
+
+    db = SessionLocal()
+    try:
+        items = await fetch_indices(DEFAULT_KR_INDICES)
+        if items:
+            upsert_indices_to_db(db, items, collected_at=now, keep_days=7)
+            print(f"✅ Yahoo(KR) 지수 저장 완료: {len(items)}개")
+        else:
+            print("⚠️ Yahoo(KR) 지수 수집 결과 없음")
+    except Exception as e:
+        print(f"❌ Yahoo(KR) 지수 수집 오류: {e}")
+    finally:
+        db.close()
+
+
+class YahooIndexScheduler:
+    """
+    Yahoo Finance 지수 수집 스케줄러
+    """
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone('Asia/Seoul')
+
+    def start(self):
+        if self.scheduler is not None:
+            print("⚠️ Yahoo 지수 스케줄러가 이미 실행 중입니다.")
+            return
+
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+
+        # US: 06:20, 00:00, 02:00, 04:00 (KST)
+        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=6, minute=20, timezone=self.kst),
+                               id="yahoo_us_0620", name="Yahoo US Indices (06:20)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=0, minute=0, timezone=self.kst),
+                               id="yahoo_us_0000", name="Yahoo US Indices (00:00)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=2, minute=0, timezone=self.kst),
+                               id="yahoo_us_0200", name="Yahoo US Indices (02:00)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_us_indices, CronTrigger(hour=4, minute=0, timezone=self.kst),
+                               id="yahoo_us_0400", name="Yahoo US Indices (04:00)", replace_existing=True)
+
+        # KR: 09:20, 11:00, 13:00, 15:30 (KST)
+        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=9, minute=20, timezone=self.kst),
+                               id="yahoo_kr_0920", name="Yahoo KR Indices (09:20)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=11, minute=0, timezone=self.kst),
+                               id="yahoo_kr_1100", name="Yahoo KR Indices (11:00)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=13, minute=0, timezone=self.kst),
+                               id="yahoo_kr_1300", name="Yahoo KR Indices (13:00)", replace_existing=True)
+        self.scheduler.add_job(collect_yahoo_kr_indices, CronTrigger(hour=15, minute=30, timezone=self.kst),
+                               id="yahoo_kr_1530", name="Yahoo KR Indices (15:30)", replace_existing=True)
+
+        self.scheduler.start()
+        print("✅ Yahoo 지수 수집 스케줄러 시작")
+        print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
+        print("   - KR: 09:20 / 11:00 / 13:00 / 15:30 (KST)")
+        print("   - 최근 7일치만 유지\n")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ Yahoo 지수 수집 스케줄러 종료")
+
+
+yahoo_index_scheduler = YahooIndexScheduler()
 
 
 # 전역 스케줄러 인스턴스

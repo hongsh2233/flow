@@ -22,6 +22,7 @@ from app.database import get_db
 from app.config import ADMIN_EMAIL
 from app.services.api_service import krx_api_service
 from app.models import KrxData
+from datetime import date, timedelta
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -111,6 +112,152 @@ async def finance_data_page(request: Request, user=Depends(get_current_user)):
         "admin_email": ADMIN_EMAIL,
         "active_page": "finance-data"
     })
+
+
+# =========================================================
+# Yahoo Finance 지수 (DB 저장본 조회용 - Admin UI)
+# =========================================================
+
+@router.get("/api/yahoo-indices/latest")
+async def get_yahoo_indices_latest(
+    group: str = "kr",
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    저장된 Yahoo 지수의 "오늘(또는 최신 날짜)" 일별 최종값 조회
+    """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    from app.models import YahooIndexDaily
+    latest_date = db.query(func.max(YahooIndexDaily.date)).filter(YahooIndexDaily.group == group).scalar()
+    if not latest_date:
+        return JSONResponse({"success": True, "date": None, "data": []})
+
+    rows = db.query(YahooIndexDaily).filter(
+        YahooIndexDaily.group == group,
+        YahooIndexDaily.date == latest_date,
+    ).order_by(YahooIndexDaily.symbol.asc()).all()
+
+    data = [{
+        "date": r.date.isoformat(),
+        "group": r.group,
+        "symbol": r.symbol,
+        "name": r.name,
+        "market": r.market,
+        "currency": r.currency,
+        "price": r.price,
+        "change": r.change,
+        "change_percent": r.change_percent,
+        "last_collected_at": r.last_collected_at.isoformat() if r.last_collected_at else None,
+        "last_collected_time": r.last_collected_time,
+    } for r in rows]
+
+    return JSONResponse({"success": True, "date": latest_date.isoformat(), "data": data})
+
+
+@router.get("/api/yahoo-indices/daily")
+async def get_yahoo_indices_daily(
+    group: str = "kr",
+    days: int = 7,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    저장된 Yahoo 지수 일별 최종값을 최근 N일 조회 (기본 7일)
+    """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    from app.models import YahooIndexDaily
+    days = max(1, min(days, 30))
+
+    # latest date 기준으로 최근 N일 범위 계산
+    latest_date = db.query(func.max(YahooIndexDaily.date)).filter(YahooIndexDaily.group == group).scalar()
+    if not latest_date:
+        return JSONResponse({"success": True, "data": []})
+
+    start_date = latest_date - timedelta(days=days - 1)
+    rows = db.query(YahooIndexDaily).filter(
+        YahooIndexDaily.group == group,
+        YahooIndexDaily.date >= start_date,
+        YahooIndexDaily.date <= latest_date,
+    ).order_by(YahooIndexDaily.date.desc(), YahooIndexDaily.symbol.asc()).all()
+
+    data = [{
+        "date": r.date.isoformat(),
+        "group": r.group,
+        "symbol": r.symbol,
+        "name": r.name,
+        "market": r.market,
+        "currency": r.currency,
+        "price": r.price,
+        "change": r.change,
+        "change_percent": r.change_percent,
+        "last_collected_at": r.last_collected_at.isoformat() if r.last_collected_at else None,
+        "last_collected_time": r.last_collected_time,
+    } for r in rows]
+
+    return JSONResponse({"success": True, "data": data, "latest_date": latest_date.isoformat()})
+
+
+@router.post("/api/yahoo-indices/manual-collect")
+async def manual_collect_yahoo_indices(
+    group: str = "kr",
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    테스트용: Yahoo 지수 즉시 수동 수집 → DB 저장(스냅샷+일별 upsert) → 7일 유지 정리
+
+    group:
+    - kr: 코스피/코스닥
+    - us: S&P500/다우/나스닥
+    - all: kr+us
+    """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    group = (group or "kr").lower().strip()
+    if group not in ["kr", "us", "all"]:
+        return JSONResponse({"error": "group은 kr|us|all 중 하나여야 합니다."}, status_code=400)
+
+    from datetime import datetime
+    import pytz
+    from app.services.yahoo_index_service import (
+        fetch_indices,
+        upsert_indices_to_db,
+        DEFAULT_US_INDICES,
+        DEFAULT_KR_INDICES,
+    )
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+
+    try:
+        indices = []
+        if group in ["kr", "all"]:
+            indices.extend(DEFAULT_KR_INDICES)
+        if group in ["us", "all"]:
+            indices.extend(DEFAULT_US_INDICES)
+
+        results = await fetch_indices(indices)
+        upsert_indices_to_db(db, results, collected_at=now, keep_days=7)
+
+        ok = [r for r in results if r.get("ok") is True]
+        fail = [r for r in results if r.get("ok") is not True]
+
+        return JSONResponse({
+            "success": True,
+            "group": group,
+            "collected_at": now.isoformat(),
+            "count_success": len(ok),
+            "count_fail": len(fail),
+            "failures": fail[:20],  # 너무 길어지는 것 방지
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 
 

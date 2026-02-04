@@ -1,7 +1,7 @@
 """
 데이터베이스 모델 정의 (PostgreSQL 호환)
 """
-from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.engine.database import Base
@@ -37,7 +37,28 @@ class NavMenuTab(Base):
     nav_menu_item = relationship("NavMenuItem", back_populates="tabs")
 
 
-__all__ = ["Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post", "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member", "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking"]
+__all__ = [
+    "Base",
+    "CollectedData",
+    "AdminUser",
+    "Schedule",
+    "Board",
+    "Post",
+    "KrxData",
+    "FscStockPrice",
+    "FscRisingStock",
+    "RefreshToken",
+    "Member",
+    "Character",
+    "StockWord",
+    "MainPageItem",
+    "Banner",
+    "NavMenuItem",
+    "NavMenuTab",
+    "NaverStockRanking",
+    "YahooIndexSnapshot",
+    "YahooIndexDaily",
+]
 
 
 class CollectedData(Base):
@@ -245,3 +266,49 @@ class NaverStockRanking(Base):
     collected_time = Column(String(5), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (UniqueConstraint('ranking_type', 'market_type', 'rank', 'collected_at', name='uq_naver_ranking'),)
+
+
+class YahooIndexSnapshot(Base):
+    """
+    Yahoo Finance 지수 스냅샷 (수집 시각별 기록).
+
+    - 미국지수: 06:20 / 00:00 / 02:00 / 04:00 (KST) 등
+    - 한국지수: 09:20 / 11:00 / 13:00 / 15:30 (KST) 등
+    """
+    __tablename__ = "yahoo_index_snapshots"
+    id = Column(Integer, primary_key=True, index=True)
+    group = Column(String(10), nullable=False, index=True)  # 'us' | 'kr' | etc
+    symbol = Column(String(30), nullable=False, index=True)
+    name = Column(String(50), nullable=False)
+    market = Column(String(10), nullable=True)
+    currency = Column(String(10), nullable=True)
+    price = Column(Float, nullable=True)
+    change = Column(Float, nullable=True)
+    change_percent = Column(Float, nullable=True)
+    regular_market_time = Column(Integer, nullable=True)  # yahoo meta regularMarketTime (epoch seconds)
+    collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    collected_date = Column(Date, nullable=False, index=True)  # KST date 기준
+    collected_time = Column(String(5), nullable=False, index=True)  # 'HH:MM' (KST)
+
+
+class YahooIndexDaily(Base):
+    """
+    Yahoo Finance 지수 일별 최종값(해당 날짜의 마지막 수집값).
+
+    date+symbol+group 으로 upsert하여 "기존 데이터를 덮어쓰되, 날짜별 마지막 값 저장" 요구사항을 만족.
+    최근 7일 유지 정책은 스케줄러/서비스에서 정리한다.
+    """
+    __tablename__ = "yahoo_index_daily"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, nullable=False, index=True)  # KST date
+    group = Column(String(10), nullable=False, index=True)
+    symbol = Column(String(30), nullable=False, index=True)
+    name = Column(String(50), nullable=False)
+    market = Column(String(10), nullable=True)
+    currency = Column(String(10), nullable=True)
+    price = Column(Float, nullable=True)
+    change = Column(Float, nullable=True)
+    change_percent = Column(Float, nullable=True)
+    last_collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    last_collected_time = Column(String(5), nullable=False)  # 'HH:MM' (KST)
+    __table_args__ = (UniqueConstraint('date', 'group', 'symbol', name='uq_yahoo_index_daily'),)

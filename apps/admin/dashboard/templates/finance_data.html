@@ -338,6 +338,9 @@
     <button class="tab-button" onclick="switchTab('kosdaq')">
       🚀 코스닥
     </button>
+    <button class="tab-button" onclick="switchTab('yahoo')">
+      🌐 야후 지수
+    </button>
     <button class="tab-button" onclick="switchTab('naver-ranking')">
       📈 네이버 랭킹
     </button>
@@ -360,6 +363,60 @@
         <h3>코스닥 지수 정보</h3>
       </div>
       <div id="kosdaq-accordion" class="accordion"></div>
+    </div>
+  </div>
+
+  <!-- Yahoo 지수 탭 -->
+  <div id="tab-yahoo" class="tab-content">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>Yahoo Finance 지수 (DB 저장본)</h3>
+      </div>
+      <p style="color:#666; margin:0 0 10px 0;">
+        스케줄러로 저장된 지수(최근 7일)를 표시합니다. (한국: 09:20/11:00/13:00/15:30, 미국: 06:20/00:00/02:00/04:00)
+      </p>
+
+      <!-- KR -->
+      <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h4 style="margin:0;">🇰🇷 한국 지수 (KOSPI/KOSDAQ)</h4>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn-fetch" onclick="manualCollectYahoo('kr')">🧪 한국 수동 수집</button>
+            <button class="btn-fetch" onclick="loadYahooGroup('kr')" style="background:#3498db;">새로고침</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
+          <div style="flex:1; min-width:320px;">
+            <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
+            <div id="yahoo-kr-latest" class="data-table-container"></div>
+          </div>
+          <div style="flex:1; min-width:320px;">
+            <div style="margin:10px 0; font-weight:700;">최근 7일</div>
+            <div id="yahoo-kr-daily" class="data-table-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- US -->
+      <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h4 style="margin:0;">🇺🇸 미국 지수 (S&P500/다우/나스닥)</h4>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn-fetch" onclick="manualCollectYahoo('us')" style="background:#2c3e50;">🧪 미국 수동 수집</button>
+            <button class="btn-fetch" onclick="loadYahooGroup('us')" style="background:#3498db;">새로고침</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
+          <div style="flex:1; min-width:320px;">
+            <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
+            <div id="yahoo-us-latest" class="data-table-container"></div>
+          </div>
+          <div style="flex:1; min-width:320px;">
+            <div style="margin:10px 0; font-weight:700;">최근 7일</div>
+            <div id="yahoo-us-daily" class="data-table-container"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -402,7 +459,8 @@
 </div>
 {% endblock %}
 {% block extra_scripts %}
-<script src="/static/js/finance_data.js"></script>
+{# 캐시로 인해 JS 변경사항이 반영되지 않을 수 있어 버전 파라미터 추가 #}
+<script src="/static/js/finance_data.js?v=20260204"></script>
 <script>
   let currentNaverTab = 'volume';
   let currentNaverMarket = 'kospi';

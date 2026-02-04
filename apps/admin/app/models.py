@@ -21,10 +21,13 @@ from app.engine.models import (
     NavMenuItem,
     NavMenuTab,
     NaverStockRanking,
+    YahooIndexSnapshot,
+    YahooIndexDaily,
 )
 
 __all__ = [
     "Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
+    "YahooIndexSnapshot", "YahooIndexDaily",
 ]

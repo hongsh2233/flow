@@ -39,6 +39,15 @@ function switchTab(tabName) {
     case 'kosdaq':
       fetchKosdaqIndex();
       break;
+    case 'yahoo':
+      // KR/US 섹션 둘 다 갱신
+      if (typeof window.loadYahooGroup === 'function') {
+        window.loadYahooGroup('kr');
+        window.loadYahooGroup('us');
+      } else {
+        loadYahooIndices('kr');
+      }
+      break;
   }
 }
 
@@ -347,4 +356,239 @@ document.addEventListener('DOMContentLoaded', function() {
   // 코스피 데이터 자동 로드
   fetchKospiIndex();
 });
+
+
+// =========================================================
+// Yahoo Finance 지수 (DB 저장본) - Admin UI
+// =========================================================
+
+function formatNumber(value, digits = 2) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  const num = Number(value);
+  return num.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function formatSigned(value, digits = 2) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  const num = Number(value);
+  const sign = num > 0 ? '+' : '';
+  return `${sign}${num.toFixed(digits)}`;
+}
+
+function formatSignedPercent(value, digits = 2) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  const num = Number(value);
+  const sign = num > 0 ? '+' : '';
+  return `${sign}${num.toFixed(digits)}%`;
+}
+
+function changeColorStyle(value) {
+  if (value === null || value === undefined || isNaN(value)) return '';
+  const num = Number(value);
+  if (num > 0) return 'color:#e74c3c; font-weight:600;';
+  if (num < 0) return 'color:#3498db; font-weight:600;';
+  return '';
+}
+
+function buildYahooLatestTable(rows, dateStr) {
+  if (!rows || rows.length === 0) return '<div class="empty-message">저장된 데이터가 없습니다.</div>';
+
+  let html = `
+    <div class="info-badge success" style="margin: 10px 0;">
+      기준일: ${escapeHtml(dateStr || '-')}
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>지수</th>
+          <th style="text-align:right;">현재</th>
+          <th style="text-align:right;">변동</th>
+          <th style="text-align:right;">변동률</th>
+          <th style="text-align:center;">수집</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  rows.forEach(r => {
+    const style = changeColorStyle(r.change);
+    html += `
+      <tr>
+        <td style="font-weight:600;">${escapeHtml(r.name)} <span style="color:#999; font-size:12px;">${escapeHtml(r.symbol)}</span></td>
+        <td style="text-align:right; font-weight:600;">${formatNumber(r.price, 2)}</td>
+        <td style="text-align:right; ${style}">${formatSigned(r.change, 2)}</td>
+        <td style="text-align:right; ${style}">${formatSignedPercent(r.change_percent, 2)}</td>
+        <td style="text-align:center; color:#666;">${escapeHtml(r.last_collected_time || '')}</td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+function buildYahooDailyTable(rows) {
+  if (!rows || rows.length === 0) return '<div class="empty-message">저장된 데이터가 없습니다.</div>';
+
+  // date -> [rows]
+  const byDate = {};
+  rows.forEach(r => {
+    const d = r.date || '';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(r);
+  });
+
+  const dates = Object.keys(byDate).sort().reverse();
+  let html = '';
+
+  dates.forEach(d => {
+    html += `
+      <div style="margin: 12px 0 6px 0; font-weight:700; color:#2c3e50;">
+        ${escapeHtml(d)}
+      </div>
+      <table class="data-table" style="margin-bottom:14px;">
+        <thead>
+          <tr>
+            <th>지수</th>
+            <th style="text-align:right;">마지막값</th>
+            <th style="text-align:right;">변동</th>
+            <th style="text-align:right;">변동률</th>
+            <th style="text-align:center;">수집</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    byDate[d].forEach(r => {
+      const style = changeColorStyle(r.change);
+      html += `
+        <tr>
+          <td style="font-weight:600;">${escapeHtml(r.name)} <span style="color:#999; font-size:12px;">${escapeHtml(r.symbol)}</span></td>
+          <td style="text-align:right; font-weight:600;">${formatNumber(r.price, 2)}</td>
+          <td style="text-align:right; ${style}">${formatSigned(r.change, 2)}</td>
+          <td style="text-align:right; ${style}">${formatSignedPercent(r.change_percent, 2)}</td>
+          <td style="text-align:center; color:#666;">${escapeHtml(r.last_collected_time || '')}</td>
+        </tr>
+      `;
+    });
+    html += '</tbody></table>';
+  });
+
+  return html;
+}
+
+async function loadYahooIndices(group) {
+  // backward compat: 기존 단일 영역 id가 있으면 그쪽에 렌더링
+  const latestDiv = document.getElementById('yahoo-latest');
+  const dailyDiv = document.getElementById('yahoo-daily');
+  if (!latestDiv || !dailyDiv) {
+    // 새 UI(kr/us 분리)에서는 loadYahooGroup 사용
+    return;
+  }
+
+  latestDiv.innerHTML = '<div class="loading">최신 데이터 로딩 중...</div>';
+  dailyDiv.innerHTML = '<div class="loading">최근 7일 로딩 중...</div>';
+
+  try {
+    const [latestRes, dailyRes] = await Promise.all([
+      fetch(`/api/yahoo-indices/latest?group=${encodeURIComponent(group)}`),
+      fetch(`/api/yahoo-indices/daily?group=${encodeURIComponent(group)}&days=7`),
+    ]);
+
+    const latestJson = await latestRes.json();
+    const dailyJson = await dailyRes.json();
+
+    if (!latestRes.ok || latestJson.error) {
+      throw new Error(latestJson.error || '최신 데이터 조회 실패');
+    }
+    if (!dailyRes.ok || dailyJson.error) {
+      throw new Error(dailyJson.error || '일별 데이터 조회 실패');
+    }
+
+    latestDiv.innerHTML = buildYahooLatestTable(latestJson.data || [], latestJson.date || '');
+    dailyDiv.innerHTML = buildYahooDailyTable(dailyJson.data || []);
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    latestDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+    dailyDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+  }
+}
+
+// 전역으로 노출 (템플릿 inline onclick용)
+window.loadYahooIndices = loadYahooIndices;
+
+async function loadYahooGroup(group) {
+  const latestDiv = document.getElementById(`yahoo-${group}-latest`);
+  const dailyDiv = document.getElementById(`yahoo-${group}-daily`);
+  if (!latestDiv || !dailyDiv) return;
+
+  latestDiv.innerHTML = '<div class="loading">최신 데이터 로딩 중...</div>';
+  dailyDiv.innerHTML = '<div class="loading">최근 7일 로딩 중...</div>';
+
+  try {
+    const [latestRes, dailyRes] = await Promise.all([
+      fetch(`/api/yahoo-indices/latest?group=${encodeURIComponent(group)}`),
+      fetch(`/api/yahoo-indices/daily?group=${encodeURIComponent(group)}&days=7`),
+    ]);
+
+    const latestJson = await latestRes.json();
+    const dailyJson = await dailyRes.json();
+
+    if (!latestRes.ok || latestJson.error) {
+      throw new Error(latestJson.error || '최신 데이터 조회 실패');
+    }
+    if (!dailyRes.ok || dailyJson.error) {
+      throw new Error(dailyJson.error || '일별 데이터 조회 실패');
+    }
+
+    latestDiv.innerHTML = buildYahooLatestTable(latestJson.data || [], latestJson.date || '');
+    dailyDiv.innerHTML = buildYahooDailyTable(dailyJson.data || []);
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    latestDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+    dailyDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+  }
+}
+
+window.loadYahooGroup = loadYahooGroup;
+
+async function manualCollectYahoo(group) {
+  // 새 UI(kr/us 분리) 우선, 없으면 기존 단일 영역 fallback
+  const latestDiv = document.getElementById(`yahoo-${group}-latest`) || document.getElementById('yahoo-latest');
+  const dailyDiv = document.getElementById(`yahoo-${group}-daily`) || document.getElementById('yahoo-daily');
+  if (latestDiv) latestDiv.innerHTML = '<div class="loading">수동 수집 중...</div>';
+  if (dailyDiv) dailyDiv.innerHTML = '<div class="loading">수동 수집 중...</div>';
+
+  try {
+    const res = await fetch(`/api/yahoo-indices/manual-collect?group=${encodeURIComponent(group)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const json = await res.json();
+    if (!res.ok || json.success === false) {
+      throw new Error(json.error || json.message || '수동 수집 실패');
+    }
+
+    const successCount = json.count_success ?? 0;
+    const failCount = json.count_fail ?? 0;
+    let msg = `✅ 수동 수집 완료\n그룹: ${group}\n성공: ${successCount}개\n실패: ${failCount}개`;
+    if (failCount > 0 && Array.isArray(json.failures) && json.failures.length > 0) {
+      const first = json.failures[0];
+      msg += `\n\n예시 실패: ${first.symbol || ''} (${first.error || 'unknown'})`;
+      console.warn('Yahoo manual collect failures:', json.failures);
+    }
+    alert(msg);
+    if (typeof window.loadYahooGroup === 'function') {
+      await window.loadYahooGroup(group);
+    } else {
+      await loadYahooIndices(group);
+    }
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    if (latestDiv) latestDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+    if (dailyDiv) dailyDiv.innerHTML = `<div class="error">오류: ${escapeHtml(msg)}</div>`;
+    alert(`❌ 수동 수집 오류: ${msg}`);
+  }
+}
+
+window.manualCollectYahoo = manualCollectYahoo;
 
