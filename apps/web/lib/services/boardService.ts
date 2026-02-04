@@ -1,9 +1,8 @@
 /**
  * 게시판 서비스
- * Stock BO API 연동 - DB/백엔드 미준비 시 빈 데이터 및 에러 메시지 반환
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
 
-import { API_BASE_URL, getAuthHeaders } from '@/lib/config/api'
 import type { ApiResponse, Board, Post } from '@/lib/types/api'
 
 export interface PostDetail extends Omit<Post, 'views'> {
@@ -26,9 +25,9 @@ export interface PostDetail extends Omit<Post, 'views'> {
  */
 export async function fetchBoards(): Promise<ApiResponse<Board[]>> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/boards`, {
+    const response = await fetch('/api/boards', {
       method: 'GET',
-      headers: getAuthHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
     })
 
@@ -77,10 +76,10 @@ export async function fetchBoardPosts(
   try {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) })
     const response = await fetch(
-      `${API_BASE_URL}/api/boards/${boardId}/posts?${params}`,
+      `/api/boards/${boardId}/posts?${params}`,
       {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )
@@ -116,9 +115,9 @@ export async function fetchBoardPosts(
  */
 export async function fetchPostDetail(postId: string): Promise<PostDetail | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+    const response = await fetch(`/api/posts/${postId}`, {
       method: 'GET',
-      headers: getAuthHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
     })
 

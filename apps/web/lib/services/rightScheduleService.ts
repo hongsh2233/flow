@@ -1,9 +1,8 @@
 /**
  * 권리행사일정 서비스
- * Stock BO API 연동 - DB/백엔드 미준비 시 빈 데이터 반환
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
 
-import { API_BASE_URL, getAuthHeaders } from '@/lib/config/api'
 import type { RightScheduleItem } from '@/lib/types/api'
 
 export interface FetchRightScheduleResult {
@@ -22,10 +21,10 @@ export async function fetchRightSchedule(
   try {
     const params = new URLSearchParams({ q: query.trim() })
     const response = await fetch(
-      `${API_BASE_URL}/api/right-schedule?${params}`,
+      `/api/right-schedule?${params}`,
       {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )
