@@ -46,20 +46,16 @@ endblock %} {% block content %}
   <div id="attachments" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
     <div class="attachments-list">
       {% for file in attachments %}
-        {% if file.type and file.type.startswith('image/') %}
-          <!-- 이미지는 content에 이미 포함되어 있을 수 있으므로 표시하지 않음 -->
-        {% else %}
-          <!-- 일반 파일은 다운로드 링크로 표시 -->
-          <div class="attachment-item">
-            <span style="font-size: 20px;">📎</span>
-            <a href="{{ file.path }}" class="attachment-link" download="{{ file.filename }}" target="_blank">
-              {{ file.filename }}
-            </a>
-            {% if file.formatted_size %}
-            <span class="attachment-size">{{ file.formatted_size }}</span>
-            {% endif %}
-          </div>
-        {% endif %}
+        <!-- 모든 첨부파일을 다운로드 가능한 링크로 표시 (이미지 포함) -->
+        <div class="attachment-item">
+          <span style="font-size: 20px;">📎</span>
+          <a href="{{ file.path }}" class="attachment-link" download="{{ file.filename }}" target="_blank">
+            {{ file.filename }}
+          </a>
+          {% if file.formatted_size %}
+          <span class="attachment-size">{{ file.formatted_size }}</span>
+          {% endif %}
+        </div>
       {% endfor %}
     </div>
   </div>

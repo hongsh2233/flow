@@ -81,10 +81,44 @@
 
   .posts-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+  justify-content: space-between;
+  align-items: flex-start;
     margin-bottom: 20px;
   }
+
+.search-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 13px;
+}
+
+.search-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  background: #3498db;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.search-reset {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: none;
+  background: #ecf0f1;
+  color: #555;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
 
   .empty-posts {
     text-align: center;
@@ -235,8 +269,30 @@
 
 <div class="posts-section">
   <div class="posts-header">
-    <h3 style="margin: 0">게시글 목록</h3>
-    <a href="/admin/board/{{ board.id }}/write" class="btn-write">✏️ 새 글 작성</a>
+    <div>
+      <h3 style="margin: 0">게시글 목록</h3>
+      {% if search_query %}
+      <div style="margin-top: 4px; font-size: 12px; color: #7f8c8d;">
+        "{{ search_query }}" 검색 결과 ({{ posts|length }}건)
+      </div>
+      {% endif %}
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+      <form class="search-form" method="get" action="/admin/board/{{ board.id }}/posts">
+        <input
+          type="text"
+          name="q"
+          class="search-input"
+          placeholder="제목/내용 검색"
+          value="{{ search_query or '' }}"
+        />
+        <button type="submit" class="search-button">검색</button>
+        {% if search_query %}
+        <a href="/admin/board/{{ board.id }}/posts" class="search-reset">전체 보기</a>
+        {% endif %}
+      </form>
+      <a href="/admin/board/{{ board.id }}/write" class="btn-write">✏️ 새 글 작성</a>
+    </div>
   </div>
 
   {% if posts %}

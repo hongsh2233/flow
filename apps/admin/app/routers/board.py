@@ -8,6 +8,7 @@ from fastapi import APIRouter, Form, Request, Depends, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -213,15 +214,45 @@ async def delete_board(board_id: str, user=Depends(get_current_user), db: Sessio
     return RedirectResponse(url="/admin/board", status_code=303)
 
 @router.get("/admin/board/{board_id}/posts", response_class=HTMLResponse)
-async def admin_board_posts_page(board_id: str, request: Request, user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def admin_board_posts_page(
+    board_id: str,
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not user: return RedirectResponse(url="/")
     board = db.query(models.Board).filter(models.Board.id == board_id).first()
     if not board: raise HTTPException(status_code=404)
-    posts = db.query(models.Post).filter(models.Post.board_id == board_id).order_by(models.Post.created_at.desc()).all()
+
+    # 검색어(q) 쿼리 파라미터
+    q = request.query_params.get("q", "").strip()
+
+    # 기본 쿼리
+    query = db.query(models.Post).filter(models.Post.board_id == board_id)
+
+    # 제목/내용 검색
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                models.Post.title.ilike(like),
+                models.Post.content.ilike(like),
+            )
+        )
+
+    posts = query.order_by(models.Post.created_at.desc()).all()
 
     now = datetime.now()
     cutoff = now - timedelta(hours=12)
-    new_post_ids = {p.id for p in posts if p.created_at and p.created_at >= cutoff}
+
+    # timezone 정보 유무와 상관없이 비교 가능하도록 naive datetime으로 변환
+    def _to_naive(dt: datetime) -> datetime:
+        return dt.replace(tzinfo=None) if getattr(dt, "tzinfo", None) is not None else dt
+
+    new_post_ids = {
+        p.id for p in posts
+        if p.created_at and _to_naive(p.created_at) >= cutoff
+    }
 
     return templates.TemplateResponse("admin_board_posts.html", {
         "request": request,
@@ -229,6 +260,7 @@ async def admin_board_posts_page(board_id: str, request: Request, user=Depends(g
         "board": board,
         "posts": posts,
         "new_post_ids": new_post_ids,
+        "search_query": q,
         "active_page": "board",
     })
 
@@ -384,27 +416,19 @@ async def admin_post_view(board_id: str, post_id: int, request: Request, user=De
     cleaned_content = clean_content(original_content)
     post.content = cleaned_content
     
-    # 이미지 파일 제외하고 일반 파일만 필터링
-    non_image_attachments = [
-        file for file in all_attachments 
-        if not file.get('type') or not file.get('type', '').startswith('image/')
-    ]
-    
     # 디버깅용 로그
     print(f"[DEBUG] admin_post_view - post_id: {post_id}")
     print(f"[DEBUG] all_attachments count: {len(all_attachments) if all_attachments else 0}")
-    print(f"[DEBUG] non_image_attachments count: {len(non_image_attachments)}")
     if all_attachments:
         print(f"[DEBUG] all_attachments: {all_attachments}")
-    if non_image_attachments:
-        print(f"[DEBUG] non_image_attachments: {non_image_attachments}")
     
     formatted_author = format_author_name(post.author or "", ADMIN_EMAIL)
     return templates.TemplateResponse("admin_post_view.html", {
         "request": request, 
         "board": {"id": board_id}, 
         "post": post,
-        "attachments": non_image_attachments,  # 이미지 제외한 일반 파일만 전달
+        # 모든 첨부파일 전달 (이미지는 본문에도 들어갈 수 있지만, 다운로드 가능하도록 유지)
+        "attachments": all_attachments,
         "admin_email": ADMIN_EMAIL,
         "formatted_author": formatted_author,
         "active_page": "board"
@@ -606,7 +630,7 @@ async def board_detail_page(
     board_id: str,
     request: Request,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user)
+    user = Depends(get_current_user),
 ):
     """
     게시판 상세 화면 (목록)
@@ -618,11 +642,25 @@ async def board_detail_page(
     if not board:
         raise HTTPException(status_code=404, detail="게시판을 찾을 수 없습니다.")
     
+    # 검색어(q) 쿼리 파라미터
+    q = request.query_params.get("q", "").strip()
+
     # 2. 게시글 목록 조회 (최신순 정렬: created_at desc)
     # 비밀글은 작성자나 관리자만 목록에 표시
-    all_posts = db.query(models.Post).filter(
+    query = db.query(models.Post).filter(
         models.Post.board_id == board_id
-    ).order_by(models.Post.created_at.desc()).all()
+    )
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                models.Post.title.ilike(like),
+                models.Post.content.ilike(like),
+            )
+        )
+
+    all_posts = query.order_by(models.Post.created_at.desc()).all()
     
     # 비밀글 필터링: 작성자나 관리자만 볼 수 있음
     posts = []
@@ -642,7 +680,15 @@ async def board_detail_page(
 
     now = datetime.now()
     cutoff = now - timedelta(hours=12)
-    new_post_ids = {p.id for p in posts if p.created_at and p.created_at >= cutoff}
+
+    # timezone 정보 유무와 상관없이 비교 가능하도록 naive datetime으로 변환
+    def _to_naive(dt: datetime) -> datetime:
+        return dt.replace(tzinfo=None) if getattr(dt, "tzinfo", None) is not None else dt
+
+    new_post_ids = {
+        p.id for p in posts
+        if p.created_at and _to_naive(p.created_at) >= cutoff
+    }
     
     # 각 게시글의 첨부파일 정보 파싱
     posts_with_attachments = []
@@ -666,6 +712,7 @@ async def board_detail_page(
         "new_post_ids": new_post_ids,
         "is_admin": user is not None,
         "admin_email": ADMIN_EMAIL if user else None,
+        "search_query": q,
     })
 
 
