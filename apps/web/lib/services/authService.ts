@@ -1,8 +1,8 @@
 /**
  * 인증 및 회원 관리 서비스
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
 
-import { API_BASE_URL, API_SECRET_KEY, getAuthHeaders } from '@/lib/config/api'
 import type { ApiResponse, CharacterInfo } from '@/lib/types/api'
 
 /**
@@ -54,13 +54,11 @@ export async function getFavoriteStocks(
   email: string
 ): Promise<ApiResponse<FavoriteStockResponse>> {
   try {
-    const headers = getAuthHeaders()
-
     const response = await fetch(
-      `${API_BASE_URL}/api/auth/member/favorites?email=${encodeURIComponent(email)}`,
+      `/api/auth/member/favorites?email=${encodeURIComponent(email)}`,
       {
         method: 'GET',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )
@@ -101,11 +99,9 @@ export async function addFavoriteStock(params: {
   stock_code: string
 }): Promise<ApiResponse<FavoriteStockResponse>> {
   try {
-    const headers = getAuthHeaders()
-
-    const response = await fetch(`${API_BASE_URL}/api/auth/member/favorites`, {
+    const response = await fetch('/api/auth/member/favorites', {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: params.email,
         stock_code: params.stock_code,
@@ -116,7 +112,7 @@ export async function addFavoriteStock(params: {
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
       console.error(`Add favorite stock API error (${response.status}):`, errorText)
-      
+
       // 400 에러인 경우 detail 메시지 파싱 시도
       let errorMessage = '관심종목을 추가할 수 없습니다.'
       try {
@@ -161,11 +157,9 @@ export async function removeFavoriteStock(params: {
   stock_code: string
 }): Promise<ApiResponse<FavoriteStockResponse>> {
   try {
-    const headers = getAuthHeaders()
-
-    const response = await fetch(`${API_BASE_URL}/api/auth/member/favorites`, {
+    const response = await fetch('/api/auth/member/favorites', {
       method: 'DELETE',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: params.email,
         stock_code: params.stock_code,
@@ -208,11 +202,9 @@ export async function updateMember(
   params: UpdateMemberRequest
 ): Promise<ApiResponse<UpdateMemberResponse>> {
   try {
-    const headers = getAuthHeaders()
-
-    const response = await fetch(`${API_BASE_URL}/api/auth/member/update`, {
+    const response = await fetch('/api/auth/member/update', {
       method: 'PUT',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
       cache: 'no-store',
     })
@@ -249,11 +241,9 @@ export async function updateMember(
  */
 export async function getCharacters(): Promise<ApiResponse<CharactersResponse>> {
   try {
-    const headers = getAuthHeaders()
-
-    const response = await fetch(`${API_BASE_URL}/api/auth/characters`, {
+    const response = await fetch('/api/auth/characters', {
       method: 'GET',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
     })
 
@@ -292,13 +282,11 @@ export async function withdrawMember(
   email: string
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
   try {
-    const headers = getAuthHeaders()
-
     const response = await fetch(
-      `${API_BASE_URL}/api/auth/member/withdraw?email=${encodeURIComponent(email)}`,
+      `/api/auth/member/withdraw?email=${encodeURIComponent(email)}`,
       {
         method: 'DELETE',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )
@@ -328,4 +316,3 @@ export async function withdrawMember(
     }
   }
 }
-

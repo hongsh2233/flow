@@ -1,9 +1,8 @@
 /**
  * 공휴일 서비스
- * Stock BO API 연동 - DB/백엔드 미준비 시 빈 데이터 반환
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
 
-import { API_BASE_URL, getAuthHeaders } from '@/lib/config/api'
 import type { ApiResponse, Holiday } from '@/lib/types/api'
 
 /**
@@ -15,10 +14,10 @@ export async function fetchHolidays(
 ): Promise<ApiResponse<Holiday[]>> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/holidays?year=${year}`,
+      `/api/holidays?year=${year}`,
       {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )

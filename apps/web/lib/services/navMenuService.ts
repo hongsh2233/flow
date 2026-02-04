@@ -1,9 +1,7 @@
 /**
  * 하단/헤더 메뉴 API
- * admin 설정에서 관리한 메뉴를 조회합니다.
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
-
-import { API_BASE_URL } from '@/lib/config/api'
 
 export interface NavMenuTabItem {
   label: string
@@ -32,7 +30,7 @@ const DEFAULT_NAV_LIST: NavMenuItem[] = [
  */
 export async function fetchNavMenu(): Promise<NavMenuItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/nav-menu`, {
+    const res = await fetch('/api/nav-menu', {
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
     })

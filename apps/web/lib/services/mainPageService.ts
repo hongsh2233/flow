@@ -2,7 +2,6 @@
  * 메인 페이지 설정 서비스
  */
 
-import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
 import type { ApiResponse, MainPageConfigResponse } from '@/lib/types/api'
 
 /**

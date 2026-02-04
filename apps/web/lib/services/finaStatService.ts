@@ -1,9 +1,8 @@
 /**
  * 재무제표 서비스
- * Stock BO API 연동 - DB/백엔드 미준비 시 빈 데이터 반환
+ * Next.js API route를 통해 admin 서버로 프록시 (CORS 문제 방지)
  */
 
-import { API_BASE_URL, getAuthHeaders } from '@/lib/config/api'
 import type { FinaStatType } from '@/lib/types/api'
 
 export interface FetchFinaStatResult {
@@ -34,10 +33,10 @@ export async function fetchFinaStat(
     types.forEach((t) => params.append('types', t))
 
     const response = await fetch(
-      `${API_BASE_URL}/api/fina-stat?${params}`,
+      `/api/fina-stat?${params}`,
       {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
       }
     )

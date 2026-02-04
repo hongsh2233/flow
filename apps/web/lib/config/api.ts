@@ -6,7 +6,7 @@
  * API base URL from environment variable or default
  */
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
 /**
  * API secret key from environment variable

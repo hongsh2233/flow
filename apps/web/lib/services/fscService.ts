@@ -3,7 +3,6 @@
  * Stock BO API 연동 - DB/백엔드 미준비 시 빈 데이터 반환
  */
 
-import { API_BASE_URL, getAuthHeaders } from '@/lib/config/api'
 import type { ApiResponse, FscStockPrice } from '@/lib/types/api'
 
 export interface FetchFscStockPriceParams {

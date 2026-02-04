@@ -1,7 +1,7 @@
 // app/api/main-page-config/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 const NEXT_PUBLIC_X_API_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
 export async function GET(request: NextRequest) {
