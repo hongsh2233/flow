@@ -10,10 +10,9 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /workspace
 
 
-# 4. 종속성 설치를 위해 필요한 라이브러리들을 설치합니다 (MySQL 연결 등 대비)
+# 4. 종속성 설치를 위해 필요한 라이브러리들을 설치합니다 (PostgreSQL 연결 등)
 RUN apt-get update && apt-get install -y \
     build-essential \
-    default-libmysqlclient-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
