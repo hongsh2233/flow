@@ -33,6 +33,9 @@ export async function fetchBoards(): Promise<ApiResponse<Board[]>> {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
+      if (response.status === 401 || response.status === 500) {
+        return { success: true, data: [] }
+      }
       return {
         success: false,
         message: '게시판 목록을 불러올 수 없습니다.',
@@ -53,12 +56,7 @@ export async function fetchBoards(): Promise<ApiResponse<Board[]>> {
     }
   } catch (error) {
     console.error('게시판 목록 조회 오류:', error)
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : '게시판 목록을 불러오는데 실패했습니다.',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
+    return { success: true, data: [] }
   }
 }
 
@@ -86,6 +84,10 @@ export async function fetchBoardPosts(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
+      // 404(게시판 없음), 401(인증) 등 → 빈 목록으로 처리해 UI 정상 표시
+      if (response.status === 404 || response.status === 401) {
+        return { success: true, data: [], message: '' }
+      }
       return {
         success: false,
         message: '게시글 목록을 불러올 수 없습니다.',

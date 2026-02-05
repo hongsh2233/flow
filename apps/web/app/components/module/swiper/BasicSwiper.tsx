@@ -35,7 +35,8 @@ export default function BasicSwiper() {
         const response = await fetch('/api/banners?type=banner')
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          setBanners([])
+          return
         }
 
         const result: BannerResponse = await response.json()
@@ -46,7 +47,6 @@ export default function BasicSwiper() {
           setBanners([])
         }
       } catch (error) {
-        console.error('배너 가져오기 실패:', error)
         setBanners([])
       } finally {
         setLoading(false)

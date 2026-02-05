@@ -47,9 +47,11 @@ export default function Board({ boardId, emptyMessage = '등록된 게시글이 
     <div className={styles.listtype__board}>
       {error ? (
         <div className={styles.board__items}>
-          <p style={{ color: 'red' }}>{error}</p>
-          <p style={{ fontSize: '0.9em', color: '#666', marginTop: '8px' }}>
-            .env.local 파일에 NEXT_PUBLIC_X_API_KEY를 설정해주세요.
+          <p style={{ color: 'var(--color-text-secondary, #666)' }}>
+            {error}
+          </p>
+          <p style={{ fontSize: '0.85em', color: 'var(--color-text-tertiary, #999)', marginTop: '6px' }}>
+            게시판이 아직 없거나 서버 연결을 확인해 주세요.
           </p>
         </div>
       ) : posts.length > 0 ? (
