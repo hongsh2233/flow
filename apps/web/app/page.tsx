@@ -29,6 +29,19 @@ import type { MainPageItem } from '@/lib/types/api'
 // 커스텀 훅 임포트
 import { useFavoriteStocks } from './hooks/useFavoriteStocks'
 
+// [기본 메인 페이지 아이템] API 실패 시 사용할 기본 구성
+const DEFAULT_MAIN_PAGE_ITEMS: MainPageItem[] = [
+  { id: 1, name: '상단 배너', component_key: 'top_banner', order_index: 1, is_visible: 'visible' },
+  { id: 2, name: '국내 지수', component_key: 'domestic_indices', order_index: 2, is_visible: 'visible' },
+  { id: 3, name: '해외 지수', component_key: 'foreign_indices', order_index: 3, is_visible: 'visible' },
+  { id: 4, name: '배너', component_key: 'banner', order_index: 4, is_visible: 'visible' },
+  { id: 5, name: '관심종목', component_key: 'favorite_stocks', order_index: 5, is_visible: 'visible' },
+  { id: 6, name: '환율', component_key: 'exchange_rate', order_index: 6, is_visible: 'visible' },
+  { id: 7, name: '네이버 랭킹', component_key: 'naver_ranking', order_index: 7, is_visible: 'visible' },
+  { id: 8, name: '뉴스', component_key: 'news', order_index: 8, is_visible: 'visible' },
+  { id: 9, name: '글로벌', component_key: 'global_board', order_index: 9, is_visible: 'visible' },
+]
+
 // [타입 정의] 지수 아이템
 interface IndexItem {
   name: string
@@ -183,17 +196,17 @@ export default function MainPage() {
       setIsLoadingConfig(true)
       try {
         const result = await getMainPageConfig()
-        if (result.success && result.data && result.data.items) {
+        if (result.success && result.data && result.data.items && result.data.items.length > 0) {
           setMainPageItems(result.data.items)
         } else {
-          // 실패 시 빈 배열로 설정 (에러 메시지는 콘솔에만 출력)
-          console.warn('메인 페이지 설정을 불러올 수 없습니다:', result.message || '알 수 없는 오류')
-          setMainPageItems([])
+          // API 실패 또는 빈 응답 시 기본 구성 사용
+          console.warn('메인 페이지 설정을 불러올 수 없어 기본 구성을 사용합니다:', result.message || '알 수 없는 오류')
+          setMainPageItems(DEFAULT_MAIN_PAGE_ITEMS)
         }
       } catch (error) {
-        console.error('메인 페이지 설정 로딩 실패:', error)
-        // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
-        setMainPageItems([])
+        console.error('메인 페이지 설정 로딩 실패, 기본 구성 사용:', error)
+        // 에러 발생 시 기본 구성 사용하여 UI가 정상 표시되도록 함
+        setMainPageItems(DEFAULT_MAIN_PAGE_ITEMS)
       } finally {
         setIsLoadingConfig(false)
       }
