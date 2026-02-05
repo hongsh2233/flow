@@ -6,12 +6,16 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const bannerType = searchParams.get('type') || 'banner'
 
-    const response = await fetch(`${API_BASE_URL}/api/banners?type=${bannerType}`, {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (API_SECRET_KEY) {
+      headers['X-API-KEY'] = API_SECRET_KEY
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/banners?banner_type=${bannerType}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': API_SECRET_KEY,
-      },
+      headers,
     })
 
     if (!response.ok) {

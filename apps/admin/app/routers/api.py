@@ -1084,6 +1084,55 @@ async def get_foreign_indices(
 # 네이버 증권 랭킹 데이터 API
 # =========================================================
 
+@router.get("/api/holidays")
+async def get_holidays(
+    year: Optional[int] = Query(None, description="조회할 연도 (YYYY)"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    공휴일 목록 조회 API
+
+    Schedule 테이블에서 type='api'인 일정(공휴일)을 조회합니다.
+    year 파라미터가 없으면 전체 공휴일을 반환합니다.
+    """
+    try:
+        query = db.query(models.Schedule).filter(
+            models.Schedule.type == "api"
+        )
+
+        if year:
+            # 해당 연도의 공휴일만 필터링
+            year_start = date(year, 1, 1)
+            year_end = date(year, 12, 31)
+            query = query.filter(
+                models.Schedule.date >= year_start,
+                models.Schedule.date <= year_end,
+            )
+
+        holidays = query.order_by(models.Schedule.date).all()
+
+        result = [
+            {
+                "date": serialize_date(h.date),
+                "name": h.subject or "공휴일",
+                "is_national": True,
+            }
+            for h in holidays
+        ]
+
+        return {
+            "success": True,
+            "data": result,
+            "count": len(result),
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"공휴일 데이터 조회 실패: {str(e)}"
+        )
+
+
 @router.get("/api/naver-stock-ranking")
 async def get_naver_stock_ranking(
     ranking_type: str = Query(..., description="랭킹 타입: 'volume' (거래량 상위), 'amount' (거래대금 상위), 'search' (검색 상위)"),

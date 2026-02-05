@@ -1,8 +1,6 @@
 // app/api/main-page-config/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
-const NEXT_PUBLIC_X_API_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
+import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +8,8 @@ export async function GET(request: NextRequest) {
       'Content-Type': 'application/json',
     }
 
-    if (NEXT_PUBLIC_X_API_KEY) {
-      headers['X-API-KEY'] = NEXT_PUBLIC_X_API_KEY
+    if (API_SECRET_KEY) {
+      headers['X-API-KEY'] = API_SECRET_KEY
     }
 
     const response = await fetch(

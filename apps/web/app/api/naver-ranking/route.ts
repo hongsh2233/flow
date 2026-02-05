@@ -1,8 +1,6 @@
 // app/api/naver-ranking/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
-const API_SECRET_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
+import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
 
 export async function GET(request: NextRequest) {
   try {

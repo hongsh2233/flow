@@ -59,7 +59,7 @@ const handler = NextAuth({
             // 서버 사이드에서 직접 API 호출
             const apiBaseUrl =
               process.env.NEXT_PUBLIC_API_BASE_URL ||
-              'https://stock-bo-production.up.railway.app'
+              'http://localhost:8080'
             const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
             const headers: Record<string, string> = {
@@ -118,7 +118,7 @@ const handler = NextAuth({
           try {
             const apiBaseUrl =
               process.env.NEXT_PUBLIC_API_BASE_URL ||
-              'https://stock-bo-production.up.railway.app'
+              'http://localhost:8080'
             const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
             const headers: Record<string, string> = {
