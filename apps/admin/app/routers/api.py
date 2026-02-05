@@ -201,8 +201,14 @@ async def get_fsc_stock_price(
             query = query.filter(models.FscStockPrice.bas_dt == latest_date_str)
             print(f"✅ FSC 주식시세 최신 날짜 조회: {latest_date_str}")
         else:
+            # 데이터 없음 시 404 대신 200 + 빈 배열 반환 (프론트 페이지 정상 로드)
             print(f"⚠️ FSC 주식시세 데이터가 DB에 없습니다.")
-            raise HTTPException(status_code=404, detail="데이터를 찾을 수 없습니다.")
+            return {
+                "success": True,
+                "data": [],
+                "bas_dt": None,
+                "count": 0
+            }
     
     # 시장구분 필터링 (DB 레벨에서 먼저 필터링)
     if mrkt_ctg:

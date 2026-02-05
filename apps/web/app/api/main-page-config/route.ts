@@ -23,6 +23,14 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
+      // 404 = 백엔드 미가동 또는 설정 없음 → 200 + 빈 항목으로 반환해 메인 페이지 정상 로드
+      if (response.status === 404) {
+        return NextResponse.json({
+          success: true,
+          message: '메인 페이지 설정이 없습니다.',
+          items: [],
+        })
+      }
       console.error(`Main page config API error (${response.status}):`, errorText)
       return NextResponse.json(
         {

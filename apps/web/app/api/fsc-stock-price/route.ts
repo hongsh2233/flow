@@ -31,6 +31,15 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
+      // 404 = 백엔드 미가동 또는 DB 데이터 없음 → 200 + 빈 데이터로 반환해 페이지 정상 로드
+      if (response.status === 404) {
+        return NextResponse.json({
+          success: true,
+          data: [],
+          bas_dt: null,
+          count: 0,
+        })
+      }
       console.error(`FSC Stock Price API error (${response.status}):`, errorText)
       return NextResponse.json(
         {
