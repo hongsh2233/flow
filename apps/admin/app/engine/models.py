@@ -1,7 +1,7 @@
 """
 데이터베이스 모델 정의 (PostgreSQL 호환)
 """
-from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.engine.database import Base
@@ -58,6 +58,7 @@ __all__ = [
     "NaverStockRanking",
     "YahooIndexSnapshot",
     "YahooIndexDaily",
+    "StockTerm",
 ]
 
 
@@ -312,3 +313,14 @@ class YahooIndexDaily(Base):
     last_collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     last_collected_time = Column(String(5), nullable=False)  # 'HH:MM' (KST)
     __table_args__ = (UniqueConstraint('date', 'group', 'symbol', name='uq_yahoo_index_daily'),)
+
+
+class StockTerm(Base):
+    """주식용어 사전 - 용어와 쉬운 설명을 저장"""
+    __tablename__ = "stock_terms"
+    id = Column(Integer, primary_key=True, index=True)
+    term = Column(String(100), nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=False)
+    category = Column(String(50), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
