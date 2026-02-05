@@ -8,8 +8,7 @@ from sqlalchemy.orm import Session
 from datetime import date as date_type
 from typing import List, Dict, Any
 
-# verify_api_key 의존성 추가
-from app.dependencies import get_current_user, verify_api_key 
+from app.dependencies import get_current_user
 from app.config import ADMIN_EMAIL
 from app.database import get_db
 from app import models
@@ -18,55 +17,9 @@ from app.services.schedule_api_service import schedule_api_service
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
 
-# --- 프론트엔드 호출용 신규 API 엔드포인트 ---
-
-@router.get("/api/schedules", response_model=Dict[str, Any])
-async def get_schedules_api(
-    db: Session = Depends(get_db),
-    _ = Depends(verify_api_key)  # 시크릿 키 인증 적용
-):
-    """
-    프론트엔드용 일정 목록 조회 API
-    지정된 X-API-KEY 헤더가 있어야 호출 가능합니다.
-    """
-    try:
-        # DB에서 일정 목록 가져오기 (날짜순 정렬)
-        schedules = db.query(models.Schedule).order_by(models.Schedule.date).all()
-        
-        # 디버깅: DB에서 가져온 데이터 확인
-        print(f"=== 일정 API 호출: 총 {len(schedules)}개 ===")
-        for s in schedules[:5]:  # 처음 5개만 출력
-            print(f"ID: {s.id}, Date: {s.date}, Subject: {s.subject}, Type: {s.type}, Content: {s.content}")
-        
-        result_data = []
-        for s in schedules:
-            item = {
-                "id": s.id,
-                "date": s.date.isoformat() if s.date else None,
-                "subject": s.subject,
-                "content": s.content if s.content else "",  # content 필드 명시적으로 포함 (None이면 빈 문자열)
-                "type": s.type if s.type else "manual",  # type 필드 명시적으로 포함 (None이면 "manual")
-            }
-            result_data.append(item)
-            # 디버깅: 각 아이템 확인 (content 포함)
-            if s.type == "api" or s.content:
-                print(f"아이템 확인: ID={s.id}, Type={s.type}, Content={s.content}, ContentLength={len(s.content) if s.content else 0}")
-        
-        response = {
-            "success": True,
-            "data": result_data
-        }
-        
-        print(f"=== 응답 데이터 (처음 3개) ===")
-        for item in result_data[:3]:
-            print(f"응답 아이템: {item}")
-        
-        return response
-    except Exception as e:
-        print(f"일정 API 오류: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"데이터 조회 실패: {str(e)}")
+# --- 프론트엔드 호출용 API 엔드포인트는 api.py에서 통합 관리 ---
+# /api/schedules 엔드포인트는 api.py의 get_schedules()에서 처리
+# (query parameter 지원: start_date, end_date, type)
 
 # --- 기존 관리자 페이지용 로직 (유지) ---
 

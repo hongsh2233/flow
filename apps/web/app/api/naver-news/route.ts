@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || 'A84Urh7iuzPL517X7T50'
-const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || 'AopZ_T1aEw'
+const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || ''
+const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || ''
 
 interface NaverNewsItem {
   title: string
