@@ -11,23 +11,22 @@ def upgrade():
     """
     with engine.connect() as conn:
         try:
-            # is_secret 컬럼이 이미 존재하는지 확인
+            # is_secret 컬럼이 이미 존재하는지 확인 (PostgreSQL 호환)
             check_query = text("""
-                SELECT COUNT(*) 
-                FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'posts' 
-                AND COLUMN_NAME = 'is_secret'
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                AND table_name = 'posts'
+                AND column_name = 'is_secret'
             """)
             result = conn.execute(check_query)
             exists = result.scalar() > 0
-            
+
             if not exists:
                 # is_secret 컬럼 추가
                 alter_query = text("""
-                    ALTER TABLE posts 
-                    ADD COLUMN is_secret VARCHAR(20) DEFAULT 'false' 
-                    AFTER views
+                    ALTER TABLE posts
+                    ADD COLUMN is_secret VARCHAR(20) DEFAULT 'false'
                 """)
                 conn.execute(alter_query)
                 conn.commit()

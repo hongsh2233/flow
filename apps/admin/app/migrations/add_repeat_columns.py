@@ -18,102 +18,68 @@ def run_migration(db=None):
         should_close = False
 
     try:
-        # 1. start_date, end_date 컬럼 크기 확장 (VARCHAR(10) -> VARCHAR(16))
+        # 1. start_date, end_date 컬럼 크기 확장 (VARCHAR(10) -> VARCHAR(16)) (PostgreSQL 호환)
         print("📝 start_date, end_date 컬럼 크기 확장 중...")
         try:
-            db.execute(text("ALTER TABLE main_page_items MODIFY COLUMN start_date VARCHAR(16) NULL"))
-            db.execute(text("ALTER TABLE main_page_items MODIFY COLUMN end_date VARCHAR(16) NULL"))
+            db.execute(text("ALTER TABLE main_page_items ALTER COLUMN start_date TYPE VARCHAR(16)"))
+            db.execute(text("ALTER TABLE main_page_items ALTER COLUMN end_date TYPE VARCHAR(16)"))
             db.commit()
             print("✅ start_date, end_date 컬럼 크기 확장 완료")
         except Exception as e:
             print(f"⚠️ 컬럼 크기 확장 실패 (이미 확장되어 있을 수 있음): {e}")
             db.rollback()
 
-        # 2. repeat_type 컬럼 확인 및 추가
-        result = db.execute(text("""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'main_page_items'
-            AND COLUMN_NAME = 'repeat_type'
-        """))
-        has_repeat_type = result.fetchone() is not None
+        # 헬퍼: 컬럼 존재 여부 확인
+        def has_column(table_name, column_name):
+            result = db.execute(text("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                AND table_name = :table_name
+                AND column_name = :column_name
+            """), {"table_name": table_name, "column_name": column_name})
+            return result.fetchone() is not None
 
-        if not has_repeat_type:
+        # 2. repeat_type 컬럼 확인 및 추가
+        if not has_column('main_page_items', 'repeat_type'):
             print("📝 repeat_type 컬럼 추가 중...")
-            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_type VARCHAR(20) DEFAULT 'none' AFTER end_date"))
+            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_type VARCHAR(20) DEFAULT 'none'"))
             db.commit()
             print("✅ repeat_type 컬럼 추가 완료")
         else:
             print("✅ repeat_type 컬럼이 이미 존재합니다.")
 
         # 3. repeat_days 컬럼 확인 및 추가
-        result = db.execute(text("""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'main_page_items'
-            AND COLUMN_NAME = 'repeat_days'
-        """))
-        has_repeat_days = result.fetchone() is not None
-
-        if not has_repeat_days:
+        if not has_column('main_page_items', 'repeat_days'):
             print("📝 repeat_days 컬럼 추가 중...")
-            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_days VARCHAR(20) NULL AFTER repeat_type"))
+            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_days VARCHAR(20) NULL"))
             db.commit()
             print("✅ repeat_days 컬럼 추가 완료")
         else:
             print("✅ repeat_days 컬럼이 이미 존재합니다.")
 
         # 4. repeat_start_time 컬럼 확인 및 추가
-        result = db.execute(text("""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'main_page_items'
-            AND COLUMN_NAME = 'repeat_start_time'
-        """))
-        has_repeat_start_time = result.fetchone() is not None
-
-        if not has_repeat_start_time:
+        if not has_column('main_page_items', 'repeat_start_time'):
             print("📝 repeat_start_time 컬럼 추가 중...")
-            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_start_time VARCHAR(5) NULL AFTER repeat_days"))
+            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_start_time VARCHAR(5) NULL"))
             db.commit()
             print("✅ repeat_start_time 컬럼 추가 완료")
         else:
             print("✅ repeat_start_time 컬럼이 이미 존재합니다.")
 
         # 5. repeat_end_time 컬럼 확인 및 추가
-        result = db.execute(text("""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'main_page_items'
-            AND COLUMN_NAME = 'repeat_end_time'
-        """))
-        has_repeat_end_time = result.fetchone() is not None
-
-        if not has_repeat_end_time:
+        if not has_column('main_page_items', 'repeat_end_time'):
             print("📝 repeat_end_time 컬럼 추가 중...")
-            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_end_time VARCHAR(5) NULL AFTER repeat_start_time"))
+            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_end_time VARCHAR(5) NULL"))
             db.commit()
             print("✅ repeat_end_time 컬럼 추가 완료")
         else:
             print("✅ repeat_end_time 컬럼이 이미 존재합니다.")
 
         # 6. repeat_next_day 컬럼 확인 및 추가
-        result = db.execute(text("""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'main_page_items'
-            AND COLUMN_NAME = 'repeat_next_day'
-        """))
-        has_repeat_next_day = result.fetchone() is not None
-
-        if not has_repeat_next_day:
+        if not has_column('main_page_items', 'repeat_next_day'):
             print("📝 repeat_next_day 컬럼 추가 중...")
-            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_next_day VARCHAR(5) DEFAULT 'false' AFTER repeat_end_time"))
+            db.execute(text("ALTER TABLE main_page_items ADD COLUMN repeat_next_day VARCHAR(5) DEFAULT 'false'"))
             db.commit()
             print("✅ repeat_next_day 컬럼 추가 완료")
         else:
