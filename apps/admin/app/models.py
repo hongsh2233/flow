@@ -23,11 +23,12 @@ from app.engine.models import (
     NaverStockRanking,
     YahooIndexSnapshot,
     YahooIndexDaily,
+    StockTerm,
 )
 
 __all__ = [
     "Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
-    "YahooIndexSnapshot", "YahooIndexDaily",
+    "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
 ]

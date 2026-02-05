@@ -32,6 +32,12 @@ except ImportError as e:
     print(f"⚠️ profile 라우터 import 실패 (무시 가능): {e}")
     profile = None
 
+try:
+    from app.routers import stock_terms
+except ImportError as e:
+    print(f"⚠️ stock_terms 라우터 import 실패 (무시 가능): {e}")
+    stock_terms = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -298,3 +304,5 @@ app.include_router(fsc.router)       # 금융위원회 데이터
 app.include_router(api.router)       # REST API (외부 호출용)
 if profile:
     app.include_router(profile.router)   # 프로필 설정 관리 (캐릭터, 주식 단어)
+if stock_terms:
+    app.include_router(stock_terms.router)  # 주식용어 관리

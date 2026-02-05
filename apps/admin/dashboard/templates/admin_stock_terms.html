@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block title %}주식용어 관리 - BO System{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+
+  .section h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+  }
+
+  /* 검색 영역 */
+  .search-area {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .search-area input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .search-area select {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 140px;
+  }
+
+  .btn-search {
+    padding: 10px 25px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .btn-search:hover {
+    background: #2980b9;
+  }
+
+  .btn-reset {
+    padding: 10px 20px;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-reset:hover {
+    background: #7f8c8d;
+  }
+
+  /* 추가 폼 */
+  .add-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .add-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .add-form .form-group label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .add-form input[type="text"],
+  .add-form textarea,
+  .add-form select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .add-form .form-group.term-input {
+    min-width: 160px;
+  }
+
+  .add-form .form-group.desc-input {
+    flex: 2;
+    min-width: 300px;
+  }
+
+  .add-form .form-group.cat-input {
+    min-width: 140px;
+  }
+
+  .btn-add {
+    padding: 10px 25px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+
+  .btn-add:hover {
+    background: #229954;
+  }
+
+  /* 테이블 */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .table th,
+  .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .table tr:hover {
+    background: #f8f9fa;
+  }
+
+  .term-name {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 15px;
+  }
+
+  .term-desc {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 500px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .category-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #eaf2f8;
+    color: #2980b9;
+    white-space: nowrap;
+  }
+
+  .btn-edit,
+  .btn-del {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    margin-right: 5px;
+  }
+
+  .btn-edit {
+    background: #f39c12;
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background: #e67e22;
+  }
+
+  .btn-del {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .btn-del:hover {
+    background: #c0392b;
+  }
+
+  .count-info {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+
+  /* 페이지네이션 */
+  .pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 25px;
+    flex-wrap: wrap;
+  }
+
+  .pagination a,
+  .pagination span {
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #ddd;
+  }
+
+  .pagination a {
+    color: #2c3e50;
+    background: #fff;
+  }
+
+  .pagination a:hover {
+    background: #eaf2f8;
+    border-color: #3498db;
+  }
+
+  .pagination span.current {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+
+  .pagination span.disabled {
+    color: #ccc;
+    background: #f8f9fa;
+    cursor: default;
+  }
+
+  .highlight {
+    background: #fff3cd;
+    padding: 1px 3px;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="color: #2c3e50; margin-top: 0">📖 주식용어 관리</h2>
+  <p style="color: #666">
+    주식 관련 용어를 쉽게 풀어서 등록하고 관리합니다. 검색으로 빠르게 찾을 수 있습니다.
+  </p>
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0" />
+
+  <!-- 검색 영역 -->
+  <div class="section">
+    <h3>🔍 용어 검색</h3>
+    <form method="GET" action="/admin/stock-terms" class="search-area">
+      <input type="text" name="q" placeholder="용어 또는 설명 검색..." value="{{ q }}" />
+      <select name="category">
+        <option value="">전체 카테고리</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-search">검색</button>
+      <a href="/admin/stock-terms" class="btn-reset">초기화</a>
+    </form>
+  </div>
+
+  <!-- 용어 추가 -->
+  <div class="section">
+    <h3>➕ 새 용어 등록</h3>
+    <form method="POST" action="/admin/stock-terms/add" class="add-form">
+      <div class="form-group term-input">
+        <label>용어</label>
+        <input type="text" name="term" placeholder="예: PER" required maxlength="100" />
+      </div>
+      <div class="form-group desc-input">
+        <label>쉬운 설명</label>
+        <input type="text" name="description" placeholder="예: 주가를 주당순이익으로 나눈 값. 숫자가 낮을수록 저평가된 주식일 수 있어요." required />
+      </div>
+      <div class="form-group cat-input">
+        <label>카테고리</label>
+        <select name="category">
+          <option value="">선택안함</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-add">등록</button>
+    </form>
+  </div>
+
+  <!-- 용어 목록 -->
+  <div class="section">
+    <h3>📋 등록된 용어 목록</h3>
+    <div class="count-info">
+      {% if q or category %}
+        검색 결과: <strong>{{ total }}건</strong>
+        {% if q %} (검색어: "{{ q }}"){% endif %}
+        {% if category %} (카테고리: {{ category }}){% endif %}
+      {% else %}
+        전체 용어: <strong>{{ total }}건</strong>
+      {% endif %}
+    </div>
+
+    {% if terms %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 150px;">용어</th>
+          <th>쉬운 설명</th>
+          <th style="width: 110px;">카테고리</th>
+          <th style="width: 120px;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in terms %}
+        <tr>
+          <td><span class="term-name">{{ t.term }}</span></td>
+          <td><span class="term-desc">{{ t.description }}</span></td>
+          <td>
+            {% if t.category %}
+            <span class="category-badge">{{ t.category }}</span>
+            {% else %}
+            <span style="color: #ccc;">-</span>
+            {% endif %}
+          </td>
+          <td>
+            <button onclick="editTerm({{ t.id }}, '{{ t.term | replace("'", "\\'") }}', `{{ t.description | replace('`', '') }}`, '{{ t.category or '' }}')"
+                    class="btn-edit">수정</button>
+            <a href="/admin/stock-terms/delete/{{ t.id }}"
+               class="btn-del"
+               onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- 페이지네이션 -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="/admin/stock-terms?page={{ page - 1 }}&q={{ q }}&category={{ category }}">&laquo; 이전</a>
+      {% else %}
+      <span class="disabled">&laquo; 이전</span>
+      {% endif %}
+
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="current">{{ p }}</span>
+        {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+        <a href="/admin/stock-terms?page={{ p }}&q={{ q }}&category={{ category }}">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 3 %}
+        <span class="disabled">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if page < total_pages %}
+      <a href="/admin/stock-terms?page={{ page + 1 }}&q={{ q }}&category={{ category }}">다음 &raquo;</a>
+      {% else %}
+      <span class="disabled">다음 &raquo;</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 40px;">
+      {% if q or category %}
+        검색 결과가 없습니다.
+      {% else %}
+        등록된 용어가 없습니다. 위 폼에서 새 용어를 등록해보세요.
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div id="editTermModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 550px;">
+    <h3 style="margin-top: 0">용어 수정</h3>
+    <form method="POST" id="editTermForm">
+      <div style="margin-bottom: 15px;">
+        <label style="font-weight: 600;">용어:</label>
+        <input type="text" name="term" id="editTermName" required maxlength="100"
+               style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;" />
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-weight: 600;">쉬운 설명:</label>
+        <textarea name="description" id="editTermDesc" required rows="4"
+                  style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="font-weight: 600;">카테고리:</label>
+        <select name="category" id="editTermCategory"
+                style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">선택안함</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="text-align: right;">
+        <button type="button" onclick="closeTermModal()"
+                style="padding: 8px 20px; margin-right: 10px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">취소</button>
+        <button type="submit"
+                style="padding: 8px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function editTerm(id, term, description, category) {
+  document.getElementById('editTermName').value = term;
+  document.getElementById('editTermDesc').value = description;
+  document.getElementById('editTermCategory').value = category || '';
+  document.getElementById('editTermForm').action = '/admin/stock-terms/update/' + id;
+  document.getElementById('editTermModal').style.display = 'block';
+}
+
+function closeTermModal() {
+  document.getElementById('editTermModal').style.display = 'none';
+}
+
+// 모달 외부 클릭 시 닫기
+window.addEventListener('click', function(event) {
+  const modal = document.getElementById('editTermModal');
+  if (event.target === modal) {
+    closeTermModal();
+  }
+});
+</script>
+{% endblock %}
