@@ -258,33 +258,66 @@ def init_admin_user():
     해당 이메일의 관리자가 없을 경우 자동으로 생성합니다.
     DB 연결 실패 시에도 앱은 시작되도록 예외 처리합니다.
     """
+    print("\n" + "=" * 60)
+    print("관리자 계정 초기화 시작")
+    print("=" * 60)
+    
+    # 환경 변수 확인
+    print(f"ADMIN_EMAIL 설정 여부: {'✅ 설정됨' if ADMIN_EMAIL else '❌ 설정되지 않음'}")
+    print(f"ADMIN_PW 설정 여부: {'✅ 설정됨' if ADMIN_PW else '❌ 설정되지 않음'}")
+    
+    if not ADMIN_EMAIL:
+        print("⚠️ 경고: ADMIN_EMAIL 환경 변수가 설정되지 않았습니다.")
+        print("💡 Railway Variables에 ADMIN_EMAIL을 설정하세요.")
+        return
+    
+    if not ADMIN_PW:
+        print("⚠️ 경고: ADMIN_PW 환경 변수가 설정되지 않았습니다.")
+        print("💡 Railway Variables에 ADMIN_PW를 설정하세요.")
+        return
+    
     try:
         db = next(get_db())
         try:
-            if ADMIN_EMAIL and ADMIN_PW:
-                existing_user = db.query(models.AdminUser).filter(
-                    models.AdminUser.email == ADMIN_EMAIL
-                ).first()
-                
-                if not existing_user:
-                    # 보안: 관리자 이메일은 콘솔에 출력하지 않음
-                    print(f"⚠️ 초기 관리자 계정 생성 중")
-                    hashed_pw = utils.get_password_hash(ADMIN_PW)
-                    new_admin = models.AdminUser(
-                        email=ADMIN_EMAIL,
-                        name="최고관리자",
-                        hashed_password=hashed_pw
-                    )
-                    db.add(new_admin)
-                    db.commit()
-                    print("✅ 초기 관리자 생성 완료")
+            # 기존 관리자 확인
+            existing_user = db.query(models.AdminUser).filter(
+                models.AdminUser.email == ADMIN_EMAIL
+            ).first()
+            
+            if existing_user:
+                print(f"ℹ️  관리자 계정이 이미 존재합니다: {ADMIN_EMAIL}")
+                print("   (새로 생성하지 않습니다)")
+                return
+            
+            # 새 관리자 생성
+            print(f"⚠️ 초기 관리자 계정 생성 중...")
+            print(f"   이메일: {ADMIN_EMAIL}")
+            hashed_pw = utils.get_password_hash(ADMIN_PW)
+            new_admin = models.AdminUser(
+                email=ADMIN_EMAIL,
+                name="관리자",
+                hashed_password=hashed_pw
+            )
+            db.add(new_admin)
+            db.commit()
+            print("✅ 초기 관리자 생성 완료!")
+            print(f"   이메일: {ADMIN_EMAIL}")
+            print(f"   이름: 관리자")
+            
         except Exception as e:
             print(f"❌ 초기 관리자 생성 실패: {e}")
+            import traceback
+            traceback.print_exc()
+            db.rollback()
         finally:
             db.close()
     except Exception as e:
         print(f"⚠️ DB 연결 실패 (로그인/관리자 초기화 불가): {e}")
-        print("💡 .env.local 의 DB_HOST(호스트만), DB_PORT, DATABASE_URL, SSL(sslmode=require) 확인")
+        print("💡 Railway Variables에서 DATABASE_URL을 확인하세요.")
+        import traceback
+        traceback.print_exc()
+    
+    print("=" * 60 + "\n")
 
 
 # 서버 시작 시 초기화 작업 실행
