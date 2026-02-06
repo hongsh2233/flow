@@ -18,7 +18,7 @@ import httpx
 from app.database import get_db
 from app import models
 from app.routers.board import parse_attached_files, clean_content
-from app.dependencies import get_current_user_from_token, get_current_user_from_token_optional
+from app.dependencies import get_current_user_from_token, get_current_user_from_token_optional, verify_api_key, API_SECRET_KEY
 from app.services.api_service import krx_api_service  # 시장현황 데이터 처리를 위한 서비스 임포트
 from pydantic import BaseModel
 
@@ -50,23 +50,9 @@ class MainPageConfigResponse(BaseModel):
 # ---------------------------------------------------------
 # API 인증 설정
 # ---------------------------------------------------------
-# 프론트엔드(.env)의 NEXT_PUBLIC_X_API_KEY와 일치해야 합니다.
-API_ACCESS_KEY = "1978022019820308200705092018111420220303"
-
-async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KEY")):
-    """
-    API Key 검증 의존성 함수
-    헤더에 포함된 X-API-KEY가 서버에 설정된 키와 일치하는지 확인합니다.
-    """
-    if x_api_key is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    # 공백 제거 후 비교
-    x_api_key = x_api_key.strip()
-    if x_api_key == API_ACCESS_KEY:
-        return True
-    # 키가 없거나 불일치할 경우 401 에러
-    raise HTTPException(status_code=401, detail="Not authenticated")
+# verify_api_key는 app.dependencies에서 import하여 사용
+# API_SECRET_KEY도 app.dependencies에서 import하여 사용
+# 이렇게 하면 환경 변수(NEXT_PUBLIC_X_API_KEY)를 일관되게 사용할 수 있습니다.
 
 
 def serialize_datetime(dt: Optional[datetime]) -> Optional[str]:
@@ -342,7 +328,7 @@ async def get_current_user_or_api_key(
     if x_api_key:
         # 앞뒤 공백 제거
         x_api_key_cleaned = x_api_key.strip()
-        if x_api_key_cleaned == API_ACCESS_KEY:
+        if x_api_key_cleaned == API_SECRET_KEY:
             return True  # API Key로 인증됨
         else:
             # API 키 불일치

@@ -24,23 +24,35 @@
    → 연결 정보(`DATABASE_URL` 등) 자동 생성됨
 3. **BO 서비스** → "New" → "GitHub Repo" → jurin-i 선택  
    - Root Directory: **`apps/admin`**  
-   - Build: Nixpacks (Python 인식)  
+   - Build: Dockerfile 사용 (또는 Nixpacks)  
    - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`  
-   - 환경 변수: PostgreSQL에서 나온 `DATABASE_URL` 붙여넣기 + `ADMIN_EMAIL`, `SECRET_TOKEN` 등
+   - **환경 변수 (Variables 탭에서 설정):**
+     - `DATABASE_URL` = PostgreSQL에서 자동 생성된 연결 URL
+     - `ADMIN_EMAIL` = 초기 관리자 이메일 (예: `admin@example.com`)
+     - `ADMIN_PW` = 초기 관리자 비밀번호
+     - `SECRET_TOKEN` = 세션 인증 토큰 (`openssl rand -base64 32`로 생성)
+     - `NEXT_PUBLIC_X_API_KEY` = **FE와 동일한 값** (API 인증 키, 예: `1978022019820308200705092018111420220303`)
+     - `JWT_SECRET_KEY` = (선택) JWT 토큰 암호화 키 (없으면 SECRET_TOKEN 사용)
 4. **FE 서비스** → "New" → 같은 repo (jurin-i)  
    - Root Directory: **`apps/web`**  
    - Build: Nixpacks (Node 인식)  
-   - 환경 변수:
-     - `NEXT_PUBLIC_API_BASE_URL` = BO 서비스 URL (Railway가 준 주소)
-     - `NEXTAUTH_URL` = FE 서비스 실제 URL (예: `https://xxx.up.railway.app`) — **localhost 사용 금지**
+   - **환경 변수 (Variables 탭에서 설정):**
+     - `NEXT_PUBLIC_API_BASE_URL` = BO 서비스 URL (예: `https://admin-service.up.railway.app`)
+     - `NEXTAUTH_URL` = FE 서비스 실제 URL (예: `https://web-service.up.railway.app`) — **localhost 사용 금지**
      - `NEXTAUTH_SECRET` = 32자 이상 랜덤 문자열 (`openssl rand -base64 32`)
-     - `NEXT_PUBLIC_X_API_KEY` = BO와 동일한 API 키
+     - `NEXT_PUBLIC_X_API_KEY` = **BO와 동일한 값** (API 인증 키, BO의 `NEXT_PUBLIC_X_API_KEY`와 정확히 일치해야 함)
 
 ---
 
 ## 502 / NextAuth 오류 발생 시
 
 → `RAILWAY_TROUBLESHOOTING.md` 참고
+
+## 인증 오류 (401) 발생 시
+
+→ `RAILWAY_AUTH_FIX.md` 참고
+
+**핵심:** `NEXT_PUBLIC_X_API_KEY`가 **BO와 FE에서 정확히 동일한 값**이어야 합니다!
 
 ---
 
