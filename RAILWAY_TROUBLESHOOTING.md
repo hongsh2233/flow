@@ -4,9 +4,28 @@
 
 | 오류 | 원인 | 해결 |
 |------|------|------|
-| `CLIENT_FETCH_ERROR` (NextAuth) | NEXTAUTH_URL 또는 NEXTAUTH_SECRET 미설정 | FE Railway 환경 변수 설정 |
+| `CLIENT_FETCH_ERROR` / `/api/auth/session` / **FE가 뜨지 않고 계속 데이터 불러오기** | NEXTAUTH_URL 또는 NEXTAUTH_SECRET 미설정/잘못 설정 | 아래 "1. FE (Web) Railway 환경 변수" 반드시 설정 |
 | `502 Application failed to respond` | BO(Admin) 서비스 미응답 또는 FE 서비스 문제 | 아래 체크리스트 확인 |
 | 메인 페이지 설정/FSC 주식시세 502 | BO 서비스 다운 또는 연결 실패 | BO 서비스 상태 및 DB 연결 확인 |
+
+### FE가 뜨지 않고 계속 로딩만 될 때 (client_fetch_error)
+
+증상: 배포된 FE URL 접속 시 화면이 안 뜨고, 콘솔에 `client_fetch_error`, `There is a problem with the server configuration`, `/api/auth/session` 오류가 반복됩니다.
+
+**원인**: Railway의 **Web(FE) 서비스**에 `NEXTAUTH_URL` 또는 `NEXTAUTH_SECRET`이 없거나, `NEXTAUTH_URL`이 `localhost`로 되어 있는 경우입니다.
+
+**해결 순서**:
+1. Railway 대시보드 → **Web 서비스 (apps/web)** → **Variables** 탭 이동
+2. 다음 두 변수를 **반드시** 추가/수정:
+   - **NEXTAUTH_URL**  
+     - FE의 **실제 배포 URL** (예: `https://jurin-i-web-production.up.railway.app`)  
+     - **절대** `http://localhost:3000` 사용 금지  
+     - Railway가 제공하는 도메인을 쓰려면: 서비스 **Settings** → **Networking**에서 **Generate domain** 후 나온 URL을 그대로 사용 (예: `https://xxxx.up.railway.app`)
+   - **NEXTAUTH_SECRET**  
+     - 32자 이상 랜덤 문자열  
+     - 로컬 터미널에서 `openssl rand -base64 32` 실행 후 나온 값을 붙여넣기
+3. 저장 후 **Redeploy** (Variables 변경 후 재배포 필요할 수 있음)
+4. 재배포 후 FE URL 다시 접속하여 세션 오류가 사라졌는지 확인
 
 ---
 

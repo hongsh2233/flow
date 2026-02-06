@@ -5,17 +5,44 @@ import NaverProvider from 'next-auth/providers/naver'
 // Railway 배포 시 동적 렌더링 강제 (인증 API 캐싱 방지)
 export const dynamic = 'force-dynamic'
 
-// NEXTAUTH_SECRET 미설정 시 경고 로그
-if (!process.env.NEXTAUTH_SECRET) {
-  console.error(
-    '[NextAuth] NEXTAUTH_SECRET 환경변수가 설정되지 않았습니다. ' +
-      'Railway 대시보드 > Web 서비스 > Variables에서 NEXTAUTH_SECRET을 추가해주세요. ' +
-      '터미널에서 `openssl rand -base64 32` 명령으로 생성할 수 있습니다.'
-  )
+const isProduction = process.env.NODE_ENV === 'production'
+const nextAuthUrl = process.env.NEXTAUTH_URL ?? ''
+const nextAuthSecret = process.env.NEXTAUTH_SECRET ?? ''
+
+/** 프로덕션에서 NEXTAUTH 설정 누락 시 클라이언트/서버 로그용 명확한 오류 반환 */
+function checkNextAuthConfig(): Response | null {
+  if (!isProduction) return null
+  if (!nextAuthSecret) {
+    console.error(
+      '[NextAuth] NEXTAUTH_SECRET이 설정되지 않았습니다. Railway 대시보드 > Web 서비스 > Variables에서 추가하세요. (openssl rand -base64 32)'
+    )
+    return Response.json(
+      {
+        error: 'ConfigurationError',
+        message:
+          'NEXTAUTH_SECRET is not set. Add it in Railway Variables (openssl rand -base64 32).',
+      },
+      { status: 503 }
+    )
+  }
+  if (!nextAuthUrl || nextAuthUrl.includes('localhost')) {
+    console.error(
+      '[NextAuth] NEXTAUTH_URL이 배포 URL이 아닙니다. Railway Variables에 NEXTAUTH_URL=https://YOUR-FE-DOMAIN.up.railway.app 또는 NEXTAUTH_URL=https://${{RAILWAY_PUBLIC_DOMAIN}} 로 설정하세요.'
+    )
+    return Response.json(
+      {
+        error: 'ConfigurationError',
+        message:
+          'NEXTAUTH_URL must be your production URL (e.g. https://xxx.up.railway.app). Set it in Railway Variables.',
+      },
+      { status: 503 }
+    )
+  }
+  return null
 }
 
 const handler = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: nextAuthSecret || undefined,
   trustHost: true,
   debug: process.env.NODE_ENV === 'development',
   providers: [
@@ -187,4 +214,11 @@ const handler = NextAuth({
   },
 } as AuthOptions)
 
-export { handler as GET, handler as POST }
+const wrappedHandler = (req: Request, context: any) => {
+  const err = checkNextAuthConfig()
+  if (err) return err
+  return handler(req, context)
+}
+
+export const GET = wrappedHandler
+export const POST = wrappedHandler
