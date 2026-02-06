@@ -22,14 +22,16 @@ export async function getMainPageConfig(): Promise<ApiResponse<MainPageConfigRes
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
-      // 404 = 백엔드 미가동 또는 설정 없음 → 빈 설정으로 처리해 메인 페이지 정상 로드
-      if (response.status === 404) {
+      // 404 = 백엔드 미가동 또는 설정 없음
+      // 502/503 = Railway "Application failed to respond" (BO 서비스 다운)
+      // → 빈 설정으로 처리해 메인 페이지 정상 로드
+      if (response.status === 404 || response.status === 502 || response.status === 503) {
         return {
           success: true,
-          message: '메인 페이지 설정이 없습니다.',
+          message: '메인 페이지 설정을 불러올 수 없어 기본 구성을 사용합니다.',
           data: {
             success: true,
-            message: '메인 페이지 설정이 없습니다.',
+            message: '메인 페이지 설정을 불러올 수 없어 기본 구성을 사용합니다.',
             items: [],
           },
         }

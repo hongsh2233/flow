@@ -31,13 +31,20 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
-      // 404 = 백엔드 미가동 또는 DB 데이터 없음 → 200 + 빈 데이터로 반환해 페이지 정상 로드
-      if (response.status === 404) {
+      // 404 = 백엔드 미가동 또는 DB 데이터 없음
+      // 502/503 = Railway "Application failed to respond" (BO 서비스 다운/타임아웃)
+      // → 200 + 빈 데이터로 반환해 페이지 정상 로드
+      if (response.status === 404 || response.status === 502 || response.status === 503) {
+        console.warn(
+          `FSC Stock Price API (${response.status}): BO unavailable, using fallback:`,
+          errorText.slice(0, 100)
+        )
         return NextResponse.json({
           success: true,
           data: [],
           bas_dt: null,
           count: 0,
+          message: 'FSC 주식시세를 불러올 수 없습니다.',
         })
       }
       console.error(`FSC Stock Price API error (${response.status}):`, errorText)
@@ -54,15 +61,15 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('FSC 주식시세 데이터 조회 오류:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: error instanceof Error ? error.message : 'FSC 주식시세 데이터 조회 중 오류 발생',
-        data: [],
-      },
-      { status: 500 }
-    )
+    // 네트워크 오류, BO 연결 실패 등 → 200 + 빈 데이터로 페이지 정상 로드
+    console.warn('FSC 주식시세 조회 실패 (BO 연결 불가), 빈 데이터 반환:', error)
+    return NextResponse.json({
+      success: true,
+      data: [],
+      bas_dt: null,
+      count: 0,
+      message: 'FSC 주식시세를 불러올 수 없습니다.',
+    })
   }
 }
 

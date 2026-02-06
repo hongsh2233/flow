@@ -30,7 +30,17 @@
 4. **FE 서비스** → "New" → 같은 repo (jurin-i)  
    - Root Directory: **`apps/web`**  
    - Build: Nixpacks (Node 인식)  
-   - 환경 변수: `NEXT_PUBLIC_API_BASE_URL` = BO 서비스 URL (Railway가 준 주소)
+   - 환경 변수:
+     - `NEXT_PUBLIC_API_BASE_URL` = BO 서비스 URL (Railway가 준 주소)
+     - `NEXTAUTH_URL` = FE 서비스 실제 URL (예: `https://xxx.up.railway.app`) — **localhost 사용 금지**
+     - `NEXTAUTH_SECRET` = 32자 이상 랜덤 문자열 (`openssl rand -base64 32`)
+     - `NEXT_PUBLIC_X_API_KEY` = BO와 동일한 API 키
+
+---
+
+## 502 / NextAuth 오류 발생 시
+
+→ `RAILWAY_TROUBLESHOOTING.md` 참고
 
 ---
 

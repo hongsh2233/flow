@@ -44,8 +44,10 @@ export async function fetchFscStockPrice(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
-      // 404 = 백엔드 미가동 또는 DB에 데이터 없음 → 빈 데이터로 처리해 페이지는 정상 로드
-      if (response.status === 404) {
+      // 404 = 백엔드 미가동 또는 DB에 데이터 없음
+      // 502/503 = Railway "Application failed to respond" (BO 서비스 다운)
+      // → 빈 데이터로 처리해 페이지는 정상 로드
+      if (response.status === 404 || response.status === 502 || response.status === 503) {
         return { success: true, data: [] }
       }
       console.error('FSC 주식시세 조회 실패:', response.status, errorText)

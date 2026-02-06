@@ -23,11 +23,17 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error')
-      // 404 = 백엔드 미가동 또는 설정 없음 → 200 + 빈 항목으로 반환해 메인 페이지 정상 로드
-      if (response.status === 404) {
+      // 404 = 백엔드 미가동 또는 설정 없음
+      // 502/503 = Railway "Application failed to respond" (BO 서비스 다운/타임아웃)
+      // → 200 + 빈 항목으로 반환해 메인 페이지 정상 로드
+      if (response.status === 404 || response.status === 502 || response.status === 503) {
+        console.warn(
+          `Main page config API (${response.status}): BO unavailable, using fallback:`,
+          errorText.slice(0, 100)
+        )
         return NextResponse.json({
           success: true,
-          message: '메인 페이지 설정이 없습니다.',
+          message: '메인 페이지 설정을 불러올 수 없어 기본 구성을 사용합니다.',
           items: [],
         })
       }
@@ -45,15 +51,13 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('메인 페이지 설정 조회 오류:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: error instanceof Error ? error.message : '메인 페이지 설정 조회 중 오류 발생',
-        items: [],
-      },
-      { status: 500 }
-    )
+    // 네트워크 오류, BO 연결 실패 등 → 200 + 빈 항목으로 메인 페이지 정상 로드
+    console.warn('메인 페이지 설정 조회 실패 (BO 연결 불가), 기본 구성 사용:', error)
+    return NextResponse.json({
+      success: true,
+      message: '메인 페이지 설정을 불러올 수 없어 기본 구성을 사용합니다.',
+      items: [],
+    })
   }
 }
 
