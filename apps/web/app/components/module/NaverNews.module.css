@@ -1,11 +1,11 @@
 .news__wrap {
-  width: calc(100% - 32px);
-  margin: 36px auto 16px auto;
+  width: 100%;
+  margin: 0;
   /* padding-bottom: 120px; */
 }
 
 .news__header {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .news__title {
@@ -17,37 +17,56 @@
 
 .news__tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 4px;
+  align-items: center;
+  border-bottom: 2px solid var(--border-color);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.news__tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .news__tab {
-  padding: 6px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  background-color: transparent;
-  color: var(--color-second);
-  font-size: 13px;
-  font-weight: 500;
+  display: inline-flex;
+  padding: var(--spacing-md) var(--spacing-sm);
+  text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  position: relative;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .news__tab:hover {
-  border-color: #dc3545;
-  color: #dc3545;
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
 }
 
 .news__tab--active {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: #fff;
+  color: var(--color-active);
+  font-weight: 600;
 }
 
-.news__tab--active:hover {
-  background-color: #c82333;
-  border-color: #c82333;
-  color: #fff;
+.news__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--color-active);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .news__search {

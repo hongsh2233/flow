@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import styles from './BottomNav.module.css'
 import IconButton from '../element/IconButton'
@@ -10,8 +10,9 @@ import { fetchNavMenu } from '@/lib/services/navMenuService'
 const DEFAULT_NAV_LIST = [
   { name: '홈', icon: 'icon_home', link: '/' },
   { name: '캘린더', icon: 'icon_calendar', link: '/schedule' },
-  { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
   { name: '뉴스', icon: 'icon_article', link: '/news' },
+  { name: '시황자료', icon: 'icon_chat', link: '/news?board=B002' },
+  { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
   { name: '설정', icon: 'icon_setting', link: '/setting' },
 ]
 
@@ -19,11 +20,17 @@ export default function Header() {
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
-  const [navList, setNavList] = useState<Array<{ name: string; icon: string; link: string }>>(DEFAULT_NAV_LIST)
+  const searchParams = useSearchParams()
+  const [navList, setNavList] = useState<Array<{ name: string; icon: string; link: string; matchPaths?: string[] }>>(DEFAULT_NAV_LIST)
 
   useEffect(() => {
     fetchNavMenu().then((items) => {
-      setNavList(items.map((item) => ({ name: item.name, icon: item.icon, link: item.link })))
+      setNavList(items.map((item) => ({ 
+        name: item.name, 
+        icon: item.icon, 
+        link: item.link,
+        matchPaths: item.matchPaths 
+      })))
     })
   }, [])
 
@@ -33,9 +40,30 @@ export default function Header() {
   // 2. 메인 페이지 여부 확인 변수
   const isMain = pathname === '/'
 
-  // 3. 네비게이션 타이틀 로직 (메인이 아닐 때 사용) - 경로 일치 또는 matchPaths 포함
-  const currentNav = navList.find((nav) => nav.link === pathname)
-    ?? navList.find((nav) => pathname.startsWith(nav.link) && nav.link !== '/')
+  // 3. 네비게이션 타이틀 로직 (메인이 아닐 때 사용) - 경로 일치 또는 matchPaths 포함 (query string 고려)
+  const currentQuery = searchParams.toString()
+  const currentNav = navList.find((nav) => {
+    const navLink = nav.link.split('?')[0]
+    const navQuery = nav.link.includes('?') ? nav.link.split('?')[1] : ''
+    // 정확히 일치하는 경우
+    if (pathname === navLink && navQuery === currentQuery) return true
+    
+    // matchPaths 확인
+    if (nav.matchPaths && nav.matchPaths.length > 0) {
+      return nav.matchPaths.some(path => {
+        const matchPath = path.split('?')[0]
+        const matchQuery = path.includes('?') ? path.split('?')[1] : ''
+        return pathname === matchPath && matchQuery === currentQuery
+      })
+    }
+    
+    // 기본 매칭 (query string이 없는 경우)
+    if (!navQuery && !currentQuery && pathname.startsWith(navLink) && navLink !== '/') return true
+    return false
+  }) ?? navList.find((nav) => {
+    const navLink = nav.link.split('?')[0]
+    return pathname.startsWith(navLink) && navLink !== '/' && !searchParams.toString()
+  })
   const subPageTitle = currentNav?.name || '증시 정보'
 
   const handleBack = () => router.back()

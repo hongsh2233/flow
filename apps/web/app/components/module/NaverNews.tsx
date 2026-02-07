@@ -90,7 +90,6 @@ export default function NaverNews() {
   return (
     <div className={styles.news__wrap}>
       <div className={styles.news__header}>
-        <h2 className={styles.news__title}>뉴스</h2>
         <div className={styles.news__tabs}>
           {CATEGORIES.map((cat) => (
             <button

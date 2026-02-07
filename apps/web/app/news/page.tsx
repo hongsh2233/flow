@@ -7,9 +7,9 @@ import PageTitle from '../components/element/PageTitle'
 import Tabs from '../components/element/tabsUi/Tabs'
 import TabList from '../components/element/tabsUi/TabList'
 import TabPanel from '../components/element/tabsUi/TabPanel'
-import TabCont from '../components/element/tabsUi/TabCont'
 import NaverNews from '../components/module/NaverNews'
 import StockNews from '../components/module/stock/StockNews'
+import Board from '../components/module/Board'
 import { useNavTabs } from '../hooks/useNavTabs'
 import { useFavoriteStocks } from '../hooks/useFavoriteStocks'
 
@@ -22,29 +22,67 @@ export default function NewsPage() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab') || 'all'
-  const { tabs, isLoading } = useNavTabs()
+  const boardId = searchParams.get('board')
+  const { tabs } = useNavTabs()
   const { favoriteStocks } = useFavoriteStocks()
   
   const menuData = tabs.length > 0 
     ? tabs.map((t) => ({ label: t.label, href: t.href })) 
     : DEFAULT_TABS
 
+  // board 쿼리 파라미터가 있으면 게시판 표시 (시황자료 페이지)
+  if (boardId) {
+    const boardTab = searchParams.get('tab') || 'market'
+    // 시황자료는 항상 B002(시황), B003(공부방) 사용
+    const marketBoardId = 'B002'
+    const studyBoardId = 'B003'
+    
+    const boardTabs = [
+      { label: '시황', href: `/news?board=B002&tab=market` },
+      { label: '공부방', href: `/news?board=B002&tab=study` },
+    ]
+
+    return (
+      <div className="content__wrap">
+        <PageTitle label="시황자료" />
+        <Tabs>
+          <TabList items={boardTabs} variant="menu" />
+          <TabPanel>
+            {/* 시황 탭 */}
+            {boardTab !== 'study' && (
+              <div>
+                <Board boardId={marketBoardId} />
+              </div>
+            )}
+            
+            {/* 공부방 탭 */}
+            {boardTab === 'study' && (
+              <div>
+                <Board boardId={studyBoardId} />
+              </div>
+            )}
+          </TabPanel>
+        </Tabs>
+      </div>
+    )
+  }
+
   return (
     <div className="content__wrap">
-      <PageTitle label="뉴스" />
+      {/* <PageTitle label="뉴스" /> */}
       <Tabs>
         <TabList items={menuData} variant="menu" />
         <TabPanel>
           {/* 전체뉴스 탭 */}
           {activeTab !== 'favorite' && (
-            <TabCont>
+            <div>
               <NaverNews />
-            </TabCont>
+            </div>
           )}
           
           {/* 관심뉴스 탭 */}
           {activeTab === 'favorite' && (
-            <TabCont>
+            <div>
               {!session ? (
                 <div className="no-data">로그인 이후 이용가능합니다.</div>
               ) : favoriteStocks.length === 0 ? (
@@ -65,7 +103,7 @@ export default function NewsPage() {
                   ))}
                 </div>
               )}
-            </TabCont>
+            </div>
           )}
         </TabPanel>
       </Tabs>
