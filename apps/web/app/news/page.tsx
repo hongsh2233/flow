@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import PageTitle from '../components/element/PageTitle'
@@ -18,7 +18,7 @@ const DEFAULT_TABS = [
   { label: '관심뉴스', href: '/news?tab=favorite' },
 ]
 
-export default function NewsPage() {
+function NewsContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab') || 'all'
@@ -39,24 +39,26 @@ export default function NewsPage() {
     
     const boardTabs = [
       { label: '시황', href: `/news?board=B002&tab=market` },
-      { label: '급등종목', href: `/news?board=B002&tab=study` },
+      { label: '급등종목', href: `/news?board=B002&tab=trending` },
     ]
 
     return (
       <div className="content__wrap">
         <PageTitle label="시황자료" />
         <Tabs>
-          <TabList items={boardTabs} variant="menu" />
+          <Suspense fallback={<div>Loading...</div>}>
+            <TabList items={boardTabs} variant="menu" />
+          </Suspense>
           <TabPanel>
             {/* 시황 탭 */}
-            {boardTab !== 'study' && (
+            {boardTab !== 'trending' && (
               <div>
                 <Board boardId={marketBoardId} />
               </div>
             )}
             
             {/* 급등종목 탭 */}
-            {boardTab === 'study' && (
+            {boardTab === 'trending' && (
               <div>
                 <Board boardId={studyBoardId} />
               </div>
@@ -71,7 +73,9 @@ export default function NewsPage() {
     <div className="content__wrap">
       {/* <PageTitle label="뉴스" /> */}
       <Tabs>
-        <TabList items={menuData} variant="menu" />
+        <Suspense fallback={<div>Loading...</div>}>
+          <TabList items={menuData} variant="menu" />
+        </Suspense>
         <TabPanel>
           {/* 전체뉴스 탭 */}
           {activeTab !== 'favorite' && (
@@ -108,5 +112,13 @@ export default function NewsPage() {
         </TabPanel>
       </Tabs>
     </div>
+  )
+}
+
+export default function NewsPage() {
+  return (
+    <Suspense fallback={<div className="content__wrap"><PageTitle label="뉴스" /></div>}>
+      <NewsContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import * as React, { Suspense } from 'react'
 import PageTitle from '../components/element/PageTitle'
 import Tabs from '../components/element/tabsUi/Tabs'
 import TabList from '../components/element/tabsUi/TabList'
@@ -14,7 +14,7 @@ const DEFAULT_TABS = [
   { label: '뉴스', href: '/disclosure' },
 ]
 
-export default function DisclosurePage() {
+function DisclosureContent() {
   const { tabs, isLoading } = useNavTabs()
   const menuData = tabs.length > 0 ? tabs.map((t) => ({ label: t.label, href: t.href })) : (isLoading ? DEFAULT_TABS : DEFAULT_TABS)
 
@@ -22,9 +22,19 @@ export default function DisclosurePage() {
     <div className="content__wrap">
       <PageTitle label="금융/주식 뉴스" />
       <Tabs>
-        <TabList items={menuData} variant="menu" />
+        <Suspense fallback={<div>Loading...</div>}>
+          <TabList items={menuData} variant="menu" />
+        </Suspense>
       </Tabs>
       <NaverNews />
     </div>
+  )
+}
+
+export default function DisclosurePage() {
+  return (
+    <Suspense fallback={<div className="content__wrap"><PageTitle label="금융/주식 뉴스" /></div>}>
+      <DisclosureContent />
+    </Suspense>
   )
 }

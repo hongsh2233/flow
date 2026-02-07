@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import styles from './BottomNav.module.css'
@@ -63,7 +63,7 @@ function isPathActive(pathname: string, searchParams: URLSearchParams, item: Nav
 }
 
 // 4. 컴포넌트에 타입을 적용합니다.
-export default function NaviList({ navList }: NaviListProps) {
+function NaviListContent({ navList }: NaviListProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -86,5 +86,13 @@ export default function NaviList({ navList }: NaviListProps) {
         )
       })}
     </ul>
+  )
+}
+
+export default function NaviList({ navList }: NaviListProps) {
+  return (
+    <Suspense fallback={<ul className={styles.naviList}></ul>}>
+      <NaviListContent navList={navList} />
+    </Suspense>
   )
 }

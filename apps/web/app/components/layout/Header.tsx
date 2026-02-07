@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import styles from './BottomNav.module.css'
@@ -16,7 +16,7 @@ const DEFAULT_NAV_LIST = [
   { name: '설정', icon: 'icon_setting', link: '/setting' },
 ]
 
-export default function Header() {
+function HeaderContent() {
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
@@ -111,5 +111,17 @@ export default function Header() {
         />
       )}
     </div>
+  )
+}
+
+export default function Header() {
+  return (
+    <Suspense fallback={
+      <div className={styles.header__wrap}>
+        <h1 className={styles.header__title_center}>주린이 탈출</h1>
+      </div>
+    }>
+      <HeaderContent />
+    </Suspense>
   )
 }
