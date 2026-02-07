@@ -23,6 +23,13 @@ from app import models
 
 KST = pytz.timezone("Asia/Seoul")
 
+# api.py의 _YAHOO_HEADERS와 동일하게 유지 (Windows Chrome UA - 검증된 동작)
+_YAHOO_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
+
 
 @dataclass(frozen=True)
 class YahooIndexDef:
@@ -87,129 +94,201 @@ def _prev_non_null(values: list[Any]) -> Any:
     return None
 
 
-async def _fetch_one_index(client: httpx.AsyncClient, idx: YahooIndexDef) -> dict:
+# =========================================================
+# Yahoo Finance crumb 인증
+# =========================================================
+
+_crumb_cache: dict = {"crumb": None, "cookies": None, "expires": 0}
+_CRUMB_TTL = 1800  # 30분
+
+
+async def _get_yahoo_crumb(client: httpx.AsyncClient) -> tuple[Optional[str], Optional[httpx.Cookies]]:
     """
-    Yahoo Finance v8 chart API에서 지수 1건 조회 후 표준 dict 반환
+    Yahoo Finance crumb + 세션 쿠키 획득.
+    Yahoo v8 API는 crumb 인증이 필요한 심볼이 있음 (^GSPC, ^KS11 등).
+
+    Flow:
+    1. GET https://fc.yahoo.com → 세션 쿠키 획득
+    2. GET https://query2.finance.yahoo.com/v1/test/getcrumb → crumb 문자열 획득
     """
+    import time
+
+    # 캐시된 crumb가 유효하면 재사용
+    if _crumb_cache["crumb"] and _crumb_cache["expires"] > time.time():
+        return _crumb_cache["crumb"], _crumb_cache["cookies"]
+
     try:
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{idx.symbol}"
-        params = {"interval": "1d", "range": "5d"}
-        # Yahoo는 429(rate limit)가 자주 발생하므로, 짧은 backoff 재시도
-        last_status = None
-        for attempt in range(3):
-            res = await client.get(url, params=params, timeout=10.0)
-            last_status = res.status_code
+        # 1단계: 세션 쿠키 획득
+        r1 = await client.get(
+            "https://fc.yahoo.com",
+            headers=_YAHOO_HEADERS,
+            timeout=10.0,
+            follow_redirects=True,
+        )
+        cookies = r1.cookies
 
-            if res.status_code == 429:
-                # Retry-After가 있으면 우선 사용, 없으면 지수 backoff
-                retry_after = res.headers.get("Retry-After")
-                try:
-                    sleep_s = float(retry_after) if retry_after else (1.0 * (2 ** attempt))
-                except Exception:
-                    sleep_s = (1.0 * (2 ** attempt))
-                # 약간의 지터(동시 요청 완화)
-                sleep_s = min(10.0, sleep_s + (0.2 * attempt))
-                await asyncio.sleep(sleep_s)
-                continue
+        # 2단계: crumb 획득
+        r2 = await client.get(
+            "https://query2.finance.yahoo.com/v1/test/getcrumb",
+            headers=_YAHOO_HEADERS,
+            cookies=cookies,
+            timeout=10.0,
+            follow_redirects=True,
+        )
 
-            # 5xx는 재시도, 그 외 4xx는 즉시 실패
-            if 500 <= res.status_code <= 599:
-                await asyncio.sleep(min(5.0, 0.5 * (2 ** attempt)))
-                continue
+        if r2.status_code == 200:
+            crumb = r2.text.strip()
+            if crumb and len(crumb) < 100:
+                _crumb_cache["crumb"] = crumb
+                _crumb_cache["cookies"] = cookies
+                _crumb_cache["expires"] = time.time() + _CRUMB_TTL
+                print(f"✅ Yahoo crumb 획득 성공")
+                return crumb, cookies
 
-            break
-
-        if last_status and last_status >= 400:
-            return {
-                "ok": False,
-                "group": idx.group,
-                "symbol": idx.symbol,
-                "name": idx.name,
-                "market": idx.market,
-                "error": f"http_{last_status}",
-            }
-
-        data = res.json()
-
-        chart = data.get("chart") or {}
-        if chart.get("error"):
-            return {
-                "ok": False,
-                "group": idx.group,
-                "symbol": idx.symbol,
-                "name": idx.name,
-                "market": idx.market,
-                "error": f"chart_error: {chart.get('error')}",
-            }
-        if not chart.get("result"):
-            return {
-                "ok": False,
-                "group": idx.group,
-                "symbol": idx.symbol,
-                "name": idx.name,
-                "market": idx.market,
-                "error": "no_result",
-            }
-
-        result = chart["result"][0]
-        meta = result.get("meta", {}) or {}
-        quote = (result.get("indicators") or {}).get("quote") or [{}]
-        close = (quote[0] or {}).get("close") or []
-
-        # 가장 신뢰할 수 있는 값: regularMarketPrice / previousClose
-        price = meta.get("regularMarketPrice") or meta.get("chartPreviousClose") or meta.get("previousClose")
-        prev = meta.get("previousClose") or meta.get("chartPreviousClose") or price
-        if price is None:
-            price = _last_non_null(close)
-        if prev is None:
-            prev = _prev_non_null(close) or price
-        if price is None or prev is None:
-            return {
-                "ok": False,
-                "group": idx.group,
-                "symbol": idx.symbol,
-                "name": idx.name,
-                "market": idx.market,
-                "error": "no_price",
-            }
-
-        change = float(price) - float(prev)
-        change_percent = (change / float(prev) * 100.0) if float(prev) != 0 else 0.0
-
-        return {
-            "ok": True,
-            "group": idx.group,
-            "symbol": idx.symbol,
-            "name": idx.name,
-            "market": idx.market,
-            "currency": meta.get("currency"),
-            "price": float(price),
-            "change": float(change),
-            "change_percent": float(change_percent),
-            "regular_market_time": meta.get("regularMarketTime"),
-        }
+        print(f"⚠️ Yahoo crumb 획득 실패 (status={r2.status_code})")
+        return None, None
     except Exception as e:
-        return {
-            "ok": False,
-            "group": idx.group,
-            "symbol": idx.symbol,
-            "name": idx.name,
-            "market": idx.market,
-            "error": f"exception: {type(e).__name__}: {str(e)}",
-        }
+        print(f"⚠️ Yahoo crumb 획득 오류: {type(e).__name__}: {e}")
+        return None, None
+
+
+# =========================================================
+# Yahoo Finance 지수 조회
+# =========================================================
+
+async def _fetch_one_index(
+    client: httpx.AsyncClient,
+    idx: YahooIndexDef,
+    crumb: Optional[str] = None,
+    cookies: Optional[httpx.Cookies] = None,
+) -> dict:
+    """
+    Yahoo Finance chart API에서 지수 1건 조회 후 표준 dict 반환.
+    query1 → query2 순서로 fallback 시도.
+    """
+    base_urls = [
+        "https://query1.finance.yahoo.com/v8/finance/chart/",
+        "https://query2.finance.yahoo.com/v8/finance/chart/",
+    ]
+
+    params = {"interval": "1d", "range": "5d"}
+    if crumb:
+        params["crumb"] = crumb
+
+    last_error = "unknown"
+
+    for base_url in base_urls:
+        url = f"{base_url}{idx.symbol}"
+        try:
+            last_status = None
+            res = None
+            for attempt in range(3):
+                kwargs = {
+                    "url": url,
+                    "params": params,
+                    "headers": _YAHOO_HEADERS,
+                    "timeout": 10.0,
+                }
+                if cookies:
+                    kwargs["cookies"] = cookies
+
+                res = await client.get(**kwargs)
+                last_status = res.status_code
+
+                if res.status_code == 429:
+                    retry_after = res.headers.get("Retry-After")
+                    try:
+                        sleep_s = float(retry_after) if retry_after else (1.0 * (2 ** attempt))
+                    except Exception:
+                        sleep_s = (1.0 * (2 ** attempt))
+                    sleep_s = min(10.0, sleep_s + (0.3 * attempt))
+                    await asyncio.sleep(sleep_s)
+                    continue
+
+                if 500 <= res.status_code <= 599:
+                    await asyncio.sleep(min(5.0, 0.5 * (2 ** attempt)))
+                    continue
+
+                break
+
+            if last_status and last_status >= 400:
+                last_error = f"http_{last_status}"
+                continue  # 다음 base_url 시도
+
+            data = res.json()
+            chart = data.get("chart") or {}
+
+            if chart.get("error"):
+                last_error = f"chart_error: {chart.get('error')}"
+                continue
+
+            if not chart.get("result"):
+                last_error = "no_result"
+                continue
+
+            result = chart["result"][0]
+            meta = result.get("meta", {}) or {}
+            quote = (result.get("indicators") or {}).get("quote") or [{}]
+            close = (quote[0] or {}).get("close") or []
+
+            price = meta.get("regularMarketPrice") or meta.get("chartPreviousClose") or meta.get("previousClose")
+            prev = meta.get("previousClose") or meta.get("chartPreviousClose") or price
+            if price is None:
+                price = _last_non_null(close)
+            if prev is None:
+                prev = _prev_non_null(close) or price
+            if price is None or prev is None:
+                last_error = "no_price"
+                continue
+
+            change = float(price) - float(prev)
+            change_percent = (change / float(prev) * 100.0) if float(prev) != 0 else 0.0
+
+            return {
+                "ok": True,
+                "group": idx.group,
+                "symbol": idx.symbol,
+                "name": idx.name,
+                "market": idx.market,
+                "currency": meta.get("currency"),
+                "price": float(price),
+                "change": float(change),
+                "change_percent": float(change_percent),
+                "regular_market_time": meta.get("regularMarketTime"),
+            }
+        except Exception as e:
+            last_error = f"exception: {type(e).__name__}: {str(e)}"
+            continue
+
+    # 모든 URL 시도 실패
+    print(f"⚠️ Yahoo 지수 조회 실패: {idx.symbol} - {last_error}")
+    return {
+        "ok": False,
+        "group": idx.group,
+        "symbol": idx.symbol,
+        "name": idx.name,
+        "market": idx.market,
+        "error": last_error,
+    }
 
 
 async def fetch_indices(indices: Iterable[YahooIndexDef]) -> list[dict]:
-    async with httpx.AsyncClient(
-        headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        },
-        follow_redirects=True,
-    ) as client:
-        tasks = [_fetch_one_index(client, idx) for idx in indices]
-        results = await asyncio.gather(*tasks)
-    return list(results)
+    """
+    지수 목록을 순차적으로 조회 (rate limit 방지).
+    crumb 인증을 사용하여 ^GSPC, ^KS11 등 인증 필요 심볼도 지원.
+    """
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        # crumb 인증 토큰 획득
+        crumb, cookies = await _get_yahoo_crumb(client)
+
+        results = []
+        for idx in indices:
+            result = await _fetch_one_index(client, idx, crumb=crumb, cookies=cookies)
+            results.append(result)
+            # 순차 호출 사이 딜레이 (api.py와 동일 패턴, rate limit 방지)
+            await asyncio.sleep(0.5)
+
+    return results
 
 
 def upsert_indices_to_db(
@@ -290,5 +369,3 @@ def upsert_indices_to_db(
     db.query(models.YahooIndexSnapshot).filter(models.YahooIndexSnapshot.collected_date < cutoff).delete(synchronize_session=False)
 
     db.commit()
-
-

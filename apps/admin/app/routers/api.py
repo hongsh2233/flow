@@ -842,22 +842,70 @@ def _set_cached(key: str, data):
     _yahoo_cache[key] = {"data": data, "expires": time.time() + _YAHOO_CACHE_TTL}
 
 
-async def _yahoo_fetch_with_retry(
-    client: httpx.AsyncClient, url: str, params: dict, max_retries: int = 3
-):
-    """Yahoo Finance API 호출 (429 시 지수 백오프 재시도)"""
-    for attempt in range(max_retries):
-        resp = await client.get(
-            url, params=params, headers=_YAHOO_HEADERS, timeout=10.0
+_yahoo_crumb_cache: dict = {"crumb": None, "cookies": None, "expires": 0}
+_YAHOO_CRUMB_TTL = 1800  # 30분
+
+
+async def _get_yahoo_crumb(client: httpx.AsyncClient):
+    """Yahoo Finance crumb + 세션 쿠키 획득 (^GSPC, ^KS11 등 인증 필요 심볼 대응)"""
+    if _yahoo_crumb_cache["crumb"] and _yahoo_crumb_cache["expires"] > time.time():
+        return _yahoo_crumb_cache["crumb"], _yahoo_crumb_cache["cookies"]
+    try:
+        r1 = await client.get(
+            "https://fc.yahoo.com", headers=_YAHOO_HEADERS,
+            timeout=10.0, follow_redirects=True,
         )
-        if resp.status_code == 429:
-            wait = 2 ** attempt  # 1s, 2s, 4s
-            await asyncio.sleep(wait)
-            continue
-        resp.raise_for_status()
-        return resp.json()
-    # 마지막 시도에서도 429면 예외
-    resp.raise_for_status()
+        cookies = r1.cookies
+        r2 = await client.get(
+            "https://query2.finance.yahoo.com/v1/test/getcrumb",
+            headers=_YAHOO_HEADERS, cookies=cookies,
+            timeout=10.0, follow_redirects=True,
+        )
+        if r2.status_code == 200:
+            crumb = r2.text.strip()
+            if crumb and len(crumb) < 100:
+                _yahoo_crumb_cache["crumb"] = crumb
+                _yahoo_crumb_cache["cookies"] = cookies
+                _yahoo_crumb_cache["expires"] = time.time() + _YAHOO_CRUMB_TTL
+                return crumb, cookies
+    except Exception:
+        pass
+    return None, None
+
+
+async def _yahoo_fetch_with_retry(
+    client: httpx.AsyncClient, url: str, params: dict, max_retries: int = 3,
+    crumb: str = None, cookies=None,
+):
+    """Yahoo Finance API 호출 (crumb 인증 + 429 시 지수 백오프 재시도 + query2 fallback)"""
+    if crumb:
+        params = {**params, "crumb": crumb}
+
+    # query1 → query2 fallback
+    urls = [url]
+    if "query1.finance.yahoo.com" in url:
+        urls.append(url.replace("query1.finance.yahoo.com", "query2.finance.yahoo.com"))
+
+    for try_url in urls:
+        for attempt in range(max_retries):
+            kwargs = {"url": try_url, "params": params, "headers": _YAHOO_HEADERS, "timeout": 10.0}
+            if cookies:
+                kwargs["cookies"] = cookies
+            resp = await client.get(**kwargs)
+            if resp.status_code == 429:
+                wait = 2 ** attempt  # 1s, 2s, 4s
+                await asyncio.sleep(wait)
+                continue
+            if 500 <= resp.status_code <= 599:
+                await asyncio.sleep(0.5 * (2 ** attempt))
+                continue
+            if resp.status_code >= 400:
+                break  # 다음 URL 시도
+            return resp.json()
+        # 이 URL 실패 → 다음 URL 시도
+        continue
+
+    # 모든 시도 실패
     return None
 
 
@@ -883,12 +931,12 @@ async def get_domestic_indices(
     if cached is not None:
         return cached
 
-    async def fetch_one(client: httpx.AsyncClient, item: dict):
+    async def fetch_one(client: httpx.AsyncClient, item: dict, crumb=None, cookies=None):
         try:
             symbol = item["symbol"]
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
             params = {"interval": "1d", "range": "1d"}
-            data = await _yahoo_fetch_with_retry(client, url, params)
+            data = await _yahoo_fetch_with_retry(client, url, params, crumb=crumb, cookies=cookies)
             if not data or "chart" not in data or "result" not in data["chart"] or not data["chart"]["result"]:
                 return None
             result = data["chart"]["result"][0]
@@ -909,11 +957,12 @@ async def get_domestic_indices(
         except Exception:
             return None
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        crumb, cookies = await _get_yahoo_crumb(client)
         # 순차 호출 (Yahoo rate limit 방지)
         results = []
         for item in DOMESTIC_INDICES:
-            results.append(await fetch_one(client, item))
+            results.append(await fetch_one(client, item, crumb=crumb, cookies=cookies))
             await asyncio.sleep(0.3)
 
     valid = [r for r in results if r is not None]
@@ -970,7 +1019,7 @@ async def get_foreign_indices(
         {"symbol": "^VIX", "name": "VIX", "market": "US"}
     ]
 
-    async def fetch_index_data(client: httpx.AsyncClient, index: dict):
+    async def fetch_index_data(client: httpx.AsyncClient, index: dict, crumb=None, cookies=None):
         """개별 지수 데이터를 Yahoo Finance에서 조회"""
         try:
             symbol = index["symbol"]
@@ -980,7 +1029,7 @@ async def get_foreign_indices(
                 "range": "5d"
             }
 
-            data = await _yahoo_fetch_with_retry(client, url, params)
+            data = await _yahoo_fetch_with_retry(client, url, params, crumb=crumb, cookies=cookies)
 
             if data and "chart" in data and "result" in data["chart"] and data["chart"]["result"]:
                 result = data["chart"]["result"][0]
@@ -1050,18 +1099,13 @@ async def get_foreign_indices(
                 "error": str(e)
             }
 
-    # 소규모 배치로 나눠서 호출 (4개씩, 배치 간 0.5초 대기)
-    async with httpx.AsyncClient() as client:
+    # 순차 호출 (Yahoo rate limit 방지 - crumb 인증 사용)
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        crumb, cookies = await _get_yahoo_crumb(client)
         results = []
-        batch_size = 4
-        for i in range(0, len(indices), batch_size):
-            batch = indices[i:i + batch_size]
-            batch_results = await asyncio.gather(
-                *[fetch_index_data(client, idx) for idx in batch]
-            )
-            results.extend(batch_results)
-            if i + batch_size < len(indices):
-                await asyncio.sleep(0.5)
+        for idx in indices:
+            results.append(await fetch_index_data(client, idx, crumb=crumb, cookies=cookies))
+            await asyncio.sleep(0.3)
 
     result = {
         "success": True,
