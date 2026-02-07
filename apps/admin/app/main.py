@@ -262,46 +262,46 @@ def init_admin_user():
     print("관리자 계정 초기화 시작")
     print("=" * 60)
     
-    # 환경 변수 확인
-    print(f"ADMIN_EMAIL 설정 여부: {'✅ 설정됨' if ADMIN_EMAIL else '❌ 설정되지 않음'}")
-    print(f"ADMIN_PW 설정 여부: {'✅ 설정됨' if ADMIN_PW else '❌ 설정되지 않음'}")
-    
-    if not ADMIN_EMAIL:
-        print("⚠️ 경고: ADMIN_EMAIL 환경 변수가 설정되지 않았습니다.")
-        print("💡 Railway Variables에 ADMIN_EMAIL을 설정하세요.")
-        return
-    
-    if not ADMIN_PW:
-        print("⚠️ 경고: ADMIN_PW 환경 변수가 설정되지 않았습니다.")
-        print("💡 Railway Variables에 ADMIN_PW를 설정하세요.")
-        return
+    # 환경 변수 확인 (없으면 기본 관리자 계정 사용)
+    DEFAULT_ADMIN_EMAIL = "hongsh220303@gmail.com"
+    DEFAULT_ADMIN_PW = "0000"
+
+    admin_email = ADMIN_EMAIL or DEFAULT_ADMIN_EMAIL
+    admin_pw = ADMIN_PW or DEFAULT_ADMIN_PW
+
+    if not ADMIN_EMAIL or not ADMIN_PW:
+        print("⚠️ ADMIN_EMAIL 또는 ADMIN_PW 환경 변수가 설정되지 않았습니다.")
+        print(f"   기본 관리자 계정을 사용합니다: {DEFAULT_ADMIN_EMAIL}")
+    else:
+        print(f"ADMIN_EMAIL: ✅ 설정됨")
+        print(f"ADMIN_PW: ✅ 설정됨")
     
     try:
         db = next(get_db())
         try:
             # 기존 관리자 확인
             existing_user = db.query(models.AdminUser).filter(
-                models.AdminUser.email == ADMIN_EMAIL
+                models.AdminUser.email == admin_email
             ).first()
-            
+
             if existing_user:
-                print(f"ℹ️  관리자 계정이 이미 존재합니다: {ADMIN_EMAIL}")
+                print(f"ℹ️  관리자 계정이 이미 존재합니다: {admin_email}")
                 print("   (새로 생성하지 않습니다)")
                 return
-            
+
             # 새 관리자 생성
             print(f"⚠️ 초기 관리자 계정 생성 중...")
-            print(f"   이메일: {ADMIN_EMAIL}")
-            hashed_pw = utils.get_password_hash(ADMIN_PW)
+            print(f"   이메일: {admin_email}")
+            hashed_pw = utils.get_password_hash(admin_pw)
             new_admin = models.AdminUser(
-                email=ADMIN_EMAIL,
+                email=admin_email,
                 name="관리자",
                 hashed_password=hashed_pw
             )
             db.add(new_admin)
             db.commit()
             print("✅ 초기 관리자 생성 완료!")
-            print(f"   이메일: {ADMIN_EMAIL}")
+            print(f"   이메일: {admin_email}")
             print(f"   이름: 관리자")
             
         except Exception as e:
