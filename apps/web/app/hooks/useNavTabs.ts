@@ -6,10 +6,8 @@ import { fetchNavMenu } from '@/lib/services/navMenuService'
 import type { NavMenuTabItem } from '@/lib/services/navMenuService'
 
 const DEFAULT_NEWS_TABS: NavMenuTabItem[] = [
-  { label: '시황', href: '/news' },
-  { label: '리포트', href: '/report' },
-  { label: '글로벌', href: '/global' },
-  { label: '뉴스', href: '/disclosure' },
+  { label: '전체뉴스', href: '/news' },
+  { label: '관심뉴스', href: '/news?tab=favorite' },
 ]
 
 /**

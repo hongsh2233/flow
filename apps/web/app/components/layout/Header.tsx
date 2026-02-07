@@ -9,9 +9,9 @@ import { fetchNavMenu } from '@/lib/services/navMenuService'
 
 const DEFAULT_NAV_LIST = [
   { name: '홈', icon: 'icon_home', link: '/' },
-  { name: '증시일정', icon: 'icon_calendar', link: '/schedule' },
+  { name: '캘린더', icon: 'icon_calendar', link: '/schedule' },
   { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
-  { name: '시황/뉴스', icon: 'icon_article', link: '/news' },
+  { name: '뉴스', icon: 'icon_article', link: '/news' },
   { name: '설정', icon: 'icon_setting', link: '/setting' },
 ]
 

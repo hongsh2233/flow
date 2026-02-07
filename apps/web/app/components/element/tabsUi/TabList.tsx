@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import styles from './Tab.module.css'
 
 interface TabItem {
@@ -25,6 +25,7 @@ export default function TabList({
   setActiveValue,
 }: TabListProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const tabMenuRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLButtonElement | null>(null)
   const activeLinkRef = useRef<HTMLAnchorElement | null>(null)
@@ -49,17 +50,27 @@ export default function TabList({
         behavior: 'smooth',
       })
     }
-  }, [activeValue, pathname, variant])
+  }, [activeValue, pathname, searchParams, variant])
 
   return (
     <div className={styles.tabMenu} ref={tabMenuRef}>
       {items.map((item, index) => {
         const itemValue = item.value || index.toString()
 
-        // 활성화 조건: menu는 URL 비교, tab은 상태값 비교
+        // 활성화 조건: menu는 URL 비교 (query string 포함), tab은 상태값 비교
         const isActive =
           variant === 'menu'
-            ? pathname === item.href
+            ? (() => {
+                if (!item.href) return false
+                // href에서 pathname과 query string 추출
+                const itemHref = item.href.split('?')[0]
+                const itemQuery = item.href.includes('?') ? item.href.split('?')[1] : ''
+                // 현재 URL의 pathname과 query string
+                const currentQuery = searchParams.toString()
+                // pathname과 query string 비교
+                return pathname === itemHref && 
+                       (itemQuery === currentQuery || (!itemQuery && !currentQuery))
+              })()
             : activeValue === itemValue
 
         if (variant === 'menu' && item.href) {

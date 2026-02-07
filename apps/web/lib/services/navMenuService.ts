@@ -19,9 +19,9 @@ export interface NavMenuItem {
 
 const DEFAULT_NAV_LIST: NavMenuItem[] = [
   { id: 0, name: '홈', icon: 'icon_home', link: '/', matchPaths: ['/'] },
-  { id: 1, name: '증시일정', icon: 'icon_calendar', link: '/schedule', matchPaths: ['/schedule'] },
+  { id: 1, name: '캘린더', icon: 'icon_calendar', link: '/schedule', matchPaths: ['/schedule'] },
   { id: 2, name: '종목자료', icon: 'icon_chat', link: '/stock_info', matchPaths: ['/stock_info'] },
-  { id: 3, name: '시황/뉴스', icon: 'icon_article', link: '/news', matchPaths: ['/news', '/report', '/global', '/disclosure', '/post'] },
+  { id: 3, name: '뉴스', icon: 'icon_article', link: '/news', matchPaths: ['/news', '/report', '/global', '/disclosure', '/post'] },
   { id: 4, name: '설정', icon: 'icon_setting', link: '/setting', matchPaths: ['/setting'] },
 ]
 

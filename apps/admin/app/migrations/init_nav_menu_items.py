@@ -11,9 +11,9 @@ def run_migration(db=None):
     """하단 메뉴 초기 데이터 생성 (기존 항목이 있으면 스킵)"""
     default_items = [
         {"label": "홈", "icon": "icon_home", "link_type": "page", "link_value": "/", "match_paths": "/", "order_index": 0},
-        {"label": "증시일정", "icon": "icon_calendar", "link_type": "page", "link_value": "/schedule", "match_paths": "/schedule", "order_index": 1},
+        {"label": "캘린더", "icon": "icon_calendar", "link_type": "page", "link_value": "/schedule", "match_paths": "/schedule", "order_index": 1},
         {"label": "종목자료", "icon": "icon_chat", "link_type": "page", "link_value": "/stock_info", "match_paths": "/stock_info", "order_index": 2},
-        {"label": "시황/뉴스", "icon": "icon_article", "link_type": "page", "link_value": "/news", "match_paths": "/news,/report,/global,/disclosure,/post", "order_index": 3},
+        {"label": "뉴스", "icon": "icon_article", "link_type": "page", "link_value": "/news", "match_paths": "/news,/report,/global,/disclosure,/post", "order_index": 3},
         {"label": "설정", "icon": "icon_setting", "link_type": "page", "link_value": "/setting", "match_paths": "/setting", "order_index": 4},
     ]
 

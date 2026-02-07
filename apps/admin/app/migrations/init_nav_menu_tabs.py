@@ -1,19 +1,17 @@
 """
 메뉴별 서브 메뉴(탭) 초기 데이터 마이그레이션
 
-'시황/뉴스' 메뉴에 기본 탭(시황, 리포트, 글로벌, 뉴스)을 추가합니다.
+'뉴스' 메뉴에 기본 탭(전체뉴스, 관심뉴스)을 추가합니다.
 """
 from app.database import SessionLocal
 from app.models import NavMenuItem, NavMenuTab
 
 
 def run_migration(db=None):
-    """시황/뉴스 메뉴에 기본 탭 추가 (이미 있으면 스킵)"""
+    """뉴스 메뉴에 기본 탭 추가 (이미 있으면 스킵)"""
     default_tabs = [
-        {"label": "시황", "link_value": "/news", "order_index": 0},
-        {"label": "리포트", "link_value": "/report", "order_index": 1},
-        {"label": "글로벌", "link_value": "/global", "order_index": 2},
-        {"label": "뉴스", "link_value": "/disclosure", "order_index": 3},
+        {"label": "전체뉴스", "link_value": "/news", "order_index": 0},
+        {"label": "관심뉴스", "link_value": "/news?tab=favorite", "order_index": 1},
     ]
 
     if db is None:
@@ -24,7 +22,7 @@ def run_migration(db=None):
 
     try:
         parent = db.query(NavMenuItem).filter(
-            (NavMenuItem.link_value == "/news") | (NavMenuItem.label == "시황/뉴스")
+            (NavMenuItem.link_value == "/news") | (NavMenuItem.label == "뉴스")
         ).first()
         if not parent:
             return

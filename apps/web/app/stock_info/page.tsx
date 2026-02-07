@@ -65,9 +65,8 @@ export default function StockInfoPage() {
   // 커스텀 훅 사용
   const { favCodes, allStockData, favoriteStocks: favStocks, mapToStockItem } = useFavoriteStocks()
 
-  // 탭 메뉴 설정 (관심종목 탭은 항상 표시)
+  // 탭 메뉴 설정
   const menuData = [
-    { label: '관심종목' },
     { label: '시장현황' },
     { label: '상승종목(50)' },
     { label: '시가총액(200)' },
@@ -300,44 +299,7 @@ export default function StockInfoPage() {
       <Tabs>
         <TabList items={menuData} variant="tab" />
         <TabPanel>
-          {/* 1. 관심종목 탭 */}
-          <TabCont>
-            {!session ? (
-              <div className="no-data">로그인 이후 이용가능합니다.</div>
-            ) : isLoading ? (
-              <div className="no-data">로딩 중...</div>
-            ) : favStocks.length > 0 ? (
-              <>
-                <StockList
-                  stocks={favStocks}
-                  style={{ margin: '0px' }}
-                  showFavorite={true}
-                  favCodes={favCodes}
-                />
-                {/* 관심종목별 뉴스 (각 종목당 3개씩) */}
-                <div style={{ marginTop: 'var(--spacing-lg)' }}>
-                  {favStocks.map((stock) => (
-                    <div
-                      key={stock.code}
-                      style={{ marginBottom: 'var(--spacing-xl)' }}
-                    >
-                      <StockNews
-                        stockName={stock.name}
-                        stockCode={stock.code}
-                        limit={3}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="no-data">
-                즐겨찾기한 종목이 없거나 데이터가 없습니다.
-              </div>
-            )}
-          </TabCont>
-
-          {/* 2. 시장현황 탭 */}
+          {/* 1. 시장현황 탭 */}
           <TabCont>
             {isLoading ? (
               <div className="no-data">로딩 중...</div>
@@ -390,7 +352,7 @@ export default function StockInfoPage() {
             )}
           </TabCont>
 
-          {/* 3. 등락률(50) 탭 */}
+          {/* 2. 등락률(50) 탭 */}
           <TabCont>
             {isLoading ? (
               <div className="no-data">로딩 중...</div>
@@ -404,7 +366,7 @@ export default function StockInfoPage() {
             )}
           </TabCont>
 
-          {/* 4. 시가총액(200) 탭 - 코스피/코스닥 구분 */}
+          {/* 3. 시가총액(200) 탭 - 코스피/코스닥 구분 */}
           <TabCont>
             {mktcapLoading ? (
               <div className="no-data">로딩 중...</div>
@@ -465,7 +427,7 @@ export default function StockInfoPage() {
             )}
           </TabCont>
 
-          {/* 5. 종목검색 탭: 권리일정 검색 */}
+          {/* 4. 종목검색 탭: 권리일정 검색 */}
           <TabCont>
             <StockRightScheduleSearch />
           </TabCont>
