@@ -688,7 +688,7 @@ async def collect_yahoo_us_indices():
 async def collect_yahoo_kr_indices():
     """
     Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
-    - 09:20 / 11:00 / 13:00 / 15:30 (KST)
+    - 09:20 / 11:30 / 14:00 / 15:30 (KST)
     - 기존 데이터를 덮어쓰되, 날짜별 마지막 값 유지 (date+symbol upsert)
     - 최대 7일만 보관
     - 주말/공휴일은 건너뜀
@@ -771,7 +771,7 @@ class YahooIndexScheduler:
             misfire_grace_time=300,
         )
 
-        # KR: 09:20, 11:00, 13:00, 15:30 (KST)
+        # KR: 09:20, 11:30, 14:00, 15:30 (KST)
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
             CronTrigger(hour=9, minute=20, timezone=self.kst),
@@ -784,9 +784,9 @@ class YahooIndexScheduler:
         )
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
-            CronTrigger(hour=11, minute=0, timezone=self.kst),
-            id="yahoo_kr_1100",
-            name="Yahoo KR Indices (11:00)",
+            CronTrigger(hour=11, minute=30, timezone=self.kst),
+            id="yahoo_kr_1130",
+            name="Yahoo KR Indices (11:30)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -794,9 +794,9 @@ class YahooIndexScheduler:
         )
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
-            CronTrigger(hour=13, minute=0, timezone=self.kst),
-            id="yahoo_kr_1300",
-            name="Yahoo KR Indices (13:00)",
+            CronTrigger(hour=14, minute=0, timezone=self.kst),
+            id="yahoo_kr_1400",
+            name="Yahoo KR Indices (14:00)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -816,7 +816,7 @@ class YahooIndexScheduler:
         self.scheduler.start()
         print("✅ Yahoo 지수 수집 스케줄러 시작")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
-        print("   - KR: 09:20 / 11:00 / 13:00 / 15:30 (KST)")
+        print("   - KR: 09:20 / 11:30 / 14:00 / 15:30 (KST)")
         print("   - 최근 7일치만 유지\n")
 
     def shutdown(self):
