@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import {
@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
   NOTIFICATION_PERMISSION: 'notificationPermission',
 }
 
-export default function SettingPage() {
+function SettingContent() {
   const router = useRouter()
   const { data: session, status, update: updateSession } = useSession()
   const [darkMode, setDarkMode] = useState(false)
@@ -884,5 +884,13 @@ export default function SettingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SettingPage() {
+  return (
+    <Suspense fallback={<div className="inner-wrap"><div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div></div>}>
+      <SettingContent />
+    </Suspense>
   )
 }
