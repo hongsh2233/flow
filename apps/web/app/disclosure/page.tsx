@@ -1,6 +1,6 @@
 'use client'
 
-import * as React, { Suspense } from 'react'
+import React, { Suspense } from 'react'
 import PageTitle from '../components/element/PageTitle'
 import Tabs from '../components/element/tabsUi/Tabs'
 import TabList from '../components/element/tabsUi/TabList'
