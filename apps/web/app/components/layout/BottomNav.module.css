@@ -8,16 +8,16 @@
   left: 0;
   z-index: 100;
   border-bottom: 1px solid var(--border-color);
-  padding: 0 var(--spacing-md);
-  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0 var(--spacing-lg);
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   transition: all var(--transition-slow);
 }
 
 html.dark .header__wrap {
-  background-color: rgba(30, 41, 59, 0.8);
+  background-color: rgba(31, 41, 55, 0.95);
 }
 
 .header__wrap button {
@@ -29,7 +29,7 @@ html.dark .header__wrap {
 }
 .header__wrap h1 {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
   transition: color var(--transition-slow);
@@ -46,7 +46,7 @@ html.dark .header__wrap {
   font-family: 'Single Day', cursive;
   font-weight: 400;
   letter-spacing: -0.025em;
-  font-size: 26px;
+  font-size: 28px;
 }
 
 .bottomWrap {
@@ -57,44 +57,45 @@ html.dark .header__wrap {
   position: fixed;
   bottom: 0;
   left: 0;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--border-color);
-  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
-  padding-bottom: env(safe-area-inset-bottom, 4px);
+  box-shadow: none;
+  padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 50;
   transition: all var(--transition-slow);
 }
 
 html.dark .bottomWrap {
-  background-color: rgba(30, 41, 59, 0.8);
+  background-color: rgba(31, 41, 55, 0.95);
 }
 .bottomWrap ul {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 8px 0;
+  padding: 12px 0;
 }
 .bottomWrap ul li {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: calc(100% / 5);
+  width: calc(100% / 6);
 }
 .bottomWrap ul li a {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   width: 100%;
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   transition: all var(--transition-base);
   position: relative;
+  gap: 4px;
 }
 
 .bottomWrap ul li a::before {
@@ -129,7 +130,8 @@ html.dark .bottomWrap {
 }
 .bottomWrap ul li a span img {
   width: 24px;
-  opacity: 0.6;
+  height: 24px;
+  opacity: 0.5;
   transition: opacity 0.2s ease;
 }
 .bottomWrap ul li.is-active a span img {
@@ -148,7 +150,7 @@ html.dark .bottomWrap {
 .bottomWrap ul li a span svg {
   width: 24px;
   height: 24px;
-  opacity: 0.6;
+  opacity: 0.5;
   transition: opacity 0.2s ease;
 }
 

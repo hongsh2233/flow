@@ -11,18 +11,16 @@
   align-items: center;
   justify-content: space-between;
   background-color: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border-color-light);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  box-shadow: none;
   transition: all var(--transition-base);
   cursor: pointer;
 }
 
 .stock__items:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-  border-color: var(--border-color);
+  background-color: var(--bg-hover);
 }
 
 /* [중요] TSX에서 styles.up, styles.down으로 참조할 수 있도록 클래스 명시 */
@@ -51,34 +49,35 @@
 }
 
 .stock__items .title__area .name {
-  font-size: 13px;
+  font-size: 17px;
   color: var(--text-primary);
   font-weight: 600;
   letter-spacing: -0.01em;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .stock__items .title__area .code {
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--text-tertiary);
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
+  margin-top: 2px;
 }
 
 .value__area {
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
-  font-weight: 400;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 .value__area .price {
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 700;
 }
 /* 즐겨찾기 버튼 영역 스타일 */
 .favoritor {

@@ -2,12 +2,12 @@
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary);
-  border-radius: 12px;
-  padding: 12px;
-  margin: 16px auto;
-  border: 1px solid var(--border-color);
-  gap: 12px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+  border: none;
+  gap: var(--spacing-md);
+  transition: background-color 0.3s ease;
 }
 
 .usa__header {
@@ -15,9 +15,10 @@
 }
 
 .usa__title {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
 }
 
 .usa__list {
@@ -33,9 +34,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: var(--spacing-md) 0;
   border-top: 1px solid var(--border-color);
-  /* gap: 6px; */
   flex-direction: column;
 }
 
@@ -48,14 +48,14 @@
 }
 
 .usa__itemTitle {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .usa__itemValue {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -63,9 +63,10 @@
   display: flex;
   justify-content: flex-end;
   width: 100%;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: var(--spacing-sm);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: var(--spacing-xs);
 }
 
 /* 한국 증시 관례: 상승 빨간색, 하락 파란색 */

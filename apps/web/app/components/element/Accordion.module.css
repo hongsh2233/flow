@@ -1,46 +1,48 @@
 .accordion {
-  margin-top: 20px;
+  margin-top: var(--spacing-lg);
 }
 
 .accordionItem {
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  margin-bottom: 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
   overflow: hidden;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .accordionHeader {
-  padding: 15px 20px;
-  background: var(--bg-secondary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-primary);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background 0.2s, background-color 0.3s ease, border-color 0.3s ease;
+  transition: background 0.2s, background-color 0.3s ease;
   border-bottom: 1px solid var(--border-color);
 }
 
 .accordionHeader:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-hover);
 }
 
 .accordionHeader.active {
-  background: #3498db;
-  color: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .accordionTitle {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18px;
+  color: var(--text-primary);
 }
 
 .accordionIcon {
-  font-size: 18px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-secondary);
 }
 
 .accordionContent {
@@ -55,6 +57,6 @@
 }
 
 .accordionBody {
-  padding: 20px;
+  padding: var(--spacing-lg);
 }
 

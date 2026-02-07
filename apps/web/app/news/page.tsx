@@ -33,13 +33,13 @@ export default function NewsPage() {
   // board 쿼리 파라미터가 있으면 게시판 표시 (시황자료 페이지)
   if (boardId) {
     const boardTab = searchParams.get('tab') || 'market'
-    // 시황자료는 항상 B002(시황), B003(공부방) 사용
+    // 시황자료는 항상 B002(시황), B003(급등종목) 사용
     const marketBoardId = 'B002'
     const studyBoardId = 'B003'
     
     const boardTabs = [
       { label: '시황', href: `/news?board=B002&tab=market` },
-      { label: '공부방', href: `/news?board=B002&tab=study` },
+      { label: '급등종목', href: `/news?board=B002&tab=study` },
     ]
 
     return (
@@ -55,7 +55,7 @@ export default function NewsPage() {
               </div>
             )}
             
-            {/* 공부방 탭 */}
+            {/* 급등종목 탭 */}
             {boardTab === 'study' && (
               <div>
                 <Board boardId={studyBoardId} />

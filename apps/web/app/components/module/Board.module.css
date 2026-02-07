@@ -27,8 +27,9 @@
   margin-top: 16px;
 }
 .board__info {
-  font-size: 13px;
-  color: var(--color-second);
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin-top: var(--spacing-xs);
 }
 .board__wrap.list__type .board__innser + .board__innser {
   margin-top: 0px;
@@ -43,24 +44,26 @@
 }
 .board__title__h3 {
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: var(--spacing-xs);
 }
 
 .listtype__board {
-  width: calc(100% - 32px);
-  margin: 16px auto;
+  width: 100%;
+  margin: 0;
 }
 .board__items {
   background-color: var(--bg-primary);
-  padding: 8px 16px;
+  padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   border-radius: 0;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 .listtype__board > div {
   background-color: var(--bg-primary);
-  padding: 8px 16px;
+  padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   border-radius: 0;
   transition: background-color 0.3s ease, border-color 0.3s ease;

@@ -1,10 +1,10 @@
 .container {
-  margin: var(--spacing-sm) 0 24px;
+  margin: var(--spacing-md) 0;
   background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-color-light);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: none;
+  padding: var(--spacing-lg);
 }
 
 .header {
@@ -12,10 +12,11 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  margin-bottom: var(--spacing-md);
 }
 
 .referenceTime {
@@ -33,13 +34,13 @@
 }
 
 .tab {
-  padding: 10px 16px;
+  padding: var(--spacing-md) var(--spacing-lg);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text-secondary);
   transition: all 0.2s;
 }
@@ -118,17 +119,17 @@
 }
 
 .table th {
-  padding: 12px 8px;
+  padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
   font-weight: 600;
   color: var(--text-secondary);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-color-light);
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid var(--border-color-light);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .table tbody tr:hover {
@@ -162,19 +163,21 @@
 }
 
 .stockName {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 17px;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .stockCode {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-tertiary);
 }
 
 .priceCol {
   text-align: right;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 17px;
   color: var(--text-primary);
 }
 
