@@ -4,7 +4,7 @@
 import * as React from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
 
 // 컴포넌트 임포트
 import MainTop from './components/main/MainTop'
@@ -166,7 +166,7 @@ function shouldShowItem(item: MainPageItem): boolean {
   return true
 }
 
-export default function MainPage() {
+function MainPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -334,5 +334,13 @@ export default function MainPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function MainPage() {
+  return (
+    <Suspense fallback={<div className="inner-wrap"><div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div></div>}>
+      <MainPageContent />
+    </Suspense>
   )
 }

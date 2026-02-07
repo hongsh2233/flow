@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { Suspense, useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import PageTitle from '../components/element/PageTitle'
 import Tabs from '../components/element/tabsUi/Tabs'
@@ -59,7 +59,7 @@ interface IndexItemProps {
   percent: string
 }
 
-export default function StockInfoPage() {
+function StockInfoContent() {
   const { data: session } = useSession()
 
   // 커스텀 훅 사용
@@ -434,5 +434,13 @@ export default function StockInfoPage() {
         </TabPanel>
       </Tabs>
     </div>
+  )
+}
+
+export default function StockInfoPage() {
+  return (
+    <Suspense fallback={<div className="inner-wrap"><div className="no-data">로딩 중...</div></div>}>
+      <StockInfoContent />
+    </Suspense>
   )
 }
