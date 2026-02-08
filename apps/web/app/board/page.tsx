@@ -1,5 +1,7 @@
 'use client'
 
+'use client'
+
 import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PageTitle from '../components/element/PageTitle'
@@ -9,6 +11,14 @@ import TabPanel from '../components/element/tabsUi/TabPanel'
 import Board from '../components/module/Board'
 import { fetchNavMenu } from '@/lib/services/navMenuService'
 import { useEffect, useState } from 'react'
+
+function TabListWrapper({ items }: { items: Array<{ label: string; href: string }> }) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TabList items={items} variant="menu" />
+    </Suspense>
+  )
+}
 
 function BoardContent() {
   const searchParams = useSearchParams()
@@ -183,9 +193,7 @@ function BoardContent() {
       <div className="content__wrap">
         <PageTitle label={menuTitle || '게시판'} />
         <Tabs>
-          <Suspense fallback={<div>Loading...</div>}>
-            <TabList items={boardTabs} variant="menu" />
-          </Suspense>
+          <TabListWrapper items={boardTabs} />
           <TabPanel>
             <Board boardId={currentBoardId} />
           </TabPanel>
