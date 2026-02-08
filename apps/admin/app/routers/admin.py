@@ -221,6 +221,31 @@ async def nav_menu_delete(
     return RedirectResponse(url="/admin/settings", status_code=303)
 
 
+@router.post("/admin/settings/nav-menu/update-order")
+async def nav_menu_update_order(
+    item_orders: str = Form(...),  # "id1:order1,id2:order2,..." 형식
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """하단 메뉴 항목 순서 업데이트"""
+    if not user:
+        return JSONResponse({"success": False, "message": "인증이 필요합니다."}, status_code=401)
+    try:
+        pairs = item_orders.split(",")
+        for pair in pairs:
+            item_id_str, order_str = pair.split(":")
+            item_id = int(item_id_str)
+            order_index = int(order_str)
+            item = db.query(models.NavMenuItem).filter(models.NavMenuItem.id == item_id).first()
+            if item:
+                item.order_index = order_index
+        db.commit()
+        return JSONResponse({"success": True, "message": "순서가 업데이트되었습니다."})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse({"success": False, "message": f"순서 업데이트 실패: {str(e)}"}, status_code=400)
+
+
 # ==================== 서브 메뉴/탭 CRUD ====================
 
 @router.post("/admin/settings/nav-menu/{item_id}/tab/add")
