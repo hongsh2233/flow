@@ -816,53 +816,96 @@
   // ----- 탭 수정 폼 표시/숨김 -----
   window.openTabEditForm = function(tabId, label, linkType, linkValue, orderIndex) {
     var row = document.getElementById('tab-edit-row-' + tabId);
-    if (row) row.style.display = '';
+    if (!row) {
+      console.error('탭 수정 폼을 찾을 수 없습니다: tab-edit-row-' + tabId);
+      return;
+    }
+    row.style.display = '';
+    
     var form = document.getElementById('tabEditForm-' + tabId);
-    if (form) {
-      form.querySelector('input[name="label"]').value = label;
-      form.querySelector('input[name="order_index"]').value = orderIndex;
+    if (!form) {
+      console.error('탭 수정 폼을 찾을 수 없습니다: tabEditForm-' + tabId);
+      return;
+    }
 
-      var linkTypeSelect = form.querySelector('.tab-edit-link-type');
-      var pageWrap = form.querySelector('.tab-edit-page-wrap');
-      var boardWrap = form.querySelector('.tab-edit-board-wrap');
-      var tabParamWrap = form.querySelector('.tab-edit-tab-param-wrap');
-      var sel = form.querySelector('.tab-edit-link-select');
-      var custom = form.querySelector('.tab-edit-link-custom');
-      var boardSel = form.querySelector('.tab-edit-board-select');
-      var tabParam = form.querySelector('.tab-edit-tab-param');
-      var hidden = form.querySelector('.tab-edit-link-value');
+    var labelInput = form.querySelector('input[name="label"]');
+    var orderInput = form.querySelector('input[name="order_index"]');
+    if (labelInput) labelInput.value = label || '';
+    if (orderInput) orderInput.value = orderIndex || 0;
 
-      // 연결 유형 설정
-      if (linkTypeSelect) linkTypeSelect.value = linkType || 'page';
+    var linkTypeSelect = form.querySelector('.tab-edit-link-type');
+    var pageWrap = form.querySelector('.tab-edit-page-wrap');
+    var boardWrap = form.querySelector('.tab-edit-board-wrap');
+    var tabParamWrap = form.querySelector('.tab-edit-tab-param-wrap');
+    var sel = form.querySelector('.tab-edit-link-select');
+    var custom = form.querySelector('.tab-edit-link-custom');
+    var boardSel = form.querySelector('.tab-edit-board-select');
+    var tabParam = form.querySelector('.tab-edit-tab-param');
+    var hidden = form.querySelector('.tab-edit-link-value');
 
-      // 표시 전환
-      if (linkType === 'board') {
-        if (pageWrap) pageWrap.style.display = 'none';
-        if (boardWrap) boardWrap.style.display = '';
-        if (tabParamWrap) tabParamWrap.style.display = '';
-        
-        // linkValue에서 board ID와 tab 파라미터 분리
-        var boardId = linkValue;
-        var tabParamValue = '';
-        if (linkValue && linkValue.includes('?tab=')) {
-          var parts = linkValue.split('?tab=');
-          boardId = parts[0];
-          tabParamValue = parts[1] || '';
-        }
-        
-        if (boardSel) boardSel.value = boardId;
-        if (tabParam) tabParam.value = tabParamValue;
-        if (hidden) hidden.value = linkValue;
-      } else {
-        if (pageWrap) pageWrap.style.display = '';
-        if (boardWrap) boardWrap.style.display = 'none';
-        if (tabParamWrap) tabParamWrap.style.display = 'none';
-        if (sel && hidden) {
-          var opt = sel.querySelector('option[value="' + linkValue + '"]');
-          if (opt) { sel.value = linkValue; if (custom) custom.classList.add('hide'); hidden.value = linkValue; }
-          else { sel.value = '__custom__'; if (custom) { custom.classList.remove('hide'); custom.value = linkValue; } hidden.value = linkValue; }
+    // 연결 유형 설정 (이벤트 트리거 전에 값 설정)
+    if (linkTypeSelect) {
+      linkTypeSelect.value = linkType || 'page';
+    }
+
+    // 표시 전환 (이벤트 트리거 전에 직접 DOM 조작)
+    if (linkType === 'board') {
+      if (pageWrap) pageWrap.style.display = 'none';
+      if (boardWrap) boardWrap.style.display = '';
+      if (tabParamWrap) tabParamWrap.style.display = '';
+      
+      // linkValue에서 board ID와 tab 파라미터 분리
+      var boardId = linkValue || '';
+      var tabParamValue = '';
+      if (linkValue && linkValue.includes('?tab=')) {
+        var parts = linkValue.split('?tab=');
+        boardId = parts[0];
+        tabParamValue = parts[1] || '';
+      }
+      
+      if (boardSel) boardSel.value = boardId;
+      if (tabParam) tabParam.value = tabParamValue;
+      if (hidden) {
+        if (tabParamValue) {
+          hidden.value = boardId + '?tab=' + tabParamValue;
+        } else {
+          hidden.value = boardId;
         }
       }
+    } else {
+      if (pageWrap) pageWrap.style.display = '';
+      if (boardWrap) boardWrap.style.display = 'none';
+      if (tabParamWrap) tabParamWrap.style.display = 'none';
+      
+      if (sel && hidden) {
+        // linkValue에서 query string 제거 (페이지 경로만 비교)
+        var pathOnly = linkValue || '';
+        if (pathOnly.includes('?')) {
+          pathOnly = pathOnly.split('?')[0];
+        }
+        
+        var opt = sel.querySelector('option[value="' + pathOnly + '"]');
+        if (opt) {
+          sel.value = pathOnly;
+          if (custom) custom.classList.add('hide');
+          if (hidden) hidden.value = linkValue; // 원본 linkValue 유지 (query string 포함)
+        } else {
+          sel.value = '__custom__';
+          if (custom) {
+            custom.classList.remove('hide');
+            custom.value = linkValue; // 원본 linkValue 유지
+          }
+          if (hidden) hidden.value = linkValue;
+        }
+      }
+    }
+    
+    // 이벤트 트리거 (값 설정 후 - 이벤트 리스너가 제대로 동작하도록)
+    if (linkTypeSelect) {
+      setTimeout(function() {
+        var changeEvent = new Event('change', { bubbles: true });
+        linkTypeSelect.dispatchEvent(changeEvent);
+      }, 0);
     }
   };
   window.closeTabEditForm = function(tabId) {
