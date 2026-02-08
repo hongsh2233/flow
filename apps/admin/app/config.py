@@ -42,7 +42,8 @@ if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
     print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
 
 # 관리자 계정 설정
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")  # 초기 관리자 이메일
+# 기본값: 환경 변수가 없으면 init_admin_user()와 동일한 기본 이메일 사용
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "hongsh220303@gmail.com")  # 초기 관리자 이메일
 ADMIN_PW = os.environ.get("ADMIN_PW")  # 초기 관리자 비밀번호
 
 # 인증 설정
