@@ -727,16 +727,16 @@ async def get_nav_menu(db: Session = Depends(get_db)):
     for item in items:
         link = item.link_value
         if item.link_type == "board":
-            link = f"/board?board={item.link_value}" if item.link_value else "/board"
+            link = f"/news?board={item.link_value}" if item.link_value else "/news"
         tabs_list = []
         if hasattr(item, "tabs") and item.tabs:
             for t in sorted(item.tabs, key=lambda x: x.order_index):
                 if t.is_visible == "visible":
                     tab_link_type = getattr(t, "link_type", "page") or "page"
                     tab_href = t.link_value
-                    # 게시판 연결인 경우 URL 변환 (/board?board= 형식)
+                    # 게시판 연결인 경우 URL 변환
                     if tab_link_type == "board":
-                        tab_href = f"/board?board={t.link_value}" if t.link_value else "/board"
+                        tab_href = f"/news?board={t.link_value}" if t.link_value else "/news"
                     tabs_list.append({
                         "label": t.label,
                         "href": tab_href,
