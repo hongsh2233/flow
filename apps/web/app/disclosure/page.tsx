@@ -8,7 +8,7 @@ import NaverNews from '../components/module/NaverNews'
 import { useNavTabs } from '../hooks/useNavTabs'
 
 function DisclosureContent() {
-  const { tabs } = useNavTabs()
+  const { tabs, isLoading } = useNavTabs()
   const menuData = tabs.length > 0 ? tabs.map((t) => ({ label: t.label, href: t.href })) : []
 
   return (
