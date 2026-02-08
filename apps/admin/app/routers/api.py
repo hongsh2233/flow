@@ -558,6 +558,7 @@ async def get_schedules(
                 "date": serialize_date(schedule.date),
                 "subject": schedule.subject,
                 "content": schedule.content or "",
+                "detail": getattr(schedule, "detail", None) or "",
                 "type": schedule.type,
                 "created_at": serialize_datetime(schedule.created_at),
                 "updated_at": serialize_datetime(schedule.updated_at)
@@ -587,6 +588,7 @@ async def get_schedule(
             "date": serialize_date(schedule.date),
             "subject": schedule.subject,
             "content": schedule.content or "",
+            "detail": getattr(schedule, "detail", None) or "",
             "type": schedule.type,
             "created_at": serialize_datetime(schedule.created_at),
             "updated_at": serialize_datetime(schedule.updated_at)

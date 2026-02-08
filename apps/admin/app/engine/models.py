@@ -110,7 +110,8 @@ class Schedule(Base):
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, index=True)
     subject = Column(String(255), nullable=False)
-    content = Column(String(500))
+    content = Column(String(500))  # 요약 내용
+    detail = Column(Text)  # 상세 내용
     type = Column(String(20), default="manual")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

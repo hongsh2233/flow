@@ -41,6 +41,7 @@ async def schedule_page(
             "date": s.date.isoformat() if s.date else None,
             "subject": s.subject,
             "content": s.content or "",
+            "detail": getattr(s, "detail", None) or "",
             "type": s.type
         }
         for s in schedules
@@ -59,6 +60,7 @@ async def add_schedule(
     date: str = Form(...),
     subject: str = Form(...),
     content: str = Form(None),
+    detail: str = Form(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -75,6 +77,7 @@ async def add_schedule(
             date=date_obj,
             subject=subject,
             content=content or "",
+            detail=detail or None,
             type="manual"
         )
         
@@ -122,6 +125,7 @@ async def update_schedule(
     date: str = Form(...),
     subject: str = Form(...),
     content: str = Form(None),
+    detail: str = Form(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -143,6 +147,7 @@ async def update_schedule(
         schedule.date = date_obj
         schedule.subject = subject
         schedule.content = content or ""
+        schedule.detail = detail or None
         
         db.commit()
         db.refresh(schedule)

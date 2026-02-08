@@ -71,6 +71,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh Token 만료 시간 (30일) - 긴 
 # 공공데이터포털 API 설정
 DATA_GO_KR_API_KEY = os.environ.get("DATA_GO_KR_API_KEY")  # 공공데이터포털 API 인증키
 
+
 # 디버깅: API 키 로드 확인 (서버 시작 시 한 번만 출력)
 # 보안: API 키 미리보기는 콘솔에 출력하지 않음
 if DATA_GO_KR_API_KEY:
