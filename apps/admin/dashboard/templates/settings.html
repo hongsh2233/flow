@@ -351,13 +351,9 @@
           </div>
           <div class="nav-tabs-block-body" id="tabs-body-{{ item.id }}">
             {% if item.tabs %}
-            <div style="margin-bottom: 10px;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="openSelectedTabEditForms({{ item.id }}); return false;">선택한 항목 수정</button>
-            </div>
             <table class="tabs-mini-table">
               <thead>
                 <tr>
-                  <th style="width: 40px;"><input type="checkbox" class="tab-select-all" data-item-id="{{ item.id }}" onchange="toggleAllTabs({{ item.id }}, this.checked);" /></th>
                   <th style="width: 60px;">순서</th>
                   <th>탭명</th>
                   <th>연결</th>
@@ -367,17 +363,11 @@
               <tbody>
                 {% for tab in item.tabs %}
                 <tr data-tab-id="{{ tab.id }}">
-                  <td><input type="checkbox" class="tab-select-checkbox" data-tab-id="{{ tab.id }}" data-item-id="{{ item.id }}" /></td>
                   <td>{{ tab.order_index }}</td>
                   <td>{{ tab.label }}</td>
                   <td>
                     {% if tab.link_type == 'board' %}
-                      <span class="badge-board-sm">게시판</span> 
-                      {% if '?tab=' in tab.link_value %}
-                        {{ tab.link_value.split('?tab=')[0] }} (tab={{ tab.link_value.split('?tab=')[1] }})
-                      {% else %}
-                        {{ tab.link_value }}
-                      {% endif %}
+                      <span class="badge-board-sm">게시판</span> {{ tab.link_value }}
                     {% else %}
                       <span class="badge-page-sm">페이지</span> {{ tab.link_value }}
                     {% endif %}
@@ -388,7 +378,7 @@
                   </td>
                 </tr>
                 <tr class="tab-edit-form" id="tab-edit-row-{{ tab.id }}" style="display: none;">
-                  <td colspan="5">
+                  <td colspan="4">
                     <form method="post" action="/admin/settings/nav-menu/tab/update/{{ tab.id }}" id="tabEditForm-{{ tab.id }}">
                       <div class="form-row">
                         <div class="field-group"><label>탭명 *</label><input type="text" name="label" value="{{ tab.label }}" required maxlength="50" /></div>
@@ -1133,73 +1123,6 @@
       }
     });
   });
-
-  // ===== 탭 체크박스 기능 =====
-  window.toggleAllTabs = function(itemId, checked) {
-    var checkboxes = document.querySelectorAll('.tab-select-checkbox[data-item-id="' + itemId + '"]');
-    checkboxes.forEach(function(cb) {
-      cb.checked = checked;
-    });
-  };
-
-  window.openSelectedTabEditForms = function(itemId) {
-    var checkboxes = document.querySelectorAll('.tab-select-checkbox[data-item-id="' + itemId + '"]:checked');
-    if (checkboxes.length === 0) {
-      alert('수정할 탭을 선택해주세요.');
-      return;
-    }
-    
-    checkboxes.forEach(function(cb) {
-      var tabId = cb.getAttribute('data-tab-id');
-      var row = document.querySelector('tr[data-tab-id="' + tabId + '"]');
-      if (row) {
-        // 수정 폼이 이미 열려있으면 닫기
-        var editRow = document.getElementById('tab-edit-row-' + tabId);
-        if (editRow && editRow.style.display !== 'none') {
-          return; // 이미 열려있으면 스킵
-        }
-        
-        var label = row.querySelector('td:nth-child(3)').textContent.trim();
-        var linkType = 'page';
-        var linkValue = '';
-        var orderIndex = 0;
-        
-        // 순서 추출 (체크박스 다음 열)
-        var orderCell = row.querySelector('td:nth-child(2)');
-        if (orderCell) {
-          orderIndex = parseInt(orderCell.textContent.trim()) || 0;
-        }
-        
-        // 연결 정보에서 link_type과 link_value 추출 (체크박스 다음 다음 열)
-        var linkCell = row.querySelector('td:nth-child(4)');
-        if (linkCell) {
-          var badge = linkCell.querySelector('.badge-board-sm, .badge-page-sm');
-          if (badge && badge.classList.contains('badge-board-sm')) {
-            linkType = 'board';
-            // "게시판 B002" 또는 "게시판 B002 (tab=study)" 형식에서 추출
-            var linkText = linkCell.textContent.trim();
-            linkText = linkText.replace(/^게시판\s*/, '').trim();
-            // (tab=xxx) 부분 제거하고 B002만 추출
-            if (linkText.includes(' (tab=')) {
-              linkValue = linkText.split(' (tab=')[0].trim();
-              var tabParam = linkText.match(/\(tab=([^)]+)\)/);
-              if (tabParam) {
-                linkValue = linkValue + '?tab=' + tabParam[1];
-              }
-            } else {
-              linkValue = linkText;
-            }
-          } else {
-            // "페이지 /news" 같은 형식에서 /news 추출
-            var linkText = linkCell.textContent.trim();
-            linkValue = linkText.replace(/^페이지\s*/, '').trim();
-          }
-        }
-        
-        openTabEditForm(tabId, label, linkType, linkValue, orderIndex);
-      }
-    });
-  };
 
   // ===== 아이콘 빠른 수정 =====
   document.querySelectorAll('.icon-select').forEach(function(select) {
