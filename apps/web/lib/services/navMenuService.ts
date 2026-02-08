@@ -6,6 +6,8 @@
 export interface NavMenuTabItem {
   label: string
   href: string
+  linkType?: string
+  linkValue?: string
 }
 
 export interface NavMenuItem {
