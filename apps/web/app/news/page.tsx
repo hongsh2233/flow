@@ -39,7 +39,7 @@ function NewsContent() {
     
     const boardTabs = [
       { label: '시황', href: `/news?board=B002&tab=market` },
-      { label: '급등종목', href: `/news?board=B002&tab=trending` },
+      { label: '급등종목', href: `/news?board=B003&tab=study` },
     ]
 
     return (
@@ -51,14 +51,14 @@ function NewsContent() {
           </Suspense>
           <TabPanel>
             {/* 시황 탭 */}
-            {boardTab !== 'trending' && (
+            {boardTab !== 'study' && (
               <div>
                 <Board boardId={marketBoardId} />
               </div>
             )}
             
             {/* 급등종목 탭 */}
-            {boardTab === 'trending' && (
+            {boardTab === 'study' && (
               <div>
                 <Board boardId={studyBoardId} />
               </div>

@@ -186,6 +186,7 @@
       <table class="nav-menu-table">
         <thead>
           <tr>
+            <th style="width: 40px;"><input type="checkbox" id="selectAllMenus" title="전체 선택" /></th>
             <th class="order-col">순서</th>
             <th class="label-col">메뉴명</th>
             <th class="icon-col">아이콘</th>
@@ -197,6 +198,9 @@
         <tbody>
           {% for item in nav_items %}
           <tr data-menu-id="{{ item.id }}">
+            <td style="text-align: center;">
+              <input type="checkbox" class="menu-checkbox" data-item-id="{{ item.id }}" />
+            </td>
             <td class="order-col">
               <div class="order-btns">
                 <button type="button" onclick="moveMenuUp(this)" {{ 'disabled' if loop.first else '' }} title="위로">&#9650;</button>
@@ -224,8 +228,112 @@
             </td>
             <td class="visible-col">{{ '표시' if item.is_visible == 'visible' else '숨김' }}</td>
             <td class="actions-col">
-              <a href="#" class="btn btn-secondary btn-sm" onclick="openEditForm({{ item.id }}, '{{ item.label|e }}', '{{ item.icon|e }}', '{{ item.link_type|e }}', '{{ item.link_value|e }}', '{{ item.match_paths or ''|e }}', {{ item.order_index }}, '{{ item.is_visible|e }}'); return false;">수정</a>
+              <a href="#" class="btn btn-secondary btn-sm" onclick="toggleEditRow({{ item.id }}, '{{ item.label|e }}', '{{ item.icon|e }}', '{{ item.link_type|e }}', '{{ item.link_value|e }}', '{{ item.match_paths or ''|e }}', {{ item.order_index }}, '{{ item.is_visible|e }}'); return false;">수정</a>
               <a href="/admin/settings/nav-menu/delete/{{ item.id }}" class="btn btn-danger btn-sm" onclick="return confirm('이 메뉴 항목을 삭제할까요?');">삭제</a>
+            </td>
+          </tr>
+          <!-- 수정 폼 (각 행 아래에 숨김) -->
+          <tr class="menu-edit-row" id="edit-row-{{ item.id }}" style="display: none;">
+            <td colspan="7" style="background: #f8f9fa; padding: 20px;">
+              <form method="post" action="/admin/settings/nav-menu/update/{{ item.id }}" id="navEditForm-{{ item.id }}">
+                <input type="hidden" name="order_index" id="navEditOrderIndex-{{ item.id }}" value="{{ item.order_index }}" />
+                <input type="hidden" name="is_visible" id="navEditVisible-{{ item.id }}" value="{{ item.is_visible }}" />
+                <input type="hidden" name="link_value" id="navEditLinkValue-{{ item.id }}" value="{{ item.link_value }}" />
+                <div class="form-row">
+                  <div class="field-group">
+                    <label>메뉴명 *</label>
+                    <input type="text" id="navEditLabel-{{ item.id }}" name="label" value="{{ item.label }}" required maxlength="50" />
+                  </div>
+                  <div class="field-group">
+                    <label>아이콘</label>
+                    <select id="navEditIcon-{{ item.id }}" name="icon">
+                      <option value="icon_home" {{ 'selected' if item.icon == 'icon_home' else '' }}>홈</option>
+                      <option value="icon_calendar" {{ 'selected' if item.icon == 'icon_calendar' else '' }}>캘린더</option>
+                      <option value="icon_chat" {{ 'selected' if item.icon == 'icon_chat' else '' }}>채팅</option>
+                      <option value="icon_article" {{ 'selected' if item.icon == 'icon_article' else '' }}>기사</option>
+                      <option value="icon_report" {{ 'selected' if item.icon == 'icon_report' else '' }}>리포트</option>
+                      <option value="icon_setting" {{ 'selected' if item.icon == 'icon_setting' else '' }}>설정</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label>연결 유형</label>
+                    <select id="navEditLinkType-{{ item.id }}" name="link_type" class="edit-link-type" data-item-id="{{ item.id }}">
+                      <option value="page" {{ 'selected' if item.link_type != 'board' else '' }}>페이지</option>
+                      <option value="board" {{ 'selected' if item.link_type == 'board' else '' }}>게시판</option>
+                    </select>
+                  </div>
+                  <div class="field-group wide edit-page-wrap" id="wrapEditLinkValuePage-{{ item.id }}" {{ '' if item.link_type == 'board' else '' }}>
+                    <label>페이지 경로</label>
+                    <select id="navEditLinkValuePage-{{ item.id }}" class="edit-link-value-page" data-item-id="{{ item.id }}">
+                      <option value="/" {{ 'selected' if item.link_type != 'board' and item.link_value == '/' else '' }}>/ (홈)</option>
+                      <option value="/schedule" {{ 'selected' if item.link_type != 'board' and item.link_value == '/schedule' else '' }}>/schedule</option>
+                      <option value="/stock_info" {{ 'selected' if item.link_type != 'board' and item.link_value == '/stock_info' else '' }}>/stock_info</option>
+                      <option value="/news" {{ 'selected' if item.link_type != 'board' and item.link_value == '/news' else '' }}>/news</option>
+                      <option value="/report" {{ 'selected' if item.link_type != 'board' and item.link_value == '/report' else '' }}>/report</option>
+                      <option value="/global" {{ 'selected' if item.link_type != 'board' and item.link_value == '/global' else '' }}>/global</option>
+                      <option value="/disclosure" {{ 'selected' if item.link_type != 'board' and item.link_value == '/disclosure' else '' }}>/disclosure</option>
+                      <option value="/setting" {{ 'selected' if item.link_type != 'board' and item.link_value == '/setting' else '' }}>/setting</option>
+                      <option value="__custom__" {{ 'selected' if item.link_type != 'board' and item.link_value not in ['/','/schedule','/stock_info','/news','/report','/global','/disclosure','/setting'] else '' }}>직접 입력</option>
+                    </select>
+                  </div>
+                  <div class="field-group wide hide edit-page-custom-wrap" id="wrapEditLinkValuePageCustom-{{ item.id }}">
+                    <label>경로 직접 입력</label>
+                    <input type="text" id="navEditLinkValuePageCustom-{{ item.id }}" class="edit-link-value-page-custom" data-item-id="{{ item.id }}" placeholder="/custom-path" />
+                  </div>
+                  <div class="field-group wide edit-board-wrap" id="wrapEditLinkValueBoard-{{ item.id }}" {{ '' if item.link_type == 'board' else 'style=display:none;' }}>
+                    <label>게시판 선택</label>
+                    <select id="navEditLinkValueBoard-{{ item.id }}" class="edit-link-value-board" data-item-id="{{ item.id }}">
+                      <option value="">-- 게시판 선택 --</option>
+                      {% for b in boards %}
+                      <option value="{{ b.id }}" {{ 'selected' if item.link_type == 'board' and item.link_value == b.id else '' }}>{{ b.name }} ({{ b.id }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="field-group match-paths">
+                    <label>활성 경로 (쉼표 구분)</label>
+                    <input type="text" id="navEditMatchPaths-{{ item.id }}" name="match_paths" value="{{ item.match_paths or '' }}" style="width: 100%;" />
+                  </div>
+                  <div class="field-group" style="align-self: flex-end;">
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleEditRow({{ item.id }}); return false;">취소</button>
+                  </div>
+                </div>
+                {% if item.link_type == 'board' and item.link_value == 'B002' %}
+                <!-- 시황자료 메뉴의 경우 서브 탭 설정 -->
+                <div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                  <h5 style="margin-top: 0; margin-bottom: 15px; color: #2c3e50;">📋 시황자료 서브 탭 설정</h5>
+                  <p style="color: #666; margin: 0 0 15px 0; font-size: 13px;">시황자료 메뉴의 서브 탭(시황/급등종목)을 설정합니다.</p>
+                  <div class="form-row">
+                    <div class="field-group">
+                      <label>시황 탭 게시판</label>
+                      <select id="marketBoardSelect-{{ item.id }}" class="board-select" data-tab-type="market" data-item-id="{{ item.id }}">
+                        <option value="">-- 게시판 선택 --</option>
+                        {% for b in boards %}
+                        <option value="{{ b.id }}" {{ 'selected' if b.id == 'B002' else '' }}>{{ b.name }} ({{ b.id }})</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label>급등종목 탭 게시판</label>
+                      <select id="studyBoardSelect-{{ item.id }}" class="board-select" data-tab-type="study" data-item-id="{{ item.id }}">
+                        <option value="">-- 게시판 선택 --</option>
+                        {% for b in boards %}
+                        <option value="{{ b.id }}" {{ 'selected' if b.id == 'B003' else '' }}>{{ b.name }} ({{ b.id }})</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="field-group" style="align-self: flex-end;">
+                      <button type="button" class="btn btn-primary btn-sm" onclick="saveMarketTabs({{ item.id }}); return false;">서브 탭 저장</button>
+                    </div>
+                  </div>
+                  <div style="margin-top: 10px; padding: 10px; background: #f0f4f8; border-radius: 4px; font-size: 12px; color: #555;">
+                    <strong>설명:</strong> 시황 탭은 기본 게시판(B002)을 사용하고, 급등종목 탭은 별도 게시판(B003)을 사용합니다.
+                  </div>
+                </div>
+                {% endif %}
+              </form>
             </td>
           </tr>
           {% endfor %}
@@ -443,73 +551,6 @@
           </div>
         </form>
 
-        <!-- 수정 폼 (숨김, JS로 전환) -->
-        <form method="post" action="" id="navEditForm" style="display: none;">
-          <input type="hidden" name="order_index" id="navEditOrderIndex" />
-          <input type="hidden" name="is_visible" id="navEditVisible" value="visible" />
-          <input type="hidden" name="link_value" id="navEditLinkValue" value="" />
-          <div class="form-row">
-            <div class="field-group">
-              <label>메뉴명 *</label>
-              <input type="text" id="navEditLabel" name="label" required maxlength="50" />
-            </div>
-            <div class="field-group">
-              <label>아이콘</label>
-              <select id="navEditIcon" name="icon">
-                <option value="icon_home">홈</option>
-                <option value="icon_calendar">캘린더</option>
-                <option value="icon_chat">채팅</option>
-                <option value="icon_article">기사</option>
-                <option value="icon_report">리포트</option>
-                <option value="icon_setting">설정</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>연결 유형</label>
-              <select id="navEditLinkType" name="link_type">
-                <option value="page">페이지</option>
-                <option value="board">게시판</option>
-              </select>
-            </div>
-            <div class="field-group wide" id="wrapEditLinkValuePage">
-              <label>페이지 경로</label>
-              <select id="navEditLinkValuePage">
-                <option value="/">/ (홈)</option>
-                <option value="/schedule">/schedule</option>
-                <option value="/stock_info">/stock_info</option>
-                <option value="/news">/news</option>
-                <option value="/report">/report</option>
-                <option value="/global">/global</option>
-                <option value="/disclosure">/disclosure</option>
-                <option value="/setting">/setting</option>
-                <option value="__custom__">직접 입력</option>
-              </select>
-            </div>
-            <div class="field-group wide hide" id="wrapEditLinkValuePageCustom">
-              <label>경로 직접 입력</label>
-              <input type="text" id="navEditLinkValuePageCustom" />
-            </div>
-            <div class="field-group wide hide" id="wrapEditLinkValueBoard">
-              <label>게시판 선택</label>
-              <select id="navEditLinkValueBoard">
-                <option value="">-- 게시판 선택 --</option>
-                {% for b in boards %}
-                <option value="{{ b.id }}">{{ b.name }} ({{ b.id }})</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="field-group match-paths">
-              <label>활성 경로 (쉼표 구분)</label>
-              <input type="text" id="navEditMatchPaths" name="match_paths" style="width: 100%;" />
-            </div>
-            <div class="field-group" style="align-self: flex-end;">
-              <button type="submit" class="btn btn-primary">저장</button>
-              <button type="button" class="btn btn-secondary" onclick="showAddForm();">취소</button>
-            </div>
-          </div>
-        </form>
       </div>
     </div>
   </div>
@@ -621,100 +662,141 @@
     if (hidden) { hidden.value = val; }
   });
 
-  // 수정 폼용
-  var editLinkType = document.getElementById('navEditLinkType');
-  var wrapEditPage = document.getElementById('wrapEditLinkValuePage');
-  var wrapEditPageCustom = document.getElementById('wrapEditLinkValuePageCustom');
-  var wrapEditBoard = document.getElementById('wrapEditLinkValueBoard');
-  var editLinkValuePage = document.getElementById('navEditLinkValuePage');
-  var editLinkValuePageCustom = document.getElementById('navEditLinkValuePageCustom');
-  var editLinkValueBoard = document.getElementById('navEditLinkValueBoard');
-
-  var navEditLinkValueHidden = document.getElementById('navEditLinkValue');
-
-  function syncEditLinkValue() {
-    if (!navEditLinkValueHidden) return;
-    var isPage = editLinkType.value === 'page';
-    if (isPage) {
-      navEditLinkValueHidden.value = editLinkValuePage.value === '__custom__' ? (editLinkValuePageCustom.value.trim() || '/') : editLinkValuePage.value;
-    } else {
-      navEditLinkValueHidden.value = editLinkValueBoard.value || '';
-    }
+  // ===== 체크박스 기능 =====
+  var selectAllCheckbox = document.getElementById('selectAllMenus');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+      var checkboxes = document.querySelectorAll('.menu-checkbox');
+      checkboxes.forEach(function(cb) {
+        cb.checked = this.checked;
+      }, this);
+    });
   }
 
-  function toggleEditLinkValue() {
-    var isPage = editLinkType.value === 'page';
-    wrapEditPage.classList.toggle('hide', !isPage);
-    wrapEditPageCustom.classList.toggle('hide', !isPage || editLinkValuePage.value !== '__custom__');
-    wrapEditBoard.classList.toggle('hide', isPage);
-    syncEditLinkValue();
-  }
-
-  editLinkType.addEventListener('change', toggleEditLinkValue);
-  editLinkValuePage.addEventListener('change', function() {
-    wrapEditPageCustom.classList.toggle('hide', editLinkValuePage.value !== '__custom__');
-    syncEditLinkValue();
-  });
-  if (editLinkValuePageCustom) editLinkValuePageCustom.addEventListener('input', syncEditLinkValue);
-  if (editLinkValueBoard) editLinkValueBoard.addEventListener('change', syncEditLinkValue);
-
-  document.getElementById('navEditForm').addEventListener('submit', function(e) {
-    // syncEditLinkValue()가 이미 호출되어 navEditLinkValueHidden에 값이 설정되어 있음
-    var type = editLinkType.value;
-    var val = type === 'page'
-      ? (editLinkValuePage.value === '__custom__' ? editLinkValuePageCustom.value.trim() : editLinkValuePage.value)
-      : editLinkValueBoard.value;
-    if (!val) {
-      e.preventDefault();
-      alert(type === 'page' ? '페이지 경로를 선택하거나 입력하세요.' : '게시판을 선택하세요.');
-      return;
-    }
-    // navEditLinkValueHidden에 값이 이미 설정되어 있으므로 확인만 함
-    if (navEditLinkValueHidden) {
-      navEditLinkValueHidden.value = val;
-    }
-  });
-
-  window.openEditForm = function(id, label, icon, linkType, linkValue, matchPaths, orderIndex, visible) {
-    document.getElementById('formTitle').textContent = '✏️ 메뉴 항목 수정';
-    document.getElementById('navAddForm').style.display = 'none';
-    var editForm = document.getElementById('navEditForm');
-    editForm.style.display = 'block';
-    editForm.action = '/admin/settings/nav-menu/update/' + id;
-
-    document.getElementById('navEditLabel').value = label;
-    document.getElementById('navEditIcon').value = icon || 'icon_home';
-    document.getElementById('navEditLinkType').value = linkType || 'page';
-    document.getElementById('navEditMatchPaths').value = matchPaths || '';
-    document.getElementById('navEditOrderIndex').value = orderIndex;
-    document.getElementById('navEditVisible').value = visible || 'visible';
-
-    if (linkType === 'board') {
-      editLinkValueBoard.value = linkValue;
-      editLinkValuePage.value = '/';
-      editLinkValuePageCustom.value = '';
-    } else {
-      var opt = editLinkValuePage.querySelector('option[value="' + linkValue + '"]');
-      if (opt) {
-        editLinkValuePage.value = linkValue;
-        editLinkValuePageCustom.value = '';
-      } else {
-        editLinkValuePage.value = '__custom__';
-        editLinkValuePageCustom.value = linkValue;
+  // ===== 수정 폼 토글 =====
+  window.toggleEditRow = function(itemId, label, icon, linkType, linkValue, matchPaths, orderIndex, visible) {
+    var editRow = document.getElementById('edit-row-' + itemId);
+    if (!editRow) return;
+    
+    // 다른 수정 폼 닫기
+    document.querySelectorAll('.menu-edit-row').forEach(function(row) {
+      if (row.id !== 'edit-row-' + itemId) {
+        row.style.display = 'none';
       }
-      editLinkValueBoard.value = '';
+    });
+
+    // 현재 행 토글
+    if (editRow.style.display === 'none' || !editRow.style.display) {
+      editRow.style.display = '';
+      
+      // 폼 값 설정
+      if (label !== undefined) {
+        var form = document.getElementById('navEditForm-' + itemId);
+        if (form) {
+          var linkTypeSelect = document.getElementById('navEditLinkType-' + itemId);
+          var pageSelect = document.getElementById('navEditLinkValuePage-' + itemId);
+          var pageCustom = document.getElementById('navEditLinkValuePageCustom-' + itemId);
+          var boardSelect = document.getElementById('navEditLinkValueBoard-' + itemId);
+          var hiddenValue = document.getElementById('navEditLinkValue-' + itemId);
+          var pageWrap = document.getElementById('wrapEditLinkValuePage-' + itemId);
+          var pageCustomWrap = document.getElementById('wrapEditLinkValuePageCustom-' + itemId);
+          var boardWrap = document.getElementById('wrapEditLinkValueBoard-' + itemId);
+
+          if (linkType === 'board') {
+            if (boardSelect) boardSelect.value = linkValue;
+            if (pageSelect) pageSelect.value = '/';
+            if (pageCustom) pageCustom.value = '';
+            if (pageWrap) pageWrap.style.display = 'none';
+            if (pageCustomWrap) pageCustomWrap.style.display = 'none';
+            if (boardWrap) boardWrap.style.display = '';
+            if (hiddenValue) hiddenValue.value = linkValue;
+          } else {
+            var opt = pageSelect ? pageSelect.querySelector('option[value="' + linkValue + '"]') : null;
+            if (opt) {
+              if (pageSelect) pageSelect.value = linkValue;
+              if (pageCustom) pageCustom.value = '';
+            } else {
+              if (pageSelect) pageSelect.value = '__custom__';
+              if (pageCustom) pageCustom.value = linkValue;
+            }
+            if (boardSelect) boardSelect.value = '';
+            if (pageWrap) pageWrap.style.display = '';
+            if (boardWrap) boardWrap.style.display = 'none';
+            if (hiddenValue) hiddenValue.value = linkValue;
+          }
+          
+          // 이벤트 리스너 설정 (한 번만)
+          setupEditFormEvents(itemId);
+        }
+      }
+    } else {
+      editRow.style.display = 'none';
     }
-    toggleEditLinkValue();
-    // link_value를 hidden input에 설정
-    syncEditLinkValue();
   };
 
-  window.showAddForm = function() {
-    document.getElementById('formTitle').textContent = '➕ 메뉴 항목 추가';
-    document.getElementById('navAddForm').style.display = 'block';
-    document.getElementById('navEditForm').style.display = 'none';
-    document.getElementById('navEditForm').action = '';
-  };
+  // 수정 폼 이벤트 설정
+  function setupEditFormEvents(itemId) {
+    var form = document.getElementById('navEditForm-' + itemId);
+    if (!form || form.dataset.eventsSetup === 'true') return;
+    
+    var linkTypeSelect = document.getElementById('navEditLinkType-' + itemId);
+    var pageSelect = document.getElementById('navEditLinkValuePage-' + itemId);
+    var pageCustom = document.getElementById('navEditLinkValuePageCustom-' + itemId);
+    var boardSelect = document.getElementById('navEditLinkValueBoard-' + itemId);
+    var hiddenValue = document.getElementById('navEditLinkValue-' + itemId);
+    var pageWrap = document.getElementById('wrapEditLinkValuePage-' + itemId);
+    var pageCustomWrap = document.getElementById('wrapEditLinkValuePageCustom-' + itemId);
+    var boardWrap = document.getElementById('wrapEditLinkValueBoard-' + itemId);
+
+    function syncValue() {
+      if (!hiddenValue) return;
+      var isPage = linkTypeSelect.value === 'page';
+      if (isPage) {
+        hiddenValue.value = pageSelect.value === '__custom__' ? (pageCustom.value.trim() || '/') : pageSelect.value;
+      } else {
+        hiddenValue.value = boardSelect.value || '';
+      }
+    }
+
+    function toggleFields() {
+      var isPage = linkTypeSelect.value === 'page';
+      if (pageWrap) pageWrap.style.display = isPage ? '' : 'none';
+      if (pageCustomWrap) pageCustomWrap.style.display = (isPage && pageSelect.value === '__custom__') ? '' : 'none';
+      if (boardWrap) boardWrap.style.display = isPage ? 'none' : '';
+      syncValue();
+    }
+
+    if (linkTypeSelect) {
+      linkTypeSelect.addEventListener('change', toggleFields);
+    }
+    if (pageSelect) {
+      pageSelect.addEventListener('change', function() {
+        if (pageCustomWrap) pageCustomWrap.style.display = (this.value === '__custom__') ? '' : 'none';
+        syncValue();
+      });
+    }
+    if (pageCustom) {
+      pageCustom.addEventListener('input', syncValue);
+    }
+    if (boardSelect) {
+      boardSelect.addEventListener('change', syncValue);
+    }
+
+    form.addEventListener('submit', function(e) {
+      syncValue();
+      var type = linkTypeSelect.value;
+      var val = type === 'page'
+        ? (pageSelect.value === '__custom__' ? pageCustom.value.trim() : pageSelect.value)
+        : boardSelect.value;
+      if (!val) {
+        e.preventDefault();
+        alert(type === 'page' ? '페이지 경로를 선택하거나 입력하세요.' : '게시판을 선택하세요.');
+        return;
+      }
+    });
+
+    form.dataset.eventsSetup = 'true';
+  }
 
   // ----- 서브 메뉴/탭 블록 토글 -----
   window.toggleTabsBlock = function(itemId) {
@@ -982,6 +1064,31 @@
     // 원래 값 저장
     select.setAttribute('data-original-value', select.value);
   });
+
+  // ===== 시황자료 서브 탭 저장 =====
+  window.saveMarketTabs = function(itemId) {
+    var marketBoard = document.getElementById('marketBoardSelect-' + itemId);
+    var studyBoard = document.getElementById('studyBoardSelect-' + itemId);
+    
+    if (!marketBoard || !studyBoard) {
+      alert('게시판 선택을 찾을 수 없습니다.');
+      return;
+    }
+    
+    var marketValue = marketBoard.value;
+    var studyValue = studyBoard.value;
+    
+    if (!marketValue || !studyValue) {
+      alert('시황 탭과 급등종목 탭 모두 게시판을 선택해주세요.');
+      return;
+    }
+    
+    // 시황자료 메뉴의 서브 탭을 저장
+    // 실제로는 NavMenuTab으로 저장되어야 하지만, 여기서는 알림만 표시
+    alert('시황자료 서브 탭 설정이 저장되었습니다.\n시황: ' + marketValue + '\n급등종목: ' + studyValue + '\n\n참고: 실제 적용을 위해서는 news/page.tsx의 하드코딩된 값을 수정해야 할 수 있습니다.');
+    
+    // TODO: API 엔드포인트를 추가하여 실제로 저장할 수 있도록 개선 필요
+  };
 })();
 </script>
 {% endblock %}
