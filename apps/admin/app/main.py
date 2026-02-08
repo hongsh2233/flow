@@ -14,6 +14,7 @@ FastAPI 애플리케이션 메인 파일
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
@@ -69,6 +70,14 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# robots.txt: BO(관리자) 영역 검색엔진 색인 차단
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    """검색엔진 봇에 관리자 전체 영역 차단 지시"""
+    return """User-agent: *
+Disallow: /
+"""
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
 # 프로덕션 환경에서는 allow_origins를 특정 도메인으로 제한해야 합니다.
