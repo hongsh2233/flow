@@ -6,6 +6,8 @@
 export interface NavMenuTabItem {
   label: string
   href: string
+  linkType?: string
+  linkValue?: string
 }
 
 export interface NavMenuItem {
@@ -13,6 +15,8 @@ export interface NavMenuItem {
   name: string
   icon: string
   link: string
+  linkType?: string
+  linkValue?: string
   matchPaths: string[]
   tabs?: NavMenuTabItem[]
 }
