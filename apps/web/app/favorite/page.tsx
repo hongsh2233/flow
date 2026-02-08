@@ -7,9 +7,11 @@ import TabList from '../components/element/tabsUi/TabList'
 import NaverNews from '../components/module/NaverNews'
 import { useNavTabs } from '../hooks/useNavTabs'
 
-const DEFAULT_TABS = [  
+const DEFAULT_TABS = [
+  { label: '시황', href: '/news' },
+  { label: '리포트', href: '/report' },
+  { label: '글로벌', href: '/global' },
   { label: '뉴스', href: '/disclosure' },
-  { label: '관심뉴스', href: '/favorite' },
 ]
 
 function DisclosureContent() {
