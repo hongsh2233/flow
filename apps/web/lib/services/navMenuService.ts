@@ -13,6 +13,8 @@ export interface NavMenuItem {
   name: string
   icon: string
   link: string
+  linkType?: string
+  linkValue?: string
   matchPaths: string[]
   tabs?: NavMenuTabItem[]
 }
