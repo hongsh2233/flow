@@ -7,12 +7,21 @@ import styles from './BottomNav.module.css'
 import IconButton from '../element/IconButton'
 import { fetchNavMenu } from '@/lib/services/navMenuService'
 
+const DEFAULT_NAV_LIST = [
+  { name: '홈', icon: 'icon_home', link: '/' },
+  { name: '캘린더', icon: 'icon_calendar', link: '/schedule' },
+  { name: '뉴스', icon: 'icon_article', link: '/news' },
+  { name: '시황자료', icon: 'icon_report', link: '/news?board=B002' },
+  { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
+  { name: '설정', icon: 'icon_setting', link: '/setting' },
+]
+
 function HeaderContent() {
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [navList, setNavList] = useState<Array<{ name: string; icon: string; link: string; matchPaths?: string[] }>>([])
+  const [navList, setNavList] = useState<Array<{ name: string; icon: string; link: string; matchPaths?: string[] }>>(DEFAULT_NAV_LIST)
 
   useEffect(() => {
     fetchNavMenu().then((items) => {
@@ -22,9 +31,6 @@ function HeaderContent() {
         link: item.link,
         matchPaths: item.matchPaths 
       })))
-    }).catch((error) => {
-      console.error('메뉴 로딩 실패:', error)
-      // 에러 발생 시 빈 배열 유지 (fallback 없음)
     })
   }, [])
 
@@ -36,7 +42,7 @@ function HeaderContent() {
 
   // 3. 네비게이션 타이틀 로직 (메인이 아닐 때 사용) - 경로 일치 또는 matchPaths 포함 (query string 고려)
   const currentQuery = searchParams.toString()
-  const currentNav = navList.length > 0 ? navList.find((nav) => {
+  const currentNav = navList.find((nav) => {
     const navLink = nav.link.split('?')[0]
     const navQuery = nav.link.includes('?') ? nav.link.split('?')[1] : ''
     // 정확히 일치하는 경우
@@ -57,7 +63,7 @@ function HeaderContent() {
   }) ?? navList.find((nav) => {
     const navLink = nav.link.split('?')[0]
     return pathname.startsWith(navLink) && navLink !== '/' && !searchParams.toString()
-  }) : null
+  })
   const subPageTitle = currentNav?.name || '증시 정보'
 
   const handleBack = () => router.back()
