@@ -38,8 +38,8 @@ function NewsContent() {
     const studyBoardId = 'B002'
     
     const boardTabs = [
-      { label: '시황', href: `/board?board=B002&tab=market` },
-      { label: '급등종목', href: `/board?board=B003&tab=study` },
+      { label: '시황', href: `/board?board=B001&tab=market` },
+      { label: '급등종목', href: `/board?board=B002&tab=study` },
     ]
 
     return (
