@@ -67,13 +67,23 @@ function BoardContent() {
               tabHref = tab.href.replace('/news?board=', '/board?board=')
             }
             
-            // href에 tab 파라미터가 없으면 추가
-            if (tab.linkType === 'board' && tabHref && !tabHref.includes('tab=')) {
-              const tabIndex = currentMenuItem.tabs?.indexOf(tab) || 0
-              const tabParam = tabIndex === 0 ? 'market' : 'study'
+            // href에 tab 파라미터가 없으면 추가 (link_value에 ?tab=xxx가 포함된 경우도 처리)
+            if (tab.linkType === 'board' && tabHref) {
               try {
                 const url = new URL(tabHref, window.location.origin)
-                url.searchParams.set('tab', tabParam)
+                // link_value에서 tab 파라미터 추출 시도
+                if (tab.linkValue && tab.linkValue.includes('?tab=')) {
+                  const linkValueUrl = new URL(tab.linkValue.includes('http') ? tab.linkValue : `http://example.com${tab.linkValue}`)
+                  const tabParam = linkValueUrl.searchParams.get('tab')
+                  if (tabParam) {
+                    url.searchParams.set('tab', tabParam)
+                  }
+                } else if (!url.searchParams.has('tab')) {
+                  // tab 파라미터가 없으면 order_index 기반으로 추가
+                  const tabIndex = currentMenuItem.tabs?.indexOf(tab) || 0
+                  const tabParam = tabIndex === 0 ? 'market' : 'study'
+                  url.searchParams.set('tab', tabParam)
+                }
                 tabHref = url.pathname + url.search
               } catch {
                 // URL 파싱 실패 시 원본 href 사용
@@ -131,11 +141,20 @@ function BoardContent() {
 
     const boardTabs = marketTabs.map(t => ({ label: t.label, href: t.href }))
 
+    // 현재 탭 찾기 (tab 파라미터 매칭)
     const currentTabIndex = boardTabs.findIndex(t => {
       try {
         const tabUrl = new URL(t.href, window.location.origin)
         const tabParam = tabUrl.searchParams.get('tab')
-        return tabParam === boardTab
+        // tab 파라미터가 정확히 일치하거나, 둘 다 없는 경우 (첫 번째 탭)
+        if (tabParam === boardTab) {
+          return true
+        }
+        // tab 파라미터가 없고 boardTab이 'market'인 경우 첫 번째 탭으로 간주
+        if (!tabParam && boardTab === 'market' && boardTabs.indexOf(t) === 0) {
+          return true
+        }
+        return false
       } catch {
         return false
       }

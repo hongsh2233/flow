@@ -736,7 +736,12 @@ async def get_nav_menu(db: Session = Depends(get_db)):
                     tab_href = t.link_value
                     # 게시판 연결인 경우 URL 변환 (/board?board= 형식)
                     if tab_link_type == "board":
-                        tab_href = f"/board?board={t.link_value}" if t.link_value else "/board"
+                        # link_value에 ?tab=xxx가 포함된 경우 처리
+                        if "?tab=" in t.link_value:
+                            board_id, tab_param = t.link_value.split("?tab=", 1)
+                            tab_href = f"/board?board={board_id}&tab={tab_param}" if board_id else "/board"
+                        else:
+                            tab_href = f"/board?board={t.link_value}" if t.link_value else "/board"
                     tabs_list.append({
                         "label": t.label,
                         "href": tab_href,
