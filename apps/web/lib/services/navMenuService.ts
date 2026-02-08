@@ -23,7 +23,7 @@ const DEFAULT_NAV_LIST: NavMenuItem[] = [
   { id: 0, name: '홈', icon: 'icon_home', link: '/', matchPaths: ['/'] },
   { id: 1, name: '캘린더', icon: 'icon_calendar', link: '/schedule', matchPaths: ['/schedule'] },
   { id: 2, name: '뉴스', icon: 'icon_article', link: '/news', matchPaths: ['/news', '/report', '/global', '/disclosure', '/post'] },
-  { id: 3, name: '시황자료', icon: 'icon_report', link: '/board?board=B001', matchPaths: ['/board?board=B001', '/board?board=B001&tab=market', '/board?board=B002&tab=study', '/board?board=B002', '/board?board=B002&tab=market', '/board?board=B002&tab=study'] },
+  { id: 3, name: '시황자료', icon: 'icon_report', link: '/board?board=B001', matchPaths: ['/board?board=B001', '/board?board=B001&tab=market', '/board?board=B001&tab=study', '/board?board=B001', '/board?board=B001&tab=market', '/board?board=B001&tab=study'] },
   { id: 4, name: '종목자료', icon: 'icon_chat', link: '/stock_info', matchPaths: ['/stock_info'] },
   { id: 5, name: '설정', icon: 'icon_setting', link: '/setting', matchPaths: ['/setting'] },
 ]

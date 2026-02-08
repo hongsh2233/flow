@@ -15,8 +15,8 @@ function BoardContent() {
   const boardTab = searchParams.get('tab') || 'market'
   const [menuTitle, setMenuTitle] = useState<string>('시황자료')
   const [boardTabs, setBoardTabs] = useState<Array<{ label: string; href: string }>>([
-    { label: '시황', href: '/board?board=B002&tab=market' },
-    { label: '급등종목', href: '/board?board=B003&tab=study' },
+    { label: '시황', href: '/board?board=B001&tab=market' },
+    { label: '급등종목', href: '/board?board=B002&tab=study' },
   ])
 
   // 백엔드에서 메뉴 정보 가져오기
