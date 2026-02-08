@@ -171,6 +171,95 @@ async def delete_stock_term(
     return RedirectResponse(url="/admin/stock-terms", status_code=303)
 
 
+@router.post("/admin/stock-terms/bulk-add")
+async def bulk_add_stock_terms(
+    bulk_data: str = Form(...),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """주식용어 일괄 등록
+    
+    형식: 각 줄마다 "용어|설명|카테고리" 또는 "용어|설명"
+    예시:
+    PER|주가를 주당순이익으로 나눈 값. 숫자가 낮을수록 저평가된 주식일 수 있어요.|재무/펀더멘털
+    PBR|주가를 주당순자산으로 나눈 값|재무/펀더멘털
+    """
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    if not bulk_data or not bulk_data.strip():
+        return HTMLResponse(
+            "<script>alert('입력된 데이터가 없습니다.'); history.back();</script>"
+        )
+
+    lines = [line.strip() for line in bulk_data.strip().split('\n') if line.strip()]
+    if not lines:
+        return HTMLResponse(
+            "<script>alert('입력된 데이터가 없습니다.'); history.back();</script>"
+        )
+
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for line_num, line in enumerate(lines, 1):
+        parts = [p.strip() for p in line.split('|')]
+        
+        if len(parts) < 2:
+            error_count += 1
+            errors.append(f"{line_num}번째 줄: 형식이 올바르지 않습니다 (용어|설명|카테고리 형식 필요)")
+            continue
+
+        term = parts[0]
+        description = parts[1]
+        category = parts[2] if len(parts) > 2 and parts[2] else ""
+
+        if not term or not description:
+            error_count += 1
+            errors.append(f"{line_num}번째 줄: 용어와 설명은 필수입니다")
+            continue
+
+        # 중복 확인
+        existing = db.query(models.StockTerm).filter(models.StockTerm.term == term).first()
+        if existing:
+            error_count += 1
+            errors.append(f"{line_num}번째 줄: '{term}' 이미 존재하는 용어입니다")
+            continue
+
+        try:
+            new_term = models.StockTerm(
+                term=term,
+                description=description,
+                category=category if category else None,
+            )
+            db.add(new_term)
+            success_count += 1
+        except Exception as e:
+            error_count += 1
+            errors.append(f"{line_num}번째 줄: 오류 발생 - {str(e)}")
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        return HTMLResponse(
+            f"<script>alert('일괄 등록 중 오류가 발생했습니다: {str(e)}'); history.back();</script>"
+        )
+
+    # 결과 메시지 생성
+    if error_count == 0:
+        message = f"성공적으로 {success_count}개의 용어가 등록되었습니다."
+    else:
+        error_msg = "\\n".join(errors[:10])  # 최대 10개만 표시
+        if len(errors) > 10:
+            error_msg += f"\\n... 외 {len(errors) - 10}개 오류"
+        message = f"등록 완료: {success_count}개 성공, {error_count}개 실패\\n\\n오류 목록:\\n{error_msg}"
+
+    return HTMLResponse(
+        f"<script>alert('{message}'); location.href='/admin/stock-terms';</script>"
+    )
+
+
 # ==================== REST API (프론트엔드용) ====================
 
 
