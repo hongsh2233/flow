@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 function BoardContent() {
   const searchParams = useSearchParams()
   const boardTab = searchParams.get('tab') || 'market'
-  const [menuTitle, setMenuTitle] = useState<string>('시황자료')
+  const [menuTitle, setMenuTitle] = useState<string>('시황')
   const [boardTabs, setBoardTabs] = useState<Array<{ label: string; href: string }>>([
     { label: '시황', href: '/board?board=B001&tab=market' },
     { label: '급등종목', href: '/board?board=B002&tab=study' },
@@ -24,15 +24,15 @@ function BoardContent() {
     fetchNavMenu().then((items) => {
       // 시황자료 메뉴 찾기 (B002 또는 B003을 linkValue로 가진 메뉴)
       const marketMenuItem = items.find(item => 
-        item.linkType === 'board' && (item.linkValue === 'B002' || item.linkValue === 'B003')
+        item.linkType === 'board' && (item.linkValue === 'B001' || item.linkValue === 'B002')
       )
       if (marketMenuItem) {
         setMenuTitle(marketMenuItem.name)
         if (marketMenuItem.tabs && marketMenuItem.tabs.length > 0) {
           const tabs = marketMenuItem.tabs.map(tab => ({
             label: tab.label,
-            href: tab.href.includes('/news?board=') 
-              ? tab.href.replace('/news?board=', '/board?board=')
+            href: tab.href.includes('/board?board=') 
+              ? tab.href.replace('/board?board=', '/board?board=')
               : tab.href
           }))
           setBoardTabs(tabs)
@@ -44,7 +44,7 @@ function BoardContent() {
   }, [])
 
   // 게시판 ID 결정: tab 파라미터에 따라 B002(시황) 또는 B003(급등종목)
-  const currentBoardId = boardTab === 'study' ? 'B003' : 'B002'
+  const currentBoardId = boardTab === 'study' ? 'B002' : 'B001'
 
   return (
     <div className="content__wrap">
