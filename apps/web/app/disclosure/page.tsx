@@ -9,7 +9,7 @@ import { useNavTabs } from '../hooks/useNavTabs'
 
 const DEFAULT_TABS = [  
   { label: '뉴스', href: '/disclosure' },
-  { label: '관심뉴스', href: '/favorite' },
+  { label: '관심뉴스', href: '/favoriteNews' },
 ]
 
 function DisclosureContent() {
