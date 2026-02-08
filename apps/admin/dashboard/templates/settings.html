@@ -413,11 +413,6 @@
                             {% endfor %}
                           </select>
                         </div>
-                        <div class="field-group wide tab-edit-tab-param-wrap" data-tab-id="{{ tab.id }}" {{ '' if tab.link_type == 'board' else 'style=display:none;' }}>
-                          <label>탭 파라미터 (선택)</label>
-                          <input type="text" class="tab-edit-tab-param" data-tab-id="{{ tab.id }}" placeholder="예: market, study" value="{{ tab.link_value.split('?tab=')[1] if tab.link_type == 'board' and '?tab=' in tab.link_value else '' }}" style="min-width: 120px;" />
-                          <small style="display: block; color: #666; margin-top: 4px; font-size: 12px;">게시판 탭 구분용 파라미터 (예: market, study)</small>
-                        </div>
                         <input type="hidden" name="link_value" class="tab-edit-link-value" data-tab-id="{{ tab.id }}" value="{{ tab.link_value }}" />
                         <div class="field-group"><label>순서</label><input type="number" name="order_index" value="{{ tab.order_index }}" min="0" style="width: 70px;" /></div>
                         <div class="field-group" style="align-self: flex-end;">
@@ -825,11 +820,9 @@
       var linkTypeSelect = form.querySelector('.tab-edit-link-type');
       var pageWrap = form.querySelector('.tab-edit-page-wrap');
       var boardWrap = form.querySelector('.tab-edit-board-wrap');
-      var tabParamWrap = form.querySelector('.tab-edit-tab-param-wrap');
       var sel = form.querySelector('.tab-edit-link-select');
       var custom = form.querySelector('.tab-edit-link-custom');
       var boardSel = form.querySelector('.tab-edit-board-select');
-      var tabParam = form.querySelector('.tab-edit-tab-param');
       var hidden = form.querySelector('.tab-edit-link-value');
 
       // 연결 유형 설정
@@ -839,24 +832,11 @@
       if (linkType === 'board') {
         if (pageWrap) pageWrap.style.display = 'none';
         if (boardWrap) boardWrap.style.display = '';
-        if (tabParamWrap) tabParamWrap.style.display = '';
-        
-        // linkValue에서 board ID와 tab 파라미터 분리
-        var boardId = linkValue;
-        var tabParamValue = '';
-        if (linkValue && linkValue.includes('?tab=')) {
-          var parts = linkValue.split('?tab=');
-          boardId = parts[0];
-          tabParamValue = parts[1] || '';
-        }
-        
-        if (boardSel) boardSel.value = boardId;
-        if (tabParam) tabParam.value = tabParamValue;
+        if (boardSel) boardSel.value = linkValue;
         if (hidden) hidden.value = linkValue;
       } else {
         if (pageWrap) pageWrap.style.display = '';
         if (boardWrap) boardWrap.style.display = 'none';
-        if (tabParamWrap) tabParamWrap.style.display = 'none';
         if (sel && hidden) {
           var opt = sel.querySelector('option[value="' + linkValue + '"]');
           if (opt) { sel.value = linkValue; if (custom) custom.classList.add('hide'); hidden.value = linkValue; }
@@ -880,25 +860,13 @@
       var linkSel = document.querySelector('.tab-edit-link-select[data-tab-id="' + tabId + '"]');
       var boardSel = document.querySelector('.tab-edit-board-select[data-tab-id="' + tabId + '"]');
 
-      var tabParamWrap = document.querySelector('.tab-edit-tab-param-wrap[data-tab-id="' + tabId + '"]');
       if (this.value === 'board') {
         if (pageWrap) pageWrap.style.display = 'none';
         if (boardWrap) boardWrap.style.display = '';
-        if (tabParamWrap) tabParamWrap.style.display = '';
-        if (hidden && boardSel) {
-          var tabParam = document.querySelector('.tab-edit-tab-param[data-tab-id="' + tabId + '"]');
-          var boardId = boardSel.value || '';
-          var param = tabParam ? tabParam.value.trim() : '';
-          if (param) {
-            hidden.value = boardId + '?tab=' + param;
-          } else {
-            hidden.value = boardId;
-          }
-        }
+        if (hidden && boardSel) hidden.value = boardSel.value || '';
       } else {
         if (pageWrap) pageWrap.style.display = '';
         if (boardWrap) boardWrap.style.display = 'none';
-        if (tabParamWrap) tabParamWrap.style.display = 'none';
         if (hidden && linkSel) hidden.value = linkSel.value === '__custom__' ? '' : linkSel.value;
       }
     });
@@ -925,37 +893,11 @@
       if (hidden) hidden.value = this.value.trim() || '';
     });
   });
-  // 탭 수정 폼: 게시판 선택 및 tab 파라미터 동기화
   document.querySelectorAll('.tab-edit-board-select').forEach(function(sel) {
     sel.addEventListener('change', function() {
       var tabId = this.getAttribute('data-tab-id');
       var hidden = document.querySelector('.tab-edit-link-value[data-tab-id="' + tabId + '"]');
-      var tabParam = document.querySelector('.tab-edit-tab-param[data-tab-id="' + tabId + '"]');
-      if (hidden) {
-        var boardId = this.value;
-        var param = tabParam ? tabParam.value.trim() : '';
-        if (param) {
-          hidden.value = boardId + '?tab=' + param;
-        } else {
-          hidden.value = boardId;
-        }
-      }
-    });
-  });
-  document.querySelectorAll('.tab-edit-tab-param').forEach(function(inp) {
-    inp.addEventListener('input', function() {
-      var tabId = this.getAttribute('data-tab-id');
-      var hidden = document.querySelector('.tab-edit-link-value[data-tab-id="' + tabId + '"]');
-      var boardSel = document.querySelector('.tab-edit-board-select[data-tab-id="' + tabId + '"]');
-      if (hidden && boardSel) {
-        var boardId = boardSel.value;
-        var param = this.value.trim();
-        if (param) {
-          hidden.value = boardId + '?tab=' + param;
-        } else {
-          hidden.value = boardId;
-        }
-      }
+      if (hidden) hidden.value = this.value;
     });
   });
   document.querySelectorAll('form[id^="tabEditForm-"]').forEach(function(form) {
@@ -968,16 +910,7 @@
       var hidden = form.querySelector('.tab-edit-link-value');
 
       if (linkType && linkType.value === 'board') {
-        if (hidden && boardSel) {
-          var tabParam = form.querySelector('.tab-edit-tab-param[data-tab-id="' + tabId + '"]');
-          var boardId = boardSel.value;
-          var param = tabParam ? tabParam.value.trim() : '';
-          if (param) {
-            hidden.value = boardId + '?tab=' + param;
-          } else {
-            hidden.value = boardId;
-          }
-        }
+        if (hidden && boardSel) hidden.value = boardSel.value;
       } else if (sel && hidden) {
         if (sel.value === '__custom__' && custom) hidden.value = custom.value.trim() || hidden.value;
         else if (sel.value !== '__custom__') hidden.value = sel.value;

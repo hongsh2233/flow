@@ -21,8 +21,6 @@ import { getAuthHeaders, API_BASE_URL } from '../../lib/config/api'
 
 // 커스텀 훅 임포트
 import { useFavoriteStocks } from '../hooks/useFavoriteStocks'
-import { useNavTabs } from '../hooks/useNavTabs'
-import { fetchNavMenu } from '@/lib/services/navMenuService'
 
 interface StockItemProps {
   name: string
@@ -66,19 +64,14 @@ function StockInfoContent() {
 
   // 커스텀 훅 사용
   const { favCodes, allStockData, favoriteStocks: favStocks, mapToStockItem } = useFavoriteStocks()
-  const { tabs } = useNavTabs()
 
-  // 탭 메뉴 설정 (백엔드에서 가져온 탭이 있으면 사용, 없으면 기본값)
-  const defaultMenuData = [
-    { label: '시장현황', href: '/stock_info' },
-    { label: '상승종목(50)', href: '/stock_info' },
-    { label: '시가총액(200)', href: '/stock_info' },
-    { label: '종목검색', href: '/stock_info' },
+  // 탭 메뉴 설정
+  const menuData = [
+    { label: '시장현황' },
+    { label: '상승종목(50)' },
+    { label: '시가총액(200)' },
+    { label: '종목검색' },
   ]
-  
-  const menuData = tabs.length > 0 
-    ? tabs.map((t) => ({ label: t.label, href: t.href || '/stock_info' }))
-    : defaultMenuData
 
   // 상태 관리
   const [indices, setIndices] = useState<IndexItemProps[]>([])
@@ -299,10 +292,6 @@ function StockInfoContent() {
     loadData()
   }, [convertIndexItemToStockItem, extractIndexArray])
 
-  // 관심종목 탭 인덱스 찾기
-  const favoriteTabIndex = menuData.findIndex(m => m.label?.includes('관심') || m.label?.includes('favorite'))
-  const hasFavoriteTab = favoriteTabIndex >= 0
-
   return (
     <div className="inner-wrap">
       {/* [수정] showDate 대신 date 속성에 직접 포맷팅된 날짜 전달 */}
@@ -310,35 +299,6 @@ function StockInfoContent() {
       <Tabs>
         <TabList items={menuData} variant="tab" />
         <TabPanel>
-          {/* 관심종목 탭이 있고 첫 번째 탭인 경우 */}
-          {hasFavoriteTab && favoriteTabIndex === 0 && (
-            <TabCont>
-              {!session ? (
-                <div className="no-data">로그인 이후 이용가능합니다.</div>
-              ) : favStocks.length === 0 ? (
-                <div className="no-data">관심종목이 없습니다. 종목자료에서 관심종목을 추가해주세요.</div>
-              ) : (
-                <div>
-                  <StockList
-                    stocks={favStocks.map(mapToStockItem)}
-                    style={{ margin: '0px' }}
-                    showFavorite={true}
-                    favCodes={favCodes}
-                  />
-                  {favStocks.map((stock) => (
-                    <div key={stock.code} style={{ marginTop: 'var(--spacing-lg)' }}>
-                      <StockNews
-                        stockName={stock.name}
-                        stockCode={stock.code}
-                        limit={10}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabCont>
-          )}
-          
           {/* 1. 시장현황 탭 */}
           <TabCont>
             {isLoading ? (
@@ -471,35 +431,6 @@ function StockInfoContent() {
           <TabCont>
             <StockRightScheduleSearch />
           </TabCont>
-
-          {/* 관심종목 탭이 있고 첫 번째 탭이 아닌 경우 */}
-          {hasFavoriteTab && favoriteTabIndex > 0 && (
-            <TabCont>
-              {!session ? (
-                <div className="no-data">로그인 이후 이용가능합니다.</div>
-              ) : favStocks.length === 0 ? (
-                <div className="no-data">관심종목이 없습니다. 종목자료에서 관심종목을 추가해주세요.</div>
-              ) : (
-                <div>
-                  <StockList
-                    stocks={favStocks.map(mapToStockItem)}
-                    style={{ margin: '0px' }}
-                    showFavorite={true}
-                    favCodes={favCodes}
-                  />
-                  {favStocks.map((stock) => (
-                    <div key={stock.code} style={{ marginTop: 'var(--spacing-lg)' }}>
-                      <StockNews
-                        stockName={stock.name}
-                        stockCode={stock.code}
-                        limit={10}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabCont>
-          )}
         </TabPanel>
       </Tabs>
     </div>
