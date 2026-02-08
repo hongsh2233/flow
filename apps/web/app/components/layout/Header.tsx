@@ -11,7 +11,7 @@ const DEFAULT_NAV_LIST = [
   { name: '홈', icon: 'icon_home', link: '/' },
   { name: '캘린더', icon: 'icon_calendar', link: '/schedule' },
   { name: '뉴스', icon: 'icon_article', link: '/news' },
-  { name: '시황자료', icon: 'icon_report', link: '/news?board=B002' },
+  { name: '시황자료', icon: 'icon_report', link: '/board?board=B001' },
   { name: '종목자료', icon: 'icon_chat', link: '/stock_info' },
   { name: '설정', icon: 'icon_setting', link: '/setting' },
 ]
