@@ -1,33 +1,21 @@
 'use client'
 
+'use client'
+
 import React, { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PageTitle from '../components/element/PageTitle'
 import Tabs from '../components/element/tabsUi/Tabs'
 import TabList from '../components/element/tabsUi/TabList'
 import TabPanel from '../components/element/tabsUi/TabPanel'
-import TabCont from '../components/element/tabsUi/TabCont'
 import Board from '../components/module/Board'
 import { fetchNavMenu } from '@/lib/services/navMenuService'
 import { useEffect, useState } from 'react'
 
-function TabListWrapper({ 
-  items,
-  activeValue,
-  setActiveValue
-}: { 
-  items: Array<{ label: string; href: string }>
-  activeValue?: string
-  setActiveValue?: (val: string) => void
-}) {
+function TabListWrapper({ items }: { items: Array<{ label: string; href: string }> }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <TabList 
-        items={items} 
-        variant="tab"
-        activeValue={activeValue}
-        setActiveValue={setActiveValue}
-      />
+      <TabList items={items} variant="tab" />
     </Suspense>
   )
 }
@@ -145,6 +133,8 @@ function BoardContent() {
       </div>
     )
   }
+
+  const boardTab = searchParams.get('tab') || 'market'
   
   // 백엔드에서 탭 정보를 가져온 경우 탭 표시
   if (marketTabs.length > 0) {
@@ -159,11 +149,45 @@ function BoardContent() {
       )
     }
 
-    const boardTabs = marketTabs.map((t, index) => ({ 
-      label: t.label, 
-      href: t.href,
-      value: index.toString()
-    }))
+    const boardTabs = marketTabs.map(t => ({ label: t.label, href: t.href }))
+
+    // 현재 탭 찾기 (tab 파라미터 매칭)
+    const currentTabIndex = boardTabs.findIndex(t => {
+      try {
+        const tabUrl = new URL(t.href, window.location.origin)
+        const tabParam = tabUrl.searchParams.get('tab')
+        // tab 파라미터가 정확히 일치하거나, 둘 다 없는 경우 (첫 번째 탭)
+        if (tabParam === boardTab) {
+          return true
+        }
+        // tab 파라미터가 없고 boardTab이 'market'인 경우 첫 번째 탭으로 간주
+        if (!tabParam && boardTab === 'market' && boardTabs.indexOf(t) === 0) {
+          return true
+        }
+        return false
+      } catch {
+        return false
+      }
+    })
+    
+    let currentBoardId: string | undefined = undefined
+    if (currentTabIndex >= 0 && marketTabs[currentTabIndex]?.boardId) {
+      currentBoardId = marketTabs[currentTabIndex].boardId
+    } else {
+      const firstTab = marketTabs[0]
+      if (firstTab?.href) {
+        try {
+          const url = new URL(firstTab.href, window.location.origin)
+          const boardParam = url.searchParams.get('board')
+          if (boardParam) {
+            currentBoardId = boardParam
+          }
+        } catch {
+          // URL 파싱 실패
+        }
+      }
+      currentBoardId = currentBoardId || boardId
+    }
 
     return (
       <div className="content__wrap">
@@ -171,14 +195,7 @@ function BoardContent() {
         <Tabs>
           <TabListWrapper items={boardTabs} />
           <TabPanel>
-            {marketTabs.map((tab, index) => {
-              const tabBoardId = tab.boardId || boardId
-              return (
-                <TabCont key={index}>
-                  <Board boardId={tabBoardId} />
-                </TabCont>
-              )
-            })}
+            <Board boardId={currentBoardId} />
           </TabPanel>
         </Tabs>
       </div>
