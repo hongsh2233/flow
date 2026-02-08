@@ -8,7 +8,7 @@ import Board from '../components/module/Board'
 import { useNavTabs } from '../hooks/useNavTabs'
 
 const DEFAULT_TABS = [
-  { label: '시황', href: '/news' },
+  { label: '시황', href: '/news?board=B002' },
   { label: '리포트', href: '/report' },
   { label: '글로벌', href: '/global' },
   { label: '뉴스', href: '/disclosure' },
