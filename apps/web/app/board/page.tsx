@@ -34,12 +34,12 @@ function NewsContent() {
   if (boardId) {
     const boardTab = searchParams.get('tab') || 'market'
     // 시황자료는 항상 B002(시황), B003(급등종목) 사용
-    const marketBoardId = 'B002'
-    const studyBoardId = 'B003'
+    const marketBoardId = 'B001'
+    const studyBoardId = 'B002'
     
     const boardTabs = [
-      { label: '시황', href: `/news?board=B002&tab=market` },
-      { label: '급등종목', href: `/news?board=B003&tab=study` },
+      { label: '시황', href: `/board?board=B002&tab=market` },
+      { label: '급등종목', href: `/board?board=B003&tab=study` },
     ]
 
     return (
