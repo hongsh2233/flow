@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 function TabListWrapper({ items }: { items: Array<{ label: string; href: string }> }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <TabList items={items} variant="menu" />
+      <TabList items={items} variant="tab" />
     </Suspense>
   )
 }

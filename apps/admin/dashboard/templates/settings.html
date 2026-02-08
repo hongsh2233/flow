@@ -825,22 +825,35 @@
 
   // ----- 탭 수정 폼 표시/숨김 -----
   window.openTabEditForm = function(tabId, label, linkType, linkValue, orderIndex) {
+    console.log('openTabEditForm 호출:', tabId, label, linkType, linkValue, orderIndex);
+    
     var row = document.getElementById('tab-edit-row-' + tabId);
     if (!row) {
+      alert('탭 수정 폼을 찾을 수 없습니다: tab-edit-row-' + tabId);
       console.error('탭 수정 폼을 찾을 수 없습니다: tab-edit-row-' + tabId);
-      return;
+      return false;
     }
-    row.style.display = '';
+    
+    // 다른 모든 수정 폼 닫기
+    document.querySelectorAll('.tab-edit-form').forEach(function(r) {
+      if (r.id !== 'tab-edit-row-' + tabId) {
+        r.style.display = 'none';
+      }
+    });
+    
+    // 현재 수정 폼 표시
+    row.style.display = 'table-row';
     
     var form = document.getElementById('tabEditForm-' + tabId);
     if (!form) {
+      alert('탭 수정 폼을 찾을 수 없습니다: tabEditForm-' + tabId);
       console.error('탭 수정 폼을 찾을 수 없습니다: tabEditForm-' + tabId);
-      return;
+      return false;
     }
 
     var labelInput = form.querySelector('input[name="label"]');
     var orderInput = form.querySelector('input[name="order_index"]');
-    if (labelInput) labelInput.value = label || '';
+    if (labelInput) labelInput.value = (label || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
     if (orderInput) orderInput.value = orderIndex || 0;
 
     var linkTypeSelect = form.querySelector('.tab-edit-link-type');
@@ -853,22 +866,25 @@
     var tabParam = form.querySelector('.tab-edit-tab-param');
     var hidden = form.querySelector('.tab-edit-link-value');
 
-    // 연결 유형 설정 (이벤트 트리거 전에 값 설정)
+    // linkValue 디코딩 (HTML 엔티티 처리)
+    var decodedLinkValue = (linkValue || '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+
+    // 연결 유형 설정
     if (linkTypeSelect) {
       linkTypeSelect.value = linkType || 'page';
     }
 
-    // 표시 전환 (이벤트 트리거 전에 직접 DOM 조작)
+    // 표시 전환
     if (linkType === 'board') {
       if (pageWrap) pageWrap.style.display = 'none';
       if (boardWrap) boardWrap.style.display = '';
       if (tabParamWrap) tabParamWrap.style.display = '';
       
       // linkValue에서 board ID와 tab 파라미터 분리
-      var boardId = linkValue || '';
+      var boardId = decodedLinkValue || '';
       var tabParamValue = '';
-      if (linkValue && linkValue.includes('?tab=')) {
-        var parts = linkValue.split('?tab=');
+      if (decodedLinkValue && decodedLinkValue.includes('?tab=')) {
+        var parts = decodedLinkValue.split('?tab=');
         boardId = parts[0];
         tabParamValue = parts[1] || '';
       }
@@ -889,7 +905,7 @@
       
       if (sel && hidden) {
         // linkValue에서 query string 제거 (페이지 경로만 비교)
-        var pathOnly = linkValue || '';
+        var pathOnly = decodedLinkValue || '';
         if (pathOnly.includes('?')) {
           pathOnly = pathOnly.split('?')[0];
         }
@@ -898,25 +914,30 @@
         if (opt) {
           sel.value = pathOnly;
           if (custom) custom.classList.add('hide');
-          if (hidden) hidden.value = linkValue; // 원본 linkValue 유지 (query string 포함)
+          if (hidden) hidden.value = decodedLinkValue; // 원본 linkValue 유지 (query string 포함)
         } else {
           sel.value = '__custom__';
           if (custom) {
             custom.classList.remove('hide');
-            custom.value = linkValue; // 원본 linkValue 유지
+            custom.value = decodedLinkValue; // 원본 linkValue 유지
           }
-          if (hidden) hidden.value = linkValue;
+          if (hidden) hidden.value = decodedLinkValue;
         }
       }
     }
     
-    // 이벤트 트리거 (값 설정 후 - 이벤트 리스너가 제대로 동작하도록)
+    // 이벤트 트리거 (값 설정 후)
     if (linkTypeSelect) {
       setTimeout(function() {
         var changeEvent = new Event('change', { bubbles: true });
         linkTypeSelect.dispatchEvent(changeEvent);
-      }, 0);
+      }, 10);
     }
+    
+    // 스크롤 이동
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    return false;
   };
   window.closeTabEditForm = function(tabId) {
     var row = document.getElementById('tab-edit-row-' + tabId);
@@ -1146,59 +1167,67 @@
     var checkboxes = document.querySelectorAll('.tab-select-checkbox[data-item-id="' + itemId + '"]:checked');
     if (checkboxes.length === 0) {
       alert('수정할 탭을 선택해주세요.');
-      return;
+      return false;
     }
     
+    // 모든 수정 폼 닫기
+    document.querySelectorAll('.tab-edit-form').forEach(function(r) {
+      r.style.display = 'none';
+    });
+    
+    var openedCount = 0;
     checkboxes.forEach(function(cb) {
       var tabId = cb.getAttribute('data-tab-id');
       var row = document.querySelector('tr[data-tab-id="' + tabId + '"]');
-      if (row) {
-        // 수정 폼이 이미 열려있으면 닫기
-        var editRow = document.getElementById('tab-edit-row-' + tabId);
-        if (editRow && editRow.style.display !== 'none') {
-          return; // 이미 열려있으면 스킵
-        }
-        
-        var label = row.querySelector('td:nth-child(3)').textContent.trim();
-        var linkType = 'page';
-        var linkValue = '';
-        var orderIndex = 0;
-        
-        // 순서 추출 (체크박스 다음 열)
-        var orderCell = row.querySelector('td:nth-child(2)');
-        if (orderCell) {
-          orderIndex = parseInt(orderCell.textContent.trim()) || 0;
-        }
-        
-        // 연결 정보에서 link_type과 link_value 추출 (체크박스 다음 다음 열)
-        var linkCell = row.querySelector('td:nth-child(4)');
-        if (linkCell) {
-          var badge = linkCell.querySelector('.badge-board-sm, .badge-page-sm');
-          if (badge && badge.classList.contains('badge-board-sm')) {
-            linkType = 'board';
-            // "게시판 B002" 또는 "게시판 B002 (tab=study)" 형식에서 추출
-            var linkText = linkCell.textContent.trim();
-            linkText = linkText.replace(/^게시판\s*/, '').trim();
-            // (tab=xxx) 부분 제거하고 B002만 추출
-            if (linkText.includes(' (tab=')) {
-              linkValue = linkText.split(' (tab=')[0].trim();
-              var tabParam = linkText.match(/\(tab=([^)]+)\)/);
-              if (tabParam) {
-                linkValue = linkValue + '?tab=' + tabParam[1];
-              }
-            } else {
-              linkValue = linkText;
+      if (!row) return;
+      
+      var label = row.querySelector('td:nth-child(3)').textContent.trim();
+      var linkType = 'page';
+      var linkValue = '';
+      var orderIndex = 0;
+      
+      // 순서 추출 (체크박스 다음 열)
+      var orderCell = row.querySelector('td:nth-child(2)');
+      if (orderCell) {
+        orderIndex = parseInt(orderCell.textContent.trim()) || 0;
+      }
+      
+      // 연결 정보에서 link_type과 link_value 추출 (체크박스 다음 다음 열)
+      var linkCell = row.querySelector('td:nth-child(4)');
+      if (linkCell) {
+        var badge = linkCell.querySelector('.badge-board-sm, .badge-page-sm');
+        if (badge && badge.classList.contains('badge-board-sm')) {
+          linkType = 'board';
+          // "게시판 B002" 또는 "게시판 B002 (tab=study)" 형식에서 추출
+          var linkText = linkCell.textContent.trim();
+          linkText = linkText.replace(/^게시판\s*/, '').trim();
+          // (tab=xxx) 부분 처리
+          if (linkText.includes(' (tab=')) {
+            var tabMatch = linkText.match(/\(tab=([^)]+)\)/);
+            linkValue = linkText.split(' (tab=')[0].trim();
+            if (tabMatch) {
+              linkValue = linkValue + '?tab=' + tabMatch[1];
             }
           } else {
-            // "페이지 /news" 같은 형식에서 /news 추출
-            var linkText = linkCell.textContent.trim();
-            linkValue = linkText.replace(/^페이지\s*/, '').trim();
+            linkValue = linkText;
           }
+        } else {
+          // "페이지 /news" 같은 형식에서 /news 추출
+          var linkText = linkCell.textContent.trim();
+          linkValue = linkText.replace(/^페이지\s*/, '').trim();
         }
-        
-        openTabEditForm(tabId, label, linkType, linkValue, orderIndex);
+      }
+      
+      if (openTabEditForm(tabId, label, linkType, linkValue, orderIndex) !== false) {
+        openedCount++;
       }
     });
+    
+    if (openedCount === 0) {
+      alert('선택한 탭의 수정 폼을 열 수 없습니다.');
+    }
+    
+    return false;
   };
 
   // ===== 아이콘 빠른 수정 =====
