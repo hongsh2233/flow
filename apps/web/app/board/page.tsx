@@ -14,8 +14,8 @@ import { useNavTabs } from '../hooks/useNavTabs'
 import { useFavoriteStocks } from '../hooks/useFavoriteStocks'
 
 const DEFAULT_TABS = [
-  { label: '전체뉴스', href: '/news' },
-  { label: '관심뉴스', href: '/news?tab=favorite' },
+  { label: '시황', href: `/board?board=B002&tab=market` },
+  { label: '급등종목', href: `/board?board=B003&tab=study` },
 ]
 
 function NewsContent() {
