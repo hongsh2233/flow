@@ -205,7 +205,16 @@
               </div>
             </td>
             <td class="label-col">{{ item.label }}</td>
-            <td class="icon-col">{{ item.icon }}</td>
+            <td class="icon-col">
+              <select class="icon-select" data-item-id="{{ item.id }}" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; cursor: pointer; width: 100%;">
+                <option value="icon_home" {{ 'selected' if item.icon == 'icon_home' else '' }}>홈 (icon_home)</option>
+                <option value="icon_calendar" {{ 'selected' if item.icon == 'icon_calendar' else '' }}>캘린더 (icon_calendar)</option>
+                <option value="icon_chat" {{ 'selected' if item.icon == 'icon_chat' else '' }}>채팅 (icon_chat)</option>
+                <option value="icon_article" {{ 'selected' if item.icon == 'icon_article' else '' }}>기사 (icon_article)</option>
+                <option value="icon_report" {{ 'selected' if item.icon == 'icon_report' else '' }}>리포트 (icon_report)</option>
+                <option value="icon_setting" {{ 'selected' if item.icon == 'icon_setting' else '' }}>설정 (icon_setting)</option>
+              </select>
+            </td>
             <td class="link-col">
               {% if item.link_type == 'board' %}
                 <span class="badge-board">게시판</span> {{ item.link_value }}
@@ -906,6 +915,57 @@
         }
       }
     });
+  });
+
+  // ===== 아이콘 빠른 수정 =====
+  document.querySelectorAll('.icon-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+      var itemId = this.getAttribute('data-item-id');
+      var icon = this.value;
+      var originalValue = this.getAttribute('data-original-value') || icon;
+      
+      // 로딩 상태 표시
+      this.disabled = true;
+      this.style.opacity = '0.6';
+      
+      var formData = new FormData();
+      formData.append('icon', icon);
+      
+      fetch('/admin/settings/nav-menu/update-icon/' + itemId, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.success) {
+          // 성공 시 원래 값 업데이트
+          select.setAttribute('data-original-value', icon);
+          // 성공 메시지 (선택적)
+          // console.log('아이콘이 업데이트되었습니다.');
+        } else {
+          // 실패 시 원래 값으로 복원
+          select.value = originalValue;
+          alert('아이콘 업데이트 실패: ' + (data.message || '알 수 없는 오류'));
+        }
+      })
+      .catch(function(error) {
+        // 오류 시 원래 값으로 복원
+        select.value = originalValue;
+        alert('아이콘 업데이트 중 오류가 발생했습니다.');
+        console.error('Error:', error);
+      })
+      .finally(function() {
+        // 로딩 상태 해제
+        select.disabled = false;
+        select.style.opacity = '1';
+      });
+    });
+    
+    // 원래 값 저장
+    select.setAttribute('data-original-value', select.value);
   });
 })();
 </script>

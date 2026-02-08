@@ -246,6 +246,28 @@ async def nav_menu_update_order(
         return JSONResponse({"success": False, "message": f"순서 업데이트 실패: {str(e)}"}, status_code=400)
 
 
+@router.post("/admin/settings/nav-menu/update-icon/{item_id}")
+async def nav_menu_update_icon(
+    item_id: int,
+    icon: str = Form(...),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """하단 메뉴 항목 아이콘만 빠르게 업데이트"""
+    if not user:
+        return JSONResponse({"success": False, "message": "인증이 필요합니다."}, status_code=401)
+    try:
+        item = db.query(models.NavMenuItem).filter(models.NavMenuItem.id == item_id).first()
+        if not item:
+            return JSONResponse({"success": False, "message": "항목을 찾을 수 없습니다."}, status_code=404)
+        item.icon = icon.strip() or "icon_home"
+        db.commit()
+        return JSONResponse({"success": True, "message": "아이콘이 업데이트되었습니다.", "icon": item.icon})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse({"success": False, "message": f"아이콘 업데이트 실패: {str(e)}"}, status_code=400)
+
+
 # ==================== 서브 메뉴/탭 CRUD ====================
 
 @router.post("/admin/settings/nav-menu/{item_id}/tab/add")
