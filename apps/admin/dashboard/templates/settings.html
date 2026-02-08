@@ -353,6 +353,7 @@
 
         <form method="post" action="/admin/settings/nav-menu/add" id="navAddForm">
           <input type="hidden" name="order_index" id="navOrderIndex" value="{{ nav_items|length if nav_items else 0 }}" />
+          <input type="hidden" name="link_value" id="navLinkValue" value="/" />
           <div class="form-row">
             <div class="field-group">
               <label for="navLabel">메뉴명 *</label>
@@ -418,6 +419,7 @@
         <form method="post" action="" id="navEditForm" style="display: none;">
           <input type="hidden" name="order_index" id="navEditOrderIndex" />
           <input type="hidden" name="is_visible" id="navEditVisible" value="visible" />
+          <input type="hidden" name="link_value" id="navEditLinkValue" value="" />
           <div class="form-row">
             <div class="field-group">
               <label>메뉴명 *</label>
@@ -494,36 +496,48 @@
   var linkValuePageCustom = document.getElementById('navLinkValuePageCustom');
   var linkValueBoard = document.getElementById('navLinkValueBoard');
 
+  var navLinkValueHidden = document.getElementById('navLinkValue');
+
+  function syncAddLinkValue() {
+    if (!navLinkValueHidden) return;
+    var isPage = linkType.value === 'page';
+    if (isPage) {
+      navLinkValueHidden.value = linkValuePage.value === '__custom__' ? (linkValuePageCustom.value.trim() || '/') : linkValuePage.value;
+    } else {
+      navLinkValueHidden.value = linkValueBoard.value || '';
+    }
+  }
+
   function toggleLinkValue() {
     var isPage = linkType.value === 'page';
     wrapPage.classList.toggle('hide', !isPage);
     wrapPageCustom.classList.toggle('hide', !isPage || linkValuePage.value !== '__custom__');
     wrapBoard.classList.toggle('hide', isPage);
+    syncAddLinkValue();
   }
 
   linkType.addEventListener('change', toggleLinkValue);
   linkValuePage.addEventListener('change', function() {
     wrapPageCustom.classList.toggle('hide', linkValuePage.value !== '__custom__');
+    syncAddLinkValue();
   });
+  if (linkValuePageCustom) linkValuePageCustom.addEventListener('input', syncAddLinkValue);
+  if (linkValueBoard) linkValueBoard.addEventListener('change', syncAddLinkValue);
   toggleLinkValue();
 
   // 추가 폼 제출 시 link_value 합치기
-  document.getElementById('navAddForm').addEventListener('submit', function() {
+  document.getElementById('navAddForm').addEventListener('submit', function(e) {
     var type = linkType.value;
     var val = type === 'page'
       ? (linkValuePage.value === '__custom__' ? linkValuePageCustom.value.trim() : linkValuePage.value)
       : linkValueBoard.value;
     if (!val) {
+      e.preventDefault();
       alert(type === 'page' ? '페이지 경로를 선택하거나 입력하세요.' : '게시판을 선택하세요.');
-      return false;
+      return;
     }
-    var existing = this.querySelector('input[name="link_value"]');
-    if (existing) existing.remove();
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'link_value';
-    input.value = val;
-    this.appendChild(input);
+    var hidden = document.getElementById('navLinkValue');
+    if (hidden) { hidden.value = val; }
   });
 
   // 수정 폼용
@@ -547,22 +561,24 @@
     wrapEditPageCustom.classList.toggle('hide', editLinkValuePage.value !== '__custom__');
   });
 
-  document.getElementById('navEditForm').addEventListener('submit', function() {
+  document.getElementById('navEditForm').addEventListener('submit', function(e) {
     var type = editLinkType.value;
     var val = type === 'page'
       ? (editLinkValuePage.value === '__custom__' ? editLinkValuePageCustom.value.trim() : editLinkValuePage.value)
       : editLinkValueBoard.value;
     if (!val) {
+      e.preventDefault();
       alert(type === 'page' ? '페이지 경로를 선택하거나 입력하세요.' : '게시판을 선택하세요.');
-      return false;
+      return;
     }
     var existing = this.querySelector('input[name="link_value"]');
-    if (existing) existing.remove();
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'link_value';
-    input.value = val;
-    this.appendChild(input);
+    if (!existing) {
+      existing = document.createElement('input');
+      existing.type = 'hidden';
+      existing.name = 'link_value';
+      this.appendChild(existing);
+    }
+    existing.value = val;
   });
 
   window.openEditForm = function(id, label, icon, linkType, linkValue, matchPaths, orderIndex, visible) {

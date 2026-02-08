@@ -12,11 +12,11 @@
     {% include "sidebar.html" %}
     {% endif %}
     <div class="main-content" {% if active_page is none %}style="margin-left: 0; width: 100%;"{% endif %}>
-      {% if active_page is not none and admin_email %}
+      {% if active_page is not none %}
       <div class="header">
         <div style="display: flex; flex-direction: column;">
           <span style="font-size: 18px; font-weight: 500;">
-            환영합니다, <b>{{ admin_email }}</b> 관리자님
+            환영합니다, <b>{{ admin_email or '관리자' }}</b> 관리자님
           </span>
           <span id="sessionInfo" style="margin-top: 4px; font-size: 12px; color: #666;">
             로그인 시간: - / 남은 시간: -
