@@ -1,27 +1,11 @@
-// @ts-nocheck
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { Visibility, Comment } from '@mui/icons-material'
-import styles from './BoardDetail.module.css'
+import Link from "next/link";
+import { Visibility, Comment } from "@mui/icons-material";
+import type { BoardPost, BoardDetailProps } from "@/lib/types";
+import styles from "./BoardDetail.module.css";
 
-export interface BoardPost {
-  id: number
-  title: string
-  category: string
-  tag: string | null
-  author: string
-  time: string
-  views: number
-  comments: number
-  content: string
-}
-
-interface BoardDetailProps {
-  post: BoardPost
-  backHref?: string
-  backLabel?: string
-}
+export type { BoardPost };
 
 export function BoardDetail({
   post,

@@ -1,27 +1,11 @@
-// @ts-nocheck
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { AccessTime, Visibility, Comment } from '@mui/icons-material'
-import styles from './BoardList.module.css'
+import Link from "next/link";
+import { AccessTime, Visibility, Comment } from "@mui/icons-material";
+import type { BoardListItem, BoardListProps } from "@/lib/types";
+import styles from "./BoardList.module.css";
 
-export interface BoardListItem {
-  id: number
-  category: string
-  title: string
-  summary: string
-  author: string
-  time: string
-  views: number
-  comments: number
-  tag: string | null
-}
-
-interface BoardListProps {
-  items?: BoardListItem[]
-  detailHref?: (id: number) => string
-  onLoadMore?: () => void
-}
+export type { BoardListItem };
 
 const defaultItems: BoardListItem[] = [
   { id: 1, category: '마감시황', title: '코스피, 외국인 매수세에 1% 상승 마감', summary: '코스피가 외국인 투자자들의 순매수에 힘입어 1% 상승하며 2,456선에서 거래를 마쳤습니다. IT와 자동차 업종이 강세를 보였습니다.', author: '시황팀', time: '30분 전', views: 1234, comments: 45, tag: 'HOT' },

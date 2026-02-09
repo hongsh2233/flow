@@ -1,13 +1,8 @@
-'use client'
+"use client";
 
-import { Search as SearchIcon } from 'lucide-react'
-import styles from './Search.module.css'
-
-export interface SearchProps {
-    value: string
-    onChange: (value: string) => void
-    placeholder?: string
-}
+import { Search as SearchIcon } from "lucide-react";
+import type { SearchProps } from "@/lib/types";
+import styles from "./Search.module.css";
 
 export function Search({
     value,

@@ -1,31 +1,18 @@
-'use client'
+"use client";
 
 import {
-    X,
-    TrendingUp,
-    TrendingDown,
-    Info,
-    Heart,
-    BarChart3,
-    DollarSign,
-} from 'lucide-react'
-import styles from './StockDetailModal.module.css'
+  X,
+  TrendingUp,
+  TrendingDown,
+  Info,
+  Heart,
+  BarChart3,
+  DollarSign,
+} from "lucide-react";
+import type { StockDetail, StockDetailModalProps } from "@/lib/types";
+import styles from "./StockDetailModal.module.css";
 
-export interface StockDetail {
-    name: string
-    code: string
-    price: number
-    change: number
-    volume?: string
-    marketCap?: string
-}
-
-export interface StockDetailModalProps {
-    stock: StockDetail | null
-    onClose: () => void
-    onAddFavorite?: (stock: StockDetail) => void
-    onShowChart?: (stock: StockDetail) => void
-}
+export type { StockDetail };
 
 export function StockDetailModal({
     stock,

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
+import type { SocialProvider } from "@/lib/types";
 import styles from "./LoginPage.module.css";
 
 export default function LoginPage() {
@@ -24,7 +25,7 @@ export default function LoginPage() {
     router.refresh();
   };
 
-  const handleSocialLogin = (provider: "kakao" | "naver" | "google") => {
+  const handleSocialLogin = (provider: SocialProvider) => {
     signIn(provider, { callbackUrl: "/" });
   };
 

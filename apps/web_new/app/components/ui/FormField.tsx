@@ -1,18 +1,8 @@
 "use client";
 
-import { LucideIcon } from "lucide-react";
 import { Input } from "./Input";
+import type { FormFieldProps } from "@/lib/types";
 import styles from "./FormField.module.css";
-
-export interface FormFieldProps {
-  label: string;
-  type?: string;
-  placeholder?: string;
-  value: string;
-  onChange: (value: string) => void;
-  icon?: LucideIcon;
-  id?: string;
-}
 
 export function FormField({
   label,

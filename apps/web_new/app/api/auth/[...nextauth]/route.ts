@@ -5,8 +5,11 @@ import GoogleProvider from 'next-auth/providers/google'
 
 export const dynamic = 'force-dynamic'
 
+// 개발 환경에서 NEXTAUTH_SECRET 미설정 시 기본값 사용 (배포 시 반드시 .env에 설정)
+const secret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-secret-change-in-production' : undefined)
+
 const handler = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+  secret,
   trustHost: true,
   debug: process.env.NODE_ENV === 'development',
   providers: [

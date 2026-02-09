@@ -1,18 +1,19 @@
 import styles from "./Settings.module.css";
 import {
-  Bell, 
-  Moon, 
-  HelpCircle, 
-  Lock, 
-  Mail, 
+  Bell,
+  Moon,
+  HelpCircle,
+  Lock,
+  Mail,
   ChevronRight,
   User,
   Shield,
-  FileText
+  FileText,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
+import type { SettingsGroup } from "@/lib/types";
 
-const settingsGroups = [
+const settingsGroups: SettingsGroup[] = [
   {
     title: "내 정보",
     items: [

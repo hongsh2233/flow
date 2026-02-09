@@ -1,7 +1,6 @@
-// @ts-nocheck
-import styles from './Report.module.css'
-import BoardList from '../components/module/board/BoardList'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
+import styles from "./Report.module.css";
+import BoardList from "../components/module/board/BoardList";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 
 export default function ReportPage() {
   return (

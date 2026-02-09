@@ -1,16 +1,28 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Heart, BarChart3, Building2 } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Heart,
+  BarChart3,
+  Building2,
+} from "lucide-react";
 import { useState } from "react";
 import { Search } from "../components/module/Search";
 import { StockCard } from "../components/module/StockCard";
-import { StockDetail, StockDetailModal } from "../components/module/StockDetailModal";
-import { RisingStock } from "../components/module/StockCard";
+import { StockDetailModal } from "../components/module/StockDetailModal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import type {
+  RisingStock,
+  StockDetail,
+  FavoriteStock,
+  SectorData,
+  MarketCapStock,
+} from "@/lib/types";
 import styles from "./StocksPage.module.css";
 
 // 섹터 데이터
-const kospiSectors = [
+const kospiSectors: SectorData[] = [
   { name: "반도체", change: 2.3, value: 1245.67 },
   { name: "자동차", change: 1.5, value: 892.34 },
   { name: "금융", change: 0.8, value: 567.89 },
@@ -18,7 +30,7 @@ const kospiSectors = [
   { name: "철강", change: -1.2, value: 345.67 },
 ];
 
-const kosdaqSectors = [
+const kosdaqSectors: SectorData[] = [
   { name: "IT/소프트웨어", change: 3.1, value: 234.56 },
   { name: "바이오", change: 2.8, value: 456.78 },
   { name: "게임", change: 1.2, value: 189.34 },
@@ -27,7 +39,7 @@ const kosdaqSectors = [
 ];
 
 // 시가총액 상위
-const marketCapStocks = [
+const marketCapStocks: MarketCapStock[] = [
   { rank: 1, name: "삼성전자", code: "005930", price: 71800, change: 1.7, marketCap: "428조" },
   { rank: 2, name: "SK하이닉스", code: "000660", price: 128500, change: -1.76, marketCap: "93조" },
   { rank: 3, name: "삼성바이오로직스", code: "207940", price: 789000, change: -1.5, marketCap: "56조" },
@@ -55,7 +67,7 @@ const risingStocks: RisingStock[] = [
 ];
 
 // 관심종목
-const favorite = [
+const favorite: FavoriteStock[] = [
   { id: "1", name: "삼성전자", code: "005930", price: 71800, change: 1.7 },
   { id: "2", name: "NAVER", code: "035420", price: 234500, change: 1.52 },
   { id: "3", name: "KB금융", code: "105560", price: 67800, change: 0.85 },

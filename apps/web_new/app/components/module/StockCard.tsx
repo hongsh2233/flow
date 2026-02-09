@@ -1,20 +1,10 @@
-'use client'
+"use client";
 
-import { TrendingUp } from 'lucide-react'
-import styles from './StockCard.module.css'
+import { TrendingUp } from "lucide-react";
+import type { RisingStock, StockCardProps } from "@/lib/types";
+import styles from "./StockCard.module.css";
 
-export interface RisingStock {
-    rank: number
-    name: string
-    code: string
-    price: number
-    change: number | string
-}
-
-export interface StockCardProps {
-    stocks: RisingStock[]
-    onSelect: (stock: RisingStock) => void
-}
+export type { RisingStock };
 
 export function StockCard({ stocks, onSelect }: StockCardProps) {
     return (

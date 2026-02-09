@@ -1,9 +1,9 @@
-// @ts-nocheck
-import styles from './News.module.css'
-import NewsList from '../components/module/NewsList'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
+import type { Metadata } from "next";
+import styles from "./News.module.css";
+import NewsList from "../components/module/NewsList";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: '뉴스 | 주리니',
   description: '주식·경제 뉴스를 확인하세요.',
 }

@@ -1,9 +1,9 @@
-// @ts-nocheck
-import type { Metadata } from 'next'
-import Header from './components/layout/Header'
-import BottomNavigation from './components/layout/BottomNavigation'
-import NextAuthProvider from './components/providers/NextAuthProvider'
-import '../assets/css/index.css'
+import type { Metadata } from "next";
+import Header from "./components/layout/Header";
+import BottomNavigation from "./components/layout/BottomNavigation";
+import NextAuthProvider from "./components/providers/NextAuthProvider";
+import type { RootLayoutProps } from "@/lib/types";
+import "../assets/css/index.css";
 
 export const metadata: Metadata = {
   title: '주리니',
@@ -19,11 +19,7 @@ export const metadata: Metadata = {
   manifest: '/images/manifest.json',
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ko">
       <body>

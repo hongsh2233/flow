@@ -1,15 +1,15 @@
-// @ts-nocheck
-'use client';
+"use client";
 
-import { useState } from 'react';
-import CalendarToday from '@mui/icons-material/CalendarToday';
-import AccessTime from '@mui/icons-material/AccessTime';
-import Business from '@mui/icons-material/Business';
-import Payments from '@mui/icons-material/Payments';
-import Groups from '@mui/icons-material/Groups';
-import styles from './Calendar.module.css';
+import { useState } from "react";
+import CalendarToday from "@mui/icons-material/CalendarToday";
+import AccessTime from "@mui/icons-material/AccessTime";
+import Business from "@mui/icons-material/Business";
+import Payments from "@mui/icons-material/Payments";
+import Groups from "@mui/icons-material/Groups";
+import type { IconType, ScheduleItem, WeekDateInfo } from "@/lib/types";
+import styles from "./Calendar.module.css";
 
-const getWeekDates = () => {
+function getWeekDates(): WeekDateInfo[] {
   const today = new Date();
   const currentDay = today.getDay();
   const diff = currentDay === 0 ? -6 : 1 - currentDay;
@@ -25,19 +25,6 @@ const getWeekDates = () => {
     });
   }
   return weekDates;
-};
-
-type IconType = 'blue' | 'green' | 'purple';
-
-interface ScheduleItem {
-  id: number;
-  type: string;
-  icon: React.ComponentType<{ fontSize?: 'small' | 'inherit' | 'medium' | 'large' }>;
-  company: string;
-  title: string;
-  date: string;
-  time: string;
-  color: IconType;
 }
 
 const scheduleData: ScheduleItem[] = [

@@ -1,8 +1,13 @@
-// @ts-nocheck
-'use client'
+"use client";
 
-import * as React from 'react'
-import styles from './Tabs.module.css'
+import * as React from "react";
+import type {
+  TabsProps,
+  TabsListProps,
+  TabsTriggerProps,
+  TabsContentProps,
+} from "@/lib/types";
+import styles from "./Tabs.module.css";
 
 const TabsContext = React.createContext<{
   value: string
@@ -16,13 +21,7 @@ function Tabs({
   onValueChange,
   children,
   ...props
-}: {
-  className?: string
-  value?: string
-  defaultValue?: string
-  onValueChange?: (value: string) => void
-  children?: React.ReactNode
-}) {
+}: TabsProps) {
   const [internalValue, setInternal] = React.useState(defaultValue ?? '')
   const isControlled = value !== undefined
   const currentValue = isControlled ? value : internalValue
@@ -46,7 +45,11 @@ function Tabs({
   )
 }
 
-function TabsList({ className, children, ...props }: { className?: string; children?: React.ReactNode }) {
+function TabsList({
+  className,
+  children,
+  ...props
+}: TabsListProps) {
   return (
     <div
       data-slot="tabs-list"
@@ -64,7 +67,7 @@ function TabsTrigger({
   value,
   children,
   ...props
-}: { className?: string; value: string; children?: React.ReactNode }) {
+}: TabsTriggerProps) {
   const ctx = React.useContext(TabsContext)
   if (!ctx) throw new Error('TabsTrigger must be used within Tabs')
   const isActive = ctx.value === value
@@ -89,7 +92,7 @@ function TabsContent({
   value,
   children,
   ...props
-}: { className?: string; value: string; children?: React.ReactNode }) {
+}: TabsContentProps) {
   const ctx = React.useContext(TabsContext)
   if (!ctx) throw new Error('TabsContent must be used within Tabs')
   if (ctx.value !== value) return null

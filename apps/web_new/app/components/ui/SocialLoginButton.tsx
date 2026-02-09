@@ -1,8 +1,9 @@
 "use client";
 
+import type { SocialProvider } from "@/lib/types";
 import styles from "./SocialLoginButton.module.css";
 
-export type SocialProvider = "kakao" | "naver" | "google";
+export type { SocialProvider };
 
 export interface SocialLoginButtonProps {
   provider: SocialProvider;
