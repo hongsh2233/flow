@@ -1,0 +1,181 @@
+ .screen {
+  padding: 1.5rem 1rem 5rem;
+}
+
+.header {
+  background: linear-gradient(135deg, #fb923c, #f97316, #fb7185);
+  padding: 1.5rem;
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.headerSubtitle {
+  font-size: 0.875rem;
+  color: #fffbeb;
+}
+
+.profileSection {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.profileCard {
+  background: linear-gradient(135deg, #fffbeb, #fdf2f8);
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #fed7aa;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profileAvatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #fb923c, #fb7185);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.profileText {
+  flex: 1;
+}
+
+.profileName {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.125rem;
+  color: #111827;
+}
+
+.profileRole {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.profileArrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #9ca3af;
+}
+
+.groups {
+  padding: 0 1rem;
+}
+
+.group {
+  margin-bottom: 1.5rem;
+}
+
+.groupTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.groupCard {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.itemRowBordered {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.itemLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.itemIconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemLabel {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chevronIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #9ca3af;
+}
+
+.versionSection {
+  padding: 1.5rem 1rem 0;
+  text-align: center;
+}
+
+.versionText {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.versionSubText {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.logoutSection {
+  padding: 1.5rem 1rem 0;
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-radius: 1rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.logoutButton:hover {
+  background-color: #e5e7eb;
+}

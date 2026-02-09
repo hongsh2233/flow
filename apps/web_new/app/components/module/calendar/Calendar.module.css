@@ -1,0 +1,280 @@
+.root {
+  padding-bottom: 5rem;
+}
+
+/* 헤더 */
+.header {
+  background: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  padding: 1.5rem;
+  border-radius: 0 0 1.5rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.headerSub {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 월 표시 */
+.monthWrap {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.monthRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.monthTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.calendarBtn {
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.calendarBtn:hover {
+  background: #f3f4f6;
+}
+
+.calendarBtn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #4b5563;
+}
+
+/* 주간 캘린더 */
+.weekWrap {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.weekBox {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3f4f6;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.dayBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-radius: 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dayBtn:hover {
+  background: #f9fafb;
+}
+
+.dayBtnSelected {
+  background: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  color: #fff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.dayBtnToday {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.dayBtnToday.dayBtnSelected {
+  background: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  color: #fff;
+}
+
+.dayLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.dayNum {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.todayDot {
+  width: 4px;
+  height: 4px;
+  background: #f97316;
+  border-radius: 50%;
+  margin-top: 0.25rem;
+}
+
+/* 일정 필터 */
+.filterWrap {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.filterRow::-webkit-scrollbar {
+  display: none;
+}
+
+.filterBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.filterBtnActive {
+  background: #f97316;
+  color: #fff;
+}
+
+.filterBtnDefault {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.filterBtnDefault:hover {
+  background: #e5e7eb;
+}
+
+/* 일정 리스트 */
+.scheduleWrap {
+  padding: 0 1rem;
+}
+
+.scheduleTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+}
+
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheduleCard {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3f4f6;
+  transition: box-shadow 0.2s;
+}
+
+.scheduleCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.scheduleInner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.iconBox {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.iconBox svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #fff;
+}
+
+.iconBlue {
+  background: #3b82f6;
+}
+
+.iconGreen {
+  background: #22c55e;
+}
+
+.iconPurple {
+  background: #a855f7;
+}
+
+.scheduleContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.scheduleTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.scheduleTitleText {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.scheduleCompany {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.scheduleDate {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ea580c;
+  text-align: right;
+}
+
+.scheduleTimeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.scheduleTimeRow svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #9ca3af;
+}
+
+.scheduleTime {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
