@@ -1,0 +1,8 @@
+[
+  { "id": "home", "label": "홈", "href": "/" },
+  { "id": "calendar", "label": "캘린더", "href": "/calendar" },
+  { "id": "news", "label": "뉴스", "href": "/news" },
+  { "id": "market", "label": "시황/리포트", "href": "/report" },
+  { "id": "stocks", "label": "종목자료", "href": "/stocks" },
+  { "id": "settings", "label": "설정", "href": "/settings" }
+]

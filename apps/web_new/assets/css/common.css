@@ -1,0 +1,13 @@
+.wrap {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content__wrap {
+  width: 100%;
+  min-height: calc(100vh - 64px - 80px);
+  padding: calc(64px + var(--spacing-lg)) var(--spacing-lg) calc(80px + var(--spacing-lg));
+  box-sizing: border-box;
+}
