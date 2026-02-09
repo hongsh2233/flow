@@ -1,0 +1,24 @@
+.root {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.root::placeholder {
+  color: #9ca3af;
+}
+
+.root:focus {
+  border-color: #f97316;
+}
+
+.rootWithIcon {
+  padding-left: 2.75rem;
+}

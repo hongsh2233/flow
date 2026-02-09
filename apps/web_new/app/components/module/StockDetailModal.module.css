@@ -1,0 +1,303 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(to bottom right, #fb923c, #f472b6);
+  padding: 1.5rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.titleArea h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #fff;
+}
+
+.titleArea p {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.closeBtn svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.priceCard {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.priceCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.priceCardLabel {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.priceValue {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.trendIcon {
+  width: 3rem;
+  height: 3rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.changeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.changeValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.changeLabel {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.content {
+  padding: 1.5rem;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.infoCard {
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.infoCardBlue {
+  background: #eff6ff;
+}
+
+.infoCardPurple {
+  background: #faf5ff;
+}
+
+.infoCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.infoCardHeader svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.infoCardBlue .infoCardHeader {
+  color: #1e40af;
+}
+
+.infoCardBlue .infoCardHeader p {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e3a8a;
+}
+
+.infoCardPurple .infoCardHeader {
+  color: #9333ea;
+}
+
+.infoCardPurple .infoCardHeader p {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #581c87;
+}
+
+.infoCardBlue .infoCardValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.infoCardPurple .infoCardValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #581c87;
+}
+
+.explainBox {
+  background: linear-gradient(to bottom right, #eff6ff, #faf5ff);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.explainInner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.explainIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #2563eb;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.explainContent h4 {
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.5rem;
+}
+
+.explainList {
+  font-size: 0.875rem;
+  color: #1e40af;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.explainList li {
+  margin-bottom: 0.5rem;
+}
+
+.explainList li:last-child {
+  margin-bottom: 0;
+}
+
+.volatilitySection {
+  margin-bottom: 1.5rem;
+}
+
+.volatilitySection h4 {
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badgeStable {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badgeNormal {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.badgeHigh {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionBtnPrimary {
+  background: linear-gradient(to right, #fb923c, #f472b6);
+  color: #fff;
+}
+
+.actionBtnPrimary:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.actionBtnSecondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.actionBtnSecondary:hover {
+  background: #e5e7eb;
+}
+
+.actionBtn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
