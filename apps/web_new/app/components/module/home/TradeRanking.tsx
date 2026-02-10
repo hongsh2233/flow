@@ -1,120 +1,67 @@
 "use client";
 
+import { memo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import type { TradeRankingProps, VolumeStock, ValueStock } from "@/lib/types";
-import type { StockDetail } from "@/lib/types";
+import { PriceChange } from "@/app/components/ui/PriceChange";
+import type { TradeRankingProps, VolumeStock, ValueStock, StockDetail } from "@/lib/types";
 import styles from "./TradeRanking.module.css";
 
-function VolumeList({
+const RankingList = memo(function RankingList({
   stocks,
   rankClass,
   onSelect,
+  subKey,
 }: {
-  stocks: VolumeStock[];
+  stocks: (VolumeStock | ValueStock)[];
   rankClass: string;
   onSelect: (stock: StockDetail) => void;
+  subKey: "volume" | "value";
 }) {
   return (
     <div className={styles.list}>
-      {stocks.map((stock) => {
-        const isPositive = stock.change >= 0;
-        return (
-          <button
-            key={stock.rank}
-            type="button"
-            onClick={() =>
-              onSelect({
-                name: stock.name,
-                code: stock.code,
-                price: stock.price,
-                change: stock.change,
-                volume: stock.volume,
-              })
-            }
-            className={styles.card}
-          >
-            <div className={styles.cardInner}>
-              <span className={rankClass}>{stock.rank}</span>
-              <div className={styles.info}>
-                <h4 className={styles.stockName}>{stock.name}</h4>
-                <p className={styles.stockSub}>{stock.volume}</p>
-              </div>
-              <div className={styles.priceArea}>
-                <p className={styles.price}>
-                  {stock.price.toLocaleString()}
-                </p>
-                <p
-                  className={`${styles.changeText} ${
-                    isPositive ? styles.changeUp : styles.changeDown
-                  }`}
-                >
-                  {isPositive ? "+" : ""}
-                  {stock.change}%
-                </p>
-              </div>
+      {stocks.map((stock) => (
+        <button
+          key={stock.rank}
+          type="button"
+          onClick={() =>
+            onSelect({
+              name: stock.name,
+              code: "code" in stock ? stock.code : "",
+              price: stock.price,
+              change: stock.change,
+              ...(subKey === "volume" && "volume" in stock ? { volume: stock.volume } : {}),
+            })
+          }
+          className={styles.card}
+        >
+          <div className={styles.cardInner}>
+            <span className={rankClass}>{stock.rank}</span>
+            <div className={styles.info}>
+              <h4 className={styles.stockName}>{stock.name}</h4>
+              <p className={styles.stockSub}>
+                {subKey === "volume" && "volume" in stock ? stock.volume : "value" in stock ? (stock as ValueStock).value : ""}
+              </p>
             </div>
-          </button>
-        );
-      })}
+            <div className={styles.priceArea}>
+              <p className={styles.price}>
+                {stock.price.toLocaleString()}
+              </p>
+              <PriceChange
+                change={stock.change}
+                showIcon={false}
+                textClassName={styles.changeText}
+                upClassName={styles.changeUp}
+                downClassName={styles.changeDown}
+              />
+            </div>
+          </div>
+        </button>
+      ))}
     </div>
   );
-}
+});
 
-function ValueList({
-  stocks,
-  rankClass,
-  onSelect,
-}: {
-  stocks: ValueStock[];
-  rankClass: string;
-  onSelect: (stock: StockDetail) => void;
-}) {
-  return (
-    <div className={styles.list}>
-      {stocks.map((stock) => {
-        const isPositive = stock.change >= 0;
-        return (
-          <button
-            key={stock.rank}
-            type="button"
-            onClick={() =>
-              onSelect({
-                name: stock.name,
-                code: "",
-                price: stock.price,
-                change: stock.change,
-              })
-            }
-            className={styles.card}
-          >
-            <div className={styles.cardInner}>
-              <span className={rankClass}>{stock.rank}</span>
-              <div className={styles.info}>
-                <h4 className={styles.stockName}>{stock.name}</h4>
-                <p className={styles.stockSub}>{stock.value}</p>
-              </div>
-              <div className={styles.priceArea}>
-                <p className={styles.price}>
-                  {stock.price.toLocaleString()}
-                </p>
-                <p
-                  className={`${styles.changeText} ${
-                    isPositive ? styles.changeUp : styles.changeDown
-                  }`}
-                >
-                  {isPositive ? "+" : ""}
-                  {stock.change}%
-                </p>
-              </div>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function TradeRanking({
+export const TradeRanking = memo(function TradeRanking({
   kospiVolume,
   kosdaqVolume,
   kospiValue,
@@ -143,37 +90,21 @@ export function TradeRanking({
         </TabsList>
 
         <TabsContent value="kospi-volume">
-          <VolumeList
-            stocks={kospiVolume}
-            rankClass={styles.rankBlue}
-            onSelect={onSelect}
-          />
+          <RankingList stocks={kospiVolume} rankClass={styles.rankBlue} onSelect={onSelect} subKey="volume" />
         </TabsContent>
 
         <TabsContent value="kosdaq-volume">
-          <VolumeList
-            stocks={kosdaqVolume}
-            rankClass={styles.rankPurple}
-            onSelect={onSelect}
-          />
+          <RankingList stocks={kosdaqVolume} rankClass={styles.rankPurple} onSelect={onSelect} subKey="volume" />
         </TabsContent>
 
         <TabsContent value="kospi-value">
-          <ValueList
-            stocks={kospiValue}
-            rankClass={styles.rankBlue}
-            onSelect={onSelect}
-          />
+          <RankingList stocks={kospiValue} rankClass={styles.rankBlue} onSelect={onSelect} subKey="value" />
         </TabsContent>
 
         <TabsContent value="kosdaq-value">
-          <ValueList
-            stocks={kosdaqValue}
-            rankClass={styles.rankPurple}
-            onSelect={onSelect}
-          />
+          <RankingList stocks={kosdaqValue} rankClass={styles.rankPurple} onSelect={onSelect} subKey="value" />
         </TabsContent>
       </Tabs>
     </div>
   );
-}
+});

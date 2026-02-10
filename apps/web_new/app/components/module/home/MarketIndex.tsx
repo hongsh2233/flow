@@ -1,8 +1,9 @@
+import { memo } from "react";
 import { Activity, TrendingUp, TrendingDown } from "lucide-react";
 import type { MarketIndexProps } from "@/lib/types";
 import styles from "./MarketIndex.module.css";
 
-export function MarketIndex({ indices }: MarketIndexProps) {
+export const MarketIndex = memo(function MarketIndex({ indices }: MarketIndexProps) {
   return (
     <div className={styles.section}>
       <h3 className={styles.heading}>
@@ -50,4 +51,4 @@ export function MarketIndex({ indices }: MarketIndexProps) {
       </div>
     </div>
   );
-}
+});

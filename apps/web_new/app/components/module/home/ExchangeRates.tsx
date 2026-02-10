@@ -1,8 +1,9 @@
+import { memo } from "react";
 import { DollarSign } from "lucide-react";
 import type { ExchangeRatesProps } from "@/lib/types";
 import styles from "./ExchangeRates.module.css";
 
-export function ExchangeRates({ rates }: ExchangeRatesProps) {
+export const ExchangeRates = memo(function ExchangeRates({ rates }: ExchangeRatesProps) {
   return (
     <div className={styles.section}>
       <h3 className={styles.heading}>
@@ -27,4 +28,4 @@ export function ExchangeRates({ rates }: ExchangeRatesProps) {
       </div>
     </div>
   );
-}
+});

@@ -1,10 +1,8 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import type { RisingStock, StockCardProps } from "@/lib/types";
+import type { StockCardProps } from "@/lib/types";
 import styles from "./StockCard.module.css";
-
-export type { RisingStock };
 
 export function StockCard({ stocks, onSelect }: StockCardProps) {
     return (

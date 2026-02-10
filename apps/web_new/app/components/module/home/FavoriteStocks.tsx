@@ -1,10 +1,12 @@
 "use client";
 
-import { Heart, TrendingUp, TrendingDown } from "lucide-react";
+import { memo } from "react";
+import { Heart } from "lucide-react";
+import { PriceChange } from "@/app/components/ui/PriceChange";
 import type { FavoriteStocksProps } from "@/lib/types";
 import styles from "./FavoriteStocks.module.css";
 
-export function FavoriteStocks({ stocks, onSelect }: FavoriteStocksProps) {
+export const FavoriteStocks = memo(function FavoriteStocks({ stocks, onSelect }: FavoriteStocksProps) {
   return (
     <div className={styles.section}>
       <div className={styles.header}>
@@ -16,50 +18,37 @@ export function FavoriteStocks({ stocks, onSelect }: FavoriteStocksProps) {
       </div>
 
       <div className={styles.grid}>
-        {stocks.map((stock) => {
-          const isPositive = stock.change >= 0;
-          return (
-            <button
-              key={stock.id}
-              type="button"
-              onClick={() =>
-                onSelect({
-                  name: stock.name,
-                  code: stock.code,
-                  price: stock.price,
-                  change: stock.change,
-                })
-              }
-              className={styles.card}
-            >
-              <h4 className={styles.stockName}>{stock.name}</h4>
-              <p className={styles.stockCode}>{stock.code}</p>
-              <p className={styles.stockPrice}>
-                {stock.price.toLocaleString()}
-              </p>
-              <div className={styles.changeRow}>
-                {isPositive ? (
-                  <TrendingUp
-                    className={`${styles.changeIcon} ${styles.changeIconUp}`}
-                  />
-                ) : (
-                  <TrendingDown
-                    className={`${styles.changeIcon} ${styles.changeIconDown}`}
-                  />
-                )}
-                <p
-                  className={`${styles.changeText} ${
-                    isPositive ? styles.changeUp : styles.changeDown
-                  }`}
-                >
-                  {isPositive ? "+" : ""}
-                  {stock.change}%
-                </p>
-              </div>
-            </button>
-          );
-        })}
+        {stocks.map((stock) => (
+          <button
+            key={stock.id}
+            type="button"
+            onClick={() =>
+              onSelect({
+                name: stock.name,
+                code: stock.code,
+                price: stock.price,
+                change: stock.change,
+              })
+            }
+            className={styles.card}
+          >
+            <h4 className={styles.stockName}>{stock.name}</h4>
+            <p className={styles.stockCode}>{stock.code}</p>
+            <p className={styles.stockPrice}>
+              {stock.price.toLocaleString()}
+            </p>
+            <div className={styles.changeRow}>
+              <PriceChange
+                change={stock.change}
+                iconClassName={styles.changeIcon}
+                upClassName={styles.changeIconUp}
+                downClassName={styles.changeIconDown}
+                textClassName={styles.changeText}
+              />
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );
-}
+});
