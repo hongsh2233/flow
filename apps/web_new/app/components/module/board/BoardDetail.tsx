@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Visibility from "@mui/icons-material/Visibility";
-import Comment from "@mui/icons-material/Comment";
+// import Comment from "@mui/icons-material/Comment"; // 댓글 기능 준비 중
 import type { BoardDetailProps } from "@/lib/types";
 import styles from "./BoardDetail.module.css";
 
@@ -47,10 +47,12 @@ export function BoardDetail({
             <span className={styles.statIcon}><Visibility fontSize="inherit" /></span>
             {post.views.toLocaleString()}
           </span>
+          {/* 댓글 기능 준비 중
           <span className={styles.stat}>
             <span className={styles.statIcon}><Comment fontSize="inherit" /></span>
             {post.comments}
           </span>
+          */}
         </div>
       </footer>
     </article>

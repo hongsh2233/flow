@@ -7,21 +7,41 @@ import styles from "./Search.module.css";
 export function Search({
     value,
     onChange,
-    placeholder = '종목명 또는 코드 검색',
+    onSearch,
+    placeholder = "종목명 또는 코드 검색",
     }: SearchProps) {
+    const handleSearch = () => {
+        onSearch?.(value);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+        e.preventDefault();
+        handleSearch();
+        }
+    };
+
     return (
         <div className={styles.wrap}>
         <div className={styles.inner}>
-            <SearchIcon className={styles.icon} aria-hidden />
             <input
             type="text"
             placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             className={styles.input}
             aria-label={placeholder}
             />
+            <button
+            type="button"
+            onClick={handleSearch}
+            className={styles.searchBtn}
+            aria-label="검색"
+            >
+            <SearchIcon className={styles.searchIcon} aria-hidden />
+            </button>
         </div>
         </div>
-    )
+    );
 }
