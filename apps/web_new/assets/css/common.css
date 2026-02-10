@@ -11,3 +11,8 @@
   padding: calc(64px + var(--spacing-lg)) var(--spacing-lg) calc(80px + var(--spacing-lg));
   box-sizing: border-box;
 }
+
+.home-term-wrap {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}

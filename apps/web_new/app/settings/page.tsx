@@ -87,7 +87,7 @@ function SettingsScreen() {
                   >
                     <div className={styles.itemLeft}>
                       <div className={styles.itemIconWrap}>
-                        <Icon className="w-5 h-5 text-orange-500" />
+                        <Icon className={styles.itemIcon} />
                       </div>
                       <span className={styles.itemLabel}>{item.label}</span>
                     </div>

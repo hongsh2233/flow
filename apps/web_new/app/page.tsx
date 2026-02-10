@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { HomeGreeting } from "./components/module/home/HomeGreeting";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { ExchangeRates } from "./components/module/home/ExchangeRates";
 import { MarketIndex } from "./components/module/home/MarketIndex";
@@ -102,9 +101,8 @@ export default function Home() {
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
 
   return (
-    <div className="content__wrap">      
-
-      <div style={{ padding: "0 1rem", marginBottom: "1.5rem" }}>
+    <div className="content__wrap">
+      <div className="home-term-wrap">
         <StockTermBox />
       </div>
 

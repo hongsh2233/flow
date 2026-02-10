@@ -1,0 +1,9 @@
+declare module "@mui/icons-material/CalendarToday";
+declare module "@mui/icons-material/AccessTime";
+declare module "@mui/icons-material/NotificationsNone";
+declare module "@mui/icons-material/NotificationsActive";
+declare module "@mui/icons-material/Business";
+declare module "@mui/icons-material/Payments";
+declare module "@mui/icons-material/Groups";
+declare module "@mui/icons-material/ChevronLeft";
+declare module "@mui/icons-material/ChevronRight";

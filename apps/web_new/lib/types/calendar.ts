@@ -1,21 +1,19 @@
-import type { ComponentType } from "react";
-
-export type IconType = "blue" | "green" | "purple";
-
 export interface WeekDateInfo {
   date: number;
   day: string;
+  /** 0(일) ~ 6(토) */
+  dayOfWeek: number;
   fullDate: Date;
   isToday: boolean;
 }
 
+export type NotifyTiming = "1min" | "30min" | "1day" | "2day";
+
 export interface ScheduleItem {
   id: number;
   type: string;
-  icon: ComponentType<{ fontSize?: "small" | "inherit" | "medium" | "large" }>;
   company: string;
   title: string;
   date: string;
   time: string;
-  color: IconType;
 }
