@@ -55,6 +55,7 @@ export interface MarketIndexItem {
 export interface FavoriteStocksProps {
   stocks: FavoriteStockItem[];
   onSelect: (stock: StockDetail) => void;
+  onRemove?: (stockId: string) => void;
 }
 
 export interface RealtimeSearchProps {

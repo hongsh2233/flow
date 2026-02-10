@@ -17,7 +17,8 @@ export type { StockDetail };
 export function StockDetailModal({
     stock,
     onClose,
-    onAddFavorite,
+    isFavorite = false,
+    onToggleFavorite,
     onShowChart,
 }: StockDetailModalProps) {
     if (!stock) return null
@@ -149,11 +150,16 @@ export function StockDetailModal({
             <div className={styles.actionGrid}>
                 <button
                 type="button"
-                className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-                onClick={() => onAddFavorite?.(stock)}
+                className={`${styles.actionBtn} ${
+                    isFavorite ? styles.actionBtnDanger : styles.actionBtnPrimary
+                }`}
+                onClick={() => onToggleFavorite?.(stock)}
                 >
-                <Heart aria-hidden />
-                관심 추가
+                <Heart
+                    className={isFavorite ? styles.heartFilled : ""}
+                    aria-hidden
+                />
+                {isFavorite ? "관심 해제" : "관심 추가"}
                 </button>
                 <button
                 type="button"

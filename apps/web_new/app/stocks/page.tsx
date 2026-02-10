@@ -7,7 +7,7 @@ import {
   BarChart3,
   Building2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Search } from "../components/module/Search";
 import { StockCard } from "../components/module/StockCard";
 import { StockDetailModal } from "../components/module/StockDetailModal";
@@ -67,7 +67,7 @@ const risingStocks: RisingStock[] = [
 ];
 
 // 관심종목
-const favorite: FavoriteStock[] = [
+const initialFavorites: FavoriteStock[] = [
   { id: "1", name: "삼성전자", code: "005930", price: 71800, change: 1.7 },
   { id: "2", name: "NAVER", code: "035420", price: 234500, change: 1.52 },
   { id: "3", name: "KB금융", code: "105560", price: 67800, change: 0.85 },
@@ -83,6 +83,30 @@ export default function StocksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("favorite");
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
+  const [favorites, setFavorites] = useState(initialFavorites);
+
+  const handleToggleFavorite = useCallback((stock: StockDetail) => {
+    setFavorites((prev) => {
+      const exists = prev.some((s) => s.code === stock.code);
+      if (exists) {
+        return prev.filter((s) => s.code !== stock.code);
+      }
+      return [
+        ...prev,
+        {
+          id: stock.code,
+          name: stock.name,
+          code: stock.code,
+          price: stock.price,
+          change: stock.change,
+        },
+      ];
+    });
+  }, []);
+
+  const isSelectedFavorite = selectedStock
+    ? favorites.some((s) => s.code === selectedStock.code)
+    : false;
 
   return (
     <div className={styles.page}>
@@ -102,45 +126,71 @@ export default function StocksPage() {
 
         {/* 관심종목 */}
         <TabsContent value="favorite" className={styles.tabContent}>
-          <div className={styles.cardList}>
-            {favorite.map((stock) => {
-              const isPositive = stock.change >= 0;
-              return (
-                <button
-                  key={stock.id}
-                  type="button"
-                  onClick={() => setSelectedStock(toStockDetail(stock))}
-                  className={styles.favoriteCard}
-                >
-                  <div className={styles.favoriteInner}>
-                    <div className={styles.favoriteLeft}>
-                      <button type="button" className={styles.heartBtn} aria-label="관심종목">
-                        <Heart className={styles.heart} aria-hidden />
-                      </button>
-                      <div className={styles.favoriteInfo}>
-                        <h4>{stock.name}</h4>
-                        <p>{stock.code}</p>
+          {favorites.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>관심종목이 없습니다.</p>
+              <p className={styles.emptyHint}>종목을 검색하여 추가해보세요.</p>
+            </div>
+          ) : (
+            <div className={styles.cardList}>
+              {favorites.map((stock) => {
+                const isPositive = stock.change >= 0;
+                return (
+                  <div key={stock.id} className={styles.favoriteCard}>
+                    <div className={styles.favoriteInner}>
+                      <div className={styles.favoriteLeft}>
+                        <button
+                          type="button"
+                          className={styles.heartBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleFavorite(toStockDetail(stock));
+                          }}
+                          aria-label={`${stock.name} 관심종목 해제`}
+                        >
+                          <Heart className={styles.heart} aria-hidden />
+                        </button>
+                        <div
+                          className={styles.favoriteInfo}
+                          onClick={() => setSelectedStock(toStockDetail(stock))}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") setSelectedStock(toStockDetail(stock));
+                          }}
+                        >
+                          <h4>{stock.name}</h4>
+                          <p>{stock.code}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className={styles.favoriteRight}>
-                      <p className={styles.favoritePrice}>{stock.price.toLocaleString()}</p>
-                      <div className={styles.favoriteChangeRow}>
-                        {isPositive ? (
-                          <TrendingUp className={`${styles.changeIcon} ${styles.changeUp}`} aria-hidden />
-                        ) : (
-                          <TrendingDown className={`${styles.changeIcon} ${styles.changeDown}`} aria-hidden />
-                        )}
-                        <p className={isPositive ? styles.changeUp : styles.changeDown}>
-                          {isPositive ? "+" : ""}
-                          {stock.change}%
-                        </p>
+                      <div
+                        className={styles.favoriteRight}
+                        onClick={() => setSelectedStock(toStockDetail(stock))}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") setSelectedStock(toStockDetail(stock));
+                        }}
+                      >
+                        <p className={styles.favoritePrice}>{stock.price.toLocaleString()}</p>
+                        <div className={styles.favoriteChangeRow}>
+                          {isPositive ? (
+                            <TrendingUp className={`${styles.changeIcon} ${styles.changeUp}`} aria-hidden />
+                          ) : (
+                            <TrendingDown className={`${styles.changeIcon} ${styles.changeDown}`} aria-hidden />
+                          )}
+                          <p className={isPositive ? styles.changeUp : styles.changeDown}>
+                            {isPositive ? "+" : ""}
+                            {stock.change}%
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         {/* 시장현황 */}
@@ -245,6 +295,8 @@ export default function StocksPage() {
         <StockDetailModal
           stock={selectedStock}
           onClose={() => setSelectedStock(null)}
+          isFavorite={isSelectedFavorite}
+          onToggleFavorite={handleToggleFavorite}
         />
       )}
     </div>

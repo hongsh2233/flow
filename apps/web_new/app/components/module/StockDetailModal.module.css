@@ -288,6 +288,15 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
+.actionBtnDanger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.actionBtnDanger:hover {
+  background: #fecaca;
+}
+
 .actionBtnSecondary {
   background: #f3f4f6;
   color: #374151;
@@ -300,4 +309,9 @@
 .actionBtn svg {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+.heartFilled {
+  fill: #dc2626;
+  color: #dc2626;
 }

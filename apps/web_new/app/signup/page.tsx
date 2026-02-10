@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Mail, Lock } from "lucide-react";
+import { BarChart3, Mail, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -9,19 +9,18 @@ import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import type { SocialProvider } from "@/lib/types";
-import styles from "./LoginPage.module.css";
+import styles from "./SignupPage.module.css";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 실제 이메일/비밀번호 인증 API 연동
-    router.push("/");
-    router.refresh();
+    // TODO: 실제 회원가입 API 연동
+    router.push("/login");
   };
 
   const handleSocialLogin = (provider: SocialProvider) => {
@@ -38,12 +37,20 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className={styles.headerTitle}>주리니</h1>
-          <p className={styles.headerSub}>초보 투자자를 위한 친절한 주식 앱</p>
+          <p className={styles.headerSub}>지금 가입하고 투자를 시작하세요</p>
         </div>
 
         <div className={styles.form}>
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
+              <FormField
+                label="이름"
+                type="text"
+                placeholder="주린이"
+                value={name}
+                onChange={setName}
+                icon={User}
+              />
               <FormField
                 label="이메일"
                 type="email"
@@ -62,20 +69,6 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className={styles.options}>
-              <label className={styles.checkboxWrap}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                <span>로그인 상태 유지</span>
-              </label>
-              <button type="button" className={styles.forgotLink}>
-                비밀번호 찾기
-              </button>
-            </div>
-
             <Button
               type="submit"
               variant="primary"
@@ -83,7 +76,7 @@ export default function LoginPage() {
               large
               className={styles.submitBtn}
             >
-              로그인
+              회원가입
             </Button>
           </form>
 
@@ -109,8 +102,8 @@ export default function LoginPage() {
             />
           </div>
 
-          <p className={styles.signupLink}>
-            아직 계정이 없으신가요? <Link href="/signup">회원가입</Link>
+          <p className={styles.loginLink}>
+            이미 계정이 있으신가요? <Link href="/login">로그인</Link>
           </p>
         </div>
       </div>

@@ -62,45 +62,6 @@
   margin-bottom: 1rem;
 }
 
-.options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.checkboxWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkboxWrap input {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  accent-color: #f97316;
-}
-
-.checkboxWrap span {
-  color: #6b7280;
-}
-
-.forgotLink {
-  color: #f97316;
-  font-weight: 500;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.forgotLink:hover {
-  color: #ea580c;
-}
-
 .submitBtn {
   width: 100%;
   padding: 0.875rem;
@@ -145,20 +106,20 @@
   gap: 0.75rem;
 }
 
-.signupLink {
+.loginLink {
   margin-top: 1.5rem;
   text-align: center;
   font-size: 0.875rem;
   color: #6b7280;
 }
 
-.signupLink a {
+.loginLink a {
   color: #f97316;
   font-weight: 600;
   text-decoration: none;
 }
 
-.signupLink a:hover {
+.loginLink a:hover {
   color: #ea580c;
   text-decoration: underline;
 }

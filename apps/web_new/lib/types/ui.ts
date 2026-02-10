@@ -45,6 +45,7 @@ export interface FormFieldProps {
 export interface SearchProps {
   value: string;
   onChange: (value: string) => void;
+  onSearch?: (value: string) => void;
   placeholder?: string;
 }
 
