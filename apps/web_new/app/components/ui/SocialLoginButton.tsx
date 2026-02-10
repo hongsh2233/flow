@@ -3,8 +3,6 @@
 import type { SocialProvider } from "@/lib/types";
 import styles from "./SocialLoginButton.module.css";
 
-export type { SocialProvider };
-
 export interface SocialLoginButtonProps {
   provider: SocialProvider;
   onClick?: () => void;

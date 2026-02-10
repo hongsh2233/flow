@@ -2,14 +2,12 @@
  * 하단 네비게이션 등 앱 전역에서 쓰는 링크/메뉴는 config에서 불러옵니다.
  * 데이터: config/nav-items.json
  */
-import {
-  Home,
-  CalendarToday,
-  Article,
-  Description,
-  FolderOpen,
-  Settings,
-} from '@mui/icons-material'
+import Home from '@mui/icons-material/Home'
+import CalendarToday from '@mui/icons-material/CalendarToday'
+import Article from '@mui/icons-material/Article'
+import Description from '@mui/icons-material/Description'
+import FolderOpen from '@mui/icons-material/FolderOpen'
+import Settings from '@mui/icons-material/Settings'
 import navData from './nav-items.json'
 
 type IconComponent = typeof Home

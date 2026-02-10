@@ -9,10 +9,8 @@ import {
   BarChart3,
   DollarSign,
 } from "lucide-react";
-import type { StockDetail, StockDetailModalProps } from "@/lib/types";
+import type { StockDetailModalProps } from "@/lib/types";
 import styles from "./StockDetailModal.module.css";
-
-export type { StockDetail };
 
 export function StockDetailModal({
     stock,

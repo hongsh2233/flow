@@ -1,10 +1,8 @@
 "use client";
 
-import { AccessTime } from "@mui/icons-material";
+import AccessTime from "@mui/icons-material/AccessTime";
 import type { NewsItem, NewsListProps } from "@/lib/types";
 import styles from "./NewsList.module.css";
-
-export type { NewsItem };
 
 const defaultItems: NewsItem[] = [
   { id: 1, category: '경제', title: '삼성전자, 신규 반도체 공장 건설 발표', summary: '삼성전자가 차세대 반도체 생산을 위한 신규 공장 건설을 발표했습니다.', time: '10분 전', tag: '핫이슈' },

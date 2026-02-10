@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Visibility, Comment } from "@mui/icons-material";
-import type { BoardPost, BoardDetailProps } from "@/lib/types";
+import Visibility from "@mui/icons-material/Visibility";
+import Comment from "@mui/icons-material/Comment";
+import type { BoardDetailProps } from "@/lib/types";
 import styles from "./BoardDetail.module.css";
-
-export type { BoardPost };
 
 export function BoardDetail({
   post,
