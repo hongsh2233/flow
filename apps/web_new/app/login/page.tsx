@@ -1,9 +1,10 @@
 "use client";
 
-import { BarChart3, Mail, Lock, User } from "lucide-react";
+import { BarChart3, Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
@@ -12,10 +13,8 @@ import styles from "./LoginPage.module.css";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [remember, setRemember] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,35 +42,10 @@ export default function LoginPage() {
         </div>
 
         <div className={styles.form}>
-          <div className={styles.tabGroup}>
-            <button
-              type="button"
-              onClick={() => setIsSignUp(false)}
-              className={`${styles.tab} ${!isSignUp ? styles.tabActive : styles.tabInactive}`}
-            >
-              로그인
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsSignUp(true)}
-              className={`${styles.tab} ${isSignUp ? styles.tabActive : styles.tabInactive}`}
-            >
-              회원가입
-            </button>
-          </div>
+          <h2 className={styles.formTitle}>로그인</h2>
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
-              {isSignUp && (
-                <FormField
-                  label="이름"
-                  type="text"
-                  placeholder="주린이"
-                  value={name}
-                  onChange={setName}
-                  icon={User}
-                />
-              )}
               <FormField
                 label="이메일"
                 type="email"
@@ -90,21 +64,19 @@ export default function LoginPage() {
               />
             </div>
 
-            {!isSignUp && (
-              <div className={styles.options}>
-                <label className={styles.checkboxWrap}>
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                  />
-                  <span>로그인 상태 유지</span>
-                </label>
-                <button type="button" className={styles.forgotLink}>
-                  비밀번호 찾기
-                </button>
-              </div>
-            )}
+            <div className={styles.options}>
+              <label className={styles.checkboxWrap}>
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <span>로그인 상태 유지</span>
+              </label>
+              <button type="button" className={styles.forgotLink}>
+                비밀번호 찾기
+              </button>
+            </div>
 
             <Button
               type="submit"
@@ -113,7 +85,7 @@ export default function LoginPage() {
               large
               className={styles.submitBtn}
             >
-              {isSignUp ? "회원가입" : "로그인"}
+              로그인
             </Button>
           </form>
 
@@ -138,6 +110,11 @@ export default function LoginPage() {
               onClick={() => handleSocialLogin("google")}
             />
           </div>
+
+          <p className={styles.switchLink}>
+            아직 계정이 없으신가요?{" "}
+            <Link href="/signup">회원가입</Link>
+          </p>
         </div>
       </div>
     </div>

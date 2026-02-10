@@ -70,87 +70,10 @@
   margin-bottom: 1rem;
 }
 
-.options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.checkboxWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkboxWrap input {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  accent-color: #f97316;
-}
-
-.checkboxWrap span {
-  color: #6b7280;
-}
-
-.forgotLink {
-  color: #f97316;
-  font-weight: 500;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.forgotLink:hover {
-  color: #ea580c;
-}
-
 .submitBtn {
   width: 100%;
   padding: 0.875rem;
   margin-top: 0.5rem;
-}
-
-.divider {
-  position: relative;
-  margin: 1.5rem 0 1rem;
-}
-
-.dividerLine {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-}
-
-.dividerLine::before {
-  content: "";
-  width: 100%;
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.dividerText {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.dividerText span {
-  padding: 0 1rem;
-  background: #fff;
-}
-
-.socialButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
 }
 
 .switchLink {
