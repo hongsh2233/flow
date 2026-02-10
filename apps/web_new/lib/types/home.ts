@@ -1,0 +1,78 @@
+import type { StockDetail } from "./stock";
+
+/* ── 실시간 검색 ── */
+export interface RealtimeSearchItem {
+  rank: number;
+  name: string;
+  change: number;
+}
+
+/* ── 거래량 상위 종목 ── */
+export interface VolumeStock {
+  rank: number;
+  name: string;
+  code: string;
+  price: number;
+  change: number;
+  volume: string;
+}
+
+/* ── 거래대금 상위 종목 ── */
+export interface ValueStock {
+  rank: number;
+  name: string;
+  price: number;
+  change: number;
+  value: string;
+}
+
+/* ── 관심종목 ── */
+export interface FavoriteStockItem {
+  id: string;
+  name: string;
+  code: string;
+  price: number;
+  change: number;
+}
+
+/* ── 환율 ── */
+export interface ExchangeRateItem {
+  currency: string;
+  rate: string;
+  change: string;
+  isPositive: boolean;
+}
+
+/* ── 지수 ── */
+export interface MarketIndexItem {
+  name: string;
+  value: string;
+  change: string;
+  isPositive: boolean;
+}
+
+/* ── 컴포넌트 Props ── */
+export interface FavoriteStocksProps {
+  stocks: FavoriteStockItem[];
+  onSelect: (stock: StockDetail) => void;
+}
+
+export interface RealtimeSearchProps {
+  items: RealtimeSearchItem[];
+}
+
+export interface TradeRankingProps {
+  kospiVolume: VolumeStock[];
+  kosdaqVolume: VolumeStock[];
+  kospiValue: ValueStock[];
+  kosdaqValue: ValueStock[];
+  onSelect: (stock: StockDetail) => void;
+}
+
+export interface ExchangeRatesProps {
+  rates: ExchangeRateItem[];
+}
+
+export interface MarketIndexProps {
+  indices: MarketIndexItem[];
+}

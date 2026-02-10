@@ -1,0 +1,90 @@
+.section {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.heading {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headingIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #2563eb;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.cardKospi {
+  background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+}
+
+.cardKosdaq {
+  background: linear-gradient(to bottom right, #faf5ff, #f3e8ff);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e9d5ff;
+}
+
+.cardLabel {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.labelKospi {
+  color: #1d4ed8;
+}
+
+.labelKosdaq {
+  color: #7e22ce;
+}
+
+.cardValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.changeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.changeIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.changeIconUp {
+  color: #ef4444;
+}
+
+.changeIconDown {
+  color: #3b82f6;
+}
+
+.changeText {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.changeUp {
+  color: #ef4444;
+}
+
+.changeDown {
+  color: #3b82f6;
+}

@@ -11,6 +11,7 @@ import styles from "./Tabs.module.css";
 
 const TabsContext = React.createContext<{
   value: string
+  variant: "pill" | "underline"
   onValueChange: (value: string) => void
 } | null>(null)
 
@@ -19,6 +20,7 @@ function Tabs({
   value,
   defaultValue,
   onValueChange,
+  variant = "pill",
   children,
   ...props
 }: TabsProps) {
@@ -33,7 +35,7 @@ function Tabs({
     [isControlled, onValueChange]
   )
   return (
-    <TabsContext.Provider value={{ value: currentValue, onValueChange: handleChange }}>
+    <TabsContext.Provider value={{ value: currentValue, variant, onValueChange: handleChange }}>
       <div
         data-slot="tabs"
         className={className ? `${styles.root} ${className}` : styles.root}
@@ -50,11 +52,13 @@ function TabsList({
   children,
   ...props
 }: TabsListProps) {
+  const ctx = React.useContext(TabsContext)
+  const base = ctx?.variant === "underline" ? styles.listUnderline : styles.list
   return (
     <div
       data-slot="tabs-list"
       role="tablist"
-      className={className ? `${styles.list} ${className}` : styles.list}
+      className={className ? `${base} ${className}` : base}
       {...props}
     >
       {children}
@@ -71,6 +75,7 @@ function TabsTrigger({
   const ctx = React.useContext(TabsContext)
   if (!ctx) throw new Error('TabsTrigger must be used within Tabs')
   const isActive = ctx.value === value
+  const base = ctx.variant === "underline" ? styles.triggerUnderline : styles.trigger
   return (
     <button
       type="button"
@@ -78,7 +83,7 @@ function TabsTrigger({
       aria-selected={isActive}
       data-state={isActive ? 'active' : 'inactive'}
       data-slot="tabs-trigger"
-      className={className ? `${styles.trigger} ${className}` : styles.trigger}
+      className={className ? `${base} ${className}` : base}
       onClick={() => ctx.onValueChange(value)}
       {...props}
     >

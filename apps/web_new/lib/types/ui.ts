@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
+export type TabsVariant = "pill" | "underline";
+
 export interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  variant?: TabsVariant;
   children?: ReactNode;
 }
 

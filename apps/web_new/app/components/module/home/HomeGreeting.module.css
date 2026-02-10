@@ -1,0 +1,18 @@
+.wrapper {
+  background: linear-gradient(to bottom right, #fb923c, #f472b6);
+  padding: 1.5rem;
+  border-radius: 0 0 1.5rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #fff7ed;
+  font-size: 0.875rem;
+}
