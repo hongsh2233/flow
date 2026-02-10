@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import LayoutShell from "./components/layout/LayoutShell";
+import Header from "./components/layout/Header";
+import BottomNavigation from "./components/layout/BottomNavigation";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import type { RootLayoutProps } from "@/lib/types";
 import "../assets/css/index.css";
@@ -23,7 +24,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="ko">
       <body>
         <NextAuthProvider>
-          <LayoutShell>{children}</LayoutShell>
+          <div className="wrap">
+            <Header />
+            {children}
+            <BottomNavigation />
+          </div>
         </NextAuthProvider>
       </body>
     </html>

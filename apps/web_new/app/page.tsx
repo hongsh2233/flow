@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { ExchangeRates } from "./components/module/home/ExchangeRates";
 import { MarketIndex } from "./components/module/home/MarketIndex";
@@ -77,7 +77,7 @@ const kosdaqValue = [
   { rank: 10, name: "씨젠", price: 34000, change: -0.8, value: "398억" },
 ];
 
-const initialFavoriteStocks = [
+const favoriteStocks = [
   { id: "1", name: "삼성전자", code: "005930", price: 71800, change: 1.7 },
   { id: "2", name: "NAVER", code: "035420", price: 234500, change: 1.52 },
   { id: "3", name: "카카오", code: "035720", price: 45600, change: -1.72 },
@@ -99,37 +99,6 @@ const marketIndices = [
 
 export default function Home() {
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
-  const [favorites, setFavorites] = useState(initialFavoriteStocks);
-
-  const handleRemoveFavorite = useCallback((stockId: string) => {
-    setFavorites((prev) => prev.filter((s) => s.id !== stockId));
-  }, []);
-
-  const handleToggleFavorite = useCallback(
-    (stock: StockDetail) => {
-      setFavorites((prev) => {
-        const exists = prev.some((s) => s.code === stock.code);
-        if (exists) {
-          return prev.filter((s) => s.code !== stock.code);
-        }
-        return [
-          ...prev,
-          {
-            id: stock.code,
-            name: stock.name,
-            code: stock.code,
-            price: stock.price,
-            change: stock.change,
-          },
-        ];
-      });
-    },
-    []
-  );
-
-  const isSelectedFavorite = selectedStock
-    ? favorites.some((s) => s.code === selectedStock.code)
-    : false;
 
   return (
     <div className="content__wrap">
@@ -137,11 +106,7 @@ export default function Home() {
         <StockTermBox />
       </div>
 
-      <FavoriteStocks
-        stocks={favorites}
-        onSelect={setSelectedStock}
-        onRemove={handleRemoveFavorite}
-      />
+      <FavoriteStocks stocks={favoriteStocks} onSelect={setSelectedStock} />
       <ExchangeRates rates={exchangeRates} />
       <MarketIndex indices={marketIndices} />
       <RealtimeSearch items={realtimeSearch} />
@@ -157,8 +122,6 @@ export default function Home() {
         <StockDetailModal
           stock={selectedStock}
           onClose={() => setSelectedStock(null)}
-          isFavorite={isSelectedFavorite}
-          onToggleFavorite={handleToggleFavorite}
         />
       )}
     </div>
