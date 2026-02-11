@@ -12,6 +12,7 @@ export function FormField({
   onChange,
   icon: Icon,
   id,
+  readOnly,
 }: FormFieldProps) {
   const fieldId = id ?? label;
   return (
@@ -28,6 +29,8 @@ export function FormField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           withIcon={!!Icon}
+          readOnly={readOnly}
+          className={readOnly ? styles.readOnly : ""}
         />
       </div>
     </div>

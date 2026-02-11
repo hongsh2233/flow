@@ -24,3 +24,9 @@
   height: 1.25rem;
   pointer-events: none;
 }
+
+.readOnly {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}

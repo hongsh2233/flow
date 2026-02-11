@@ -185,3 +185,12 @@
 .logoutButton:hover {
   background-color: #e5e7eb;
 }
+
+.clickable {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.clickable:hover {
+  background-color: #f9fafb;
+}

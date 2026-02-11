@@ -40,6 +40,7 @@ export interface FormFieldProps {
   onChange: (value: string) => void;
   icon?: LucideIcon;
   id?: string;
+  readOnly?: boolean;
 }
 
 export interface SearchProps {

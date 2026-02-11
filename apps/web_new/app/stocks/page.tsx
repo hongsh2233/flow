@@ -60,15 +60,22 @@ export default function StocksPage() {
             {favorite.map((stock) => {
               const isPositive = stock.change >= 0;
               return (
-                <button
+                <div
                   key={stock.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedStock(toStockDetail(stock))}
+                  onKeyDown={(e) => e.key === "Enter" && setSelectedStock(toStockDetail(stock))}
                   className={styles.favoriteCard}
                 >
                   <div className={styles.favoriteInner}>
                     <div className={styles.favoriteLeft}>
-                      <button type="button" className={styles.heartBtn} aria-label="관심종목">
+                      <button
+                        type="button"
+                        className={styles.heartBtn}
+                        aria-label="관심종목"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Heart className={styles.heart} aria-hidden />
                       </button>
                       <div className={styles.favoriteInfo}>
@@ -91,7 +98,7 @@ export default function StocksPage() {
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

@@ -1,0 +1,142 @@
+.screen {
+  padding: 0 0 5rem;
+}
+
+/* 상단 바 */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 0.75rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.backBtn:hover {
+  background: #e5e7eb;
+}
+
+.topBarTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.topBarSpacer {
+  width: 2.25rem;
+}
+
+/* 카테고리 */
+.categories {
+  padding: 1.25rem 1rem 0;
+}
+
+.category {
+  margin-bottom: 1.5rem;
+}
+
+.categoryTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.categoryCard {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* FAQ 아이템 */
+.faqItem {
+  /* container for question + answer */
+}
+
+.faqItemBordered {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.faqQuestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 0.75rem;
+  transition: background 0.15s;
+}
+
+.faqQuestion:hover {
+  background: #f9fafb;
+}
+
+.questionText {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.5;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition: transform 0.25s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+  color: #f97316;
+}
+
+.faqAnswer {
+  padding: 0 1.25rem 1rem;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faqAnswer p {
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: #4b5563;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #fffbeb;
+  border-left: 3px solid #f97316;
+  border-radius: 0 0.5rem 0.5rem 0;
+}

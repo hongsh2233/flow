@@ -1,58 +1,85 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./Settings.module.css";
 import {
   Bell,
   Moon,
-  HelpCircle,
-  Lock,
-  Mail,
+  CalendarCheck,
+  KeyRound,
+  MessageCircleQuestion,
   ChevronRight,
   User,
+  UserX,
   Shield,
   FileText,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
+import TermsModal from "../components/ui/TermsModal";
+import type { TermsTab } from "../components/ui/TermsModal";
 import type { SettingsGroup } from "@/lib/types";
 
 const settingsGroups: SettingsGroup[] = [
   {
     title: "내 정보",
     items: [
-      { icon: User, label: "프로필 관리", hasArrow: true },
-      { icon: Mail, label: "이메일 변경", hasArrow: true },
+      { icon: User, label: "프로필 관리", hasArrow: true, href: "/settings/profile" },
+      { icon: UserX, label: "회원 탈퇴", hasArrow: true },
     ],
   },
   {
     title: "알림 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, enabled: true },
-      { icon: Bell, label: "가격 알림", hasSwitch: true, enabled: true },
-      { icon: Bell, label: "뉴스 알림", hasSwitch: true, enabled: false },
+      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, enabled: false },
     ],
   },
   {
     title: "앱 설정",
     items: [
       { icon: Moon, label: "다크 모드", hasSwitch: true, enabled: false },
-      { icon: Lock, label: "보안 설정", hasArrow: true },
+      { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
     ],
   },
   {
     title: "지원",
     items: [
-      { icon: HelpCircle, label: "도움말", hasArrow: true },
-      { icon: Shield, label: "개인정보 처리방침", hasArrow: true },
-      { icon: FileText, label: "이용약관", hasArrow: true },
+      { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
+      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
+      { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
     ],
   },
 ];
 
 function SettingsScreen() {
+  const router = useRouter();
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
+
+  const handleItemClick = (href?: string, action?: string) => {
+    if (href) {
+      router.push(href);
+      return;
+    }
+    if (action === "privacy" || action === "terms") {
+      setTermsTab(action);
+      setTermsOpen(true);
+    }
+  };
+
   return (
     <div className={styles.screen}>
 
       {/* 사용자 프로필 */}
       <div className={styles.profileSection}>
-        <div className={styles.profileCard}>
+        <div
+          className={`${styles.profileCard} ${styles.clickable}`}
+          onClick={() => router.push("/settings/profile")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/settings/profile")}
+        >
           <div className={styles.profileRow}>
             <div className={styles.profileAvatar}>
               주
@@ -76,6 +103,7 @@ function SettingsScreen() {
             <div className={styles.groupCard}>
               {group.items.map((item, itemIndex) => {
                 const Icon = item.icon;
+                const isClickable = !!(item.href || item.action);
                 return (
                   <div
                     key={itemIndex}
@@ -83,7 +111,11 @@ function SettingsScreen() {
                       itemIndex !== group.items.length - 1
                         ? styles.itemRowBordered
                         : ""
-                    }`}
+                    } ${isClickable ? styles.clickable : ""}`}
+                    onClick={() => handleItemClick(item.href, item.action)}
+                    role={isClickable ? "button" : undefined}
+                    tabIndex={isClickable ? 0 : undefined}
+                    onKeyDown={isClickable ? (e) => e.key === "Enter" && handleItemClick(item.href, item.action) : undefined}
                   >
                     <div className={styles.itemLeft}>
                       <div className={styles.itemIconWrap}>
@@ -122,6 +154,13 @@ function SettingsScreen() {
         </button>
       </div>
 
+      {/* 약관 팝업 */}
+      <TermsModal
+        open={termsOpen}
+        onClose={() => setTermsOpen(false)}
+        viewOnly
+        initialTab={termsTab}
+      />
     </div>
   );
 }
