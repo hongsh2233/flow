@@ -953,5 +953,97 @@ class FscApiService:
             print(f"❌ 재무제표 API 호출 오류 ({fs_type}): {str(e)}")
             raise
 
+    # ==================== 대차거래 (GetCMStckLnbInfoService) ====================
+    _STCK_LNB_BASE = "https://apis.data.go.kr/1160100/service/GetCMStckLnbInfoService"
+
+    async def _fetch_stck_lnb(
+        self,
+        endpoint: str,
+        bas_dt: Optional[str] = None,
+        isin_cd: Optional[str] = None,
+        itms_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 100,
+    ) -> tuple[List, Optional[int]]:
+        """대차거래 API 공통 호출 메서드."""
+        url = f"{self._STCK_LNB_BASE}/{endpoint}"
+        params = {
+            "serviceKey": self.api_key,
+            "pageNo": page_no,
+            "numOfRows": num_of_rows,
+            "resultType": "json",
+        }
+        if bas_dt:
+            params["basDt"] = bas_dt
+        if isin_cd:
+            params["isinCd"] = isin_cd
+        if itms_nm:
+            params["itmsNm"] = itms_nm
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                result = response.json()
+
+                items = []
+                total_count = None
+                if "response" in result:
+                    body = result["response"].get("body", {})
+                    total_count = body.get("totalCount")
+                    if "items" in body:
+                        items_obj = body["items"]
+                        if "item" in items_obj:
+                            item_data = items_obj["item"]
+                            items = item_data if isinstance(item_data, list) else [item_data]
+
+                if total_count is not None and isinstance(total_count, str):
+                    total_count = int(total_count) if total_count.isdigit() else None
+                print(f"✅ 대차거래 {endpoint} 성공: {len(items)}건 (totalCount: {total_count})")
+                return items, total_count
+        except Exception as e:
+            print(f"❌ 대차거래 {endpoint} API 오류: {str(e)}")
+            return [], None
+
+    async def fetch_stck_lnb_detail(
+        self,
+        bas_dt: Optional[str] = None,
+        isin_cd: Optional[str] = None,
+        itms_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 100,
+    ) -> tuple[List, Optional[int]]:
+        """주식 대차거래내역 조회 (getStckLnbDetail)"""
+        return await self._fetch_stck_lnb(
+            "getStckLnbDetail", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
+        )
+
+    async def fetch_stck_lnb_progress(
+        self,
+        bas_dt: Optional[str] = None,
+        isin_cd: Optional[str] = None,
+        itms_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 100,
+    ) -> tuple[List, Optional[int]]:
+        """주식 대차거래추이 조회 (getStckLnbProgress)"""
+        return await self._fetch_stck_lnb(
+            "getStckLnbProgress", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
+        )
+
+    async def fetch_stck_lnb_invpn_detail(
+        self,
+        bas_dt: Optional[str] = None,
+        isin_cd: Optional[str] = None,
+        itms_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 100,
+    ) -> tuple[List, Optional[int]]:
+        """참여자별주식대차거래내역 조회 (getStckLnbInvpnDetail)"""
+        return await self._fetch_stck_lnb(
+            "getStckLnbInvpnDetail", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
+        )
+
+
 fsc_api_service = FscApiService()
 

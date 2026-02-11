@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
     <meta name="googlebot" content="noindex, nofollow" />
     <meta name="description" content="관리자 시스템 (비공개)" />
-    <title>{% block title %}BO System{% endblock %}</title>
+    <title>{% block title %}Jurin-i BO{% endblock %}</title>
     {% include "base_styles.html" %}
     {% block extra_styles %}{% endblock %}
   </head>
@@ -17,15 +17,18 @@
     <div class="main-content" {% if active_page is none %}style="margin-left: 0; width: 100%;"{% endif %}>
       {% if active_page is not none %}
       <div class="header">
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-size: 18px; font-weight: 500;">
-            환영합니다, <b>{{ admin_email or '관리자' }}</b> 관리자님
+        <div class="header-info">
+          <span class="header-greeting">
+            환영합니다, <b>{{ admin_email or '관리자' }}</b> 님
           </span>
-          <span id="sessionInfo" style="margin-top: 4px; font-size: 12px; color: #666;">
+          <span id="sessionInfo" class="header-session">
             로그인 시간: - / 남은 시간: -
           </span>
         </div>
-        <a href="/logout" class="logout-btn">로그아웃</a>
+        <a href="/logout" class="logout-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          로그아웃
+        </a>
       </div>
       {% endif %}
       {% block content %}{% endblock %}
@@ -36,22 +39,26 @@
       <div class="loading-spinner"></div>
       <div class="loading-text">처리 중...</div>
     </div>
+
     <!-- 세션 만료/연장 모달 -->
     <div id="sessionTimeoutModal" class="loading-overlay" style="display: none; align-items: center; justify-content: center;">
-      <div style="background: #fff; padding: 24px 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 380px; width: 100%; text-align: center;">
-        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 18px; color: #2c3e50;">세션 만료 안내</h3>
-        <p id="sessionTimeoutMessage" style="margin: 0 0 6px; font-size: 14px; color: #555;">
+      <div class="session-modal-card">
+        <div style="width:48px;height:48px;background:var(--color-warning-light);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.875rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>세션 만료 안내</h3>
+        <p id="sessionTimeoutMessage">
           일정 시간 동안 활동이 없어 곧 로그아웃 됩니다.
         </p>
-        <p id="sessionTimeoutCountdown" style="margin: 0 0 14px; font-size: 13px; color: #e74c3c; font-weight: 600;">
+        <p id="sessionTimeoutCountdown" class="countdown">
           10초 후 자동 로그아웃 됩니다.
         </p>
-        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 6px; align-items: center;">
-          <button id="sessionExtendBtn" style="padding: 8px 14px; border-radius: 6px; border: none; background: #3498db; color: #fff; cursor: pointer; font-size: 14px;">
+        <div class="session-modal-actions">
+          <button id="sessionExtendBtn" class="btn btn-primary" style="padding:.5rem 1.25rem;">
             로그인 연장
           </button>
-          <button id="sessionLogoutBtn" style="padding: 8px 14px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px;">
-            <span>로그아웃</span>
+          <button id="sessionLogoutBtn" class="btn btn-secondary" style="padding:.5rem 1.25rem;">
+            로그아웃
           </button>
         </div>
       </div>
@@ -332,4 +339,3 @@
     </script>
   </body>
 </html>
-

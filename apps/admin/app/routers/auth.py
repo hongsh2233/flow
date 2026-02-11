@@ -92,10 +92,37 @@ async def login_page(request: Request):
     # SECRET_TOKEN이 없으면 로그인 불가
     if not SECRET_TOKEN:
         return HTMLResponse("""
-        <div style="width: 350px; margin: 100px auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px;">
-            <h2 style="text-align: center; color: #d32f2f;">오류</h2>
-            <p>SECRET_TOKEN이 설정되지 않았습니다. 서버 관리자에게 문의하세요.</p>
-        </div>
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8"/>
+          <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+          <title>Jurin-i BO - 오류</title>
+          <style>
+            @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+            *{box-sizing:border-box;margin:0;padding:0}
+            body{font-family:'Pretendard',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a2332;padding:1rem}
+            .error-card{max-width:400px;width:100%;background:#fff;border-radius:16px;padding:2.5rem 2rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+            .error-icon{width:56px;height:56px;background:#fff5f5;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem}
+            .error-icon svg{width:28px;height:28px;color:#e53e3e}
+            h2{font-size:1.25rem;font-weight:700;color:#2d3748;margin-bottom:.5rem}
+            p{font-size:.875rem;color:#718096;line-height:1.6}
+          </style>
+        </head>
+        <body>
+          <div class="error-card">
+            <div class="error-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/>
+                <line x1="12" x2="12.01" y1="16" y2="16"/>
+              </svg>
+            </div>
+            <h2>서버 설정 오류</h2>
+            <p>SECRET_TOKEN이 설정되지 않았습니다.<br/>서버 관리자에게 문의하세요.</p>
+          </div>
+        </body>
+        </html>
         """, status_code=500)
     
     # 이미 로그인된 경우 대시보드로 리다이렉트
@@ -110,20 +137,276 @@ async def login_page(request: Request):
       <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
       <meta name="googlebot" content="noindex, nofollow" />
       <meta name="description" content="관리자 로그인 (비공개)" />
+      <title>Jurin-i BO - 로그인</title>
       <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
-        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', sans-serif; }
+
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+        body{
+          font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo',sans-serif;
+          min-height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:#1a2332;
+          background-image:
+            radial-gradient(ellipse at 20% 50%,rgba(52,152,219,.12) 0%,transparent 60%),
+            radial-gradient(ellipse at 80% 20%,rgba(46,204,113,.08) 0%,transparent 50%);
+          padding:1rem;
+          -webkit-font-smoothing:antialiased;
+        }
+
+        /* ── 카드 ── */
+        .login-card{
+          width:100%;max-width:400px;
+          background:#fff;
+          border-radius:16px;
+          box-shadow:0 4px 6px rgba(0,0,0,.04),0 20px 60px rgba(0,0,0,.15);
+          overflow:hidden;
+          animation:slideUp .5s ease-out;
+        }
+        @keyframes slideUp{
+          from{opacity:0;transform:translateY(24px)}
+          to{opacity:1;transform:translateY(0)}
+        }
+
+        /* ── 헤더 ── */
+        .login-header{
+          background:linear-gradient(135deg,#2c3e50 0%,#34495e 100%);
+          padding:2.25rem 2rem 2rem;
+          text-align:center;
+          position:relative;
+          overflow:hidden;
+        }
+        .login-header::before{
+          content:'';position:absolute;
+          width:200px;height:200px;
+          background:rgba(255,255,255,.04);
+          border-radius:50%;
+          top:-80px;right:-60px;
+        }
+        .login-header::after{
+          content:'';position:absolute;
+          width:120px;height:120px;
+          background:rgba(255,255,255,.03);
+          border-radius:50%;
+          bottom:-40px;left:-30px;
+        }
+
+        .logo-icon{
+          width:56px;height:56px;
+          background:rgba(255,255,255,.12);
+          border-radius:14px;
+          display:inline-flex;align-items:center;justify-content:center;
+          margin-bottom:.875rem;
+          backdrop-filter:blur(4px);
+          border:1px solid rgba(255,255,255,.1);
+        }
+        .logo-icon svg{
+          width:28px;height:28px;color:#fff;
+        }
+
+        .login-header h1{
+          font-size:1.375rem;font-weight:700;
+          color:#fff;letter-spacing:-.01em;
+          margin-bottom:.25rem;
+        }
+        .login-header p{
+          font-size:.8125rem;
+          color:rgba(255,255,255,.55);
+          font-weight:400;
+        }
+
+        /* ── 폼 영역 ── */
+        .login-body{
+          padding:2rem;
+        }
+
+        .field{
+          margin-bottom:1.125rem;
+        }
+        .field label{
+          display:block;
+          font-size:.8125rem;font-weight:500;
+          color:#4a5568;
+          margin-bottom:.375rem;
+          letter-spacing:-.01em;
+        }
+        .input-wrap{
+          position:relative;
+        }
+        .input-wrap svg{
+          position:absolute;
+          left:.875rem;top:50%;transform:translateY(-50%);
+          width:1.125rem;height:1.125rem;
+          color:#a0aec0;
+          pointer-events:none;
+          transition:color .2s;
+        }
+        .input-wrap input{
+          width:100%;
+          padding:.75rem .875rem .75rem 2.75rem;
+          font-size:.9375rem;
+          line-height:1.5;
+          border:1.5px solid #e2e8f0;
+          border-radius:10px;
+          background:#f7fafc;
+          outline:none;
+          font-family:inherit;
+          transition:border-color .2s,background .2s,box-shadow .2s;
+        }
+        .input-wrap input::placeholder{
+          color:#a0aec0;
+        }
+        .input-wrap input:hover{
+          border-color:#cbd5e0;
+        }
+        .input-wrap input:focus{
+          border-color:#3498db;
+          background:#fff;
+          box-shadow:0 0 0 3px rgba(52,152,219,.12);
+        }
+        .input-wrap:focus-within svg{
+          color:#3498db;
+        }
+
+        /* ── 로그인 버튼 ── */
+        .login-btn{
+          width:100%;
+          padding:.8125rem;
+          font-size:1rem;font-weight:600;
+          color:#fff;
+          background:linear-gradient(135deg,#2c3e50 0%,#3498db 100%);
+          border:none;border-radius:10px;
+          cursor:pointer;
+          transition:transform .15s,box-shadow .25s,opacity .15s;
+          margin-top:.5rem;
+          font-family:inherit;
+          position:relative;
+          overflow:hidden;
+        }
+        .login-btn::after{
+          content:'';position:absolute;
+          top:0;left:0;width:100%;height:100%;
+          background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,.08) 100%);
+          opacity:0;transition:opacity .25s;
+        }
+        .login-btn:hover{
+          transform:translateY(-1px);
+          box-shadow:0 6px 20px rgba(52,152,219,.3);
+        }
+        .login-btn:hover::after{
+          opacity:1;
+        }
+        .login-btn:active{
+          transform:translateY(0) scale(.98);
+        }
+
+        /* ── 에러 메시지 ── */
+        .error-msg{
+          display:none;
+          background:#fff5f5;
+          color:#c53030;
+          font-size:.8125rem;
+          padding:.625rem .875rem;
+          border-radius:8px;
+          border:1px solid #fed7d7;
+          margin-bottom:1rem;
+          text-align:center;
+        }
+        .error-msg.show{
+          display:block;
+          animation:shake .4s ease-in-out;
+        }
+        @keyframes shake{
+          0%,100%{transform:translateX(0)}
+          25%{transform:translateX(-6px)}
+          75%{transform:translateX(6px)}
+        }
+
+        /* ── 푸터 ── */
+        .login-footer{
+          text-align:center;
+          padding:0 2rem 1.75rem;
+        }
+        .login-footer p{
+          font-size:.75rem;
+          color:#a0aec0;
+        }
+
+        /* ── 반응형 ── */
+        @media(max-width:480px){
+          .login-card{max-width:100%;border-radius:12px}
+          .login-header{padding:1.75rem 1.5rem 1.5rem}
+          .login-body{padding:1.5rem}
+        }
       </style>
     </head>
     <body>
-      <div style="width: 350px; margin: 100px auto; padding: 30px; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        <h2 style="text-align: center; color: #333;">관리자 로그인 (BO)</h2>
-        <form action="/login" method="post" style="display: flex; flex-direction: column; gap: 15px;">
-          <input type="email" name="username" placeholder="이메일" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px;">
-          <input type="password" name="password" placeholder="비밀번호" required style="padding: 12px; border: 1px solid #ccc; border-radius: 6px;">
-          <button type="submit" style="padding: 12px; background: #2c3e50; color: white; border: none; border-radius: 6px; cursor: pointer;">로그인</button>
-        </form>
+      <div class="login-card">
+        <!-- 헤더 -->
+        <div class="login-header">
+          <div class="logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20V10"/>
+              <path d="M18 20V4"/>
+              <path d="M6 20v-4"/>
+            </svg>
+          </div>
+          <h1>Jurin-i BO</h1>
+          <p>Back Office Management</p>
+        </div>
+
+        <!-- 폼 -->
+        <div class="login-body">
+          <div id="errorMsg" class="error-msg">
+            이메일 또는 비밀번호를 확인해주세요.
+          </div>
+
+          <form action="/login" method="post" id="loginForm">
+            <div class="field">
+              <label for="username">이메일</label>
+              <div class="input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+                <input type="email" id="username" name="username" placeholder="admin@example.com"
+                       required autocomplete="email" autofocus />
+              </div>
+            </div>
+            <div class="field">
+              <label for="password">비밀번호</label>
+              <div class="input-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요"
+                       required autocomplete="current-password" />
+              </div>
+            </div>
+            <button type="submit" class="login-btn">로그인</button>
+          </form>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="login-footer">
+          <p>&copy; Jurin-i BO &middot; 관리자 전용</p>
+        </div>
       </div>
+
+      <script>
+        // URL에 error 파라미터가 있으면 에러 메시지 표시
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('error') === '1') {
+          document.getElementById('errorMsg').classList.add('show');
+        }
+      </script>
     </body>
     </html>
     """
@@ -139,7 +422,7 @@ async def do_login(
     user = db.query(models.AdminUser).filter(models.AdminUser.email == username).first()
     
     if not user or not utils.verify_password(password, user.hashed_password):
-        return HTMLResponse("<script>alert('아이디 또는 비밀번호가 잘못되었습니다.'); window.location.href='/login';</script>")
+        return RedirectResponse(url="/login?error=1", status_code=303)
     
     # 로그인 성공 시 관리자 세션 쿠키 설정 (30분 유효)
     response = RedirectResponse(url="/admin/dashboard", status_code=303)

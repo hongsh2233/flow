@@ -51,3 +51,14 @@ export interface SearchProps {
 }
 
 export type SocialProvider = "kakao" | "naver" | "google";
+
+export interface AdBannerItem {
+  title: string;
+  description?: string;
+  label?: string;
+  emoji?: string;
+  href?: string;
+  imageUrl?: string;
+  gradient?: "orange" | "blue" | "green" | "dark";
+  closeable?: boolean;
+}
