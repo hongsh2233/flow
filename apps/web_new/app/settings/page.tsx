@@ -16,6 +16,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
+import { useThemeContext } from "../components/providers/ThemeProvider";
 import TermsModal from "../components/ui/TermsModal";
 import type { TermsTab } from "../components/ui/TermsModal";
 import type { SettingsGroup } from "@/lib/types";
@@ -38,7 +39,7 @@ const settingsGroups: SettingsGroup[] = [
   {
     title: "앱 설정",
     items: [
-      { icon: Moon, label: "다크 모드", hasSwitch: true, enabled: false },
+      { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
       { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
     ],
   },
@@ -54,6 +55,7 @@ const settingsGroups: SettingsGroup[] = [
 
 function SettingsScreen() {
   const router = useRouter();
+  const { isDark, toggle } = useThemeContext();
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
 
@@ -124,7 +126,10 @@ function SettingsScreen() {
                       <span className={styles.itemLabel}>{item.label}</span>
                     </div>
                     <div className={styles.actions}>
-                      {item.hasSwitch && (
+                      {item.hasSwitch && item.action === "darkmode" && (
+                        <Switch checked={isDark} onChange={toggle} />
+                      )}
+                      {item.hasSwitch && item.action !== "darkmode" && (
                         <Switch defaultChecked={item.enabled} />
                       )}
                       {item.hasArrow && (

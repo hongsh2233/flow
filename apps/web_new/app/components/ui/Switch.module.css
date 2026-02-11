@@ -12,11 +12,11 @@
   outline: none;
   transition: background-color 150ms ease, opacity 150ms ease, box-shadow 150ms ease,
     border-color 150ms ease;
-  background-color: #e5e7eb; /* unchecked bg */
+  background-color: var(--app-switch-off); /* unchecked bg */
 }
 
 .rootChecked {
-  background-color: #2563eb; /* primary */
+  background-color: var(--app-switch-on); /* primary */
 }
 
 .rootDisabled {

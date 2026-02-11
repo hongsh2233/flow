@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #fff;
+  background: var(--app-card-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,7 +17,7 @@
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 1rem;
-  background: linear-gradient(135deg, #fb923c, #ec4899);
+  background: var(--app-accent-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,25 +33,25 @@
 .lockTitle {
   font-size: 1.375rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
   margin-bottom: 0.5rem;
 }
 
 .lockDesc {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
   margin-bottom: 1.5rem;
 }
 
 .lockTimer {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #ef4444;
+  color: var(--app-up);
   font-variant-numeric: tabular-nums;
   margin-bottom: 0.5rem;
 }
 
 .lockHint {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }

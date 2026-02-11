@@ -17,21 +17,21 @@
 }
 
 .primary {
-  background: linear-gradient(90deg, #fb923c 0%, #ec4899 100%);
+  background: var(--app-accent-gradient-h);
   color: #fff;
 }
 
 .primary:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .secondary {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--app-bg-secondary);
+  color: var(--app-text-tertiary);
 }
 
 .secondary:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--app-bg-tertiary);
 }
 
 .fullWidth {

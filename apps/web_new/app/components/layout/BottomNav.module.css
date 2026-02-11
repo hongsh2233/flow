@@ -3,8 +3,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  border-top: 1px solid #e5e7eb;
+  background: var(--app-card-bg);
+  border-top: 1px solid var(--app-border);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
@@ -25,20 +25,20 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
   transition: color 0.2s;
 }
 
 .button:hover {
-  color: #4b5563;
+  color: var(--app-text-tertiary);
 }
 
 .buttonActive {
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .buttonActive:hover {
-  color: #ea580c;
+  color: var(--app-accent-hover);
 }
 
 .link {
@@ -48,20 +48,20 @@
   justify-content: center;
   gap: 0.25rem;
   text-decoration: none;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
   transition: color 0.2s;
 }
 
 .link:hover {
-  color: #4b5563;
+  color: var(--app-text-tertiary);
 }
 
 .linkActive {
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .linkActive:hover {
-  color: #ea580c;
+  color: var(--app-accent-hover);
 }
 
 .icon {

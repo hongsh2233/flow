@@ -15,15 +15,15 @@
 .headingIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .card {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1rem;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
 }
 
 .grid {
@@ -48,7 +48,7 @@
 .rank {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--app-accent);
   width: 1rem;
 }
 
@@ -63,9 +63,9 @@
 }
 
 .changeUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .changeDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }

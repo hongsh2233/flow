@@ -10,9 +10,9 @@
   padding: 1rem;
   position: sticky;
   top: 0;
-  background: #fff;
+  background: var(--app-card-bg);
   z-index: 10;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .backBtn {
@@ -22,21 +22,21 @@
   width: 2.25rem;
   height: 2.25rem;
   border: none;
-  background: #f3f4f6;
+  background: var(--app-bg-secondary);
   border-radius: 0.75rem;
-  color: #374151;
+  color: var(--app-text-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .backBtn:hover {
-  background: #e5e7eb;
+  background: var(--app-bg-tertiary);
 }
 
 .topBarTitle {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
 }
 
 .topBarSpacer {
@@ -55,16 +55,16 @@
 .categoryTitle {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-muted);
   margin-bottom: 0.75rem;
   padding: 0 0.25rem;
 }
 
 .categoryCard {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1rem;
-  border: 1px solid #f3f4f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--app-card-shadow);
   overflow: hidden;
 }
 
@@ -74,7 +74,7 @@
 }
 
 .faqItemBordered {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .faqQuestion {
@@ -92,26 +92,26 @@
 }
 
 .faqQuestion:hover {
-  background: #f9fafb;
+  background: var(--app-bg-hover);
 }
 
 .questionText {
   flex: 1;
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #111827;
+  color: var(--app-text);
   line-height: 1.5;
 }
 
 .chevron {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
   transition: transform 0.25s ease;
 }
 
 .chevronOpen {
   transform: rotate(180deg);
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .faqAnswer {
@@ -133,10 +133,10 @@
 .faqAnswer p {
   font-size: 0.875rem;
   line-height: 1.75;
-  color: #4b5563;
+  color: var(--app-text-tertiary);
   margin: 0;
   padding: 0.75rem 1rem;
-  background: #fffbeb;
-  border-left: 3px solid #f97316;
+  background: var(--app-accent-bg);
+  border-left: 3px solid var(--app-accent);
   border-radius: 0 0.5rem 0.5rem 0;
 }

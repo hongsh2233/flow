@@ -5,7 +5,7 @@
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #fb923c 0%, #ec4899 100%);
+  background: var(--app-header-gradient);
   padding: 1.5rem;
   border-radius: 0 0 1.5rem 1.5rem;
   color: #fff;
@@ -52,18 +52,18 @@
 /* Favorite card */
 .favoriteCard {
   width: 100%;
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
   text-align: left;
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .favoriteCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .favoriteInner {
@@ -89,8 +89,8 @@
 .heart {
   width: 1.25rem;
   height: 1.25rem;
-  fill: #f87171;
-  color: #f87171;
+  fill: var(--app-up);
+  color: var(--app-up);
 }
 
 .favoriteInfo h4 {
@@ -100,7 +100,7 @@
 
 .favoriteInfo p {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .favoriteRight {
@@ -121,11 +121,11 @@
 }
 
 .changeUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .changeDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }
 
 .changeIcon {
@@ -148,13 +148,13 @@
 }
 
 .sectorIconBlue {
-  color: #2563eb;
+  color: var(--app-tag-blue);
   width: 1.25rem;
   height: 1.25rem;
 }
 
 .sectorIconPurple {
-  color: #9333ea;
+  color: var(--app-kosdaq-label);
   width: 1.25rem;
   height: 1.25rem;
 }
@@ -166,11 +166,11 @@
 }
 
 .sectorCard {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -182,7 +182,7 @@
 
 .sectorCard p:last-child {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .sectorChange {
@@ -191,28 +191,28 @@
 }
 
 .sectorChangeUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .sectorChangeDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }
 
 /* Market cap card */
 .marketCapCard {
   width: 100%;
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
   text-align: left;
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .marketCapCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .marketCapInner {
@@ -224,7 +224,7 @@
 .rankBadgeOrange {
   width: 1.75rem;
   height: 1.75rem;
-  background: #fff7ed;
+  background: var(--app-accent-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -235,7 +235,7 @@
 .rankBadgeOrange span {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #ea580c;
+  color: var(--app-accent-hover);
 }
 
 .marketCapInfo {
@@ -250,7 +250,7 @@
 
 .marketCapInfo p {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .marketCapPrice {
@@ -273,11 +273,11 @@
 
 .marketCapCol p:first-child {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .marketCapCol p:last-child {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #9333ea;
+  color: var(--app-kosdaq-label);
 }

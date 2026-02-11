@@ -3,20 +3,20 @@
   padding: 0.875rem 1rem;
   font-size: 1rem;
   line-height: 1.5;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--app-input-border);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--app-input-bg);
   box-sizing: border-box;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .root::placeholder {
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .root:focus {
-  border-color: #f97316;
+  border-color: var(--app-accent);
 }
 
 .rootWithIcon {

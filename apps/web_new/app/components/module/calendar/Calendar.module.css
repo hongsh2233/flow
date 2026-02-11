@@ -29,16 +29,16 @@
   padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 600;
-  color: #f97316;
-  background: #fff7ed;
-  border: 1px solid #fdba74;
+  color: var(--app-accent);
+  background: var(--app-accent-bg);
+  border: 1px solid var(--app-accent-border);
   border-radius: 9999px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .todayBtn:hover {
-  background: #ffedd5;
+  background: var(--app-accent-bg-alt);
 }
 
 .monthNav {
@@ -56,14 +56,14 @@
   border: none;
   border-radius: 0.5rem;
   background: transparent;
-  color: #6b7280;
+  color: var(--app-text-muted);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .navBtn:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--app-bg-secondary);
+  color: var(--app-text);
 }
 
 .navBtn:disabled {
@@ -73,7 +73,7 @@
 
 .navBtn:disabled:hover {
   background: transparent;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .navBtn svg {
@@ -90,11 +90,11 @@
 }
 
 .weekBox {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.625rem 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
 }
 
 .weekGrid {
@@ -116,29 +116,29 @@
 }
 
 .dayBtnSelected {
-  background: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  background: var(--app-accent-gradient);
   color: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   transform: scale(1.05);
 }
 
 .dayBtnToday {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--app-accent-bg);
+  color: var(--app-accent-hover);
 }
 
 .dayBtnToday.dayBtnSelected {
-  background: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  background: var(--app-accent-gradient);
   color: #fff;
 }
 
 .dayBtnHoliday {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .dayBtnHoliday.dayBtnToday {
-  color: #ef4444;
-  background: #fef2f2;
+  color: var(--app-up);
+  background: var(--app-up-bg);
 }
 
 .dayLabel {
@@ -156,7 +156,7 @@
 .todayDot {
   width: 3px;
   height: 3px;
-  background: #f97316;
+  background: var(--app-accent);
   border-radius: 50%;
   margin-top: 0.125rem;
 }
@@ -190,17 +190,17 @@
 }
 
 .filterBtnActive {
-  background: #f97316;
+  background: var(--app-accent);
   color: #fff;
 }
 
 .filterBtnDefault {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--app-bg-secondary);
+  color: var(--app-text-tertiary);
 }
 
 .filterBtnDefault:hover {
-  background: #e5e7eb;
+  background: var(--app-bg-tertiary);
 }
 
 /* 일정 리스트 */

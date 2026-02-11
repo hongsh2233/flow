@@ -135,7 +135,7 @@
   width: 0.375rem;
   height: 0.375rem;
   border-radius: 50%;
-  background: #d1d5db;
+  background: var(--app-text-faint);
   border: none;
   padding: 0;
   cursor: pointer;
@@ -145,5 +145,5 @@
 .dotActive {
   width: 1rem;
   border-radius: 0.1875rem;
-  background: #f97316;
+  background: var(--app-accent);
 }

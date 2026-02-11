@@ -15,7 +15,7 @@
 .headingIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #2563eb;
+  color: var(--app-tag-blue);
 }
 
 .grid {
@@ -25,17 +25,17 @@
 }
 
 .cardKospi {
-  background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
+  background: var(--app-kospi-bg);
   border-radius: 0.75rem;
   padding: 1rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--app-kospi-border);
 }
 
 .cardKosdaq {
-  background: linear-gradient(to bottom right, #faf5ff, #f3e8ff);
+  background: var(--app-kosdaq-bg);
   border-radius: 0.75rem;
   padding: 1rem;
-  border: 1px solid #e9d5ff;
+  border: 1px solid var(--app-kosdaq-border);
 }
 
 .cardLabel {
@@ -44,11 +44,11 @@
 }
 
 .labelKospi {
-  color: #1d4ed8;
+  color: var(--app-kospi-label);
 }
 
 .labelKosdaq {
-  color: #7e22ce;
+  color: var(--app-kosdaq-label);
 }
 
 .cardValue {
@@ -69,11 +69,11 @@
 }
 
 .changeIconUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .changeIconDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }
 
 .changeText {
@@ -82,9 +82,9 @@
 }
 
 .changeUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .changeDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }

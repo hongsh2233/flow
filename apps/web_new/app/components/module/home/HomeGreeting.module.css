@@ -1,5 +1,5 @@
 .wrapper {
-  background: linear-gradient(to bottom right, #fb923c, #f472b6);
+  background: var(--app-header-gradient);
   padding: 1.5rem;
   border-radius: 0 0 1.5rem 1.5rem;
   color: #fff;
@@ -13,6 +13,6 @@
 }
 
 .subtitle {
-  color: #fff7ed;
+  color: var(--app-accent-bg);
   font-size: 0.875rem;
 }

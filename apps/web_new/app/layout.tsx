@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LayoutShell from "./components/layout/LayoutShell";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
+import { ThemeProvider } from "./components/providers/ThemeProvider";
 import type { RootLayoutProps } from "@/lib/types";
 import "../assets/css/index.css";
 
@@ -20,10 +21,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body>
         <NextAuthProvider>
-          <LayoutShell>{children}</LayoutShell>
+          <ThemeProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </ThemeProvider>
         </NextAuthProvider>
       </body>
     </html>

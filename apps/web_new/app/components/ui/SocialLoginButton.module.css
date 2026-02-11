@@ -29,13 +29,13 @@
 }
 
 .google {
-  background: #fff;
-  color: #374151;
-  border: 1px solid #e5e7eb;
+  background: var(--app-card-bg);
+  color: var(--app-text-secondary);
+  border: 1px solid var(--app-border);
 }
 
 .google:hover {
-  background: #f9fafb;
+  background: var(--app-bg-hover);
 }
 
 .icon {

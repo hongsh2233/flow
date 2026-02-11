@@ -10,7 +10,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1.5rem;
   width: 100%;
   max-width: 600px;
@@ -21,7 +21,7 @@
 .header {
   position: sticky;
   top: 0;
-  background: linear-gradient(to bottom right, #fb923c, #f472b6);
+  background: var(--app-header-gradient);
   padding: 1.5rem;
   border-radius: 1.5rem 1.5rem 0 0;
 }
@@ -130,11 +130,11 @@
 }
 
 .infoCardBlue {
-  background: #eff6ff;
+  background: var(--app-down-bg);
 }
 
 .infoCardPurple {
-  background: #faf5ff;
+  background: var(--app-tag-purple-bg);
 }
 
 .infoCardHeader {
@@ -150,43 +150,43 @@
 }
 
 .infoCardBlue .infoCardHeader {
-  color: #1e40af;
+  color: var(--app-tag-blue);
 }
 
 .infoCardBlue .infoCardHeader p {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1e3a8a;
+  color: var(--app-kospi-label);
 }
 
 .infoCardPurple .infoCardHeader {
-  color: #9333ea;
+  color: var(--app-kosdaq-label);
 }
 
 .infoCardPurple .infoCardHeader p {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #581c87;
+  color: var(--app-kosdaq-label);
 }
 
 .infoCardBlue .infoCardValue {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e3a8a;
+  color: var(--app-kospi-label);
 }
 
 .infoCardPurple .infoCardValue {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #581c87;
+  color: var(--app-kosdaq-label);
 }
 
 .explainBox {
-  background: linear-gradient(to bottom right, #eff6ff, #faf5ff);
+  background: var(--app-kospi-bg);
   border-radius: 1rem;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--app-kospi-border);
 }
 
 .explainInner {
@@ -198,20 +198,20 @@
 .explainIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #2563eb;
+  color: var(--app-tag-blue);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .explainContent h4 {
   font-weight: 700;
-  color: #1e3a8a;
+  color: var(--app-kospi-label);
   margin-bottom: 0.5rem;
 }
 
 .explainList {
   font-size: 0.875rem;
-  color: #1e40af;
+  color: var(--app-tag-blue);
   margin: 0;
   padding-left: 1.25rem;
 }
@@ -246,18 +246,18 @@
 }
 
 .badgeStable {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--app-success-bg);
+  color: var(--app-success);
 }
 
 .badgeNormal {
-  background: #fef9c3;
-  color: #a16207;
+  background: var(--app-accent-bg);
+  color: var(--app-accent-hover);
 }
 
 .badgeHigh {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--app-up-bg);
+  color: var(--app-up);
 }
 
 .actionGrid {
@@ -280,7 +280,7 @@
 }
 
 .actionBtnPrimary {
-  background: linear-gradient(to right, #fb923c, #f472b6);
+  background: var(--app-accent-gradient);
   color: #fff;
 }
 
@@ -289,12 +289,12 @@
 }
 
 .actionBtnSecondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--app-bg-secondary);
+  color: var(--app-text-secondary);
 }
 
 .actionBtnSecondary:hover {
-  background: #e5e7eb;
+  background: var(--app-bg-tertiary);
 }
 
 .actionBtn svg {

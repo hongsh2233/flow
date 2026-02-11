@@ -11,9 +11,9 @@
   padding: 1rem;
   position: sticky;
   top: 0;
-  background: #fff;
+  background: var(--app-card-bg);
   z-index: 10;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .backBtn {
@@ -23,21 +23,21 @@
   width: 2.25rem;
   height: 2.25rem;
   border: none;
-  background: #f3f4f6;
+  background: var(--app-bg-secondary);
   border-radius: 0.75rem;
-  color: #374151;
+  color: var(--app-text-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .backBtn:hover {
-  background: #e5e7eb;
+  background: var(--app-bg-tertiary);
 }
 
 .topBarTitle {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
 }
 
 .topBarSpacer {
@@ -58,23 +58,23 @@
 }
 
 .statusIconEnabled {
-  color: #16a34a;
+  color: var(--app-success);
 }
 
 .statusIconDisabled {
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .statusTitle {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
   margin-bottom: 0.5rem;
 }
 
 .statusDesc {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
   line-height: 1.5;
 }
 
@@ -87,7 +87,7 @@
 }
 
 .removeBtn {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 /* 완료 화면 */
@@ -106,7 +106,7 @@
 .doneTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
   margin-bottom: 2rem;
 }
 

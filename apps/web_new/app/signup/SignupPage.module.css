@@ -1,5 +1,5 @@
 .page {
-  background: linear-gradient(to bottom, #fff7ed 0%, #fdf2f8 50%, #fff 100%);
+  background: var(--app-bg-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,14 +9,14 @@
 .card {
   width: 100%;
   max-width: 28rem;
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--app-card-shadow-lg);
   overflow: hidden;
 }
 
 .header {
-  background: linear-gradient(135deg, #fb923c 0%, #ec4899 100%);
+  background: var(--app-header-gradient);
   padding: 2rem;
   text-align: center;
 }
@@ -29,16 +29,16 @@
 }
 
 .iconBox {
-  background: #fff;
+  background: var(--app-card-bg);
   padding: 1rem;
   border-radius: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .iconBox svg {
   width: 3rem;
   height: 3rem;
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .headerTitle {
@@ -60,7 +60,7 @@
 .formTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--app-text);
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -75,8 +75,8 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--app-bg-hover);
+  border: 1px solid var(--app-border);
   border-radius: 0.75rem;
 }
 
@@ -90,13 +90,13 @@
 .termsCheckbox {
   width: 1.125rem;
   height: 1.125rem;
-  accent-color: #f97316;
+  accent-color: var(--app-accent);
   pointer-events: none;
 }
 
 .termsText {
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--app-text-secondary);
   font-weight: 500;
 }
 
@@ -104,7 +104,7 @@
   flex-shrink: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #f97316;
+  color: var(--app-accent);
   background: none;
   border: none;
   cursor: pointer;
@@ -114,7 +114,7 @@
 }
 
 .termsViewBtn:hover {
-  color: #ea580c;
+  color: var(--app-accent-hover);
 }
 
 .submitBtn {
@@ -139,7 +139,7 @@
   content: "";
   width: 100%;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--app-border);
 }
 
 .dividerText {
@@ -147,12 +147,12 @@
   display: flex;
   justify-content: center;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .dividerText span {
   padding: 0 1rem;
-  background: #fff;
+  background: var(--app-card-bg);
 }
 
 .socialButtons {
@@ -164,17 +164,17 @@
 .switchLink {
   text-align: center;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
   margin-top: 1.5rem;
 }
 
 .switchLink a {
-  color: #f97316;
+  color: var(--app-accent);
   font-weight: 600;
   text-decoration: none;
 }
 
 .switchLink a:hover {
-  color: #ea580c;
+  color: var(--app-accent-hover);
   text-decoration: underline;
 }

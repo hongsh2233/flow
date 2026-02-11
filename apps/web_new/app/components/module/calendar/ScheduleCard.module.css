@@ -1,15 +1,15 @@
 /* 일정 카드 */
 .card {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
   transition: box-shadow 0.2s;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .inner {
@@ -37,7 +37,7 @@
 
 .company {
   font-size: 0.875rem;
-  color: #4b5563;
+  color: var(--app-text-tertiary);
   margin-top: 0.125rem;
 }
 
@@ -51,7 +51,7 @@
 .date {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #ea580c;
+  color: var(--app-accent-hover);
 }
 
 .timeRow {
@@ -63,12 +63,12 @@
 .timeRow svg {
   width: 0.75rem;
   height: 0.75rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .time {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 /* 알림 버튼 */
@@ -84,17 +84,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #9ca3af;
+  border: 1px solid var(--app-border);
+  background: var(--app-card-bg);
+  color: var(--app-text-placeholder);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .notifyBtn:hover {
-  background: #f9fafb;
-  color: #6b7280;
-  border-color: #d1d5db;
+  background: var(--app-bg-hover);
+  color: var(--app-text-muted);
+  border-color: var(--app-text-faint);
 }
 
 .notifyBtn svg {
@@ -103,14 +103,14 @@
 }
 
 .notifyBtnActive {
-  background: #fff7ed;
-  color: #f97316;
-  border-color: #fdba74;
+  background: var(--app-accent-bg);
+  color: var(--app-accent);
+  border-color: var(--app-accent-border);
 }
 
 .notifyBtnActive:hover {
-  background: #ffedd5;
-  color: #ea580c;
+  background: var(--app-accent-bg-alt);
+  color: var(--app-accent-hover);
 }
 
 /* 알림 드롭다운 */
@@ -118,10 +118,10 @@
   position: absolute;
   top: calc(100% + 0.375rem);
   right: 0;
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-card-shadow-hover);
   padding: 0.5rem;
   min-width: 10rem;
   z-index: 20;
@@ -130,9 +130,9 @@
 .notifyDropdownTitle {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-muted);
   padding: 0.25rem 0.5rem 0.5rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
   margin-bottom: 0.25rem;
 }
 
@@ -146,27 +146,27 @@
   border-radius: 0.5rem;
   background: transparent;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--app-text-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .notifyOption:hover {
-  background: #f9fafb;
+  background: var(--app-bg-hover);
 }
 
 .notifyOptionActive {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--app-accent-bg);
+  color: var(--app-accent-hover);
   font-weight: 500;
 }
 
 .notifyOptionActive:hover {
-  background: #ffedd5;
+  background: var(--app-accent-bg-alt);
 }
 
 .notifyCheck {
   font-size: 0.875rem;
-  color: #f97316;
+  color: var(--app-accent);
   font-weight: 600;
 }

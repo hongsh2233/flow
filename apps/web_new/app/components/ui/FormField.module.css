@@ -6,7 +6,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--app-text-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -19,14 +19,14 @@
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
   width: 1.25rem;
   height: 1.25rem;
   pointer-events: none;
 }
 
 .readOnly {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--app-bg-secondary);
+  color: var(--app-text-muted);
   cursor: not-allowed;
 }

@@ -13,7 +13,7 @@
   gap: 0.25rem;
   padding: 0.5rem 0;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -21,16 +21,16 @@
 }
 
 .backBtn:hover {
-  color: #111827;
+  color: var(--app-text);
 }
 
 .header {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1rem;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
 }
 
 .tags {
@@ -49,20 +49,20 @@
 }
 
 .categoryDefault {
-  color: #7c3aed;
-  background: #f5f3ff;
+  color: var(--app-tag-purple);
+  background: var(--app-tag-purple-bg);
 }
 
 .categoryClosing {
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--app-tag-blue);
+  background: var(--app-down-bg);
 }
 
 .tag {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #ef4444;
-  background: #fef2f2;
+  color: var(--app-up);
+  background: var(--app-up-bg);
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
 }
@@ -71,7 +71,7 @@
   font-size: 1.125rem;
   font-weight: bold;
   line-height: 1.4;
-  color: #111827;
+  color: var(--app-text);
   margin-bottom: 1rem;
 }
 
@@ -81,31 +81,31 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .metaAuthor {
   font-weight: 500;
-  color: #374151;
+  color: var(--app-text-secondary);
 }
 
 .metaSep {
-  color: #d1d5db;
+  color: var(--app-text-faint);
 }
 
 .body {
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 1rem;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
 }
 
 .bodyContent {
   font-size: 0.9375rem;
   line-height: 1.7;
-  color: #374151;
+  color: var(--app-text-secondary);
   white-space: pre-wrap;
 }
 
@@ -114,9 +114,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--app-border);
   font-size: 0.8125rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .stats {

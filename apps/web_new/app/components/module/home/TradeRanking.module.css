@@ -23,18 +23,18 @@
 
 .card {
   width: 100%;
-  background: #fff;
+  background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
   text-align: left;
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-card-shadow-hover);
 }
 
 .cardInner {
@@ -46,7 +46,7 @@
 .rankBlue {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--app-tag-blue);
   width: 1.25rem;
   flex-shrink: 0;
 }
@@ -54,7 +54,7 @@
 .rankPurple {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #9333ea;
+  color: var(--app-kosdaq-label);
   width: 1.25rem;
   flex-shrink: 0;
 }
@@ -71,7 +71,7 @@
 
 .stockSub {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .priceArea {
@@ -89,11 +89,11 @@
 }
 
 .changeUp {
-  color: #ef4444;
+  color: var(--app-up);
 }
 
 .changeDown {
-  color: #3b82f6;
+  color: var(--app-down);
 }
 
 /* 탭 리스트 레이아웃 */

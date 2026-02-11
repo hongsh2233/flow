@@ -16,13 +16,13 @@
 .title {
   font-size: 1.375rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text);
   margin-bottom: 0.5rem;
 }
 
 .subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
   margin-bottom: 1.5rem;
 }
 
@@ -36,29 +36,29 @@
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 9999px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--app-text-faint);
   background: transparent;
   transition: all 0.15s ease;
 }
 
 .dotFilled {
-  background: #f97316;
-  border-color: #f97316;
+  background: var(--app-accent);
+  border-color: var(--app-accent);
   transform: scale(1.1);
 }
 
 .dotError {
-  border-color: #ef4444;
+  border-color: var(--app-up);
 }
 
 .dotFilled.dotError {
-  background: #ef4444;
+  background: var(--app-up);
 }
 
 .error {
   margin-top: 1rem;
   font-size: 0.8125rem;
-  color: #ef4444;
+  color: var(--app-up);
   font-weight: 500;
 }
 
@@ -78,9 +78,9 @@
   height: 3.5rem;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #111827;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  color: var(--app-text);
+  background: var(--app-bg-hover);
+  border: 1px solid var(--app-border);
   border-radius: 1rem;
   cursor: pointer;
   transition: background 0.1s, transform 0.1s;
@@ -89,12 +89,12 @@
 }
 
 .key:active {
-  background: #f3f4f6;
+  background: var(--app-bg-secondary);
   transform: scale(0.95);
 }
 
 .key:hover {
-  background: #f3f4f6;
+  background: var(--app-bg-secondary);
 }
 
 .keyEmpty {

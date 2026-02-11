@@ -1,9 +1,9 @@
- .screen {
-  padding: 1.5rem 1rem 5rem;
+.screen {
+ padding: 1.5rem 1rem 5rem;
 }
 
 .header {
-  background: linear-gradient(135deg, #fb923c, #f97316, #fb7185);
+  background: var(--app-header-gradient);
   padding: 1.5rem;
   border-bottom-left-radius: 1.5rem;
   border-bottom-right-radius: 1.5rem;
@@ -28,10 +28,10 @@
 }
 
 .profileCard {
-  background: linear-gradient(135deg, #fffbeb, #fdf2f8);
+  background: var(--app-bg-warm);
   border-radius: 1.5rem;
   padding: 1.25rem;
-  border: 1px solid #fed7aa;
+  border: 1px solid var(--app-accent-border);
 }
 
 .profileRow {
@@ -44,7 +44,7 @@
   width: 4rem;
   height: 4rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #fb923c, #fb7185);
+  background: var(--app-accent-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,18 +61,18 @@
   font-size: 1.125rem;
   font-weight: 700;
   margin-bottom: 0.125rem;
-  color: #111827;
+  color: var(--app-text);
 }
 
 .profileRole {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .profileArrow {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .groups {
@@ -86,16 +86,16 @@
 .groupTitle {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-muted);
   margin-bottom: 0.75rem;
   padding: 0 0.5rem;
 }
 
 .groupCard {
-  background-color: #ffffff;
+  background-color: var(--app-card-bg);
   border-radius: 1rem;
-  border: 1px solid #f3f4f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--app-card-shadow);
   overflow: hidden;
 }
 
@@ -107,7 +107,7 @@
 }
 
 .itemRowBordered {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .itemLeft {
@@ -128,13 +128,13 @@
 .itemIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #f97316;
+  color: var(--app-accent);
 }
 
 .itemLabel {
   font-size: 0.9375rem;
   font-weight: 500;
-  color: #111827;
+  color: var(--app-text);
 }
 
 .actions {
@@ -146,7 +146,7 @@
 .chevronIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .versionSection {
@@ -156,13 +156,13 @@
 
 .versionText {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--app-text-muted);
 }
 
 .versionSubText {
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--app-text-placeholder);
 }
 
 .logoutSection {
@@ -172,8 +172,8 @@
 .logoutButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: #f3f4f6;
-  color: #4b5563;
+  background-color: var(--app-bg-secondary);
+  color: var(--app-text-tertiary);
   border-radius: 1rem;
   font-weight: 500;
   font-size: 0.9375rem;
@@ -183,7 +183,7 @@
 }
 
 .logoutButton:hover {
-  background-color: #e5e7eb;
+  background-color: var(--app-bg-tertiary);
 }
 
 .clickable {
@@ -192,5 +192,5 @@
 }
 
 .clickable:hover {
-  background-color: #f9fafb;
+  background-color: var(--app-bg-hover);
 }
