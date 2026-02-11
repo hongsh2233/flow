@@ -1,0 +1,149 @@
+.wrap {
+  padding: 0 1rem;
+  margin-top: 1.5rem;
+}
+
+.banner {
+  display: block;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.banner:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* 이미지 배너 */
+.imageBanner img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 텍스트 배너 */
+.textBanner {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.textLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.desc {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+.iconArea {
+  flex-shrink: 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* 그라데이션 프리셋 */
+.gradientOrange {
+  background: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
+}
+
+.gradientBlue {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+}
+
+.gradientGreen {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+}
+
+.gradientDark {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+/* 슬라이드 (여러 배너) */
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 닫기 */
+.closeBtn {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.closeIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* 인디케이터 */
+.indicator {
+  display: flex;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #d1d5db;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+}
+
+.dotActive {
+  width: 1rem;
+  border-radius: 0.1875rem;
+  background: #f97316;
+}
