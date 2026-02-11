@@ -350,6 +350,9 @@
     <button class="tab-button" onclick="switchTab('fina-stat')">
       📊 재무제표
     </button>
+    <button class="tab-button" onclick="switchTab('stck-lnb')">
+      🔄 대차거래
+    </button>
   </div>
 
   <!-- 시가총액 200 탭 -->
@@ -447,10 +450,93 @@
     </div>
   </div>
 
+  <!-- 대차거래 탭 (GetCMStckLnbInfoService) -->
+  <div id="tab-stck-lnb" class="tab-content">
+    <div class="tab-section">
+      <div class="tab-section-header">
+        <h3>주식 대차거래 정보</h3>
+      </div>
+      <p style="color: #666; margin-bottom: 15px;">
+        금융위원회에서 제공하는 주식 대차거래 정보를 조회합니다. 기준일자, ISIN코드, 종목명으로 검색할 수 있습니다.
+      </p>
+
+      <!-- 검색 폼 -->
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">기준일자 (YYYYMMDD)</label>
+          <input type="text" id="stck-lnb-bas-dt" placeholder="예: 20250210" maxlength="8" style="width: 130px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">종목명</label>
+          <input type="text" id="stck-lnb-itms-nm" placeholder="예: 삼성전자" style="width: 150px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">ISIN코드</label>
+          <input type="text" id="stck-lnb-isin-cd" placeholder="예: KR7005930003" style="width: 160px; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 4px;">건수</label>
+          <select id="stck-lnb-num-rows" style="padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px;">
+            <option value="50">50건</option>
+            <option value="100" selected>100건</option>
+            <option value="200">200건</option>
+            <option value="500">500건</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 소분류 탭 -->
+      <div class="tab-buttons" id="stck-lnb-sub-tabs" style="margin-bottom: 0;">
+        <button class="tab-button active" onclick="switchStckLnbSubTab('detail')">
+          📋 대차거래내역
+        </button>
+        <button class="tab-button" onclick="switchStckLnbSubTab('progress')">
+          📈 대차거래추이
+        </button>
+        <button class="tab-button" onclick="switchStckLnbSubTab('invpn')">
+          👥 참여자별대차거래내역
+        </button>
+      </div>
+
+      <!-- 소분류 콘텐츠: 대차거래내역 -->
+      <div id="stck-lnb-sub-detail" class="stck-lnb-sub-content" style="display: block;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+          <p style="color: #555; margin: 0; font-size: 13px;">
+            주식 대차거래내역을 조회합니다. (getStckLnbDetail)
+          </p>
+          <button class="btn-fetch" id="btn-stck-lnb-detail" onclick="fetchStckLnbDetail()">조회</button>
+        </div>
+        <div id="stck-lnb-detail-data" class="data-table-container"></div>
+      </div>
+
+      <!-- 소분류 콘텐츠: 대차거래추이 -->
+      <div id="stck-lnb-sub-progress" class="stck-lnb-sub-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+          <p style="color: #555; margin: 0; font-size: 13px;">
+            주식 대차거래추이를 조회합니다. (getStckLnbProgress)
+          </p>
+          <button class="btn-fetch" id="btn-stck-lnb-progress" onclick="fetchStckLnbProgress()">조회</button>
+        </div>
+        <div id="stck-lnb-progress-data" class="data-table-container"></div>
+      </div>
+
+      <!-- 소분류 콘텐츠: 참여자별대차거래내역 -->
+      <div id="stck-lnb-sub-invpn" class="stck-lnb-sub-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+          <p style="color: #555; margin: 0; font-size: 13px;">
+            참여자별 주식 대차거래내역을 조회합니다. (getStckLnbInvpnDetail)
+          </p>
+          <button class="btn-fetch" id="btn-stck-lnb-invpn" onclick="fetchStckLnbInvpnDetail()">조회</button>
+        </div>
+        <div id="stck-lnb-invpn-data" class="data-table-container"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/finance_data2.js"></script>
+<script src="/static/js/finance_data2.js?v={{ range(1, 999999) | random }}"></script>
 {% endblock %}
 

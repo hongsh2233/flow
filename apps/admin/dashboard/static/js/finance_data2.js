@@ -94,6 +94,41 @@ function formatColumnName(key) {
     'stckStacMd': '주식결산월일',
     'nmlsLckSttgDt': '명부폐쇄시작일자',
     'nmlsLckEdDt': '명부폐쇄종료일자',
+    // 대차거래 필드 (GetCMStckLnbInfoService)
+    'mrktClsfNm': '시장구분',
+    'stckItmsNm': '종목명',
+    'stckItmsCd': '종목코드',
+    'cclStckCnt': '체결주식수',
+    'balnStckCnt': '잔고주식수',
+    'balnStckAmt': '잔고금액',
+    'isinCdNm': 'ISIN코드명',
+    'lnbScrtDcd': '대차증권구분코드',
+    'lnbScrtDcdNm': '대차증권구분코드명',
+    'lnbCclStckCnt': '대차체결주식수',
+    'rcalRdptStckCnt': '리콜상환주식수',
+    'rdptStckCnt': '상환주식수',
+    'lnbRmanStckCnt': '대차잔여주식수',
+    'lnbBal': '대차잔액',
+    'lnbAmt': '대차금액',
+    'lnbQty': '대차수량',
+    'invpnNm': '참여자명',
+    'invpnCd': '참여자코드',
+    'invpnClsfNm': '참여자구분',
+    'invpnClsfDtlNm': '참여자상세구분',
+    'lndeCclStckAmt': '대주체결금액',
+    'lndeCclStckAmtRto': '대주체결금액비율',
+    'borCclStckAmt': '차입체결금액',
+    'borCclStckAmtRto': '차입체결금액비율',
+    'stckLnbRt': '주식대차비율',
+    'lnbTrVol': '대차거래량',
+    'lnbTrAmt': '대차거래금액',
+    'lnbTrCnt': '대차거래건수',
+    'nwLnbCclQty': '신규대차체결수량',
+    'nwLnbCclAmt': '신규대차체결금액',
+    'rdptQty': '상환수량',
+    'rdptAmt': '상환금액',
+    'lnbBalQty': '대차잔고수량',
+    'lnbBalAmt': '대차잔고금액',
     // 현금흐름표 활동별 필드
     'acitId': '활동ID',
     'acitNm': '활동명',
@@ -146,6 +181,9 @@ function switchTab(tabName) {
       break;
     case 'fina-stat':
       // 재무제표: 조회 버튼으로 수동 조회
+      break;
+    case 'stck-lnb':
+      // 대차거래: 조회 버튼으로 수동 조회
       break;
     case 'corp-info':
       // 기업정보는 수동 조회
@@ -294,6 +332,19 @@ function jsonToTable(data, options = {}) {
         
         // 상장주식수 천단위 콤마
         if (key === 'lstgStCnt' && value !== '-') {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue)) {
+            value = numValue.toLocaleString('ko-KR');
+          }
+        }
+
+        // 대차거래 수량/금액 필드 천단위 콤마
+        const lnbNumericFields = ['lnbCclStckCnt', 'rcalRdptStckCnt', 'rdptStckCnt', 
+          'lnbRmanStckCnt', 'lnbBal', 'lnbAmt', 'lnbQty', 'lnbTrVol', 'lnbTrAmt', 
+          'lnbTrCnt', 'nwLnbCclQty', 'nwLnbCclAmt', 'rdptQty', 'rdptAmt', 
+          'lnbBalQty', 'lnbBalAmt', 'cclStckCnt', 'balnStckCnt', 'balnStckAmt',
+          'lndeCclStckAmt', 'lndeCclStckAmtRto', 'borCclStckAmt', 'borCclStckAmtRto'];
+        if (lnbNumericFields.includes(key) && value !== '-') {
           const numValue = parseFloat(value);
           if (!isNaN(numValue)) {
             value = numValue.toLocaleString('ko-KR');
@@ -1265,6 +1316,90 @@ async function collectPastDays() {
     btn.disabled = false;
     btn.textContent = originalText;
   }
+}
+
+// ==================== 대차거래 (GetCMStckLnbInfoService) ====================
+
+// 대차거래 소분류 탭 전환
+function switchStckLnbSubTab(subTab) {
+  // 모든 소분류 탭 버튼 비활성화
+  document.querySelectorAll('#stck-lnb-sub-tabs .tab-button').forEach(btn => btn.classList.remove('active'));
+  // 모든 소분류 콘텐츠 숨기기
+  document.querySelectorAll('.stck-lnb-sub-content').forEach(el => el.style.display = 'none');
+
+  // 선택된 소분류 탭 활성화
+  const tabButton = document.querySelector(`#stck-lnb-sub-tabs button[onclick="switchStckLnbSubTab('${subTab}')"]`);
+  if (tabButton) tabButton.classList.add('active');
+
+  const subContent = document.getElementById(`stck-lnb-sub-${subTab}`);
+  if (subContent) subContent.style.display = 'block';
+}
+
+// 대차거래 공통 검색 파라미터 수집
+function getStckLnbParams() {
+  const params = new URLSearchParams();
+  const basDt = (document.getElementById('stck-lnb-bas-dt') || {}).value?.trim();
+  const itmsNm = (document.getElementById('stck-lnb-itms-nm') || {}).value?.trim();
+  const isinCd = (document.getElementById('stck-lnb-isin-cd') || {}).value?.trim();
+  const numRows = (document.getElementById('stck-lnb-num-rows') || {}).value || '100';
+
+  if (basDt) params.set('bas_dt', basDt);
+  if (itmsNm) params.set('itms_nm', itmsNm);
+  if (isinCd) params.set('isin_cd', isinCd);
+  params.set('num_of_rows', numRows);
+  return params;
+}
+
+// 대차거래 공통 데이터 요청 함수
+async function fetchStckLnbData(apiEndpoint, containerId, btnId) {
+  const container = document.getElementById(containerId);
+  const btn = document.getElementById(btnId);
+  if (!container) return;
+
+  const params = getStckLnbParams();
+  container.innerHTML = '<div class="loading">조회 중...</div>';
+  if (btn) btn.disabled = true;
+
+  try {
+    const response = await fetch(`${apiEndpoint}?${params.toString()}`);
+    const result = await response.json();
+
+    if (response.ok && result.data !== undefined) {
+      const data = result.data;
+      const totalCount = result.total_count;
+      const count = result.count || data.length;
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-message">조회 결과가 없습니다. 검색 조건을 변경해 보세요.</div>';
+      } else {
+        const infoHtml = `<div style="margin-bottom: 15px; padding: 10px; background: #e8f4fd; border-radius: 4px; color: #2980b9; font-weight: 500;">
+          📊 조회 결과: ${count}건` + (totalCount != null ? ` (전체 ${totalCount}건)` : '') + `
+        </div>`;
+        container.innerHTML = infoHtml + jsonToTable(data);
+      }
+    } else {
+      container.innerHTML = `<div class="error">${escapeHtml(result.error || '조회에 실패했습니다.')}</div>`;
+    }
+  } catch (error) {
+    container.innerHTML = `<div class="error">오류: ${escapeHtml(error.message)}</div>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 주식 대차거래내역 조회
+async function fetchStckLnbDetail() {
+  await fetchStckLnbData('/api/stck-lnb-detail', 'stck-lnb-detail-data', 'btn-stck-lnb-detail');
+}
+
+// 주식 대차거래추이 조회
+async function fetchStckLnbProgress() {
+  await fetchStckLnbData('/api/stck-lnb-progress', 'stck-lnb-progress-data', 'btn-stck-lnb-progress');
+}
+
+// 참여자별 주식 대차거래내역 조회
+async function fetchStckLnbInvpnDetail() {
+  await fetchStckLnbData('/api/stck-lnb-invpn-detail', 'stck-lnb-invpn-data', 'btn-stck-lnb-invpn');
 }
 
 // 페이지 로드 시: 초기 데이터 로드 + 재무제표 버튼 클릭 바인딩 (inline onclick 대신)

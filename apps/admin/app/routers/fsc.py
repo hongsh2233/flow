@@ -695,4 +695,94 @@ async def collect_past_days(
         }, status_code=500)
 
 
+# ==================== 대차거래 (GetCMStckLnbInfoService) ====================
+
+@router.get("/api/stck-lnb-detail")
+async def get_stck_lnb_detail(
+    request: Request,
+    bas_dt: str = None,
+    isin_cd: str = None,
+    itms_nm: str = None,
+    page_no: int = 1,
+    num_of_rows: int = 100,
+    auth=Depends(get_current_user_or_api_key_for_fsc),
+):
+    """주식 대차거래내역 조회 (getStckLnbDetail)"""
+    try:
+        data, total_count = await fsc_api_service.fetch_stck_lnb_detail(
+            bas_dt=bas_dt or None,
+            isin_cd=isin_cd or None,
+            itms_nm=itms_nm or None,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+        )
+        return JSONResponse({
+            "data": data,
+            "total_count": total_count,
+            "count": len(data),
+        })
+    except Exception as e:
+        import traceback
+        print(f"❌ get_stck_lnb_detail 오류: {str(e)}\n{traceback.format_exc()}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/api/stck-lnb-progress")
+async def get_stck_lnb_progress(
+    request: Request,
+    bas_dt: str = None,
+    isin_cd: str = None,
+    itms_nm: str = None,
+    page_no: int = 1,
+    num_of_rows: int = 100,
+    auth=Depends(get_current_user_or_api_key_for_fsc),
+):
+    """주식 대차거래추이 조회 (getStckLnbProgress)"""
+    try:
+        data, total_count = await fsc_api_service.fetch_stck_lnb_progress(
+            bas_dt=bas_dt or None,
+            isin_cd=isin_cd or None,
+            itms_nm=itms_nm or None,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+        )
+        return JSONResponse({
+            "data": data,
+            "total_count": total_count,
+            "count": len(data),
+        })
+    except Exception as e:
+        import traceback
+        print(f"❌ get_stck_lnb_progress 오류: {str(e)}\n{traceback.format_exc()}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/api/stck-lnb-invpn-detail")
+async def get_stck_lnb_invpn_detail(
+    request: Request,
+    bas_dt: str = None,
+    isin_cd: str = None,
+    itms_nm: str = None,
+    page_no: int = 1,
+    num_of_rows: int = 100,
+    auth=Depends(get_current_user_or_api_key_for_fsc),
+):
+    """참여자별주식대차거래내역 조회 (getStckLnbInvpnDetail)"""
+    try:
+        data, total_count = await fsc_api_service.fetch_stck_lnb_invpn_detail(
+            bas_dt=bas_dt or None,
+            isin_cd=isin_cd or None,
+            itms_nm=itms_nm or None,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+        )
+        return JSONResponse({
+            "data": data,
+            "total_count": total_count,
+            "count": len(data),
+        })
+    except Exception as e:
+        import traceback
+        print(f"❌ get_stck_lnb_invpn_detail 오류: {str(e)}\n{traceback.format_exc()}")
+        return JSONResponse({"error": str(e)}, status_code=500)
 
