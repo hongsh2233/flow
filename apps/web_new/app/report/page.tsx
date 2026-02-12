@@ -1,22 +1,64 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import styles from "./Report.module.css";
 import BoardList from "../components/module/board/BoardList";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import { fetchBoards } from "@/lib/services/boardService";
+import type { Board } from "@/lib/types/board";
 
 export default function ReportPage() {
+  const [boards, setBoards] = useState<Board[]>([]);
+
+  useEffect(() => {
+    fetchBoards().then((res) => {
+      if (res.success && res.data) {
+        setBoards(res.data);
+      }
+    });
+  }, []);
+
+  // 게시판이 없으면 빈 상태 표시
+  if (boards.length === 0) {
+    return (
+      <main className={styles.wrap}>
+        <BoardList emptyMessage="등록된 게시판이 없습니다." />
+      </main>
+    );
+  }
+
+  // 게시판이 1개면 탭 없이 바로 표시
+  if (boards.length === 1) {
+    return (
+      <main className={styles.wrap}>
+        <BoardList
+          boardId={boards[0].id}
+          detailHref={(id) => `/report/${id}`}
+        />
+      </main>
+    );
+  }
+
+  // 게시판이 여러 개면 탭으로 표시
   return (
     <main className={styles.wrap}>
-      <Tabs defaultValue="chart">
+      <Tabs defaultValue={boards[0].id}>
         <TabsList>
-          <TabsTrigger value="chart">시황</TabsTrigger>
-          <TabsTrigger value="report">리포트</TabsTrigger>
+          {boards.map((board) => (
+            <TabsTrigger key={board.id} value={board.id}>
+              {board.name}
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="chart">
-          <BoardList />
-        </TabsContent>
-        <TabsContent value="report">
-          <BoardList />
-        </TabsContent>
+        {boards.map((board) => (
+          <TabsContent key={board.id} value={board.id}>
+            <BoardList
+              boardId={board.id}
+              detailHref={(id) => `/report/${id}`}
+            />
+          </TabsContent>
+        ))}
       </Tabs>
     </main>
-  )
+  );
 }
