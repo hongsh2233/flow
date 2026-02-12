@@ -12,6 +12,14 @@ import navData from './nav-items.json'
 
 type IconComponent = typeof Home
 
+interface NavItemData {
+  id: string
+  label: string
+  href: string
+  headerTitle: string
+  headerSubtitle: string
+}
+
 const iconMap: Record<string, IconComponent> = {
   home: Home,
   calendar: CalendarToday,
@@ -26,11 +34,11 @@ export interface NavItem {
   label: string
   href: string
   icon: IconComponent
+  headerTitle: string
+  headerSubtitle: string
 }
 
-export const navItems: NavItem[] = (navData as { id: string; label: string; href: string }[]).map(
-  (item) => ({
-    ...item,
-    icon: iconMap[item.id] ?? Home,
-  })
-)
+export const navItems: NavItem[] = (navData as NavItemData[]).map((item) => ({
+  ...item,
+  icon: iconMap[item.id] ?? Home,
+}))

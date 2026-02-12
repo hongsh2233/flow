@@ -1,8 +1,44 @@
 [
-  { "id": "home", "label": "홈", "href": "/" },
-  { "id": "calendar", "label": "캘린더", "href": "/calendar" },
-  { "id": "news", "label": "뉴스", "href": "/news" },
-  { "id": "market", "label": "시황", "href": "/report" },
-  { "id": "stocks", "label": "종목", "href": "/stocks" },
-  { "id": "settings", "label": "설정", "href": "/settings" }
+  {
+    "id": "home",
+    "label": "홈",
+    "href": "/",
+    "headerTitle": "안녕하세요, 주린이님! 👋",
+    "headerSubtitle": "오늘도 현명한 투자 되세요!"
+  },
+  {
+    "id": "calendar",
+    "label": "캘린더",
+    "href": "/calendar",
+    "headerTitle": "일정 캘린더 📅",
+    "headerSubtitle": "중요한 주식 일정을 놓치지 마세요"
+  },
+  {
+    "id": "news",
+    "label": "뉴스",
+    "href": "/news",
+    "headerTitle": "주식 뉴스 📰",
+    "headerSubtitle": "실시간으로 업데이트되는 주요 뉴스"
+  },
+  {
+    "id": "market",
+    "label": "시황",
+    "href": "/report",
+    "headerTitle": "시황/리포트 📊",
+    "headerSubtitle": "전문가의 시황 분석과 종목 리포트"
+  },
+  {
+    "id": "stocks",
+    "label": "종목",
+    "href": "/stocks",
+    "headerTitle": "종목 자료 📈",
+    "headerSubtitle": "시장 데이터와 종목 정보"
+  },
+  {
+    "id": "settings",
+    "label": "설정",
+    "href": "/settings",
+    "headerTitle": "설정 ⚙️",
+    "headerSubtitle": "앱을 내 마음대로 설정하세요"
+  }
 ]
