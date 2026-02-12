@@ -279,7 +279,7 @@ async def admin_write_post_page(board_id: str, request: Request, user=Depends(ge
 async def upload_image(
     file: UploadFile = File(...),
     user=Depends(get_current_user),
-    request: Request = None
+    request: Request = None,
 ):
     """에디터 이미지 업로드 (관리자 또는 회원)"""
     # 관리자 또는 회원 확인
@@ -313,7 +313,19 @@ async def upload_image(
         
         # URL 반환
         from fastapi.responses import JSONResponse
-        return JSONResponse({"url": f"/uploads/images/{safe_filename}"})
+
+        # 절대 URL 생성: request.base_url 기준
+        base_url = ""
+        if request is not None:
+            try:
+                base_url = str(request.base_url).rstrip("/")
+            except Exception:
+                base_url = ""
+
+        relative_url = f"/uploads/images/{safe_filename}"
+        absolute_url = f"{base_url}{relative_url}" if base_url else relative_url
+
+        return JSONResponse({"url": absolute_url})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"이미지 업로드 실패: {str(e)}")
 
