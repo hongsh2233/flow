@@ -40,6 +40,18 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
 
+/**
+ * 작성자 이름 포맷팅
+ * 이메일 형식인 경우 @ 앞부분만 표시하여 이메일 노출 방지
+ */
+function formatAuthorName(author: string | null | undefined): string {
+  if (!author) return '익명'
+  if (author.includes('@')) {
+    return author.split('@')[0]
+  }
+  return author
+}
+
 // ── API → UI 변환 ──
 
 export function postToListItem(post: PostFromApi): BoardListItem {
@@ -48,7 +60,7 @@ export function postToListItem(post: PostFromApi): BoardListItem {
     id: post.id,
     title: post.title,
     summary: plainContent.length > 80 ? plainContent.slice(0, 80) + '...' : plainContent,
-    author: post.author || '관리자',
+    author: formatAuthorName(post.author),
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
     /* 댓글 기능 미구현 */
@@ -64,7 +76,7 @@ export function postToDetail(post: PostFromApi): BoardPost {
     id: post.id,
     title: post.title,
     tag: null,
-    author: post.author || '관리자',
+    author: formatAuthorName(post.author),
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
     /* 댓글 기능 미구현 */
