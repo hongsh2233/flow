@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Visibility from "@mui/icons-material/Visibility";
-// import Comment from "@mui/icons-material/Comment"; // 댓글 기능 준비 중
+// import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
 import type { BoardDetailProps } from "@/lib/types";
+import { getImageUrl } from "@/lib/config/api";
 import styles from "./BoardDetail.module.css";
 
 export function BoardDetail({
@@ -11,8 +12,7 @@ export function BoardDetail({
   backHref = '/report',
   backLabel = '목록으로',
 }: BoardDetailProps) {
-  const isClosing = post.category === '마감시황'
-  const categoryClass = isClosing ? styles.categoryClosing : styles.categoryDefault
+  const hasHtml = post.content.includes('<') && post.content.includes('>');
 
   return (
     <article className={styles.wrap}>
@@ -23,12 +23,17 @@ export function BoardDetail({
       </div>
 
       <header className={styles.header}>
-        <div className={styles.tags}>
-          <span className={`${styles.category} ${categoryClass}`}>
-            {post.category}
-          </span>
-          {post.tag && <span className={styles.tag}>{post.tag}</span>}
-        </div>
+        {/* 카테고리/태그 영역 - 카테고리 기능 미구현, 태그만 표시 */}
+        {post.tag && (
+          <div className={styles.tags}>
+            {/* 카테고리 기능 미구현 - 추후 추가 예정
+            <span className={`${styles.category} ${styles.categoryDefault}`}>
+              {post.category}
+            </span>
+            */}
+            <span className={styles.tag}>{post.tag}</span>
+          </div>
+        )}
         <h1 className={styles.title}>{post.title}</h1>
         <div className={styles.meta}>
           <span className={styles.metaAuthor}>{post.author}</span>
@@ -38,8 +43,39 @@ export function BoardDetail({
       </header>
 
       <div className={styles.body}>
-        <div className={styles.bodyContent}>{post.content}</div>
+        {hasHtml ? (
+          <div
+            className={styles.bodyContent}
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        ) : (
+          <div className={styles.bodyContent}>{post.content}</div>
+        )}
       </div>
+
+      {/* 첨부파일 */}
+      {post.attachments && post.attachments.length > 0 && (
+        <div className={styles.attachments}>
+          <h4 className={styles.attachmentsTitle}>첨부파일</h4>
+          <ul className={styles.attachmentsList}>
+            {post.attachments.map((file, idx) => (
+              <li key={idx} className={styles.attachmentItem}>
+                <a
+                  href={getImageUrl(file.path)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.attachmentLink}
+                >
+                  {file.filename}
+                  {file.formatted_size && (
+                    <span className={styles.attachmentSize}>({file.formatted_size})</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <footer className={styles.footer}>
         <div className={styles.stats}>
@@ -47,7 +83,7 @@ export function BoardDetail({
             <span className={styles.statIcon}><Visibility fontSize="inherit" /></span>
             {post.views.toLocaleString()}
           </span>
-          {/* 댓글 기능 준비 중
+          {/* 댓글 기능 미구현 - 추후 추가 예정
           <span className={styles.stat}>
             <span className={styles.statIcon}><Comment fontSize="inherit" /></span>
             {post.comments}
@@ -55,8 +91,21 @@ export function BoardDetail({
           */}
         </div>
       </footer>
+
+      {/* 댓글 영역 - 추후 추가 예정
+      <section className={styles.commentsSection}>
+        <h3>댓글</h3>
+        <div className={styles.commentInput}>
+          <textarea placeholder="댓글을 입력하세요..." />
+          <button>등록</button>
+        </div>
+        <div className={styles.commentList}>
+          댓글 목록이 여기에 표시됩니다.
+        </div>
+      </section>
+      */}
     </article>
-  )
+  );
 }
 
-export default BoardDetail
+export default BoardDetail;

@@ -4,8 +4,9 @@ import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import { postToDetail } from "@/lib/services/boardService";
 import type { PostFromApi } from "@/lib/types/board";
 
-interface ReportDetailPageProps {
+interface BoardDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }
 
 async function getPost(postId: string): Promise<PostFromApi | null> {
@@ -25,8 +26,9 @@ async function getPost(postId: string): Promise<PostFromApi | null> {
   }
 }
 
-export default async function ReportDetailPage({ params }: ReportDetailPageProps) {
+export default async function BoardDetailPage({ params, searchParams }: BoardDetailPageProps) {
   const { id } = await params;
+  const { from } = await searchParams;
   const postId = parseInt(id, 10);
 
   if (isNaN(postId)) {
@@ -40,10 +42,15 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
   }
 
   const post = postToDetail(apiPost);
+  const backHref = from ? `/board?board=${from}` : "/board";
 
   return (
     <main>
-      <BoardDetail post={post} backHref="/report" backLabel="목록으로" />
+      <BoardDetail
+        post={post}
+        backHref={backHref}
+        backLabel="목록으로"
+      />
     </main>
   );
 }

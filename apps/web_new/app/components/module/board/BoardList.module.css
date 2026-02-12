@@ -162,3 +162,18 @@
 .moreBtn:hover {
   background: var(--app-bg-tertiary);
 }
+
+.moreBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.emptyWrap {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.emptyText {
+  font-size: 0.9375rem;
+  color: var(--app-text-placeholder);
+}
