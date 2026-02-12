@@ -11,6 +11,7 @@ import type {
   BoardListItem,
   BoardPost,
 } from '@/lib/types/board'
+import { API_BASE_URL } from '@/lib/config/api'
 
 // ── 시간 포맷 유틸 ──
 
@@ -52,6 +53,20 @@ function formatAuthorName(author: string | null | undefined): string {
   return author
 }
 
+/**
+ * HTML 콘텐츠 내 /uploads/ 상대 경로를 API 서버 절대 경로로 변환
+ * 에디터에서 삽입된 이미지가 프론트엔드에서 정상 표시되도록 처리
+ */
+function rewriteUploadUrls(html: string): string {
+  if (!html) return html
+  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
+  // src="/uploads/..." 또는 href="/uploads/..." 패턴을 절대 경로로 변환
+  return html.replace(
+    /(src|href)=(["'])(\/uploads\/)/g,
+    `$1=$2${baseUrl}$3`
+  )
+}
+
 // ── API → UI 변환 ──
 
 export function postToListItem(post: PostFromApi): BoardListItem {
@@ -83,7 +98,7 @@ export function postToDetail(post: PostFromApi): BoardPost {
     // comments: 0,
     /* 카테고리 기능 미구현 */
     // category: '',
-    content: post.content,
+    content: rewriteUploadUrls(post.content),
     boardName: post.board?.name,
     attachments: post.attachments,
   }
