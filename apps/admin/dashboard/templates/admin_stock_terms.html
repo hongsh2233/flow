@@ -368,7 +368,7 @@
           <th style="width: 150px;">용어</th>
           <th>쉬운 설명</th>
           <th style="width: 110px;">카테고리</th>
-          <th style="width: 120px;">관리</th>
+          <th style="width: 180px;">관리</th>
         </tr>
       </thead>
       <tbody>
@@ -383,7 +383,7 @@
             <span style="color: #ccc;">-</span>
             {% endif %}
           </td>
-          <td>
+          <td style="white-space: nowrap;">
             <button onclick="editTerm({{ t.id }}, '{{ t.term | replace("'", "\\'") }}', `{{ t.description | replace('`', '') }}`, '{{ t.category or '' }}')"
                     class="btn-edit">수정</button>
             <a href="/admin/stock-terms/delete/{{ t.id }}"
