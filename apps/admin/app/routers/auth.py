@@ -1255,28 +1255,38 @@ async def api_member_signup(
             detail="이미 가입된 이메일입니다."
         )
 
-    # 프로필 자동 생성 (캐릭터 이미지 + 닉네임)
-    profile = generate_profile(db)
+    try:
+        # 프로필 자동 생성 (캐릭터 이미지 + 닉네임)
+        profile = generate_profile(db)
 
-    # 프론트에서 전달한 닉네임이 있으면 사용, 없으면 서버 생성 닉네임 사용
-    final_nickname = signup_request.nickname if signup_request.nickname else profile["nickname"]
+        # 프론트에서 전달한 닉네임이 있으면 사용, 없으면 서버 생성 닉네임 사용
+        final_nickname = signup_request.nickname if signup_request.nickname else profile["nickname"]
 
-    # 비밀번호 해시화
-    hashed_pw = utils.get_password_hash(signup_request.password)
+        # 비밀번호 해시화
+        hashed_pw = utils.get_password_hash(signup_request.password)
 
-    new_member = models.Member(
-        email=signup_request.email,
-        name=profile["name"],
-        nickname=final_nickname,
-        hashed_password=hashed_pw,
-        profile_image=profile["profile_image"],
-        provider="email",
-        provider_id=None,
-        status="active"
-    )
-    db.add(new_member)
-    db.commit()
-    db.refresh(new_member)
+        new_member = models.Member(
+            email=signup_request.email,
+            name=profile["name"],
+            nickname=final_nickname,
+            hashed_password=hashed_pw,
+            profile_image=profile["profile_image"],
+            provider="email",
+            provider_id=None,
+            status="active"
+        )
+        db.add(new_member)
+        db.commit()
+        db.refresh(new_member)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"❌ 회원가입 실패: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"회원가입 처리 중 오류가 발생했습니다: {str(e)}"
+        )
 
     return MemberLoginResponse(
         success=True,
