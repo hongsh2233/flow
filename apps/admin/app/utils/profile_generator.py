@@ -75,24 +75,34 @@ def generate_random_character(db: Session):
 def generate_random_nickname(db: Session):
     """
     랜덤 닉네임 생성 (데이터베이스에서)
-    주식 관련 단어 중 랜덤 선택 + 랜덤 숫자 6자리
-    
+    주식 관련 단어 중 랜덤 선택, 중복 시 랜덤 숫자를 붙여서 유일한 닉네임 생성
+
     Args:
         db: 데이터베이스 세션
-    
+
     Returns:
-        str: 생성된 닉네임 (예: "투자자123456")
+        str: 생성된 닉네임 (예: "투자자" 또는 중복 시 "투자자123456")
     """
+    from app.models import Member
+
     words = get_all_stock_words_from_db(db)
-    
+
     if not words:
-        # 데이터베이스에 단어가 없으면 기본값 사용
         word = "투자자"
     else:
         word = random.choice(words)
-    
-    random_number = random.randint(100000, 999999)
-    return f"{word}{random_number}"
+
+    # 중복 체크: 닉네임이 이미 존재하면 랜덤 숫자를 붙임
+    nickname = word
+    existing = db.query(Member).filter(Member.nickname == nickname).first()
+    if existing:
+        for _ in range(10):
+            random_number = random.randint(100000, 999999)
+            nickname = f"{word}{random_number}"
+            if not db.query(Member).filter(Member.nickname == nickname).first():
+                break
+
+    return nickname
 
 
 def generate_profile(db: Session):

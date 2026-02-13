@@ -86,9 +86,10 @@ class Member(Base):
     email = Column(String(100), unique=True, index=True)
     name = Column(String(50), nullable=False)
     nickname = Column(String(50), nullable=True)
+    hashed_password = Column(String(255), nullable=True)  # 일반 로그인용 비밀번호 (소셜 로그인 시 NULL)
     profile_image = Column(String(500), nullable=True)
     provider = Column(String(20), nullable=False, index=True)
-    provider_id = Column(String(255), nullable=False, index=True)
+    provider_id = Column(String(255), nullable=True, index=True)  # 일반 로그인 시 NULL 허용
     status = Column(String(20), default="active")
     favorite_stocks = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

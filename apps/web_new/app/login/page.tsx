@@ -16,12 +16,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 실제 이메일/비밀번호 인증 API 연동
-    router.push("/");
-    router.refresh();
+    setError("");
+    setSubmitting(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("이메일 또는 비밀번호를 확인해주세요.");
+      } else if (result?.ok) {
+        router.push("/");
+        router.refresh();
+      }
+    } catch {
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSocialLogin = (provider: SocialProvider) => {
@@ -43,6 +63,8 @@ export default function LoginPage() {
 
         <div className={styles.form}>
           <h2 className={styles.formTitle}>로그인</h2>
+
+          {error && <p className={styles.errorMsg}>{error}</p>}
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
@@ -83,9 +105,10 @@ export default function LoginPage() {
               variant="primary"
               fullWidth
               large
+              disabled={submitting}
               className={styles.submitBtn}
             >
-              로그인
+              {submitting ? "로그인 중..." : "로그인"}
             </Button>
           </form>
 

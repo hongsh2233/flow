@@ -1,7 +1,7 @@
 "use client";
 
-import { BarChart3, Mail, Lock, User } from "lucide-react";
-import { useState, useRef } from "react";
+import { BarChart3, Mail, Lock, User, RefreshCw } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,23 +10,90 @@ import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import TermsModal from "../components/ui/TermsModal";
 import type { SocialProvider } from "@/lib/types";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import styles from "./SignupPage.module.css";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [nickname] = useState("주린이");
+  const [nickname, setNickname] = useState("");
+  const [nicknameLoading, setNicknameLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const pendingProvider = useRef<SocialProvider | null>(null);
+
+  const fetchRandomNickname = useCallback(async () => {
+    setNicknameLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/generate-nickname`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNickname(data.nickname);
+      }
+    } catch {
+      // 실패 시 기본값
+      setNickname("주린이");
+    } finally {
+      setNicknameLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRandomNickname();
+  }, [fetchRandomNickname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAgreed) return;
-    // TODO: 실제 회원가입 API 연동
-    router.push("/login");
+    if (password !== confirmPassword) {
+      setError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("비밀번호는 8자 이상이어야 합니다.");
+      return;
+    }
+
+    setError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/member/signup`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.detail || "회원가입에 실패했습니다.");
+        return;
+      }
+
+      // 회원가입 성공 → 자동 로그인
+      const loginResult = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (loginResult?.ok) {
+        router.push("/");
+        router.refresh();
+      } else {
+        // 로그인 실패 시 로그인 페이지로 이동
+        router.push("/login");
+      }
+    } catch {
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSocialSignup = (provider: SocialProvider) => {
@@ -69,17 +136,35 @@ export default function SignupPage() {
         <div className={styles.form}>
           <h2 className={styles.formTitle}>회원가입</h2>
 
+          {error && <p className={styles.errorMsg}>{error}</p>}
+
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
-              <FormField
-                label="닉네임"
-                type="text"
-                placeholder="주린이"
-                value={nickname}
-                onChange={() => {}}
-                icon={User}
-                readOnly
-              />
+              <div className={styles.nicknameRow}>
+                <div className={styles.nicknameField}>
+                  <FormField
+                    label="닉네임"
+                    type="text"
+                    placeholder="닉네임 생성 중..."
+                    value={nickname}
+                    onChange={() => {}}
+                    icon={User}
+                    readOnly
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={styles.refreshBtn}
+                  onClick={fetchRandomNickname}
+                  disabled={nicknameLoading}
+                  aria-label="닉네임 새로고침"
+                >
+                  <RefreshCw
+                    size={18}
+                    className={nicknameLoading ? styles.spinning : ""}
+                  />
+                </button>
+              </div>
               <FormField
                 label="이메일"
                 type="email"
@@ -91,7 +176,7 @@ export default function SignupPage() {
               <FormField
                 label="비밀번호"
                 type="password"
-                placeholder="••••••••"
+                placeholder="8자 이상 입력"
                 value={password}
                 onChange={setPassword}
                 icon={Lock}
@@ -99,7 +184,7 @@ export default function SignupPage() {
               <FormField
                 label="비밀번호 확인"
                 type="password"
-                placeholder="••••••••"
+                placeholder="비밀번호 재입력"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 icon={Lock}
@@ -132,10 +217,10 @@ export default function SignupPage() {
               variant="primary"
               fullWidth
               large
-              disabled={!termsAgreed}
+              disabled={!termsAgreed || submitting}
               className={styles.submitBtn}
             >
-              회원가입
+              {submitting ? "가입 중..." : "회원가입"}
             </Button>
           </form>
 

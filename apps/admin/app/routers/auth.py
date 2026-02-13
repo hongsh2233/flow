@@ -30,6 +30,27 @@ class SocialLoginRequest(BaseModel):
     provider_id: str  # 소셜 로그인 제공자의 사용자 고유 ID
 
 
+# 일반 회원가입 요청 모델
+class MemberSignupRequest(BaseModel):
+    email: str
+    password: str
+
+
+# 일반 회원 로그인 요청 모델
+class MemberLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class MemberLoginResponse(BaseModel):
+    success: bool
+    message: str
+    member_id: int = None
+    email: str = None
+    nickname: str = None
+    profile_image: str = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -1174,10 +1195,120 @@ async def api_generate_nickname(db: Session = Depends(get_db)):
         nickname: str
     
     nickname = generate_random_nickname(db)
-    
+
     return NicknameResponse(
         success=True,
         message="닉네임이 생성되었습니다.",
         nickname=nickname
     )
+
+
+@router.post("/api/auth/member/signup", response_model=MemberLoginResponse)
+async def api_member_signup(
+    signup_request: MemberSignupRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    일반 회원가입 API 엔드포인트 (이메일/비밀번호)
+
+    닉네임은 BO 프로필 관리의 StockWord에서 랜덤 생성하고,
+    프로필 이미지는 BO 캐릭터에서 랜덤 배정합니다.
+    """
+    # 이메일 중복 확인
+    existing = db.query(models.Member).filter(
+        models.Member.email == signup_request.email
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이미 가입된 이메일입니다."
+        )
+
+    # 프로필 자동 생성 (닉네임 + 캐릭터 이미지)
+    profile = generate_profile(db)
+
+    # 비밀번호 해시화
+    hashed_pw = utils.get_password_hash(signup_request.password)
+
+    new_member = models.Member(
+        email=signup_request.email,
+        name=profile["name"],
+        nickname=profile["nickname"],
+        hashed_password=hashed_pw,
+        profile_image=profile["profile_image"],
+        provider="email",
+        provider_id=None,
+        status="active"
+    )
+    db.add(new_member)
+    db.commit()
+    db.refresh(new_member)
+
+    return MemberLoginResponse(
+        success=True,
+        message="회원가입이 완료되었습니다.",
+        member_id=new_member.id,
+        email=new_member.email,
+        nickname=new_member.nickname,
+        profile_image=new_member.profile_image
+    )
+
+
+@router.post("/api/auth/member/login", response_model=MemberLoginResponse)
+async def api_member_login(
+    login_request: MemberLoginRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    일반 회원 로그인 API 엔드포인트 (이메일/비밀번호)
+    """
+    member = db.query(models.Member).filter(
+        models.Member.email == login_request.email
+    ).first()
+
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="이메일 또는 비밀번호가 잘못되었습니다."
+        )
+
+    # 소셜 로그인 사용자인 경우 (비밀번호 없음)
+    if not member.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="소셜 로그인으로 가입된 계정입니다. 소셜 로그인을 이용해주세요."
+        )
+
+    if not utils.verify_password(login_request.password, member.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="이메일 또는 비밀번호가 잘못되었습니다."
+        )
+
+    return MemberLoginResponse(
+        success=True,
+        message="로그인 성공",
+        member_id=member.id,
+        email=member.email,
+        nickname=member.nickname,
+        profile_image=member.profile_image
+    )
+
+
+@router.get("/api/auth/random-profile-image")
+async def api_random_profile_image(db: Session = Depends(get_db)):
+    """
+    프로필 관리의 캐릭터 이미지 중 랜덤으로 하나를 반환합니다.
+    설정 > 프로필 수정에서 랜덤 프로필 이미지를 보여줄 때 사용합니다.
+    """
+    from app.utils.profile_generator import generate_random_character
+
+    character = generate_random_character(db)
+
+    return {
+        "success": True,
+        "message": "랜덤 프로필 이미지가 생성되었습니다.",
+        "name": character["name"],
+        "image": character["image"]
+    }
 

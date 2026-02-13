@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ArrowLeft, Eye, EyeOff, Lock, Check } from "lucide-react";
+import { Camera, ArrowLeft, Eye, EyeOff, Lock, Check, RefreshCw } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { API_BASE_URL, getAuthHeaders, getImageUrl } from "@/lib/config/api";
 import styles from "./ProfileEdit.module.css";
 
 export default function ProfileEditPage() {
@@ -12,6 +13,7 @@ export default function ProfileEditPage() {
 
   // 프로필 사진
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [randomImageLoading, setRandomImageLoading] = useState(false);
 
   // 비밀번호 변경
   const [currentPassword, setCurrentPassword] = useState("");
@@ -21,6 +23,27 @@ export default function ProfileEditPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  const fetchRandomProfileImage = useCallback(async () => {
+    setRandomImageLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/random-profile-image`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (data.success && data.image) {
+        setProfileImage(getImageUrl(data.image));
+      }
+    } catch {
+      // 실패 시 무시
+    } finally {
+      setRandomImageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRandomProfileImage();
+  }, [fetchRandomProfileImage]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,7 +127,6 @@ export default function ProfileEditPage() {
               </div>
               <div className={styles.avatarInfo}>
                 <p className={styles.avatarName}>주린이님</p>
-                <p className={styles.avatarHint}>JPG, PNG 파일 (최대 5MB)</p>
               </div>
             </div>
             <div className={styles.avatarActions}>
@@ -114,6 +136,19 @@ export default function ProfileEditPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 사진 변경
+              </Button>
+              <Button
+                variant="secondary"
+                className={styles.avatarBtn}
+                onClick={fetchRandomProfileImage}
+                disabled={randomImageLoading}
+              >
+                <RefreshCw
+                  size={14}
+                  className={randomImageLoading ? styles.spinning : ""}
+                  style={{ marginRight: "0.375rem" }}
+                />
+                랜덤 이미지
               </Button>
               {profileImage && (
                 <Button
