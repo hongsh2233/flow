@@ -151,6 +151,12 @@ def run_migrations():
         print(f"⚠️ 회원 비밀번호 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.alter_member_provider_id_nullable import run_migration as alter_provider_id_migration
+        alter_provider_id_migration()
+    except Exception as e:
+        print(f"⚠️ provider_id NULL 허용 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.add_favorite_stocks_column import upgrade
         upgrade()
     except Exception as e:
