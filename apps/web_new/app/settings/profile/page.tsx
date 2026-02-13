@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ArrowLeft, Eye, EyeOff, Lock, Check, RefreshCw } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { API_BASE_URL, getAuthHeaders, getImageUrl } from "@/lib/config/api";
 import styles from "./ProfileEdit.module.css";
 
+interface CharacterImage {
+  name: string;
+  image: string;
+}
+
 export default function ProfileEditPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 프로필 사진
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [randomImageLoading, setRandomImageLoading] = useState(false);
+  const [characterImages, setCharacterImages] = useState<CharacterImage[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   // 비밀번호 변경
   const [currentPassword, setCurrentPassword] = useState("");
@@ -24,8 +29,8 @@ export default function ProfileEditPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+  // 초기 로드: 랜덤 프로필 이미지
   const fetchRandomProfileImage = useCallback(async () => {
-    setRandomImageLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/random-profile-image`, {
         headers: getAuthHeaders(),
@@ -36,31 +41,32 @@ export default function ProfileEditPage() {
       }
     } catch {
       // 실패 시 무시
-    } finally {
-      setRandomImageLoading(false);
+    }
+  }, []);
+
+  // 캐릭터 이미지 목록 조회
+  const fetchCharacterImages = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/characters`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (data.success && data.characters) {
+        setCharacterImages(data.characters);
+      }
+    } catch {
+      // 실패 시 무시
     }
   }, []);
 
   useEffect(() => {
     fetchRandomProfileImage();
-  }, [fetchRandomProfileImage]);
+    fetchCharacterImages();
+  }, [fetchRandomProfileImage, fetchCharacterImages]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setProfileImage(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleImageRemove = () => {
-    setProfileImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleSelectImage = (image: string) => {
+    setProfileImage(getImageUrl(image));
+    setShowImagePicker(false);
   };
 
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
@@ -109,21 +115,6 @@ export default function ProfileEditPage() {
                 ) : (
                   <div className={styles.avatarPlaceholder}>주</div>
                 )}
-                <button
-                  type="button"
-                  className={styles.cameraBtn}
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="사진 변경"
-                >
-                  <Camera size={16} />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className={styles.fileInput}
-                  onChange={handleImageChange}
-                />
               </div>
               <div className={styles.avatarInfo}>
                 <p className={styles.avatarName}>주린이님</p>
@@ -133,35 +124,53 @@ export default function ProfileEditPage() {
               <Button
                 variant="primary"
                 className={styles.avatarBtn}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowImagePicker(true)}
               >
                 사진 변경
               </Button>
-              <Button
-                variant="secondary"
-                className={styles.avatarBtn}
-                onClick={fetchRandomProfileImage}
-                disabled={randomImageLoading}
-              >
-                <RefreshCw
-                  size={14}
-                  className={randomImageLoading ? styles.spinning : ""}
-                  style={{ marginRight: "0.375rem" }}
-                />
-                랜덤 이미지
-              </Button>
-              {profileImage && (
-                <Button
-                  variant="secondary"
-                  className={styles.avatarBtn}
-                  onClick={handleImageRemove}
-                >
-                  사진 삭제
-                </Button>
-              )}
             </div>
           </div>
         </section>
+
+        {/* 캐릭터 이미지 선택 모달 */}
+        {showImagePicker && (
+          <div className={styles.imagePickerOverlay} onClick={() => setShowImagePicker(false)}>
+            <div className={styles.imagePickerModal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.imagePickerHeader}>
+                <h3 className={styles.imagePickerTitle}>프로필 이미지 선택</h3>
+                <button
+                  type="button"
+                  className={styles.imagePickerClose}
+                  onClick={() => setShowImagePicker(false)}
+                  aria-label="닫기"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className={styles.imagePickerGrid}>
+                {characterImages.map((char, idx) => {
+                  const imgUrl = getImageUrl(char.image);
+                  const isSelected = profileImage === imgUrl;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`${styles.imagePickerItem} ${isSelected ? styles.imagePickerItemSelected : ""}`}
+                      onClick={() => handleSelectImage(char.image)}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={char.name}
+                        className={styles.imagePickerImg}
+                      />
+                      <span className={styles.imagePickerName}>{char.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 비밀번호 변경 */}
         <section className={styles.section}>
