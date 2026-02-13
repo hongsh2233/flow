@@ -116,7 +116,14 @@ export default function SignupPage() {
         headers: getAuthHeaders(),
         body: JSON.stringify({ email, password, nickname }),
       });
-      const data = await res.json();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setError(`서버 응답 오류 (${res.status})`);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.detail || "회원가입에 실패했습니다.");
@@ -137,8 +144,8 @@ export default function SignupPage() {
         // 로그인 실패 시 로그인 페이지로 이동
         router.push("/login");
       }
-    } catch {
-      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+    } catch (err) {
+      setError(`서버에 연결할 수 없습니다. (${err instanceof Error ? err.message : "네트워크 오류"})`);
     } finally {
       setSubmitting(false);
     }
