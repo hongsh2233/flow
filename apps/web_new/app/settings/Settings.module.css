@@ -186,6 +186,29 @@
   background-color: var(--app-bg-tertiary);
 }
 
+.loginButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--app-accent-gradient);
+  color: #ffffff;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.loginButton:hover {
+  opacity: 0.9;
+}
+
+.profileLoginLink {
+  font-size: 0.875rem;
+  color: var(--app-accent);
+  font-weight: 600;
+}
+
 .clickable {
   cursor: pointer;
   transition: background-color 0.15s;

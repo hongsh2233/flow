@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import styles from "./Settings.module.css";
 import {
   Bell,
@@ -14,6 +15,7 @@ import {
   UserX,
   Shield,
   FileText,
+  LogIn,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
 import { useThemeContext } from "../components/providers/ThemeProvider";
@@ -53,8 +55,28 @@ const settingsGroups: SettingsGroup[] = [
   },
 ];
 
+// 비로그인 시 보여줄 그룹 (앱 설정에서 간편 비밀번호 제외, 내 정보/알림 설정 숨김)
+const guestSettingsGroups: SettingsGroup[] = [
+  {
+    title: "앱 설정",
+    items: [
+      { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
+    ],
+  },
+  {
+    title: "지원",
+    items: [
+      { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
+      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
+      { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
+    ],
+  },
+];
+
 function SettingsScreen() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const { isDark, toggle } = useThemeContext();
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
@@ -70,34 +92,65 @@ function SettingsScreen() {
     }
   };
 
+  const groups = isLoggedIn ? settingsGroups : guestSettingsGroups;
+
   return (
     <div className={styles.screen}>
 
       {/* 사용자 프로필 */}
       <div className={styles.profileSection}>
-        <div
-          className={`${styles.profileCard} ${styles.clickable}`}
-          onClick={() => router.push("/settings/profile")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && router.push("/settings/profile")}
-        >
-          <div className={styles.profileRow}>
-            <div className={styles.profileAvatar}>
-              주
+        {isLoggedIn ? (
+          <div
+            className={`${styles.profileCard} ${styles.clickable}`}
+            onClick={() => router.push("/settings/profile")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && router.push("/settings/profile")}
+          >
+            <div className={styles.profileRow}>
+              <div className={styles.profileAvatar}>
+                {session?.user?.image ? (
+                  <img
+                    src={session.user.image}
+                    alt="프로필"
+                    style={{ width: "100%", height: "100%", borderRadius: "9999px", objectFit: "cover" }}
+                  />
+                ) : (
+                  "주"
+                )}
+              </div>
+              <div className={styles.profileText}>
+                <h3 className={styles.profileName}>{session?.user?.name || "주린이"}님</h3>
+                <p className={styles.profileRole}>초보 투자자</p>
+              </div>
+              <ChevronRight className={styles.profileArrow} />
             </div>
-            <div className={styles.profileText}>
-              <h3 className={styles.profileName}>주린이님</h3>
-              <p className={styles.profileRole}>초보 투자자</p>
-            </div>
-            <ChevronRight className={styles.profileArrow} />
           </div>
-        </div>
+        ) : (
+          <div
+            className={`${styles.profileCard} ${styles.clickable}`}
+            onClick={() => router.push("/login")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && router.push("/login")}
+          >
+            <div className={styles.profileRow}>
+              <div className={styles.profileAvatar}>
+                <LogIn size={24} />
+              </div>
+              <div className={styles.profileText}>
+                <h3 className={styles.profileName}>로그인이후 이용 가능합니다.</h3>
+                <p className={styles.profileLoginLink}>로그인</p>
+              </div>
+              <ChevronRight className={styles.profileArrow} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 설정 그룹 */}
       <div className={styles.groups}>
-        {settingsGroups.map((group, groupIndex) => (
+        {groups.map((group, groupIndex) => (
           <div key={groupIndex} className={styles.group}>
             <h3 className={styles.groupTitle}>
               {group.title}
@@ -152,11 +205,23 @@ function SettingsScreen() {
         </p>
       </div>
 
-      {/* 로그아웃 버튼 */}
+      {/* 로그아웃/로그인 버튼 */}
       <div className={styles.logoutSection}>
-        <button className={styles.logoutButton}>
-          로그아웃
-        </button>
+        {isLoggedIn ? (
+          <button
+            className={styles.logoutButton}
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
+            로그아웃
+          </button>
+        ) : (
+          <button
+            className={styles.loginButton}
+            onClick={() => router.push("/login")}
+          >
+            로그인
+          </button>
+        )}
       </div>
 
       {/* 약관 팝업 */}
