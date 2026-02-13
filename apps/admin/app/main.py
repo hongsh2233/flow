@@ -143,7 +143,13 @@ def run_migrations():
         migrate_member_table()
     except Exception as e:
         print(f"⚠️ 회원 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
-    
+
+    try:
+        from app.migrations.add_member_password_column import run_migration as add_member_password_migration
+        add_member_password_migration()
+    except Exception as e:
+        print(f"⚠️ 회원 비밀번호 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
     try:
         from app.migrations.add_favorite_stocks_column import upgrade
         upgrade()
