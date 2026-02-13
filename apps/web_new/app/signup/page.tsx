@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Mail, Lock, User, RefreshCw } from "lucide-react";
+import { BarChart3, Mail, Lock, User, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,9 @@ export default function SignupPage() {
   const [nickname, setNickname] = useState("");
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [email, setEmail] = useState("");
+  const [emailChecked, setEmailChecked] = useState<boolean | null>(null);
+  const [emailCheckMsg, setEmailCheckMsg] = useState("");
+  const [emailChecking, setEmailChecking] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [termsAgreed, setTermsAgreed] = useState(false);
@@ -48,9 +51,54 @@ export default function SignupPage() {
     fetchRandomNickname();
   }, [fetchRandomNickname]);
 
+  // 이메일 변경 시 중복체크 상태 초기화
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setEmailChecked(null);
+    setEmailCheckMsg("");
+  };
+
+  // 이메일 중복 체크
+  const handleCheckEmail = async () => {
+    if (!email) {
+      setEmailCheckMsg("이메일을 입력해주세요.");
+      setEmailChecked(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailCheckMsg("올바른 이메일 형식이 아닙니다.");
+      setEmailChecked(false);
+      return;
+    }
+
+    setEmailChecking(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/auth/check-email?email=${encodeURIComponent(email)}`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setEmailChecked(data.available);
+        setEmailCheckMsg(data.message);
+      }
+    } catch {
+      setEmailCheckMsg("이메일 확인 중 오류가 발생했습니다.");
+      setEmailChecked(false);
+    } finally {
+      setEmailChecking(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAgreed) return;
+    if (emailChecked !== true) {
+      setError("이메일 중복확인을 해주세요.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("비밀번호가 일치하지 않습니다.");
       return;
@@ -66,7 +114,7 @@ export default function SignupPage() {
       const res = await fetch(`${API_BASE_URL}/api/auth/member/signup`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, nickname }),
       });
       const data = await res.json();
 
@@ -165,14 +213,32 @@ export default function SignupPage() {
                   />
                 </button>
               </div>
-              <FormField
-                label="이메일"
-                type="email"
-                placeholder="jurini@example.com"
-                value={email}
-                onChange={setEmail}
-                icon={Mail}
-              />
+              <div className={styles.emailRow}>
+                <div className={styles.emailField}>
+                  <FormField
+                    label="이메일"
+                    type="email"
+                    placeholder="jurini@example.com"
+                    value={email}
+                    onChange={handleEmailChange}
+                    icon={Mail}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={styles.checkEmailBtn}
+                  onClick={handleCheckEmail}
+                  disabled={emailChecking || !email}
+                >
+                  {emailChecking ? "확인중..." : "중복확인"}
+                </button>
+              </div>
+              {emailCheckMsg && (
+                <div className={`${styles.emailCheckMsg} ${emailChecked ? styles.emailAvailable : styles.emailUnavailable}`}>
+                  {emailChecked ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                  <span>{emailCheckMsg}</span>
+                </div>
+              )}
               <FormField
                 label="비밀번호"
                 type="password"

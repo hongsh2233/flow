@@ -34,6 +34,7 @@ class SocialLoginRequest(BaseModel):
 class MemberSignupRequest(BaseModel):
     email: str
     password: str
+    nickname: str = None  # 프론트에서 전달한 닉네임 (없으면 서버에서 자동 생성)
 
 
 # 일반 회원 로그인 요청 모델
@@ -1203,6 +1204,36 @@ async def api_generate_nickname(db: Session = Depends(get_db)):
     )
 
 
+@router.get("/api/auth/check-email")
+async def api_check_email(email: str, db: Session = Depends(get_db)):
+    """
+    이메일 중복 확인 API 엔드포인트
+
+    사용 예시:
+    GET /api/auth/check-email?email=test@example.com
+
+    응답:
+    {"success": true, "available": true, "message": "사용 가능한 이메일입니다."}
+    {"success": true, "available": false, "message": "이미 가입된 이메일입니다."}
+    """
+    existing = db.query(models.Member).filter(
+        models.Member.email == email
+    ).first()
+
+    if existing:
+        return {
+            "success": True,
+            "available": False,
+            "message": "이미 가입된 이메일입니다."
+        }
+
+    return {
+        "success": True,
+        "available": True,
+        "message": "사용 가능한 이메일입니다."
+    }
+
+
 @router.post("/api/auth/member/signup", response_model=MemberLoginResponse)
 async def api_member_signup(
     signup_request: MemberSignupRequest,
@@ -1224,8 +1255,11 @@ async def api_member_signup(
             detail="이미 가입된 이메일입니다."
         )
 
-    # 프로필 자동 생성 (닉네임 + 캐릭터 이미지)
+    # 프로필 자동 생성 (캐릭터 이미지 + 닉네임)
     profile = generate_profile(db)
+
+    # 프론트에서 전달한 닉네임이 있으면 사용, 없으면 서버 생성 닉네임 사용
+    final_nickname = signup_request.nickname if signup_request.nickname else profile["nickname"]
 
     # 비밀번호 해시화
     hashed_pw = utils.get_password_hash(signup_request.password)
@@ -1233,7 +1267,7 @@ async def api_member_signup(
     new_member = models.Member(
         email=signup_request.email,
         name=profile["name"],
-        nickname=profile["nickname"],
+        nickname=final_nickname,
         hashed_password=hashed_pw,
         profile_image=profile["profile_image"],
         provider="email",
