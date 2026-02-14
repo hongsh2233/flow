@@ -15,12 +15,14 @@ interface CharacterImage {
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
 
   // 프로필 사진
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [characterImages, setCharacterImages] = useState<CharacterImage[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveMessage, setProfileSaveMessage] = useState<"success" | "error" | null>(null);
 
   // 비밀번호 변경
   const [currentPassword, setCurrentPassword] = useState("");
@@ -57,9 +59,41 @@ export default function ProfileEditPage() {
     fetchCharacterImages();
   }, [fetchCharacterImages]);
 
-  const handleSelectImage = (image: string) => {
+  const handleSelectImage = async (image: string) => {
+    if (!session?.user?.email) return;
+
     setProfileImage(getImageUrl(image));
     setShowImagePicker(false);
+    setIsSavingProfile(true);
+    setProfileSaveMessage(null);
+
+    try {
+      const res = await fetch("/api/auth/member/update", {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          email: session.user.email,
+          nickname: session.user?.name || "주린이",
+          profile_image: image,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        await updateSession({ image });
+        setProfileSaveMessage("success");
+        setTimeout(() => setProfileSaveMessage(null), 3000);
+      } else {
+        setProfileSaveMessage("error");
+        setTimeout(() => setProfileSaveMessage(null), 3000);
+      }
+    } catch {
+      setProfileSaveMessage("error");
+      setTimeout(() => setProfileSaveMessage(null), 3000);
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
@@ -96,7 +130,24 @@ export default function ProfileEditPage() {
         {/* 프로필 사진 변경 */}
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>프로필 사진</h3>
-          <div className={styles.card}>
+          {profileSaveMessage === "success" && (
+            <div className={styles.successMsg}>
+              <Check size={16} />
+              프로필 사진이 저장되었습니다.
+            </div>
+          )}
+          {profileSaveMessage === "error" && (
+            <div className={styles.errorMsg}>
+              프로필 사진 저장에 실패했습니다.
+            </div>
+          )}
+          <div
+            className={styles.card}
+            style={{
+              opacity: isSavingProfile ? 0.7 : 1,
+              pointerEvents: isSavingProfile ? "none" : "auto",
+            }}
+          >
             <div className={styles.avatarArea}>
               <div className={styles.avatarWrap}>
                 {profileImage ? (
