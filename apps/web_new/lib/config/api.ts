@@ -19,7 +19,7 @@ export function getImageUrl(imageUrl: string | null | undefined): string {
 
   const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
 
-  if (imageUrl.startsWith('/uploads/')) {
+  if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('/static/')) {
     return `${baseUrl}${imageUrl}`
   }
 

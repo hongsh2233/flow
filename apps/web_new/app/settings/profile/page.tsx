@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { API_BASE_URL, getAuthHeaders, getImageUrl } from "@/lib/config/api";
@@ -14,6 +15,7 @@ interface CharacterImage {
 
 export default function ProfileEditPage() {
   const router = useRouter();
+  const { data: session } = useSession();
 
   // 프로필 사진
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -29,20 +31,12 @@ export default function ProfileEditPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // 초기 로드: 랜덤 프로필 이미지
-  const fetchRandomProfileImage = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/random-profile-image`, {
-        headers: getAuthHeaders(),
-      });
-      const data = await res.json();
-      if (data.success && data.image) {
-        setProfileImage(getImageUrl(data.image));
-      }
-    } catch {
-      // 실패 시 무시
+  // 세션에서 현재 프로필 이미지 로드
+  useEffect(() => {
+    if (session?.user?.image && !profileImage) {
+      setProfileImage(getImageUrl(session.user.image));
     }
-  }, []);
+  }, [session, profileImage]);
 
   // 캐릭터 이미지 목록 조회
   const fetchCharacterImages = useCallback(async () => {
@@ -60,9 +54,8 @@ export default function ProfileEditPage() {
   }, []);
 
   useEffect(() => {
-    fetchRandomProfileImage();
     fetchCharacterImages();
-  }, [fetchRandomProfileImage, fetchCharacterImages]);
+  }, [fetchCharacterImages]);
 
   const handleSelectImage = (image: string) => {
     setProfileImage(getImageUrl(image));
@@ -117,7 +110,7 @@ export default function ProfileEditPage() {
                 )}
               </div>
               <div className={styles.avatarInfo}>
-                <p className={styles.avatarName}>주린이님</p>
+                <p className={styles.avatarName}>{session?.user?.name || "주린이"}님</p>
               </div>
             </div>
             <div className={styles.avatarActions}>
