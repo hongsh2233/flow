@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { getImageUrl } from "@/lib/config/api";
 import styles from "./Settings.module.css";
 import {
   Bell,
@@ -111,7 +112,7 @@ function SettingsScreen() {
               <div className={styles.profileAvatar}>
                 {session?.user?.image ? (
                   <img
-                    src={session.user.image}
+                    src={getImageUrl(session.user.image)}
                     alt="프로필"
                     style={{ width: "100%", height: "100%", borderRadius: "9999px", objectFit: "cover" }}
                   />
