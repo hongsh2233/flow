@@ -1345,7 +1345,7 @@ async def api_member_login(
 
 # 아이디(이메일) 찾기 요청 모델
 class FindEmailRequest(BaseModel):
-    name: str
+    nickname: str
 
 
 # 비밀번호 재설정 요청 모델
@@ -1365,10 +1365,10 @@ async def api_find_email(
     db: Session = Depends(get_db)
 ):
     """
-    아이디(이메일) 찾기 - 이름으로 가입된 이메일 목록 조회 (일반 회원만, 마스킹 처리)
+    아이디(이메일) 찾기 - 닉네임으로 가입된 이메일 목록 조회 (일반 회원만, 마스킹 처리)
     """
     members = db.query(models.Member).filter(
-        models.Member.name == request.name.strip(),
+        models.Member.nickname == request.nickname.strip(),
         models.Member.hashed_password.isnot(None),
         models.Member.status == "active"
     ).all()

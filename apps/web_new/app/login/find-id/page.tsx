@@ -10,7 +10,7 @@ import styles from "../LoginPage.module.css";
 
 export default function FindIdPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [nickname, setNickname] = useState("");
   const [emails, setEmails] = useState<string[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,8 +19,8 @@ export default function FindIdPage() {
     e.preventDefault();
     setError("");
     setEmails(null);
-    if (!name.trim()) {
-      setError("이름을 입력해주세요.");
+    if (!nickname.trim()) {
+      setError("닉네임을 입력해주세요.");
       return;
     }
     setLoading(true);
@@ -28,13 +28,13 @@ export default function FindIdPage() {
       const res = await fetch("/api/auth/member/find-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ nickname: nickname.trim() }),
       });
       const data = await res.json();
       if (data.success) {
         setEmails(data.emails || []);
         if (!data.emails?.length) {
-          setError("해당 이름으로 등록된 계정이 없습니다.");
+          setError("해당 닉네임으로 등록된 계정이 없습니다.");
         }
       } else {
         setError(data.message || "조회에 실패했습니다.");
@@ -59,18 +59,18 @@ export default function FindIdPage() {
           </Link>
           <h1 className={styles.headerTitle}>아이디 찾기</h1>
           <p className={styles.headerSub}>
-            가입 시 입력한 이름으로 이메일을 찾을 수 있습니다.
+            가입 시 입력한 닉네임으로 이메일을 찾을 수 있습니다.
           </p>
         </div>
         <div className={styles.form}>
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
               <FormField
-                label="이름"
+                label="닉네임"
                 type="text"
-                placeholder="이름 입력"
-                value={name}
-                onChange={setName}
+                placeholder="닉네임 입력"
+                value={nickname}
+                onChange={setNickname}
                 icon={User}
               />
             </div>

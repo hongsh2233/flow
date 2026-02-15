@@ -122,7 +122,6 @@ function SettingsScreen() {
               </div>
               <div className={styles.profileText}>
                 <h3 className={styles.profileName}>{session?.user?.name || "주린이"}님</h3>
-                <p className={styles.profileRole}>초보 투자자</p>
               </div>
               <ChevronRight className={styles.profileArrow} />
             </div>
