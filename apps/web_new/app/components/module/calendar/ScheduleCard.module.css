@@ -30,9 +30,67 @@
   gap: 0.5rem;
 }
 
+.topLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleBtn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  text-align: left;
+  cursor: default;
+}
+
+.titleBtnClickable {
+  cursor: pointer;
+}
+
+.titleBtnClickable:hover .titleText,
+.titleBtnClickable:hover .detailIcon {
+  color: var(--app-accent-hover);
+}
+
 .titleText {
   font-weight: 700;
   font-size: 1rem;
+  transition: color 0.15s;
+}
+
+.detailIcon {
+  display: inline-flex;
+  color: var(--app-text-placeholder);
+  transition: color 0.15s;
+}
+
+.detailIcon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.detailContent {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--app-text-secondary);
+}
+
+.detailContent :global(p) {
+  margin: 0 0 0.75rem;
+}
+
+.detailContent :global(ul),
+.detailContent :global(ol) {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.detailContent :global(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
 }
 
 .company {

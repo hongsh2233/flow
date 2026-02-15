@@ -214,6 +214,14 @@
   margin-bottom: 0.75rem;
 }
 
+.scheduleLoading,
+.scheduleEmpty {
+  font-size: 0.9375rem;
+  color: var(--app-text-placeholder);
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
 .scheduleList {
   display: flex;
   flex-direction: column;

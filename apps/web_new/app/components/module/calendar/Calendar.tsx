@@ -1,27 +1,24 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import CalendarToday from "@mui/icons-material/CalendarToday";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import type { ScheduleItem } from "@/lib/types";
 import { getWeeksRange } from "@/lib/utils/calendar";
+import { fetchSchedules } from "@/lib/services/scheduleService";
 import { ScheduleCard } from "./ScheduleCard";
 import styles from "./Calendar.module.css";
-
-const scheduleData: ScheduleItem[] = [
-  { id: 1, type: "earnings", company: "삼성전자", title: "4분기 실적 발표", date: "2월 10일", time: "09:00" },
-  { id: 2, type: "dividend", company: "SK하이닉스", title: "배당금 지급일", date: "2월 10일", time: "전일" },
-  { id: 3, type: "meeting", company: "NAVER", title: "정기 주주총회", date: "2월 12일", time: "14:00" },
-  { id: 4, type: "earnings", company: "카카오", title: "4분기 실적 발표", date: "2월 13일", time: "10:00" },
-  { id: 5, type: "dividend", company: "현대차", title: "배당금 지급일", date: "2월 14일", time: "전일" },
-  { id: 6, type: "earnings", company: "LG화학", title: "4분기 실적 발표", date: "2월 15일", time: "09:30" },
-];
 
 const MONTH_NAMES = [
   "1월", "2월", "3월", "4월", "5월", "6월",
   "7월", "8월", "9월", "10월", "11월", "12월",
 ];
+
+type FilterType = "all" | "manual" | "api";
+
+function formatDateDisplay(d: Date): string {
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
 function getMonthLabel(weekDates: { fullDate: Date }[]): string {
   const first = weekDates[0].fullDate;
@@ -39,11 +36,44 @@ function getMonthLabel(weekDates: { fullDate: Date }[]): string {
 export function Calendar() {
   const { weeks, todayWeekIndex } = useMemo(() => getWeeksRange(5), []);
   const [weekIndex, setWeekIndex] = useState(todayWeekIndex);
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const currentWeek = weeks[weekIndex];
 
   const [selectedDate, setSelectedDate] = useState<string>(
     () => new Date().toDateString()
   );
+
+  /* API 일정 로드 */
+  const startDate = currentWeek[0]?.fullDate;
+  const endDate = currentWeek[6]?.fullDate;
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+    const load = async () => {
+      setLoading(true);
+      const start = startDate.toISOString().slice(0, 10);
+      const end = endDate.toISOString().slice(0, 10);
+      const typeFilter = filter === "all" ? undefined : filter;
+      const res = await fetchSchedules(start, end, typeFilter);
+      if (res.success && res.data) {
+        const items: ScheduleItem[] = res.data.map((s) => ({
+          id: s.id,
+          type: s.type,
+          title: s.subject,
+          subject: s.subject,
+          date: formatDateDisplay(new Date(s.date)),
+          content: s.content || undefined,
+          detail: s.detail || undefined,
+        }));
+        setSchedules(items);
+      } else {
+        setSchedules([]);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [startDate?.toISOString(), endDate?.toISOString(), filter]);
 
   /* ── 스와이프 ── */
   const touchRef = useRef<{ startX: number; startY: number } | null>(null);
@@ -164,15 +194,20 @@ export function Calendar() {
       {/* 필터 */}
       <div className={styles.filterWrap}>
         <div className={styles.filterRow}>
-          {["전체", "실적발표", "배당", "주주총회"].map((filter) => (
+          {[
+            { value: "all" as FilterType, label: "전체" },
+            { value: "manual" as FilterType, label: "수동" },
+            { value: "api" as FilterType, label: "API" },
+          ].map((f) => (
             <button
-              key={filter}
+              key={f.value}
               type="button"
               className={`${styles.filterBtn} ${
-                filter === "전체" ? styles.filterBtnActive : styles.filterBtnDefault
+                filter === f.value ? styles.filterBtnActive : styles.filterBtnDefault
               }`}
+              onClick={() => setFilter(f.value)}
             >
-              {filter}
+              {f.label}
             </button>
           ))}
         </div>
@@ -181,11 +216,17 @@ export function Calendar() {
       {/* 일정 */}
       <div className={styles.scheduleWrap}>
         <h3 className={styles.scheduleTitle}>이번 주 일정</h3>
-        <div className={styles.scheduleList}>
-          {scheduleData.map((schedule) => (
-            <ScheduleCard key={schedule.id} schedule={schedule} />
-          ))}
-        </div>
+        {loading ? (
+          <p className={styles.scheduleLoading}>일정을 불러오는 중...</p>
+        ) : schedules.length === 0 ? (
+          <p className={styles.scheduleEmpty}>해당 기간 일정이 없습니다.</p>
+        ) : (
+          <div className={styles.scheduleList}>
+            {schedules.map((schedule) => (
+              <ScheduleCard key={schedule.id} schedule={schedule} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

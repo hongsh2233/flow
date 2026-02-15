@@ -12,8 +12,11 @@ export type NotifyTiming = "1min" | "30min" | "1day" | "2day";
 export interface ScheduleItem {
   id: number;
   type: string;
-  company: string;
+  company?: string;
   title: string;
+  subject?: string;  // API subject (alias for title)
   date: string;
-  time: string;
+  time?: string;
+  content?: string;
+  detail?: string;
 }
