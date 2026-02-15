@@ -25,6 +25,7 @@ export interface Board {
   name: string;
   type: string;
   auth: string;
+  use_categories?: string;
   created_at: string;
   updated_at: string;
   post_count: number;
@@ -50,6 +51,8 @@ export interface PostFromApi {
   is_secret: string;
   created_at: string;
   updated_at: string;
+  category?: string | null;
+  category_id?: number | null;
   attachments?: PostAttachment[];
   board?: {
     id: string;
@@ -67,10 +70,7 @@ export interface BoardListItem {
   author: string;
   time: string;
   views: number;
-  /* 댓글 기능 미구현 - 추후 추가 예정 */
-  // comments: number;
-  /* 카테고리 기능 미구현 - 추후 추가 예정 */
-  // category: string;
+  category?: string | null;
   tag: string | null;
 }
 
@@ -89,10 +89,7 @@ export interface BoardPost {
   author: string;
   time: string;
   views: number;
-  /* 댓글 기능 미구현 - 추후 추가 예정 */
-  // comments: number;
-  /* 카테고리 기능 미구현 - 추후 추가 예정 */
-  // category: string;
+  category?: string | null;
   content: string;
   boardName?: string;
   attachments?: PostAttachment[];

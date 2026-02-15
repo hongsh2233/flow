@@ -43,6 +43,7 @@ __all__ = [
     "AdminUser",
     "Schedule",
     "Board",
+    "BoardCategory",
     "Post",
     "KrxData",
     "FscStockPrice",
@@ -124,15 +125,30 @@ class Board(Base):
     name = Column(String(100), nullable=False)
     type = Column(String(20), nullable=False)
     auth = Column(String(20), nullable=False, default="all")
+    use_categories = Column(String(20), default="false")  # 카테고리 사용 여부
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     posts = relationship("Post", back_populates="board", cascade="all, delete-orphan")
+    categories = relationship("BoardCategory", back_populates="board", cascade="all, delete-orphan", order_by="BoardCategory.order_index")
+
+
+class BoardCategory(Base):
+    """게시판별 카테고리 (Admin에서 생성, 설정에서 사용여부 체크)"""
+    __tablename__ = "board_categories"
+    id = Column(Integer, primary_key=True, index=True)
+    board_id = Column(String(20), ForeignKey("boards.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    board = relationship("Board", back_populates="categories")
+    posts = relationship("Post", back_populates="category")
 
 
 class Post(Base):
     __tablename__ = "posts"
     id = Column(Integer, primary_key=True, index=True)
     board_id = Column(String(20), ForeignKey("boards.id"), nullable=False, index=True)
+    category_id = Column(Integer, ForeignKey("board_categories.id", ondelete="SET NULL"), nullable=True, index=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     author = Column(String(100))
@@ -141,6 +157,7 @@ class Post(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     board = relationship("Board", back_populates="posts")
+    category = relationship("BoardCategory", back_populates="posts")
 
 
 class KrxData(Base):

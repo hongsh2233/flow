@@ -78,10 +78,7 @@ export function postToListItem(post: PostFromApi): BoardListItem {
     author: formatAuthorName(post.author),
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
-    /* 댓글 기능 미구현 */
-    // comments: 0,
-    /* 카테고리 기능 미구현 */
-    // category: '',
+    category: post.category || null,
     tag: null,
   }
 }
@@ -94,10 +91,7 @@ export function postToDetail(post: PostFromApi): BoardPost {
     author: formatAuthorName(post.author),
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
-    /* 댓글 기능 미구현 */
-    // comments: 0,
-    /* 카테고리 기능 미구현 */
-    // category: '',
+    category: post.category || null,
     content: rewriteUploadUrls(post.content),
     boardName: post.board?.name,
     attachments: post.attachments,

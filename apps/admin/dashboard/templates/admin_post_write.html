@@ -166,6 +166,17 @@
   <h2 style="margin-top: 0">✏️ 새 게시글 작성</h2>
 
   <form id="postForm" action="/admin/board/{{ board.id }}/write" method="post" enctype="multipart/form-data">
+    {% if categories %}
+    <div class="form-group">
+      <label for="category_id">카테고리</label>
+      <select id="category_id" name="category_id" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        <option value="">선택 안 함</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
     <div class="form-group">
       <label for="title">제목 *</label>
       <input

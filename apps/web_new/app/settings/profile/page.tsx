@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { API_BASE_URL, getAuthHeaders, getImageUrl } from "@/lib/config/api";
+import { getAuthHeaders, getImageUrl } from "@/lib/config/api";
 import styles from "./ProfileEdit.module.css";
 
 interface CharacterImage {
@@ -43,7 +43,7 @@ export default function ProfileEditPage() {
   // 캐릭터 이미지 목록 조회
   const fetchCharacterImages = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/characters`, {
+      const res = await fetch("/api/auth/characters", {
         headers: getAuthHeaders(),
       });
       const data = await res.json();

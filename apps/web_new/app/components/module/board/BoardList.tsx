@@ -83,15 +83,15 @@ export function BoardList({
           >
             <div className={styles.cardInner}>
               <div className={styles.content}>
-                {/* 카테고리/태그 영역 - 카테고리 기능 미구현, 태그만 표시 */}
-                {post.tag && (
+                {/* 카테고리/태그 영역 */}
+                {(post.category || post.tag) && (
                   <div className={styles.tags}>
-                    {/* 카테고리 기능 미구현 - 추후 추가 예정
-                    <span className={`${styles.category} ${styles.categoryDefault}`}>
-                      {post.category}
-                    </span>
-                    */}
-                    <span className={styles.tag}>{post.tag}</span>
+                    {post.category && (
+                      <span className={`${styles.category} ${styles.categoryDefault}`}>
+                        {post.category}
+                      </span>
+                    )}
+                    {post.tag && <span className={styles.tag}>{post.tag}</span>}
                   </div>
                 )}
                 <h3 className={styles.title}>{post.title}</h3>

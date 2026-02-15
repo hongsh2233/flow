@@ -10,7 +10,7 @@ import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import TermsModal from "../components/ui/TermsModal";
 import type { SocialProvider } from "@/lib/types";
-import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
+import { getAuthHeaders } from "@/lib/config/api";
 import styles from "./SignupPage.module.css";
 
 export default function SignupPage() {
@@ -32,16 +32,15 @@ export default function SignupPage() {
   const fetchRandomNickname = useCallback(async () => {
     setNicknameLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/generate-nickname`, {
+      const res = await fetch("/api/auth/generate-nickname", {
         headers: getAuthHeaders(),
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.nickname) {
         setNickname(data.nickname);
       }
     } catch {
-      // 실패 시 기본값
-      setNickname("주린이");
+      // API 실패 시 빈 값 유지 (사용자가 직접 입력)
     } finally {
       setNicknameLoading(false);
     }
@@ -76,7 +75,7 @@ export default function SignupPage() {
     setEmailChecking(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/auth/check-email?email=${encodeURIComponent(email)}`,
+        `/api/auth/check-email?email=${encodeURIComponent(email)}`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -95,6 +94,10 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAgreed) return;
+    if (!nickname.trim()) {
+      setError("닉네임을 입력해주세요.");
+      return;
+    }
     if (emailChecked !== true) {
       setError("이메일 중복확인을 해주세요.");
       return;
@@ -111,7 +114,7 @@ export default function SignupPage() {
     setError("");
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/member/signup`, {
+      const res = await fetch("/api/auth/member/signup", {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ email, password, nickname }),
@@ -200,11 +203,10 @@ export default function SignupPage() {
                   <FormField
                     label="닉네임"
                     type="text"
-                    placeholder="닉네임 생성 중..."
+                    placeholder="닉네임을 입력하거나 새로고침 버튼으로 생성"
                     value={nickname}
-                    onChange={() => {}}
+                    onChange={setNickname}
                     icon={User}
-                    readOnly
                   />
                 </div>
                 <button
@@ -265,11 +267,16 @@ export default function SignupPage() {
             </div>
 
             <div className={styles.termsSection}>
-              <label className={styles.termsLabel}>
+              <label
+                className={styles.termsLabel}
+                onClick={() => setTermsModalOpen(true)}
+                role="button"
+              >
                 <input
                   type="checkbox"
                   checked={termsAgreed}
                   readOnly
+                  tabIndex={-1}
                   className={styles.termsCheckbox}
                 />
                 <span className={styles.termsText}>

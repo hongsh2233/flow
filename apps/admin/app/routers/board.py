@@ -61,6 +61,7 @@ async def get_boards_json(
                 "name": b.name,
                 "type": b.type,
                 "auth": b.auth,
+                "use_categories": getattr(b, "use_categories", "false") or "false",
                 "post_count": db.query(models.Post).filter(models.Post.board_id == b.id).count()
             } for b in boards
         ]
@@ -76,9 +77,12 @@ async def get_board_posts_json(
     _ = Depends(verify_api_key) # 시크릿 키 인증 적용
 ):
     skip = (page - 1) * limit
-    all_posts = db.query(models.Post).filter(models.Post.board_id == board_id)\
-              .order_by(models.Post.created_at.desc())\
-              .all()
+    from sqlalchemy.orm import joinedload
+    all_posts = db.query(models.Post).options(
+        joinedload(models.Post.category)
+    ).filter(models.Post.board_id == board_id)\
+     .order_by(models.Post.created_at.desc())\
+     .all()
     
     # 비밀글 필터링: API Key로 호출하는 경우 모든 글 표시 (관리자 권한으로 간주)
     posts = all_posts
@@ -92,7 +96,10 @@ async def get_board_posts_json(
                 "author": p.author,
                 "views": p.views,
                 "is_secret": p.is_secret or "false",
-                "created_at": p.created_at.isoformat()
+                "created_at": p.created_at.isoformat(),
+                "content": p.content or "",
+                "category": p.category.name if p.category else None,
+                "category_id": p.category_id
             } for p in posts[skip:skip+limit]
         ]
     }
@@ -177,7 +184,14 @@ async def admin_board_page(request: Request, user=Depends(get_current_user), db:
     })
 
 @router.post("/admin/board/create")
-async def create_board(name: str = Form(...), type: str = Form(...), auth: str = Form(...), user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def create_board(
+    name: str = Form(...),
+    type: str = Form(...),
+    auth: str = Form(...),
+    use_categories: Optional[str] = Form("false"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     if not user: return RedirectResponse(url="/", status_code=303)
     try:
         cnt = db.query(models.Board).count()
@@ -185,8 +199,8 @@ async def create_board(name: str = Form(...), type: str = Form(...), auth: str =
         while db.query(models.Board).filter(models.Board.id == new_id).first():
             cnt += 1
             new_id = f"B{cnt + 1:03d}"
-        
-        db.add(models.Board(id=new_id, name=name, type=type, auth=auth))
+        uc = "true" if use_categories == "true" else "false"
+        db.add(models.Board(id=new_id, name=name, type=type, auth=auth, use_categories=uc))
         db.commit()
         return RedirectResponse(url="/admin/board", status_code=303)
     except Exception as e:
@@ -194,15 +208,94 @@ async def create_board(name: str = Form(...), type: str = Form(...), auth: str =
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/admin/board/update")
-async def update_board(board_id: str = Form(...), name: str = Form(...), type: str = Form(...), auth: str = Form(...), user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_board(
+    board_id: str = Form(...),
+    name: str = Form(...),
+    type: str = Form(...),
+    auth: str = Form(...),
+    use_categories: Optional[str] = Form("false"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     if not user: return RedirectResponse(url="/", status_code=303)
     board = db.query(models.Board).filter(models.Board.id == board_id).first()
     if board:
         board.name = name
         board.type = type
         board.auth = auth
+        board.use_categories = "true" if use_categories == "true" else "false"
         db.commit()
     return RedirectResponse(url="/admin/board", status_code=303)
+
+# ---- 게시판 카테고리 CRUD ----
+@router.get("/admin/board/{board_id}/categories", response_class=HTMLResponse)
+async def admin_board_categories_page(
+    board_id: str,
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not user: return RedirectResponse(url="/")
+    board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not board: raise HTTPException(status_code=404)
+    categories = db.query(models.BoardCategory).filter(
+        models.BoardCategory.board_id == board_id
+    ).order_by(models.BoardCategory.order_index, models.BoardCategory.id).all()
+    return templates.TemplateResponse("board_categories.html", {
+        "request": request, "board": board, "categories": categories, "admin_email": ADMIN_EMAIL, "active_page": "board"
+    })
+
+@router.post("/admin/board/{board_id}/categories/create")
+async def create_board_category(
+    board_id: str,
+    name: str = Form(...),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not user: return RedirectResponse(url="/", status_code=303)
+    board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not board: raise HTTPException(status_code=404)
+    max_order = db.query(models.BoardCategory).filter(
+        models.BoardCategory.board_id == board_id
+    ).count()
+    db.add(models.BoardCategory(board_id=board_id, name=name.strip(), order_index=max_order))
+    db.commit()
+    return RedirectResponse(url=f"/admin/board/{board_id}/categories", status_code=303)
+
+@router.post("/admin/board/{board_id}/categories/{cat_id}/update")
+async def update_board_category(
+    board_id: str,
+    cat_id: int,
+    name: str = Form(...),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not user: return RedirectResponse(url="/", status_code=303)
+    cat = db.query(models.BoardCategory).filter(
+        models.BoardCategory.id == cat_id,
+        models.BoardCategory.board_id == board_id
+    ).first()
+    if cat:
+        cat.name = name.strip()
+        db.commit()
+    return RedirectResponse(url=f"/admin/board/{board_id}/categories", status_code=303)
+
+@router.get("/admin/board/{board_id}/categories/{cat_id}/delete")
+async def delete_board_category(
+    board_id: str,
+    cat_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not user: return RedirectResponse(url="/", status_code=303)
+    cat = db.query(models.BoardCategory).filter(
+        models.BoardCategory.id == cat_id,
+        models.BoardCategory.board_id == board_id
+    ).first()
+    if cat:
+        db.delete(cat)
+        db.commit()
+    return RedirectResponse(url=f"/admin/board/{board_id}/categories", status_code=303)
 
 @router.get("/admin/board/delete/{board_id}")
 async def delete_board(board_id: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -268,9 +361,16 @@ async def admin_board_posts_page(
 async def admin_write_post_page(board_id: str, request: Request, user=Depends(get_current_user), db: Session = Depends(get_db)):
     if not user: return RedirectResponse(url="/")
     board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not board: raise HTTPException(status_code=404)
+    categories = []
+    if getattr(board, "use_categories", "false") == "true":
+        categories = db.query(models.BoardCategory).filter(
+            models.BoardCategory.board_id == board_id
+        ).order_by(models.BoardCategory.order_index, models.BoardCategory.id).all()
     return templates.TemplateResponse("admin_post_write.html", {
         "request": request, 
         "board": board, 
+        "categories": categories,
         "admin_email": ADMIN_EMAIL, 
         "active_page": "board"
     })
@@ -336,6 +436,7 @@ async def admin_create_post(
     title: str = Form(...),
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
+    category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -398,6 +499,7 @@ async def admin_create_post(
             content=final_content,  # 파일 정보가 포함된 content 사용
             author=ADMIN_EMAIL,
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
+            category_id=category_id if category_id else None,
             created_at=datetime.now()
         )
         db.add(new_post)
@@ -472,10 +574,16 @@ async def admin_post_edit_page(
     # Post 객체의 content를 정리된 버전으로 교체 (템플릿에서 사용)
     post.content = cleaned_content
     
+    categories = []
+    if getattr(board, "use_categories", "false") == "true":
+        categories = db.query(models.BoardCategory).filter(
+            models.BoardCategory.board_id == board_id
+        ).order_by(models.BoardCategory.order_index, models.BoardCategory.id).all()
     return templates.TemplateResponse("admin_post_edit.html", {
         "request": request,
         "board": board,
         "post": post,
+        "categories": categories,
         "admin_email": ADMIN_EMAIL,
         "active_page": "board"
     })
@@ -488,6 +596,7 @@ async def admin_post_edit(
     title: str = Form(...),
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
+    category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -552,6 +661,7 @@ async def admin_post_edit(
         post.title = title.strip()
         post.content = final_content
         post.is_secret = is_secret if is_secret in ["true", "false"] else "false"
+        post.category_id = category_id if category_id else None
         post.updated_at = datetime.now()
         
         db.commit()

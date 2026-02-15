@@ -114,6 +114,10 @@
         <option value="member">회원 이상</option>
         <option value="admin">관리자 전용</option>
       </select>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="checkbox" name="use_categories" value="true" style="width: auto;">
+        카테고리 사용
+      </label>
       <button type="submit" class="btn-create">게시판 생성</button>
     </div>
   </form>
@@ -127,6 +131,7 @@
         <th>ID</th>
         <th>게시판 명</th>
         <th>유형</th>
+        <th>카테고리</th>
         <th>작성 권한</th>
         <th>생성일</th>
         <th>관리</th>
@@ -162,13 +167,24 @@
           </span>
         </td>
         <td>
+          {% if b.type in ['guestbook', 'guest'] or '방명록' in b.name %}
+          -
+          {% else %}
+          {% if b.use_categories == 'true' %}
+          <a href="/admin/board/{{ b.id }}/categories" style="color: #27ae60; text-decoration: none;">✓ 사용</a>
+          {% else %}
+          <a href="/admin/board/{{ b.id }}/categories" style="color: #95a5a6; text-decoration: none;">미사용</a>
+          {% endif %}
+          {% endif %}
+        </td>
+        <td>
           {% if b.auth == 'all' %}누구나 {% elif b.auth == 'member' %}회원 {%
           else %}관리자{% endif %}
         </td>
         <td>{{ b.created_at }}</td>
         <td>
           <button
-            onclick="openEditModal('{{ b.id }}', '{{ b.name }}', '{{ b.type }}', '{{ b.auth }}')"
+            onclick="openEditModal('{{ b.id }}', '{{ b.name }}', '{{ b.type }}', '{{ b.auth }}', '{{ b.use_categories or 'false' }}')"
             style="
               color: #3498db;
               background: none;
@@ -181,7 +197,9 @@
           >
             설정
           </button>
-
+          {% if b.type not in ['guestbook', 'guest'] and '방명록' not in b.name %}
+          <a href="/admin/board/{{ b.id }}/categories" style="color: #27ae60; text-decoration: none; margin-right: 10px; font-size: 14px;">카테고리</a>
+          {% endif %}
           <a
             href="/admin/board/delete/{{ b.id }}"
             style="color: #e74c3c; text-decoration: none; font-size: 14px"
@@ -235,6 +253,14 @@
         </select>
       </div>
 
+      <div style="margin-bottom: 15px">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" name="use_categories" id="edit_use_categories" value="true" style="width: auto;">
+          <span>카테고리 사용</span>
+        </label>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">체크 시 게시글 작성 시 카테고리 선택 가능</p>
+      </div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="closeEditModal()">
           취소
@@ -246,11 +272,13 @@
 </div>
 {% endblock %} {% block extra_scripts %}
 <script>
-  function openEditModal(id, name, type, auth) {
+  function openEditModal(id, name, type, auth, useCategories) {
     document.getElementById("edit_board_id").value = id;
     document.getElementById("edit_name").value = name;
     document.getElementById("edit_type").value = type;
     document.getElementById("edit_auth").value = auth;
+    var uc = document.getElementById("edit_use_categories");
+    if (uc) uc.checked = useCategories === 'true';
     document.getElementById("editModal").style.display = "flex";
   }
 

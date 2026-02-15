@@ -8,6 +8,7 @@ from app.engine.models import (
     AdminUser,
     Schedule,
     Board,
+    BoardCategory,
     Post,
     KrxData,
     FscStockPrice,
@@ -27,7 +28,7 @@ from app.engine.models import (
 )
 
 __all__ = [
-    "Base", "CollectedData", "AdminUser", "Schedule", "Board", "Post",
+    "Base", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
