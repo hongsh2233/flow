@@ -62,6 +62,7 @@ export default function ProfileEditPage() {
   const handleSelectImage = async (image: string) => {
     if (!session?.user?.email) return;
 
+    const prevImage = profileImage;
     setProfileImage(getImageUrl(image));
     setShowImagePicker(false);
     setIsSavingProfile(true);
@@ -81,14 +82,21 @@ export default function ProfileEditPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        await updateSession({ image });
+        await updateSession({
+          user: {
+            name: data.nickname ?? session.user?.name,
+            image: data.profile_image ?? image,
+          },
+        });
         setProfileSaveMessage("success");
         setTimeout(() => setProfileSaveMessage(null), 3000);
       } else {
+        setProfileImage(prevImage);
         setProfileSaveMessage("error");
         setTimeout(() => setProfileSaveMessage(null), 3000);
       }
     } catch {
+      setProfileImage(prevImage);
       setProfileSaveMessage("error");
       setTimeout(() => setProfileSaveMessage(null), 3000);
     } finally {

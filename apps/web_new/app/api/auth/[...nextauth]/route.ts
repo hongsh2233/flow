@@ -74,12 +74,17 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
         token.email = user.email
         token.name = user.name
         token.picture = user.image
+      }
+      if (trigger === 'update' && session?.user) {
+        if (session.user.name !== undefined) token.name = session.user.name
+        if (session.user.image !== undefined) token.picture = session.user.image
+        if (session.user.email !== undefined) token.email = session.user.email
       }
       return token
     },

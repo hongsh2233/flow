@@ -14,11 +14,12 @@ export default function Header() {
         navItems.find((item) => item.href === pathname) ?? defaultItem;
 
     const isHome = pathname === "/" || pathname === "";
+    const nickname = session?.user?.name || "주린이";
     const greetingTitle = isHome
         ? status === "loading"
             ? "안녕하세요."
-            : session?.user?.name
-              ? `안녕하세요. ${session.user.name}`
+            : session
+              ? `안녕하세요, ${nickname}님!`
               : "안녕하세요."
         : currentItem.headerTitle;
 
