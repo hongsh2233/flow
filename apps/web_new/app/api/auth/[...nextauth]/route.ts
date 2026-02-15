@@ -7,6 +7,7 @@ import GoogleProvider from 'next-auth/providers/google'
 export const dynamic = 'force-dynamic'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+const API_SECRET_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
 // 개발 환경에서 NEXTAUTH_SECRET 미설정 시 기본값 사용 (배포 시 반드시 .env에 설정)
 const secret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-secret-change-in-production' : undefined)
@@ -74,12 +75,58 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (user) {
         token.id = user.id
         token.email = user.email
         token.name = user.name
         token.picture = user.image
+
+        // 소셜 로그인 시 BO social-login API 연동 (kakao, naver, google)
+        token.lastLoginProvider = account?.provider ?? 'credentials'
+
+        if (account && ['kakao', 'naver', 'google'].includes(account.provider)) {
+          try {
+            const providerId =
+              account.providerAccountId ||
+              user.id ||
+              String(account.access_token ?? '').substring(0, 50) ||
+              ''
+            const email = user.email || ''
+            const name = user.name || user.email?.split('@')[0] || ''
+
+            const headers: Record<string, string> = {
+              'Content-Type': 'application/json',
+            }
+            if (API_SECRET_KEY) {
+              headers['X-API-KEY'] = API_SECRET_KEY
+            }
+
+            const response = await fetch(`${API_BASE_URL}/api/auth/social-login`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                provider: account.provider,
+                email,
+                name,
+                provider_id: providerId,
+              }),
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              token.isNewUser = !data.has_nickname
+              token.name = data.nickname || name
+              token.picture = data.profile_image || user.image
+              token.nickname = data.nickname || null
+              token.profileImage = data.profile_image || null
+            } else {
+              token.isNewUser = true
+            }
+          } catch {
+            token.isNewUser = true
+          }
+        }
       }
       if (trigger === 'update' && session?.user) {
         if (session.user.name !== undefined) token.name = session.user.name
@@ -91,8 +138,14 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.email = token.email as string
-        session.user.name = token.name as string
-        session.user.image = token.picture as string
+        session.user.name = (token.nickname ?? token.name) as string
+        session.user.image = (token.profileImage ?? token.picture) as string
+        if (token.isNewUser !== undefined) {
+          ;(session.user as { isNewUser?: boolean }).isNewUser = token.isNewUser
+        }
+        if (token.lastLoginProvider) {
+          ;(session as { lastLoginProvider?: string }).lastLoginProvider = token.lastLoginProvider as string
+        }
       }
       return session
     },

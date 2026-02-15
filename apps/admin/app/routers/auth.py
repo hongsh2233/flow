@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import timedelta, datetime
+import secrets
 
 from app import models, utils
 from app.database import get_db
@@ -14,6 +15,9 @@ from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_T
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
+
+# 비밀번호 재설정 인증코드 저장 (이메일 -> (code, expires_at))
+_password_reset_codes: dict[str, tuple[str, datetime]] = {}
 
 
 # API 토큰 발급용 요청 모델
@@ -24,7 +28,7 @@ class TokenRequest(BaseModel):
 
 # 소셜 로그인 회원 등록 요청 모델
 class SocialLoginRequest(BaseModel):
-    provider: str  # 'google' 또는 'naver'
+    provider: str  # 'google', 'naver', 'kakao'
     email: str
     name: str
     provider_id: str  # 소셜 로그인 제공자의 사용자 고유 ID
@@ -681,10 +685,10 @@ async def api_social_login(
     ```
     """
     # Provider 검증
-    if social_request.provider not in ['google', 'naver']:
+    if social_request.provider not in ['google', 'naver', 'kakao']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="유효하지 않은 provider입니다. 'google' 또는 'naver'만 허용됩니다."
+            detail="유효하지 않은 provider입니다. 'google', 'naver', 'kakao'만 허용됩니다."
         )
     
     # 이메일 또는 provider_id로 기존 회원 찾기
@@ -1337,6 +1341,127 @@ async def api_member_login(
         nickname=member.nickname,
         profile_image=member.profile_image
     )
+
+
+# 아이디(이메일) 찾기 요청 모델
+class FindEmailRequest(BaseModel):
+    name: str
+
+
+# 비밀번호 재설정 요청 모델
+class RequestPasswordResetRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+
+@router.post("/api/auth/member/find-email")
+async def api_find_email(
+    request: FindEmailRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    아이디(이메일) 찾기 - 이름으로 가입된 이메일 목록 조회 (일반 회원만, 마스킹 처리)
+    """
+    members = db.query(models.Member).filter(
+        models.Member.name == request.name.strip(),
+        models.Member.hashed_password.isnot(None),
+        models.Member.status == "active"
+    ).all()
+
+    def mask_email(email: str) -> str:
+        if not email or "@" not in email:
+            return "***@***.***"
+        local, domain = email.rsplit("@", 1)
+        if len(local) <= 2:
+            masked_local = "*" * len(local)
+        else:
+            masked_local = local[0] + "*" * (len(local) - 2) + local[-1]
+        return f"{masked_local}@{domain}"
+
+    emails = [mask_email(m.email) for m in members]
+    return {"success": True, "emails": emails}
+
+
+@router.post("/api/auth/member/request-password-reset")
+async def api_request_password_reset(
+    request: RequestPasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    비밀번호 재설정 인증코드 요청 - 6자리 코드 생성 후 이메일로 발송 (개발용: 응답에 코드 포함)
+    """
+    member = db.query(models.Member).filter(
+        models.Member.email == request.email,
+        models.Member.hashed_password.isnot(None),
+        models.Member.status == "active"
+    ).first()
+
+    if not member:
+        return {"success": False, "message": "등록되지 않은 이메일입니다."}
+
+    code = "".join(secrets.choice("0123456789") for _ in range(6))
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+    global _password_reset_codes
+    _password_reset_codes[request.email] = (code, expires_at)
+
+    return {
+        "success": True,
+        "message": "인증코드가 이메일로 발송되었습니다.",
+        "code": code,
+    }
+
+
+@router.post("/api/auth/member/reset-password")
+async def api_reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    비밀번호 재설정 - 인증코드 검증 후 새 비밀번호로 변경
+    """
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호는 8자 이상이어야 합니다."
+        )
+
+    global _password_reset_codes
+    stored = _password_reset_codes.get(request.email)
+    if not stored:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="인증코드가 만료되었거나 올바르지 않습니다. 다시 요청해주세요."
+        )
+    code, expires_at = stored
+    if datetime.utcnow() > expires_at:
+        del _password_reset_codes[request.email]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="인증코드가 만료되었습니다. 다시 요청해주세요."
+        )
+    if request.code != code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="인증코드가 일치하지 않습니다."
+        )
+
+    member = db.query(models.Member).filter(
+        models.Member.email == request.email
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
+
+    member.hashed_password = utils.get_password_hash(request.new_password)
+    db.commit()
+    del _password_reset_codes[request.email]
+
+    return {"success": True, "message": "비밀번호가 변경되었습니다."}
 
 
 @router.get("/api/auth/random-profile-image")

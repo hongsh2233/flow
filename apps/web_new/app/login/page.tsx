@@ -1,7 +1,7 @@
 "use client";
 
 import { BarChart3, Mail, Lock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +11,9 @@ import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import type { SocialProvider } from "@/lib/types";
 import styles from "./LoginPage.module.css";
 
+const LAST_LOGIN_KEY = "lastLoginProvider";
+type LoginMethod = "credentials" | "kakao" | "naver" | "google";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,6 +21,16 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lastLoginProvider, setLastLoginProvider] = useState<LoginMethod | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(LAST_LOGIN_KEY) as LoginMethod | null;
+      if (stored && ["credentials", "kakao", "naver", "google"].includes(stored)) {
+        setLastLoginProvider(stored);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +47,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("이메일 또는 비밀번호를 확인해주세요.");
       } else if (result?.ok) {
+        localStorage.setItem(LAST_LOGIN_KEY, "credentials");
         router.push("/");
         router.refresh();
       }
@@ -62,7 +76,12 @@ export default function LoginPage() {
         </div>
 
         <div className={styles.form}>
-          <h2 className={styles.formTitle}>로그인</h2>
+          <div className={styles.formTitleRow}>
+            <h2 className={styles.formTitle}>로그인</h2>
+            {lastLoginProvider === "credentials" && (
+              <span className={styles.recentBadge}>최근 로그인</span>
+            )}
+          </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}
 
@@ -95,9 +114,15 @@ export default function LoginPage() {
                 />
                 <span>로그인 상태 유지</span>
               </label>
-              <button type="button" className={styles.forgotLink}>
-                비밀번호 찾기
-              </button>
+              <div className={styles.findLinks}>
+                <Link href="/login/find-id" className={styles.forgotLink}>
+                  아이디 찾기
+                </Link>
+                <span className={styles.findSep}>|</span>
+                <Link href="/login/find-password" className={styles.forgotLink}>
+                  비밀번호 찾기
+                </Link>
+              </div>
             </div>
 
             <Button
@@ -123,14 +148,17 @@ export default function LoginPage() {
             <SocialLoginButton
               provider="kakao"
               onClick={() => handleSocialLogin("kakao")}
+              recent={lastLoginProvider === "kakao"}
             />
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialLogin("naver")}
+              recent={lastLoginProvider === "naver"}
             />
             <SocialLoginButton
               provider="google"
               onClick={() => handleSocialLogin("google")}
+              recent={lastLoginProvider === "google"}
             />
           </div>
 

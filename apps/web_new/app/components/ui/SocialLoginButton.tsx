@@ -3,9 +3,12 @@
 import type { SocialProvider } from "@/lib/types";
 import styles from "./SocialLoginButton.module.css";
 
+export type LoginMethod = SocialProvider | "credentials";
+
 export interface SocialLoginButtonProps {
   provider: SocialProvider;
   onClick?: () => void;
+  recent?: boolean;
 }
 
 const labels: Record<SocialProvider, string> = {
@@ -59,16 +62,19 @@ const icons: Record<SocialProvider, React.ReactNode> = {
   google: <GoogleIcon />,
 };
 
-export function SocialLoginButton({ provider, onClick }: SocialLoginButtonProps) {
+export function SocialLoginButton({ provider, onClick, recent }: SocialLoginButtonProps) {
   return (
-    <button
-      type="button"
-      className={`${styles.root} ${styles[provider]}`}
-      onClick={onClick}
-      aria-label={labels[provider]}
-    >
-      {icons[provider]}
-      {labels[provider]}
-    </button>
+    <div className={styles.wrap}>
+      <button
+        type="button"
+        className={`${styles.root} ${styles[provider]}`}
+        onClick={onClick}
+        aria-label={labels[provider]}
+      >
+        {icons[provider]}
+        <span>{labels[provider]}</span>
+      </button>
+      {recent && <span className={styles.recentBadge}>최근 로그인</span>}
+    </div>
   );
 }
