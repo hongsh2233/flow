@@ -546,9 +546,9 @@ async def get_schedules(
             raise HTTPException(status_code=400, detail="잘못된 종료 날짜 형식입니다. (YYYY-MM-DD)")
     
     if type:
-        if type in ("manual", "general"):
-            # 수동/일반 = 공휴일(api) 제외한 모든 타입
-            query = query.filter(models.Schedule.type != "api")
+        if type == "etc":
+            # 기타 = etc + manual (구 호환)
+            query = query.filter(models.Schedule.type.in_(["etc", "manual"]))
         else:
             query = query.filter(models.Schedule.type == type)
     

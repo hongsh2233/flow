@@ -14,7 +14,17 @@ const MONTH_NAMES = [
   "7월", "8월", "9월", "10월", "11월", "12월",
 ];
 
-type FilterType = "all" | "manual" | "api";
+const SCHEDULE_FILTERS = [
+  { value: "all", label: "전체" },
+  { value: "api", label: "공휴일" },
+  { value: "earnings", label: "실적발표" },
+  { value: "ipo", label: "공모청약" },
+  { value: "dividend", label: "배당" },
+  { value: "news", label: "소식" },
+  { value: "etc", label: "기타" },
+] as const;
+
+type FilterType = (typeof SCHEDULE_FILTERS)[number]["value"];
 
 function formatDateDisplay(d: Date): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
@@ -56,7 +66,7 @@ export function Calendar() {
       setFetchError(null);
       const start = startDate.toISOString().slice(0, 10);
       const end = endDate.toISOString().slice(0, 10);
-      const typeFilter = filter === "all" ? undefined : filter;
+      const typeFilter = filter === "all" ? undefined : (filter as string);
       const res = await fetchSchedules(start, end, typeFilter);
       if (res.success && res.data) {
         const items: ScheduleItem[] = res.data.map((s) => ({
@@ -203,11 +213,7 @@ export function Calendar() {
       {/* 필터 */}
       <div className={styles.filterWrap}>
         <div className={styles.filterRow}>
-          {[
-            { value: "all" as FilterType, label: "전체" },
-            { value: "manual" as FilterType, label: "일반" },
-            { value: "api" as FilterType, label: "공휴일" },
-          ].map((f) => (
+          {SCHEDULE_FILTERS.map((f) => (
             <button
               key={f.value}
               type="button"
