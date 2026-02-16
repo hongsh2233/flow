@@ -28,8 +28,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }, [isAuthPage]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && session?.user && (session as { lastLoginProvider?: string }).lastLoginProvider) {
-      localStorage.setItem(LAST_LOGIN_KEY, (session as { lastLoginProvider: string }).lastLoginProvider);
+    if (typeof window === "undefined" || !session?.user) return;
+    const provider = (session as { lastLoginProvider?: string }).lastLoginProvider;
+    if (provider) {
+      localStorage.setItem(LAST_LOGIN_KEY, provider);
     }
   }, [session]);
 

@@ -17,7 +17,17 @@ export default function Header() {
     const nickname = session?.user?.name || "주린이";
     const greetingTitle = isHome
         ? status === "loading"
-            ? "안녕하세요."
+        ./app/components/layout/LayoutShell.tsx:32:45
+        Type error: Conversion of type 'Session' to type '{ lastLoginProvider: string; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+        
+          Property 'lastLoginProvider' is missing in type 'Session' but required in type '{ lastLoginProvider: string; }'.
+          30 |   useEffect(() => {
+          31 |     if (typeof window !== "undefined" && session?.user && (session as { lastLoginProvider?: string }).lastLoginProvider) {
+        > 32 |       localStorage.setItem(LAST_LOGIN_KEY, (session as { lastLoginProvider: string }).lastLoginProvider);
+             |                                             ^
+          33 |     }
+          34 |   }, [session]);
+          35 |           ? "안녕하세요."
             : session
               ? `안녕하세요, ${nickname}님!`
               : "안녕하세요."
