@@ -39,6 +39,7 @@ export function Calendar() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const currentWeek = weeks[weekIndex];
 
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -52,6 +53,7 @@ export function Calendar() {
     if (!startDate || !endDate) return;
     const load = async () => {
       setLoading(true);
+      setFetchError(null);
       const start = startDate.toISOString().slice(0, 10);
       const end = endDate.toISOString().slice(0, 10);
       const typeFilter = filter === "all" ? undefined : filter;
@@ -69,6 +71,7 @@ export function Calendar() {
         setSchedules(items);
       } else {
         setSchedules([]);
+        setFetchError(res.message || "일정을 불러오는데 실패했습니다.");
       }
       setLoading(false);
     };
@@ -218,6 +221,8 @@ export function Calendar() {
         <h3 className={styles.scheduleTitle}>이번 주 일정</h3>
         {loading ? (
           <p className={styles.scheduleLoading}>일정을 불러오는 중...</p>
+        ) : fetchError ? (
+          <p className={styles.scheduleError}>{fetchError}</p>
         ) : schedules.length === 0 ? (
           <p className={styles.scheduleEmpty}>해당 기간 일정이 없습니다.</p>
         ) : (

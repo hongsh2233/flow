@@ -46,10 +46,9 @@ export async function fetchSchedules(
     })
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 500) {
-        return { success: true, data: [], count: 0 }
-      }
-      return { success: false, message: '일정 목록을 불러올 수 없습니다.', data: [] }
+      const errData = await response.json().catch(() => ({}))
+      const msg = errData.detail || errData.message || '일정 목록을 불러올 수 없습니다.'
+      return { success: false, message: msg, data: [] }
     }
 
     const result = await response.json()

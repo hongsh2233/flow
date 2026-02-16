@@ -23,12 +23,16 @@ export async function GET(request: NextRequest) {
     })
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 500) {
-        return NextResponse.json({ success: true, data: [], count: 0 })
-      }
       const errorText = await response.text().catch(() => 'Unknown error')
+      let detail = '일정 목록을 불러올 수 없습니다.'
+      try {
+        const errJson = JSON.parse(errorText)
+        detail = errJson.detail || errJson.message || detail
+      } catch {
+        detail = errorText || detail
+      }
       return NextResponse.json(
-        { success: false, message: '일정 목록을 불러올 수 없습니다.', error: errorText, data: [] },
+        { success: false, message: detail, error: errorText, data: [], count: 0 },
         { status: response.status }
       )
     }
@@ -37,6 +41,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('일정 목록 프록시 오류:', error)
-    return NextResponse.json({ success: true, data: [], count: 0 })
+    const msg = error instanceof Error ? error.message : '네트워크 오류'
+    return NextResponse.json(
+      { success: false, message: `Admin API 연결 실패: ${msg}. localhost:8080에서 Admin 서버가 실행 중인지 확인해주세요.`, data: [], count: 0 },
+      { status: 502 }
+    )
   }
 }
