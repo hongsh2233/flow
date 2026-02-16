@@ -61,12 +61,15 @@ async def add_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
+    type: str = Form("manual"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """일정 추가"""
     if not user:
         return RedirectResponse(url="/", status_code=303)
+    
+    schedule_type = "api" if type == "api" else "manual"
     
     try:
         # 날짜 문자열을 date 객체로 변환
@@ -78,7 +81,7 @@ async def add_schedule(
             subject=subject,
             content=content or "",
             detail=detail or None,
-            type="manual"
+            type=schedule_type
         )
         
         db.add(new_schedule)

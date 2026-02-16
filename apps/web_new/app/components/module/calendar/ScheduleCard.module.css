@@ -75,6 +75,13 @@
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--app-text-secondary);
+  min-height: 2rem;
+}
+
+.detailContent:empty::before {
+  content: "상세 내용이 없습니다.";
+  color: var(--app-text-placeholder);
+  font-style: italic;
 }
 
 .detailContent :global(p) {

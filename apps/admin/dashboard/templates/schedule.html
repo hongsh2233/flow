@@ -92,6 +92,7 @@
     background: rgba(0, 0, 0, 0.5);
     justify-content: center;
     align-items: center;
+    z-index: 1100;
   }
 
   .modal-content {
@@ -224,6 +225,10 @@
   <form action="/admin/schedule/add" method="post" class="add-form">
     <div class="add-form-row">
       <input type="date" name="date" required />
+      <select name="type" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+        <option value="manual">수동</option>
+        <option value="api">공휴일</option>
+      </select>
       <input
         type="text"
         name="subject"
@@ -268,7 +273,7 @@
         <td>
           <span
             class="badge {{ 'badge-api' if s.type == 'api' else 'badge-manual' }}"
-            >{{ 'API' if s.type == 'api' else '수동' }}</span
+            >{{ '공휴일' if s.type == 'api' else '수동' }}</span
           >
         </td>
         <td>

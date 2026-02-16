@@ -65,8 +65,9 @@ export function Calendar() {
           title: s.subject,
           subject: s.subject,
           date: formatDateDisplay(new Date(s.date)),
+          dateIso: s.date,
           content: s.content || undefined,
-          detail: s.detail || undefined,
+          detail: (s.detail && String(s.detail).trim()) ? String(s.detail) : undefined,
         }));
         setSchedules(items);
       } else {
@@ -169,8 +170,13 @@ export function Calendar() {
           <div className={styles.weekGrid}>
             {currentWeek.map((dateInfo) => {
               const dateStr = dateInfo.fullDate.toDateString();
+              const dateIso = dateInfo.fullDate.toISOString().slice(0, 10);
               const isSelected = selectedDate === dateStr;
-              const isHoliday = dateInfo.dayOfWeek === 0 || dateInfo.dayOfWeek === 6;
+              const isWeekend = dateInfo.dayOfWeek === 0 || dateInfo.dayOfWeek === 6;
+              const isPublicHoliday = schedules.some(
+                (s) => s.dateIso === dateIso && s.type === "api"
+              );
+              const isHoliday = isWeekend || isPublicHoliday;
               return (
                 <button
                   key={dateStr}
@@ -200,7 +206,7 @@ export function Calendar() {
           {[
             { value: "all" as FilterType, label: "전체" },
             { value: "manual" as FilterType, label: "수동" },
-            { value: "api" as FilterType, label: "API" },
+            { value: "api" as FilterType, label: "공휴일" },
           ].map((f) => (
             <button
               key={f.value}
