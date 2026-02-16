@@ -205,7 +205,7 @@ export function Calendar() {
         <div className={styles.filterRow}>
           {[
             { value: "all" as FilterType, label: "전체" },
-            { value: "manual" as FilterType, label: "수동" },
+            { value: "manual" as FilterType, label: "일반" },
             { value: "api" as FilterType, label: "공휴일" },
           ].map((f) => (
             <button

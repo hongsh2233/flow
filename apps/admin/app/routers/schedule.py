@@ -55,13 +55,16 @@ async def schedule_page(
     })
 
 
+VALID_SCHEDULE_TYPES = {"api", "earnings", "ipo", "dividend", "news", "etc", "manual"}
+
+
 @router.post("/admin/schedule/add")
 async def add_schedule(
     date: str = Form(...),
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
-    type: str = Form("manual"),
+    schedule_type_param: str = Form("etc"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -69,7 +72,7 @@ async def add_schedule(
     if not user:
         return RedirectResponse(url="/", status_code=303)
     
-    schedule_type = "api" if type == "api" else "manual"
+    schedule_type = schedule_type_param if schedule_type_param in VALID_SCHEDULE_TYPES else "etc"
     
     try:
         # 날짜 문자열을 date 객체로 변환
@@ -129,6 +132,7 @@ async def update_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
+    schedule_type_param: str = Form("etc"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -142,6 +146,8 @@ async def update_schedule(
     if not schedule:
         raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
     
+    schedule_type = schedule_type_param if schedule_type_param in VALID_SCHEDULE_TYPES else schedule.type or "etc"
+    
     try:
         # 날짜 문자열을 date 객체로 변환
         date_obj = date_type.fromisoformat(date)
@@ -151,6 +157,7 @@ async def update_schedule(
         schedule.subject = subject
         schedule.content = content or ""
         schedule.detail = detail or None
+        schedule.type = schedule_type
         
         db.commit()
         db.refresh(schedule)

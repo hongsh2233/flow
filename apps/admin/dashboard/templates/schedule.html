@@ -21,15 +21,12 @@
     font-weight: bold;
   }
 
-  .badge-manual {
-    background: #d1ecf1;
-    color: #0c5460;
-  }
-
-  .badge-api {
-    background: #fff3cd;
-    color: #856404;
-  }
+  .badge-api { background: #fff3cd; color: #856404; }
+  .badge-earnings { background: #cce5ff; color: #004085; }
+  .badge-ipo { background: #d4edda; color: #155724; }
+  .badge-dividend { background: #e2d5f1; color: #5a3d7a; }
+  .badge-news { background: #ffe5d0; color: #8b4513; }
+  .badge-etc, .badge-manual { background: #e2e3e5; color: #383d41; }
 
   .add-form-row {
     display: flex;
@@ -225,8 +222,12 @@
   <form action="/admin/schedule/add" method="post" class="add-form">
     <div class="add-form-row">
       <input type="date" name="date" required />
-      <select name="type" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
-        <option value="manual">수동</option>
+      <select name="schedule_type_param" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+        <option value="earnings">실적발표</option>
+        <option value="ipo">공모청약</option>
+        <option value="dividend">배당</option>
+        <option value="news">소식</option>
+        <option value="etc">기타</option>
         <option value="api">공휴일</option>
       </select>
       <input
@@ -271,10 +272,19 @@
       <tr>
         <td style="font-weight: bold">{{ s.date }}</td>
         <td>
-          <span
-            class="badge {{ 'badge-api' if s.type == 'api' else 'badge-manual' }}"
-            >{{ '공휴일' if s.type == 'api' else '수동' }}</span
-          >
+          {% if s.type == 'api' %}
+          <span class="badge badge-api">공휴일</span>
+          {% elif s.type == 'earnings' %}
+          <span class="badge badge-earnings">실적발표</span>
+          {% elif s.type == 'ipo' %}
+          <span class="badge badge-ipo">공모청약</span>
+          {% elif s.type == 'dividend' %}
+          <span class="badge badge-dividend">배당</span>
+          {% elif s.type == 'news' %}
+          <span class="badge badge-news">소식</span>
+          {% else %}
+          <span class="badge badge-etc">기타</span>
+          {% endif %}
         </td>
         <td>
           <div class="schedule-title-cell">
@@ -292,6 +302,7 @@
             class="btn-edit-schedule"
             data-id="{{ s.id }}"
             data-date="{{ s.date }}"
+            data-type="{{ s.type or 'etc' }}"
             data-subject="{{ (s.subject or '')|e }}"
             data-content="{{ (s.content or '')|e }}"
             style="
@@ -326,6 +337,15 @@
       <input type="hidden" name="sch_id" id="edit_id" />
       <label>날짜</label>
       <input type="date" name="date" id="edit_date" required />
+      <label>구분</label>
+      <select name="schedule_type_param" id="edit_type" style="width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box;">
+        <option value="earnings">실적발표</option>
+        <option value="ipo">공모청약</option>
+        <option value="dividend">배당</option>
+        <option value="news">소식</option>
+        <option value="etc">기타</option>
+        <option value="api">공휴일</option>
+      </select>
       <label>제목</label>
       <input type="text" name="subject" id="edit_subject" required />
       <label>요약 내용</label>
@@ -453,6 +473,7 @@
         openEditModal(
           id,
           btn.getAttribute('data-date'),
+          btn.getAttribute('data-type') || 'etc',
           btn.getAttribute('data-subject') || '',
           btn.getAttribute('data-content') || '',
           detail
@@ -471,9 +492,10 @@
     });
   });
 
-  function openEditModal(id, date, subject, content, detail) {
+  function openEditModal(id, date, type, subject, content, detail) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_date").value = date;
+    document.getElementById("edit_type").value = type || 'etc';
     document.getElementById("edit_subject").value = subject;
     document.getElementById("edit_content").value = content;
     quillEdit.root.innerHTML = detail || '';
