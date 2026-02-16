@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
 import { AllNews } from "./AllNews";
 import { FavoriteNews } from "./FavoriteNews";
 import styles from "./News.module.css";
