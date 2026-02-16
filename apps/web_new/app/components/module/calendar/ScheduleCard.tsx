@@ -80,12 +80,19 @@ function NotifyButton() {
 
 /** HTML 내 /uploads/ 상대경로를 API 서버 절대경로로 변환 */
 function rewriteDetailUrls(html: string): string {
-  if (!html) return html;
+  if (!html || typeof html !== "string") return "";
   const base = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
   return html.replace(
     /(src|href)=(["'])(\/uploads\/[^"']*)/g,
     (_m, attr, quote, path) => `${attr}=${quote}${base}${path}`
   );
+}
+
+/** HTML 태그 제거 후 텍스트가 비어있는지 확인 */
+function isEmptyHtml(html: string): boolean {
+  if (!html) return true;
+  const stripped = html.replace(/<[^>]*>/g, "").replace(/\s/g, "");
+  return stripped.length === 0;
 }
 
 export interface ScheduleCardProps {
@@ -94,7 +101,8 @@ export interface ScheduleCardProps {
 
 export function ScheduleCard({ schedule }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const hasDetail = !!(schedule.detail && schedule.detail.trim());
+  const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
+  const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
   const displayTitle = schedule.title || schedule.subject || "";
 
   return (
@@ -143,12 +151,18 @@ export function ScheduleCard({ schedule }: ScheduleCardProps) {
         onClose={() => setDetailOpen(false)}
         title={displayTitle}
       >
-        <div
-          className={styles.detailContent}
-          dangerouslySetInnerHTML={{
-            __html: rewriteDetailUrls(schedule.detail || ""),
-          }}
-        />
+        <div className={styles.detailContentWrap}>
+          {hasDetail ? (
+            <div
+              className={styles.detailContent}
+              dangerouslySetInnerHTML={{
+                __html: rewriteDetailUrls(rawDetail),
+              }}
+            />
+          ) : (
+            <p className={styles.detailEmpty}>상세 내용이 없습니다.</p>
+          )}
+        </div>
       </BottomSheet>
     </>
   );

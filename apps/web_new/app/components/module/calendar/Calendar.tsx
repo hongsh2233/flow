@@ -67,7 +67,7 @@ export function Calendar() {
           date: formatDateDisplay(new Date(s.date)),
           dateIso: s.date,
           content: s.content || undefined,
-          detail: (s.detail && String(s.detail).trim()) ? String(s.detail) : undefined,
+          detail: s.detail != null && s.detail !== "" ? String(s.detail) : undefined,
         }));
         setSchedules(items);
       } else {

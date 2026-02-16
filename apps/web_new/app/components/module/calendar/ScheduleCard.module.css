@@ -71,17 +71,24 @@
   height: 1rem;
 }
 
+.detailContentWrap {
+  min-height: 3rem;
+}
+
 .detailContent {
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--app-text-secondary);
-  min-height: 2rem;
 }
 
-.detailContent:empty::before {
-  content: "상세 내용이 없습니다.";
+.detailContent p:first-child {
+  margin-top: 0;
+}
+
+.detailEmpty {
   color: var(--app-text-placeholder);
   font-style: italic;
+  margin: 0;
 }
 
 .detailContent :global(p) {
