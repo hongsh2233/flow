@@ -140,7 +140,7 @@ const handler = NextAuth({
         session.user.email = token.email as string
         session.user.name = (token.nickname ?? token.name) as string
         session.user.image = (token.profileImage ?? token.picture) as string
-        if (token.isNewUser !== undefined) {
+        if (typeof token.isNewUser === 'boolean') {
           ;(session.user as { isNewUser?: boolean }).isNewUser = token.isNewUser
         }
         if (token.lastLoginProvider) {

@@ -13,7 +13,9 @@ export default function ReportPage() {
   useEffect(() => {
     fetchBoards().then((res) => {
       if (res.success && res.data) {
-        setBoards(res.data);
+        // 시황 탭에서는 주린이 알림(B003) 게시판 제외
+        const filtered = res.data.filter((b) => b.id !== "B003");
+        setBoards(filtered);
       }
     });
   }, []);
