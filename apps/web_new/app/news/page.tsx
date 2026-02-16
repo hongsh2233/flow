@@ -1,28 +1,29 @@
-import type { Metadata } from "next";
-import styles from "./News.module.css";
-import NewsList from "../components/module/NewsList";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+"use client";
 
-export const metadata: Metadata = {
-  title: '뉴스 | 주리니',
-  description: '주식·경제 뉴스를 확인하세요.',
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { News } from "../components/module/news/News";
+
+function NewsContent() {
+  const searchParams = useSearchParams();
+  const { status } = useSession();
+  const tab = searchParams.get("tab") || "all";
+
+  return (
+    <News
+      initialTab={tab === "favorite" ? "favorite" : "all"}
+      isLoggedIn={status === "authenticated"}
+    />
+  );
 }
 
 export default function NewsPage() {
   return (
-    <main className={styles.wrap}>
-      <Tabs defaultValue="news">
-        <TabsList>
-          <TabsTrigger value="news">뉴스</TabsTrigger>
-          <TabsTrigger value="favorite">관심뉴스</TabsTrigger>
-        </TabsList>
-        <TabsContent value="news">          
-          <NewsList />
-        </TabsContent>
-        <TabsContent value="favorite">
-          <NewsList />
-        </TabsContent>
-      </Tabs>
-    </main>
-  )
+    <div className="content__wrap">
+      <Suspense fallback={<div style={{ padding: "2rem", textAlign: "center" }}>로딩 중...</div>}>
+        <NewsContent />
+      </Suspense>
+    </div>
+  );
 }

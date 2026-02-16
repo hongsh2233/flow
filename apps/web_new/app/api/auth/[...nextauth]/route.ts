@@ -12,7 +12,7 @@ const API_SECRET_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
 // 개발 환경에서 NEXTAUTH_SECRET 미설정 시 기본값 사용 (배포 시 반드시 .env에 설정)
 const secret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-secret-change-in-production' : undefined)
 
-const handler = NextAuth({
+export const authOptions = {
   secret,
   trustHost: true,
   debug: process.env.NODE_ENV === 'development',
@@ -150,7 +150,9 @@ const handler = NextAuth({
       return session
     },
   },
-} as AuthOptions)
+} as AuthOptions
+
+const handler = NextAuth(authOptions)
 
 export const GET = handler
 export const POST = handler
