@@ -222,6 +222,14 @@
   text-align: center;
 }
 
+.scheduleError {
+  font-size: 0.9375rem;
+  color: var(--app-up, #dc2626);
+  padding: 1.5rem 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
 .scheduleList {
   display: flex;
   flex-direction: column;
