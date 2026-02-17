@@ -1,5 +1,13 @@
 import type { WeekDateInfo } from "@/lib/types";
 
+/** Date를 로컬(한국) 시간 기준 YYYY-MM-DD로 변환 (toISOString은 UTC라 공휴일 매칭 오류 발생) */
+export function toIsoDateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 /** 특정 날짜가 속한 주의 일요일을 반환합니다. */
 function getSunday(d: Date): Date {
   const date = new Date(d);

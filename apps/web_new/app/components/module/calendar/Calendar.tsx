@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import type { ScheduleItem } from "@/lib/types";
-import { getWeeksRange } from "@/lib/utils/calendar";
+import { getWeeksRange, toIsoDateLocal } from "@/lib/utils/calendar";
 import { fetchSchedules } from "@/lib/services/scheduleService";
 import { ScheduleCard } from "./ScheduleCard";
 import styles from "./Calendar.module.css";
@@ -64,8 +64,8 @@ export function Calendar() {
     const load = async () => {
       setLoading(true);
       setFetchError(null);
-      const start = startDate.toISOString().slice(0, 10);
-      const end = endDate.toISOString().slice(0, 10);
+      const start = toIsoDateLocal(startDate);
+      const end = toIsoDateLocal(endDate);
       const typeFilter = filter === "all" ? undefined : (filter as string);
       const res = await fetchSchedules(start, end, typeFilter);
       if (res.success && res.data) {
@@ -180,7 +180,7 @@ export function Calendar() {
           <div className={styles.weekGrid}>
             {currentWeek.map((dateInfo) => {
               const dateStr = dateInfo.fullDate.toDateString();
-              const dateIso = dateInfo.fullDate.toISOString().slice(0, 10);
+              const dateIso = toIsoDateLocal(dateInfo.fullDate);
               const isSelected = selectedDate === dateStr;
               const isWeekend = dateInfo.dayOfWeek === 0 || dateInfo.dayOfWeek === 6;
               const isPublicHoliday = schedules.some(
