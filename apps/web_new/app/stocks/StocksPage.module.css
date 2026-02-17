@@ -31,7 +31,7 @@
 /* Tabs */
 .tabList {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   width: 100%;
   gap: 0.25rem;
   margin-bottom: 1rem;
@@ -99,6 +99,58 @@
   color: var(--app-text-muted);
   text-align: center;
   padding: 2rem 0;
+}
+
+/* Search result section */
+.searchQueryInfo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  margin-bottom: 1rem;
+}
+
+.searchSection {
+  margin-bottom: 1.5rem;
+}
+
+.searchSectionTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--app-text);
+}
+
+.searchTableWrap {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border-light);
+}
+
+.searchTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.searchTable th,
+.searchTable td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--app-border-light);
+}
+
+.searchTable th {
+  font-weight: 600;
+  color: var(--app-text-muted);
+  background: var(--app-bg-secondary);
+}
+
+.searchTable td {
+  color: var(--app-text);
+}
+
+.searchTable tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* Toast */
