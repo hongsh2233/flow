@@ -72,6 +72,18 @@
 }
 
 .subTabActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: color 0.2s, box-shadow 0.2s;
+  height: 2.25rem;
   background: var(--app-accent);
   color: #fff;
   box-shadow: var(--app-card-shadow);
@@ -87,6 +99,43 @@
   color: var(--app-text-muted);
   text-align: center;
   padding: 2rem 0;
+}
+
+/* Toast */
+.toastSuccess,
+.toastError {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--app-card-shadow);
+  z-index: 100;
+  animation: toastIn 0.25s ease-out;
+}
+
+.toastSuccess {
+  background: var(--app-accent);
+  color: #fff;
+}
+
+.toastError {
+  background: var(--app-tag-red);
+  color: #fff;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* Card list */

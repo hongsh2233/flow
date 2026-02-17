@@ -51,12 +51,26 @@ export default function StocksPage() {
     window.dispatchEvent(new Event("favoritesUpdated"));
   }, []);
 
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const handleAddFavorite = useCallback(
     async (stock: StockDetail) => {
-      if (!session?.user?.email) return;
+      if (!session?.user?.email) {
+        setToast({ message: "로그인 후 이용해 주세요.", type: "error" });
+        return;
+      }
       const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
       if (res.success) {
         refreshFavorites();
+        setToast({ message: res.message || "관심종목에 추가되었습니다.", type: "success" });
+      } else {
+        setToast({ message: res.message || "추가에 실패했습니다.", type: "error" });
       }
     },
     [session?.user?.email, refreshFavorites]
@@ -69,6 +83,9 @@ export default function StocksPage() {
       const res = await removeFavoriteStock({ email: session.user.email, stock_code: code });
       if (res.success) {
         refreshFavorites();
+        setToast({ message: "관심종목에서 해제되었습니다.", type: "success" });
+      } else {
+        setToast({ message: res.message || "해제에 실패했습니다.", type: "error" });
       }
     },
     [session?.user?.email, refreshFavorites]
@@ -459,6 +476,15 @@ export default function StocksPage() {
           onClose={handleClose}
           onAddFavorite={handleAddFavorite}
         />
+      )}
+
+      {toast && (
+        <div
+          className={toast.type === "success" ? styles.toastSuccess : styles.toastError}
+          role="alert"
+        >
+          {toast.message}
+        </div>
       )}
     </div>
   );
