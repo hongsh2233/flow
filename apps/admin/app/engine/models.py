@@ -60,6 +60,9 @@ __all__ = [
     "YahooIndexSnapshot",
     "YahooIndexDaily",
     "StockTerm",
+    "FaqCategory",
+    "FaqItem",
+    "LegalDocument",
 ]
 
 
@@ -342,4 +345,37 @@ class StockTerm(Base):
     description = Column(Text, nullable=False)
     category = Column(String(50), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class FaqCategory(Base):
+    """FAQ 카테고리 (예: 계정, 주식 정보)"""
+    __tablename__ = "faq_categories"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(100), nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    items = relationship("FaqItem", back_populates="category", cascade="all, delete-orphan", order_by="FaqItem.order_index")
+
+
+class FaqItem(Base):
+    """FAQ 항목 (질문/답변)"""
+    __tablename__ = "faq_items"
+    id = Column(Integer, primary_key=True, index=True)
+    category_id = Column(Integer, ForeignKey("faq_categories.id", ondelete="CASCADE"), nullable=False, index=True)
+    question = Column(String(500), nullable=False)
+    answer = Column(Text, nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    category = relationship("FaqCategory", back_populates="items")
+
+
+class LegalDocument(Base):
+    """법적 문서 (개인정보처리방침, 이용약관)"""
+    __tablename__ = "legal_documents"
+    id = Column(Integer, primary_key=True, index=True)
+    doc_type = Column(String(30), nullable=False, unique=True, index=True)  # 'privacy' | 'terms'
+    content = Column(Text, nullable=False, default="")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

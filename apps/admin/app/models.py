@@ -25,6 +25,9 @@ from app.engine.models import (
     YahooIndexSnapshot,
     YahooIndexDaily,
     StockTerm,
+    FaqCategory,
+    FaqItem,
+    LegalDocument,
 )
 
 __all__ = [
@@ -32,4 +35,5 @@ __all__ = [
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
+    "FaqCategory", "FaqItem", "LegalDocument",
 ]

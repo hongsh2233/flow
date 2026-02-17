@@ -26,7 +26,7 @@ from app.config import ADMIN_EMAIL, ADMIN_PW
 from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api
+from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms
 try:
     from app.routers import profile
 except ImportError as e:
@@ -282,6 +282,15 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 게시판 카테고리 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.init_faq_and_legal import run_migration as init_faq_legal_migration
+        from app.database import SessionLocal
+        db = SessionLocal()
+        init_faq_legal_migration(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ FAQ 및 약관 초기 데이터 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
@@ -372,3 +381,5 @@ if profile:
     app.include_router(profile.router)   # 프로필 설정 관리 (캐릭터, 주식 단어)
 if stock_terms:
     app.include_router(stock_terms.router)  # 주식용어 관리
+app.include_router(faq.router)          # FAQ 관리
+app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)

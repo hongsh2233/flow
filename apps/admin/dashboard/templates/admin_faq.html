@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}FAQ 관리 - Jurin-i BO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>❓ FAQ 관리</h1>
+  <p class="page-desc">설정 &gt; 지원 &gt; 자주하는 질문에 표시되는 FAQ를 관리합니다. 카테고리별로 질문/답변을 등록하세요.</p>
+</div>
+
+<!-- 카테고리 추가 -->
+<div class="card" style="margin-bottom: 1.5rem;">
+  <h3 style="margin-top: 0;">📁 카테고리 추가</h3>
+  <form method="post" action="/admin/faq/category/add" class="form-inline">
+    <input type="text" name="title" placeholder="카테고리명 (예: 계정, 주식 정보)" required style="padding: 0.5rem 0.75rem; margin-right: 0.5rem; min-width: 200px;" />
+    <button type="submit" class="btn btn-primary">카테고리 추가</button>
+  </form>
+</div>
+
+<!-- 카테고리별 FAQ 목록 -->
+{% for cat in categories %}
+<div class="card" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h3 style="margin: 0;">{{ cat.title }}</h3>
+    <a href="/admin/faq/category/{{ cat.id }}/delete" class="btn btn-secondary btn-sm" onclick="return confirm('이 카테고리와 모든 FAQ를 삭제하시겠습니까?');">카테고리 삭제</a>
+  </div>
+
+  <!-- FAQ 항목 추가 폼 -->
+  <form method="post" action="/admin/faq/item/add" style="margin-bottom: 1rem; padding: 1rem; background: var(--color-gray-50); border-radius: var(--radius-md);">
+    <input type="hidden" name="category_id" value="{{ cat.id }}" />
+    <div style="margin-bottom: 0.5rem;">
+      <input type="text" name="question" placeholder="질문" required style="width: 100%; padding: 0.5rem 0.75rem; box-sizing: border-box;" />
+    </div>
+    <div style="margin-bottom: 0.5rem;">
+      <textarea name="answer" placeholder="답변" required rows="3" style="width: 100%; padding: 0.5rem 0.75rem; box-sizing: border-box; resize: vertical;"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">FAQ 추가</button>
+  </form>
+
+  <!-- FAQ 항목 목록 -->
+  <div class="faq-list">
+    {% for item in cat.items %}
+    <div class="faq-item-row" style="border: 1px solid var(--color-gray-200); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 0.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div style="flex: 1;">
+          <strong style="color: var(--color-gray-800);">{{ item.question }}</strong>
+          <p style="margin: 0.5rem 0 0; color: var(--color-gray-600); font-size: 0.9rem;">{{ item.answer }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit({{ item.id }})">수정</button>
+          <a href="/admin/faq/item/{{ item.id }}/delete" class="btn btn-secondary btn-sm" onclick="return confirm('이 FAQ를 삭제하시겠습니까?');">삭제</a>
+        </div>
+      </div>
+      <!-- 수정 폼 (숨김) -->
+      <form id="edit-form-{{ item.id }}" method="post" action="/admin/faq/item/{{ item.id }}/edit" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-gray-200);">
+        <div style="margin-bottom: 0.5rem;">
+          <input type="text" name="question" value="{{ item.question }}" required style="width: 100%; padding: 0.5rem 0.75rem; box-sizing: border-box;" />
+        </div>
+        <div style="margin-bottom: 0.5rem;">
+          <textarea name="answer" required rows="3" style="width: 100%; padding: 0.5rem 0.75rem; box-sizing: border-box; resize: vertical;">{{ item.answer }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">저장</button>
+        <button type="button" class="btn btn-secondary" onclick="toggleEdit({{ item.id }})">취소</button>
+      </form>
+    </div>
+    {% else %}
+    <p style="color: var(--color-gray-500); margin: 0;">등록된 FAQ가 없습니다. 위 폼에서 추가하세요.</p>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <p>카테고리를 먼저 추가해주세요.</p>
+</div>
+{% endfor %}
+
+<script>
+function toggleEdit(id) {
+  var form = document.getElementById('edit-form-' + id);
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+  } else {
+    form.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

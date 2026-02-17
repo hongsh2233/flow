@@ -29,6 +29,23 @@ export default function TermsModal({
   const [activeTab, setActiveTab] = useState<TermsTab>(initialTab);
   const [privacyRead, setPrivacyRead] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
+  const [privacyContent, setPrivacyContent] = useState(PRIVACY_POLICY);
+  const [termsContent, setTermsContent] = useState(TERMS_OF_SERVICE);
+
+  useEffect(() => {
+    fetch("/api/legal-documents/privacy")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.content) setPrivacyContent(json.content);
+      })
+      .catch(() => {});
+    fetch("/api/legal-documents/terms")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.content) setTermsContent(json.content);
+      })
+      .catch(() => {});
+  }, []);
 
   // 열릴 때마다 initialTab으로 리셋
   useEffect(() => {
@@ -96,7 +113,7 @@ export default function TermsModal({
 
         <div className={styles.content} onScroll={handleScroll}>
           <pre className={styles.contentText}>
-            {activeTab === "privacy" ? PRIVACY_POLICY : TERMS_OF_SERVICE}
+            {activeTab === "privacy" ? privacyContent : termsContent}
           </pre>
         </div>
 
