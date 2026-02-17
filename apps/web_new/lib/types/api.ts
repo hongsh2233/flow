@@ -1,16 +1,7 @@
 /**
  * API 타입 정의
+ * ApiResponse는 board.ts에서 export
  */
-
-/**
- * API 응답 기본 구조
- */
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  error?: string;
-}
 
 /**
  * FSC 주가 데이터 타입 (BO fsc-stock-price 응답)

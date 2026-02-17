@@ -3,7 +3,8 @@
  * BO fsc-stock-price API 프록시
  */
 
-import type { ApiResponse, FscStockPrice } from "@/lib/types/api";
+import type { ApiResponse } from "@/lib/types/board";
+import type { FscStockPrice } from "@/lib/types/api";
 
 export interface FetchFscStockPriceParams {
   limit?: number;

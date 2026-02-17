@@ -3,7 +3,8 @@
  * 관심종목 조회 - /api/auth/favorites 경유
  */
 
-import type { ApiResponse, FavoriteStockResponse } from "@/lib/types/api";
+import type { ApiResponse } from "@/lib/types/board";
+import type { FavoriteStockResponse } from "@/lib/types/api";
 
 /**
  * 관심종목 조회 (세션 기반, 클라이언트에서 fetch)
