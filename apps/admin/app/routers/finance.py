@@ -357,40 +357,36 @@ async def get_naver_ranking_data(
         market_type = 'all'
     
     # 쿼리 구성
-    query = db.query(NaverStockRanking).filter(
+    base_filter = [
         NaverStockRanking.ranking_type == ranking_type,
         NaverStockRanking.market_type == market_type,
-    )
+    ]
+    query = db.query(NaverStockRanking).filter(*base_filter)
     
-    # 수집 시간대 필터
+    # 수집 시간대 필터 (지정된 경우)
     if collected_time:
         query = query.filter(NaverStockRanking.collected_time == collected_time)
     
-    # 최신 데이터 조회 (수집 시간대가 지정되지 않은 경우)
-    if not collected_time:
-        # 가장 최근 수집 시간대 찾기
-        latest_time = db.query(func.max(NaverStockRanking.collected_time)).filter(
-            NaverStockRanking.ranking_type == ranking_type,
-            NaverStockRanking.market_type == market_type,
-        ).scalar()
-        
-        if latest_time:
-            query = query.filter(NaverStockRanking.collected_time == latest_time)
-    
-    # 최신 수집 일시 기준으로 정렬
-    latest_date = db.query(func.max(NaverStockRanking.collected_at)).filter(
-        NaverStockRanking.ranking_type == ranking_type,
-        NaverStockRanking.market_type == market_type,
-    ).scalar()
+    # 최신 수집 일시 기준 조회 (collected_at이 배치 식별자, max(collected_time) 문자열 비교 버그 회피)
+    latest_date_filter = base_filter.copy()
+    if collected_time:
+        latest_date_filter.append(NaverStockRanking.collected_time == collected_time)
+    latest_date = db.query(func.max(NaverStockRanking.collected_at)).filter(*latest_date_filter).scalar()
     
     if latest_date:
         query = query.filter(NaverStockRanking.collected_at == latest_date)
+    
+    latest_time = None
     
     # 순위로 정렬
     query = query.order_by(NaverStockRanking.rank)
     
     # 제한
     rankings = query.limit(limit).all()
+    
+    # 응답용 collected_time (첫 행에서 추출)
+    if rankings and not collected_time:
+        latest_time = rankings[0].collected_time
     
     # 결과 변환
     results = []

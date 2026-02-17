@@ -1241,32 +1241,22 @@ async def get_naver_stock_ranking(
         if ranking_type == 'search' and market_type != 'all':
             market_type = 'all'
         
-        # 쿼리 구성
-        query = db.query(models.NaverStockRanking).filter(
+        # 쿼리 구성 (collected_at이 배치 식별자, max(collected_time) 문자열 비교 버그 회피)
+        base_filter = [
             models.NaverStockRanking.ranking_type == ranking_type,
             models.NaverStockRanking.market_type == market_type,
-        )
+        ]
+        query = db.query(models.NaverStockRanking).filter(*base_filter)
         
-        # 수집 시간대 필터
+        # 수집 시간대 필터 (지정된 경우)
         if collected_time:
             query = query.filter(models.NaverStockRanking.collected_time == collected_time)
         
-        # 최신 데이터 조회 (수집 시간대가 지정되지 않은 경우)
-        if not collected_time:
-            # 가장 최근 수집 시간대 찾기
-            latest_time = db.query(func.max(models.NaverStockRanking.collected_time)).filter(
-                models.NaverStockRanking.ranking_type == ranking_type,
-                models.NaverStockRanking.market_type == market_type,
-            ).scalar()
-            
-            if latest_time:
-                query = query.filter(models.NaverStockRanking.collected_time == latest_time)
-        
-        # 최신 수집 일시 기준으로 정렬
-        latest_date = db.query(func.max(models.NaverStockRanking.collected_at)).filter(
-            models.NaverStockRanking.ranking_type == ranking_type,
-            models.NaverStockRanking.market_type == market_type,
-        ).scalar()
+        # 최신 수집 일시 기준 조회
+        latest_date_filter = list(base_filter)
+        if collected_time:
+            latest_date_filter.append(models.NaverStockRanking.collected_time == collected_time)
+        latest_date = db.query(func.max(models.NaverStockRanking.collected_at)).filter(*latest_date_filter).scalar()
         
         if latest_date:
             query = query.filter(models.NaverStockRanking.collected_at == latest_date)
@@ -1276,6 +1266,10 @@ async def get_naver_stock_ranking(
         
         # 제한
         rankings = query.limit(limit).all()
+        
+        latest_time = None
+        if rankings and not collected_time:
+            latest_time = rankings[0].collected_time
         
         # 결과 변환
         results = []
