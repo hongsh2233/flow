@@ -42,15 +42,16 @@ export async function GET(request: NextRequest) {
     }
 
     // image_url을 절대 URL로 변환
-    const mapItem = (item: { image_url?: string | null; [key: string]: unknown }) => ({
+    type BannerItem = { image_url?: string | null; [key: string]: unknown };
+    const mapItem = (item: BannerItem) => ({
       ...item,
       image_url: item.image_url ? getImageUrl(item.image_url as string) : null,
     });
 
-    const singles = (data.data.singles ?? []).map(mapItem);
-    const slides = (data.data.slides ?? []).map((s: { items: unknown[] }) => ({
+    const singles = (data.data.singles ?? []).map((i: unknown) => mapItem(i as BannerItem));
+    const slides = (data.data.slides ?? []).map((s: { items?: unknown[]; [key: string]: unknown }) => ({
       ...s,
-      items: (s.items ?? []).map(mapItem),
+      items: (s.items ?? []).map((i: unknown) => mapItem(i as BannerItem)),
     }));
 
     return NextResponse.json({
