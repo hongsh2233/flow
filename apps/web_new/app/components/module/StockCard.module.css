@@ -77,11 +77,17 @@
 .changeIcon {
   width: 0.75rem;
   height: 0.75rem;
+}
+
+.changeUp {
   color: var(--app-up);
+}
+
+.changeDown {
+  color: var(--app-down);
 }
 
 .changeText {
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--app-up);
 }

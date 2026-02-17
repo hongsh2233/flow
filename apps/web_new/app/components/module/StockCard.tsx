@@ -1,15 +1,18 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import type { StockCardProps } from "@/lib/types";
 import styles from "./StockCard.module.css";
 
 export function StockCard({ stocks, onSelect }: StockCardProps) {
     return (
         <div className={styles.list}>
-        {stocks.map((stock) => (
+        {stocks.map((stock) => {
+            const change = typeof stock.change === "string" ? parseFloat(stock.change) || 0 : stock.change;
+            const isPositive = change >= 0;
+            return (
             <button
-            key={stock.rank}
+            key={`${stock.code}-${stock.rank}`}
             type="button"
             onClick={() => onSelect(stock)}
             className={styles.card}
@@ -25,13 +28,20 @@ export function StockCard({ stocks, onSelect }: StockCardProps) {
                 <div className={styles.priceArea}>
                 <p className={styles.price}>{stock.price.toLocaleString()}</p>
                 <div className={styles.changeRow}>
-                    <TrendingUp className={styles.changeIcon} aria-hidden />
-                    <p className={styles.changeText}>+{stock.change}%</p>
+                    {isPositive ? (
+                    <TrendingUp className={`${styles.changeIcon} ${styles.changeUp}`} aria-hidden />
+                    ) : (
+                    <TrendingDown className={`${styles.changeIcon} ${styles.changeDown}`} aria-hidden />
+                    )}
+                    <p className={isPositive ? `${styles.changeText} ${styles.changeUp}` : `${styles.changeText} ${styles.changeDown}`}>
+                    {isPositive ? "+" : ""}{change}%
+                    </p>
                 </div>
                 </div>
             </div>
             </button>
-        ))}
+            );
+        })}
         </div>
     )
 }

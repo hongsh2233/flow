@@ -7,17 +7,15 @@ import {
   BarChart3,
   Building2,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Search } from "../components/module/Search";
 import { StockCard } from "../components/module/StockCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import type { StockDetail } from "@/lib/types";
+import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
 import {
   kospiSectors,
   kosdaqSectors,
-  marketCapStocks,
-  risingStocks,
   favoriteStocksPage as favorite,
 } from "@/lib/data/stocks";
 import styles from "./StocksPage.module.css";
@@ -27,16 +25,109 @@ const LazyStockDetailModal = dynamic(
   { ssr: false }
 );
 
+function formatMarketCap(value: string | number | undefined): string {
+  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) || 0 : Number(value) || 0;
+  if (num >= 1e12) return `${Math.floor(num / 1e12)}조`;
+  if (num >= 1e8) return `${Math.floor(num / 1e8)}억`;
+  return num >= 0 ? num.toLocaleString() : "-";
+}
+
 function toStockDetail(s: { name: string; code: string; price: number; change: number | string; marketCap?: string }): StockDetail {
   const change = typeof s.change === "string" ? parseFloat(s.change) || 0 : s.change;
   return { name: s.name, code: s.code, price: s.price, change, marketCap: s.marketCap };
 }
+
+type MarketType = "KOSPI" | "KOSDAQ";
 
 export default function StocksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("favorite");
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const handleClose = useCallback(() => setSelectedStock(null), []);
+
+  const [marketCapTab, setMarketCapTab] = useState<MarketType>("KOSPI");
+  const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
+  const [marketCapKospi, setMarketCapKospi] = useState<MarketCapStock[]>([]);
+  const [marketCapKosdaq, setMarketCapKosdaq] = useState<MarketCapStock[]>([]);
+  const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
+  const [marketCapLoading, setMarketCapLoading] = useState(false);
+  const [risingLoading, setRisingLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== "marketcap") return;
+    const load = async () => {
+      setMarketCapLoading(true);
+      try {
+        const [kospiRes, kosdaqRes] = await Promise.all([
+          fetch("/api/fsc-stock-price?limit=50&mrkt_ctg=KOSPI&order_by=mrkt_tot_amt&order_direction=desc"),
+          fetch("/api/fsc-stock-price?limit=50&mrkt_ctg=KOSDAQ&order_by=mrkt_tot_amt&order_direction=desc"),
+        ]);
+        const kospiData = (await kospiRes.json()).data ?? [];
+        const kosdaqData = (await kosdaqRes.json()).data ?? [];
+        setMarketCapKospi(kospiData.map((r: { srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string; mrkt_tot_amt?: string }, i: number) => ({
+          rank: i + 1,
+          name: r.itms_nm ?? "",
+          code: r.srtn_cd ?? "",
+          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
+          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
+          marketCap: formatMarketCap(r.mrkt_tot_amt),
+        })));
+        setMarketCapKosdaq(kosdaqData.map((r: { srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string; mrkt_tot_amt?: string }, i: number) => ({
+          rank: i + 1,
+          name: r.itms_nm ?? "",
+          code: r.srtn_cd ?? "",
+          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
+          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
+          marketCap: formatMarketCap(r.mrkt_tot_amt),
+        })));
+      } catch {
+        setMarketCapKospi([]);
+        setMarketCapKosdaq([]);
+      } finally {
+        setMarketCapLoading(false);
+      }
+    };
+    load();
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "rising") return;
+    const load = async () => {
+      setRisingLoading(true);
+      try {
+        const [kospiRes, kosdaqRes] = await Promise.all([
+          fetch("/api/fsc-rising-stocks?limit=50&mrkt_ctg=KOSPI"),
+          fetch("/api/fsc-rising-stocks?limit=50&mrkt_ctg=KOSDAQ"),
+        ]);
+        const kospiData = (await kospiRes.json()).data ?? [];
+        const kosdaqData = (await kosdaqRes.json()).data ?? [];
+        setRisingKospi(kospiData.map((r: { rank?: number; srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string }) => ({
+          rank: r.rank ?? 0,
+          name: r.itms_nm ?? "",
+          code: r.srtn_cd ?? "",
+          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
+          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
+        })));
+        setRisingKosdaq(kosdaqData.map((r: { rank?: number; srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string }) => ({
+          rank: r.rank ?? 0,
+          name: r.itms_nm ?? "",
+          code: r.srtn_cd ?? "",
+          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
+          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
+        })));
+      } catch {
+        setRisingKospi([]);
+        setRisingKosdaq([]);
+      } finally {
+        setRisingLoading(false);
+      }
+    };
+    load();
+  }, [activeTab]);
+
+  const marketCapStocks = marketCapTab === "KOSPI" ? marketCapKospi : marketCapKosdaq;
+  const risingStocks = risingTab === "KOSPI" ? risingKospi : risingKosdaq;
 
   return (
     <div className={styles.page}>
@@ -156,12 +247,31 @@ export default function StocksPage() {
 
         {/* 시가총액 */}
         <TabsContent value="marketcap" className={styles.tabContent}>
+          <div className={styles.subTabList}>
+            <button
+              type="button"
+              className={marketCapTab === "KOSPI" ? styles.subTabActive : styles.subTab}
+              onClick={() => setMarketCapTab("KOSPI")}
+            >
+              코스피
+            </button>
+            <button
+              type="button"
+              className={marketCapTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
+              onClick={() => setMarketCapTab("KOSDAQ")}
+            >
+              코스닥
+            </button>
+          </div>
+          {marketCapLoading ? (
+            <p className={styles.loadingText}>로딩 중...</p>
+          ) : (
           <div className={styles.cardList}>
             {marketCapStocks.map((stock) => {
               const isPositive = stock.change >= 0;
               return (
                 <button
-                  key={stock.rank}
+                  key={`${stock.code}-${stock.rank}`}
                   type="button"
                   onClick={() => setSelectedStock(toStockDetail(stock))}
                   className={styles.marketCapCard}
@@ -190,14 +300,35 @@ export default function StocksPage() {
               );
             })}
           </div>
+          )}
         </TabsContent>
 
         {/* 상승종목 */}
         <TabsContent value="rising" className={styles.tabContent}>
+          <div className={styles.subTabList}>
+            <button
+              type="button"
+              className={risingTab === "KOSPI" ? styles.subTabActive : styles.subTab}
+              onClick={() => setRisingTab("KOSPI")}
+            >
+              코스피
+            </button>
+            <button
+              type="button"
+              className={risingTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
+              onClick={() => setRisingTab("KOSDAQ")}
+            >
+              코스닥
+            </button>
+          </div>
+          {risingLoading ? (
+            <p className={styles.loadingText}>로딩 중...</p>
+          ) : (
           <StockCard
             stocks={risingStocks}
             onSelect={(s) => setSelectedStock(toStockDetail(s))}
           />
+          )}
         </TabsContent>
       </Tabs>
 

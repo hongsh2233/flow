@@ -289,6 +289,49 @@ async def get_fsc_stock_price(
     }
 
 
+@router.get("/api/fsc-rising-stocks")
+async def get_fsc_rising_stocks(
+    bas_dt: Optional[str] = Query(None, description="기준일자 (YYYYMMDD). None이면 최신 데이터"),
+    limit: int = Query(100, ge=1, le=500),
+    mrkt_ctg: Optional[str] = Query(None, description="시장구분 (KOSPI, KOSDAQ)"),
+    order_by: Optional[str] = Query("flt_rt"),
+    order_direction: Optional[str] = Query("desc"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    금융위원회 상승종목 조회 (FscRisingStock 테이블)
+    """
+    query = db.query(models.FscRisingStock)
+    if bas_dt:
+        query = query.filter(models.FscRisingStock.bas_dt == bas_dt)
+    else:
+        latest = db.query(func.max(models.FscRisingStock.bas_dt)).scalar()
+        if not latest:
+            return {"success": True, "data": [], "bas_dt": None, "count": 0}
+        query = query.filter(models.FscRisingStock.bas_dt == latest)
+        bas_dt = latest
+    if mrkt_ctg:
+        query = query.filter(models.FscRisingStock.mrkt_ctg == mrkt_ctg)
+    all_stocks = query.all()
+    reverse_order = order_direction != "asc"
+    key_fn = lambda x: float(str(x.flt_rt or "0").replace("%", "").replace("+", "").replace("-", "").strip() or 0)
+    sorted_stocks = sorted(all_stocks, key=key_fn, reverse=reverse_order)[:limit]
+    result = []
+    for i, s in enumerate(sorted_stocks, 1):
+        result.append({
+            "rank": i,
+            "srtn_cd": s.srtn_cd,
+            "itms_nm": s.itms_nm,
+            "clpr": s.clpr,
+            "flt_rt": s.flt_rt,
+            "mrkt_tot_amt": s.mrkt_tot_amt,
+            "mrkt_ctg": s.mrkt_ctg,
+            "bas_dt": s.bas_dt,
+        })
+    return {"success": True, "data": result, "bas_dt": bas_dt, "count": len(result)}
+
+
 @router.get("/api/fsc-stock-price/dates")
 async def get_fsc_stock_price_dates(
     db: Session = Depends(get_db),
