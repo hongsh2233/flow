@@ -22,7 +22,8 @@
 }
 
 .tab[data-state="active"] {
-  color: var(--app-accent);
+  color: #fff;
+  background: var(--app-accent);
   border-bottom-color: var(--app-accent);
 }
 
