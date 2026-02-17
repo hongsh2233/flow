@@ -18,6 +18,23 @@ interface NaverNewsResponse {
   display: number
 }
 
+/** HTML 엔티티 디코딩 및 API 내부 코드 제거 */
+function cleanText(text: string): string {
+  if (!text || typeof text !== 'string') return ''
+  return text
+    .replace(/<[^>]*>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -76,10 +93,10 @@ export async function GET(request: NextRequest) {
     const data: NaverNewsResponse = await response.json()
 
     const cleanedItems = data.items.map((item) => ({
-      title: item.title.replace(/<[^>]*>/g, '').trim(),
-      originallink: item.originallink,
-      link: item.link,
-      description: item.description.replace(/<[^>]*>/g, '').trim(),
+      title: cleanText(item.title),
+      originallink: item.originallink || item.link,
+      link: item.originallink || item.link,
+      description: cleanText(item.description),
       pubDate: item.pubDate,
     }))
 

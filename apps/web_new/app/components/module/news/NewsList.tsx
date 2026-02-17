@@ -36,6 +36,24 @@ function getHostname(link: string): string {
   }
 }
 
+/** 뉴스 출처 표시명 정제 (ntt 등 내부 코드 숨김) */
+function getDisplaySource(link: string): string {
+  const hostname = getHostname(link);
+  if (!hostname) return "뉴스";
+
+  if (hostname === "ntt" || hostname.startsWith("ntt.")) {
+    return "뉴스";
+  }
+
+  const friendlyNames: Record<string, string> = {
+    "n.news.naver.com": "네이버 뉴스",
+    "news.naver.com": "네이버 뉴스",
+    "sports.news.naver.com": "네이버 스포츠",
+    "m.sports.naver.com": "네이버 스포츠",
+  };
+  return friendlyNames[hostname] || hostname;
+}
+
 interface NewsListProps {
   items: (NewsItem & { stockCode?: string })[];
 }
@@ -58,7 +76,7 @@ export function NewsList({ items }: NewsListProps) {
           <div className={styles.newsMeta}>
             <span className={styles.newsDate}>{formatDate(item.pubDate)}</span>
             <span className={styles.newsSource}>
-              {getHostname(item.originallink || item.link) || "뉴스"}
+              {getDisplaySource(item.originallink || item.link)}
             </span>
           </div>
         </a>
