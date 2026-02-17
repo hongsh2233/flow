@@ -487,12 +487,18 @@ async def get_fina_stat(
 
 @router.post("/api/fsc-collect-manual")
 async def manual_collect_fsc_data(user=Depends(get_current_user), db: Session = Depends(get_db)):
-    """FSC 데이터 수동 수집 (관리자 전용)"""
+    """FSC 데이터 수동 수집 (관리자 전용) - 한국 주말·공휴일에는 수집하지 않음"""
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
-    
+
+    from app.services.scheduler_service import should_skip_today
+    if should_skip_today():
+        return JSONResponse({
+            "success": False,
+            "error": "한국 기준 주말 또는 공휴일에는 데이터 수집을 수행하지 않습니다.",
+        }, status_code=400)
+
     try:
-        # 수동으로 데이터 수집 실행 (주말/공휴일 체크 없이 실행)
         print(f"\n{'='*60}")
         print(f"📊 FSC 데이터 수동 수집 시작")
         print(f"{'='*60}")
@@ -546,10 +552,17 @@ async def collect_rising_stocks(
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """상승종목 수동 수집 (관리자 전용)"""
+    """상승종목 수동 수집 (관리자 전용) - 한국 주말·공휴일에는 수집하지 않음"""
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
-    
+
+    from app.services.scheduler_service import should_skip_today
+    if should_skip_today():
+        return JSONResponse({
+            "success": False,
+            "error": "한국 기준 주말 또는 공휴일에는 데이터 수집을 수행하지 않습니다.",
+        }, status_code=400)
+
     try:
         # 기본값으로 수집 (최신 데이터, 10% 이상 상승, 최대 1000개)
         data, actual_date = await fsc_api_service.fetch_rising_stocks(

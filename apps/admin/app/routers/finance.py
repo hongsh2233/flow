@@ -215,6 +215,8 @@ async def manual_collect_yahoo_indices(
     - kr: 코스피/코스닥
     - us: S&P500/다우/나스닥
     - all: kr+us
+
+    한국지수(kr/all)는 주말·공휴일에는 수집하지 않습니다.
     """
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
@@ -225,15 +227,23 @@ async def manual_collect_yahoo_indices(
 
     from datetime import datetime
     import pytz
+    from app.services.scheduler_service import should_skip_today
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+
+    # 한국지수(kr, all)는 주말·공휴일 수집 건너뜀
+    if group in ["kr", "all"] and should_skip_today():
+        return JSONResponse({
+            "success": False,
+            "message": "한국 기준 주말 또는 공휴일에는 한국 지수 데이터를 수집하지 않습니다.",
+        }, status_code=400)
     from app.services.yahoo_index_service import (
         fetch_indices,
         upsert_indices_to_db,
         DEFAULT_US_INDICES,
         DEFAULT_KR_INDICES,
     )
-
-    kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
 
     try:
         # 너무 잦은 수동 수집 방지(레이트리밋 회피): 같은 그룹을 30초 내 재호출하면 차단
@@ -413,15 +423,22 @@ async def manual_collect_naver_ranking(
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """네이버 증권 랭킹 데이터 수동 수집"""
+    """네이버 증권 랭킹 데이터 수동 수집 - 한국 주말·공휴일에는 수집하지 않음"""
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
-    
+
+    from app.services.scheduler_service import should_skip_today
+    if should_skip_today():
+        return JSONResponse({
+            "success": False,
+            "message": "한국 기준 주말 또는 공휴일에는 데이터 수집을 수행하지 않습니다.",
+        }, status_code=400)
+
     try:
         from app.services.naver_finance_service import naver_finance_service
         from datetime import datetime
         import pytz
-        
+
         kst = pytz.timezone('Asia/Seoul')
         now = datetime.now(kst)
         current_hour = now.hour

@@ -937,20 +937,53 @@ async def get_domestic_indices(
     if cached is not None:
         return cached
 
+    def _last_non_null(values):
+        if not values:
+            return None
+        for v in reversed(values):
+            if v is not None:
+                return v
+        return None
+
+    def _prev_non_null(values):
+        if not values:
+            return None
+        seen_last = False
+        for v in reversed(values):
+            if v is None:
+                continue
+            if not seen_last:
+                seen_last = True
+                continue
+            return v
+        return None
+
     async def fetch_one(client: httpx.AsyncClient, item: dict, crumb=None, cookies=None):
         try:
             symbol = item["symbol"]
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-            params = {"interval": "1d", "range": "1d"}
+            params = {"interval": "1d", "range": "5d"}
             data = await _yahoo_fetch_with_retry(client, url, params, crumb=crumb, cookies=cookies)
             if not data or "chart" not in data or "result" not in data["chart"] or not data["chart"]["result"]:
                 return None
             result = data["chart"]["result"][0]
             meta = result.get("meta", {})
-            current_price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
-            previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+            quote = (result.get("indicators") or {}).get("quote") or [{}]
+            close = (quote[0] or {}).get("close") or []
+
+            # close 배열 2개 이상이면 최신/직전 종가로 변동 계산 (chartPreviousClose는 5일 전 값일 수 있음)
+            last_close = _last_non_null(close)
+            prev_close = _prev_non_null(close)
+            if last_close is not None and prev_close is not None:
+                current_price = float(last_close)
+                previous_close = float(prev_close)
+            else:
+                current_price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
+                previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
             if current_price is None or previous_close is None:
                 return None
+            current_price = float(current_price)
+            previous_close = float(previous_close)
             change = current_price - previous_close
             percent = (change / previous_close * 100) if previous_close != 0 else 0
             return {
