@@ -84,6 +84,8 @@ export function StockDetailModal({
   stock,
   onClose,
   onAddFavorite,
+  onRemoveFavorite,
+  isFavorited = false,
 }: StockDetailModalProps) {
   const [detail, setDetail] = useState<FscStockDetail | null>(null);
   const [rightSchedule, setRightSchedule] = useState<RightScheduleItem[]>([]);
@@ -247,15 +249,18 @@ export function StockDetailModal({
             )}
           </section>
 
-          {/* 관심 추가 */}
+          {/* 관심 추가 / 관심해제 토글 */}
           <div className={styles.actionGrid}>
             <button
               type="button"
               className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-              onClick={() => onAddFavorite?.(stock)}
+              onClick={() =>
+                isFavorited ? onRemoveFavorite?.(stock) : onAddFavorite?.(stock)
+              }
+              aria-label={isFavorited ? "관심해제" : "관심 추가"}
             >
-              <Heart aria-hidden />
-              관심 추가
+              <Heart aria-hidden fill={isFavorited ? "currentColor" : "none"} />
+              {isFavorited ? "관심해제" : "관심 추가"}
             </button>
           </div>
         </div>

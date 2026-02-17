@@ -77,13 +77,13 @@ export default function StocksPage() {
   );
 
   const handleRemoveFavorite = useCallback(
-    async (code: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (code: string, e?: React.MouseEvent) => {
+      e?.stopPropagation();
       if (!session?.user?.email) return;
       const res = await removeFavoriteStock({ email: session.user.email, stock_code: code });
       if (res.success) {
         refreshFavorites();
-        setToast({ message: "관심종목에서 해제되었습니다.", type: "success" });
+        setToast({ message: res.message || "해제되었습니다.", type: "success" });
       } else {
         setToast({ message: res.message || "해제에 실패했습니다.", type: "error" });
       }
@@ -605,6 +605,8 @@ export default function StocksPage() {
           stock={selectedStock}
           onClose={handleClose}
           onAddFavorite={handleAddFavorite}
+          onRemoveFavorite={(s) => handleRemoveFavorite(s.code)}
+          isFavorited={favCodes.includes(selectedStock.code)}
         />
       )}
 
