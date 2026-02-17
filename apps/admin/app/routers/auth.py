@@ -1,6 +1,7 @@
 """
 인증 관련 라우터
 """
+import time
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -459,6 +460,15 @@ async def do_login(
         max_age=30 * 60,  # 30분
         samesite="lax"
     )
+    # 로그인 시각 전달용 쿠키 (프론트엔드 세션 타이머 표시용, httponly 아님)
+    login_time_ms = int(time.time() * 1000)
+    response.set_cookie(
+        key="bo_login_time",
+        value=str(login_time_ms),
+        httponly=False,
+        max_age=30 * 60,
+        samesite="lax"
+    )
     return response
 
 
@@ -467,6 +477,7 @@ async def logout():
     """로그아웃"""
     response = RedirectResponse(url="/")
     response.delete_cookie(AUTH_COOKIE_NAME)
+    response.delete_cookie("bo_login_time")
     return response
 
 
@@ -485,12 +496,24 @@ async def extend_login(request: Request):
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    response = JSONResponse({"success": True, "message": "로그인이 연장되었습니다."})
+    login_time_ms = int(time.time() * 1000)
+    response = JSONResponse({
+        "success": True,
+        "message": "로그인이 연장되었습니다.",
+        "login_time": login_time_ms,
+    })
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=SECRET_TOKEN,
         httponly=True,
         max_age=30 * 60,  # 30분 재설정
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="bo_login_time",
+        value=str(login_time_ms),
+        httponly=False,
+        max_age=30 * 60,
         samesite="lax",
     )
     return response

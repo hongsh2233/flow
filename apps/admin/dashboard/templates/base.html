@@ -171,8 +171,17 @@
         const CHECK_INTERVAL_MS = 30 * 1000; // 30초마다 체크
         const MODAL_COUNTDOWN_SEC = 10;      // 모달에서 10초 카운트다운
 
+        // 로그인 시각: 서버 쿠키(bo_login_time) 우선, 없으면 sessionStorage, 없으면 현재 시각
+        function getLoginStart() {
+          const cookieMatch = document.cookie.match(/bo_login_time=(\d+)/);
+          if (cookieMatch) return Number(cookieMatch[1]);
+          const stored = sessionStorage.getItem('boLoginStart');
+          if (stored) return Number(stored);
+          return Date.now();
+        }
+
         let lastActivity = Date.now();
-        let loginStart = Number(sessionStorage.getItem('boLoginStart') || Date.now());
+        let loginStart = getLoginStart();
         sessionStorage.setItem('boLoginStart', String(loginStart));
 
         let modalVisible = false;
@@ -281,8 +290,8 @@
               window.location.href = '/logout';
               return;
             }
-            // 세션이 연장되었으므로 기준 시점 재설정
-            loginStart = Date.now();
+            // 세션이 연장되었으므로 기준 시점 재설정 (응답의 login_time 우선)
+            loginStart = typeof data.login_time === 'number' ? data.login_time : getLoginStart();
             sessionStorage.setItem('boLoginStart', String(loginStart));
             lastActivity = Date.now();
             hideSessionModal();
@@ -304,9 +313,10 @@
           });
         }
 
-        // 헤더에 로그인 시간 / 남은 시간 표시
+        // 헤더에 로그인 시간 / 남은 시간 표시 (1초마다, 서버 쿠키 기준으로 갱신)
         setInterval(function() {
           if (!sessionInfo) return;
+          loginStart = getLoginStart();  // 새 탭/연장 시 쿠키 반영
           const now = Date.now();
           const elapsedMs = now - loginStart;
           const remainingMs = SESSION_LIMIT_MIN * 60 * 1000 - elapsedMs;
@@ -315,11 +325,12 @@
           sessionInfo.textContent = '로그인 시간: ' + loginTimeStr + ' / 남은 시간: ' + remainingStr;
         }, 1000);
 
-        // 주기적으로 세션 상태 체크
+        // 주기적으로 세션 상태 체크 (서버 쿠키 기준)
         setInterval(function() {
           const now = Date.now();
+          const sessionStart = getLoginStart();
           const inactiveMinutes = (now - lastActivity) / (60 * 1000);
-          const sessionMinutes = (now - loginStart) / (60 * 1000);
+          const sessionMinutes = (now - sessionStart) / (60 * 1000);
 
           if (!modalVisible) {
             // 10분 무활동 시 경고 모달
