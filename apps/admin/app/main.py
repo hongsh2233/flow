@@ -291,6 +291,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ FAQ 및 약관 초기 데이터 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_banner_columns import upgrade as add_banner_columns_migration
+        add_banner_columns_migration()
+    except Exception as e:
+        print(f"⚠️ 배너 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

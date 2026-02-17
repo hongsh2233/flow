@@ -870,6 +870,75 @@ async def get_banners(
     }
 
 
+@router.get("/api/banners/managed")
+async def get_managed_banners(
+    page_path: str = Query(..., description="노출할 페이지 경로 (예: /, /stocks, /news)"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    배너관리에서 등록한 배너를 페이지 경로로 조회
+    
+    - page_path: 현재 페이지 경로 (예: /, /stocks). 해당 경로가 노출 대상에 포함된 배너만 반환
+    - 1개형(single)은 개별 항목, 슬라이드형(slide)은 slide_group별로 묶어서 반환
+    """
+    if not page_path.startswith("/"):
+        page_path = "/" + page_path
+    banners = (
+        db.query(models.Banner)
+        .filter(
+            models.Banner.type == "managed",
+            models.Banner.is_active == "active"
+        )
+        .order_by(models.Banner.order_index)
+        .all()
+    )
+    matched = []
+    for b in banners:
+        paths_raw = getattr(b, "page_paths", None)
+        if not paths_raw:
+            continue
+        try:
+            paths = json.loads(paths_raw) if isinstance(paths_raw, str) else paths_raw
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if not isinstance(paths, list):
+            continue
+        if page_path not in paths:
+            continue
+        matched.append(b)
+    # slide_group별로 묶기
+    singles = [b for b in matched if getattr(b, "display_type", "single") == "single"]
+    slide_groups = {}
+    for b in matched:
+        if getattr(b, "display_type", "single") == "slide":
+            sg = getattr(b, "slide_group", None) or "default"
+            if sg not in slide_groups:
+                slide_groups[sg] = []
+            slide_groups[sg].append(b)
+    slides = [{"slide_group": k, "items": v} for k, v in sorted(slide_groups.items(), key=lambda x: x[1][0].order_index)]
+    def _item(b):
+        return {
+            "id": b.id,
+            "display_type": getattr(b, "display_type", "single"),
+            "content_type": getattr(b, "content_type", "image"),
+            "image_url": b.image_url,
+            "html_content": getattr(b, "html_content", None),
+            "link_url": b.link_url or None,
+            "alt_text": b.alt_text or None,
+            "order_index": b.order_index,
+            "slide_group": getattr(b, "slide_group", None),
+        }
+    return {
+        "success": True,
+        "data": {
+            "singles": [_item(b) for b in singles],
+            "slides": [{"slide_group": s["slide_group"], "items": [_item(b) for b in s["items"]]} for s in slides],
+        },
+        "count": len(matched),
+    }
+
+
 # =========================================================
 # Yahoo Finance 공통: 캐시 + 요청 제한
 # =========================================================

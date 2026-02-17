@@ -263,11 +263,21 @@ class Banner(Base):
     __tablename__ = "banners"
     id = Column(Integer, primary_key=True, index=True)
     type = Column(String(20), nullable=False, index=True)
-    image_url = Column(String(500), nullable=False)
+    image_url = Column(String(500), nullable=True)  # content_type=html일 때 null 허용
     link_url = Column(String(500), nullable=True)
     alt_text = Column(String(200), nullable=True)
     order_index = Column(Integer, nullable=False, default=0)
     is_active = Column(String(20), default="active")
+    # 배너형태: single(1개형), slide(슬라이드형)
+    display_type = Column(String(20), default="single")
+    # 콘텐츠형태: image(이미지), html(HTML)
+    content_type = Column(String(20), default="image")
+    # HTML 배너일 때 내용
+    html_content = Column(String(5000), nullable=True)
+    # 노출 페이지 경로 (JSON 배열 문자열, 예: '["/","/stocks"]')
+    page_paths = Column(String(500), nullable=True)
+    # 슬라이드형일 때 같은 그룹끼리 묶음
+    slide_group = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

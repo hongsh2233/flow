@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}배너 수정 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
+  .section h3 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #3498db; }
+  .add-form { display: flex; flex-direction: column; gap: 15px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+  .form-row { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-weight: 500; color: #2c3e50; font-size: 14px; }
+  .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+  .form-group textarea { min-height: 120px; font-family: monospace; }
+  .form-group input[type="file"] { padding: 8px; }
+  .content-type-toggle { display: flex; gap: 10px; margin-top: 5px; }
+  .content-type-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .image-preview { max-width: 400px; max-height: 200px; object-fit: contain; border: 2px dashed #ddd; border-radius: 8px; background: #fafafa; margin-top: 10px; }
+  .html-preview { padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; min-height: 80px; margin-top: 5px; }
+  .upload-area { border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; background: #fafafa; cursor: pointer; }
+  .btn-add { padding: 12px 30px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  .btn-add:hover { background: #229954; }
+  .btn-secondary { padding: 12px 24px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; }
+  .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; }
+  .path-chip { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; margin: 4px; }
+  .path-chip button { background: none; border: none; cursor: pointer; color: #c62828; font-size: 14px; }
+  .page-path-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .path-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .display-type-option { display: flex; gap: 12px; margin-top: 5px; }
+  .display-type-option label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <a href="/admin/banner-manage" class="back-link">← 배너관리로 돌아가기</a>
+  <h1>배너 수정</h1>
+
+  <div class="section">
+    <form method="POST" action="/admin/banner-manage/update/{{ banner.id }}" class="add-form" id="editForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>배너 형태 *</label>
+          <div class="display-type-option">
+            <label><input type="radio" name="display_type" value="single" {% if banner.display_type == 'single' %}checked{% endif %}> 1개형</label>
+            <label><input type="radio" name="display_type" value="slide" {% if banner.display_type == 'slide' %}checked{% endif %}> 슬라이드형</label>
+          </div>
+        </div>
+        <div class="form-group" id="slideGroupWrap" style="display:{% if banner.display_type == 'slide' %}block{% else %}none{% endif %}">
+          <label>슬라이드 그룹</label>
+          <select name="slide_group" id="slideGroupSelect">
+            <option value="">새 그룹</option>
+            {% for g in slide_groups %}
+            <option value="{{ g }}" {% if banner.slide_group == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>콘텐츠 형태 *</label>
+        <div class="content-type-toggle">
+          <label><input type="radio" name="content_type" value="image" {% if banner.content_type == 'image' %}checked{% endif %}> 이미지</label>
+          <label><input type="radio" name="content_type" value="html" {% if banner.content_type == 'html' %}checked{% endif %}> HTML</label>
+        </div>
+      </div>
+
+      <div class="form-group" id="imageWrap" style="display:{% if banner.content_type == 'image' %}block{% else %}none{% endif %}">
+        <label>이미지 *</label>
+        <div class="upload-area" onclick="document.getElementById('imageFile').click()">클릭하여 변경</div>
+        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
+        <input type="hidden" id="imageUrl" name="image_url" value="{{ banner.image_url or '' }}" />
+        <img id="imagePreview" class="image-preview" src="{{ banner.image_url or '' }}" alt="" {% if not banner.image_url %}style="display:none"{% endif %} />
+      </div>
+
+      <div class="form-group" id="htmlWrap" style="display:{% if banner.content_type == 'html' %}block{% else %}none{% endif %}">
+        <label>HTML 내용 *</label>
+        <textarea name="html_content" id="htmlContent">{{ banner.html_content or '' }}</textarea>
+        <div class="html-preview" id="htmlPreview"></div>
+      </div>
+
+      <div class="form-group">
+        <label>링크 URL</label>
+        <input type="url" name="link_url" value="{{ banner.link_url or '' }}" placeholder="https://example.com" />
+      </div>
+
+      <div class="form-group">
+        <label>노출 페이지 경로 *</label>
+        <div class="page-path-input-row">
+          <input type="text" id="pathInput" placeholder="/ 또는 /stocks" />
+          <button type="button" class="btn-add" style="padding:8px 16px;" onclick="addPath()">추가</button>
+        </div>
+        <div class="path-list" id="pathList"></div>
+        <input type="hidden" name="page_paths" id="pagePaths" required />
+      </div>
+
+      <div class="form-group">
+        <label>상태</label>
+        <select name="is_active" style="padding:10px;border:1px solid #ddd;border-radius:6px;">
+          <option value="active" {% if banner.is_active == 'active' %}selected{% endif %}>활성</option>
+          <option value="inactive" {% if banner.is_active == 'inactive' %}selected{% endif %}>비활성</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn-add">저장</button>
+        <a href="/admin/banner-manage" class="btn-secondary">취소</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let paths = {{ banner.page_paths_list | tojson }};
+
+document.querySelectorAll('input[name="display_type"]').forEach(el => {
+  el.addEventListener('change', () => {
+    document.getElementById('slideGroupWrap').style.display = el.value === 'slide' ? 'block' : 'none';
+  });
+});
+document.querySelectorAll('input[name="content_type"]').forEach(el => {
+  el.addEventListener('change', () => {
+    const isImage = el.value === 'image';
+    document.getElementById('imageWrap').style.display = isImage ? 'block' : 'none';
+    document.getElementById('htmlWrap').style.display = isImage ? 'none' : 'block';
+  });
+});
+
+function addPath() {
+  const inp = document.getElementById('pathInput');
+  let v = (inp.value || '').trim();
+  if (!v) return;
+  if (!v.startsWith('/')) v = '/' + v;
+  if (paths.includes(v)) return;
+  paths.push(v);
+  inp.value = '';
+  renderPaths();
+}
+function removePath(p) {
+  paths = paths.filter(x => x !== p);
+  renderPaths();
+}
+function renderPaths() {
+  const list = document.getElementById('pathList');
+  const hidden = document.getElementById('pagePaths');
+  list.innerHTML = paths.map(p => `<span class="path-chip">${p} <button type="button" onclick="removePath('${p.replace(/'/g, "\\'")}')">&times;</button></span>`).join('');
+  hidden.value = JSON.stringify(paths);
+}
+document.getElementById('pathInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addPath(); }
+});
+renderPaths();
+
+document.getElementById('editForm').addEventListener('submit', function(e) {
+  if (paths.length === 0) {
+    e.preventDefault();
+    alert('노출 페이지 경로를 1개 이상 추가해주세요.');
+    return false;
+  }
+  const ct = document.querySelector('input[name="content_type"]:checked').value;
+  if (ct === 'image' && !document.getElementById('imageUrl').value) {
+    e.preventDefault();
+    alert('이미지를 업로드해주세요.');
+    return false;
+  }
+  if (ct === 'html' && !document.getElementById('htmlContent').value.trim()) {
+    e.preventDefault();
+    alert('HTML 내용을 입력해주세요.');
+    return false;
+  }
+  document.getElementById('pagePaths').value = JSON.stringify(paths);
+  return true;
+});
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('imagePreview').src = e.target.result;
+    document.getElementById('imagePreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  const fd = new FormData();
+  fd.append('file', file);
+  fetch('/api/upload-image', { method: 'POST', body: fd, credentials: 'include' })
+    .then(r => r.json())
+    .then(data => { document.getElementById('imageUrl').value = data.url; })
+    .catch(err => alert('업로드 실패'));
+}
+
+document.getElementById('htmlContent').addEventListener('input', function() {
+  document.getElementById('htmlPreview').innerHTML = this.value || '미리보기';
+});
+document.getElementById('htmlPreview').innerHTML = document.getElementById('htmlContent').value || '미리보기';
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}배너관리 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+  .section h3 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #3498db; }
+  .add-form { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+  .form-row { display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-weight: 500; color: #2c3e50; font-size: 14px; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+  }
+  .form-group textarea { min-height: 120px; font-family: monospace; }
+  .form-group input[type="file"] { padding: 8px; }
+  .content-type-toggle { display: flex; gap: 10px; margin-top: 5px; }
+  .content-type-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .content-type-toggle input { margin: 0; }
+  .image-preview { max-width: 400px; max-height: 200px; object-fit: contain; border: 2px dashed #ddd; border-radius: 8px; background: #fafafa; margin-top: 10px; display: none; }
+  .image-preview.show { display: block; }
+  .html-preview { padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; min-height: 80px; margin-top: 5px; }
+  .upload-area { border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; background: #fafafa; cursor: pointer; transition: all 0.3s; }
+  .upload-area:hover { border-color: #3498db; background: #f0f7ff; }
+  .btn-add { padding: 12px 30px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; align-self: flex-start; }
+  .btn-add:hover { background: #229954; }
+  .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+  .table th { background: #f8f9fa; font-weight: 600; color: #2c3e50; }
+  .table tr:hover { background: #f8f9fa; }
+  .banner-thumb { width: 120px; max-height: 60px; object-fit: contain; border-radius: 6px; border: 1px solid #ddd; }
+  .btn-edit, .btn-del { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 13px; margin-right: 5px; }
+  .btn-edit { background: #3498db; color: white; }
+  .btn-del { background: #e74c3c; color: white; }
+  .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+  .status-active { background: #d4edda; color: #155724; }
+  .status-inactive { background: #f8d7da; color: #721c24; }
+  .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+  .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-weight: 500; }
+  .path-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .path-tag { background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+  .page-path-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .page-path-input-row input { flex: 1; min-width: 150px; }
+  .path-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .path-chip { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .path-chip button { background: none; border: none; cursor: pointer; color: #c62828; font-size: 14px; padding: 0 2px; }
+  .display-type-option { display: flex; gap: 12px; margin-top: 5px; }
+  .display-type-option label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <a href="/admin/dashboard" class="back-link">← 대시보드로 돌아가기</a>
+  <h1>배너관리</h1>
+  <p style="color: #666; margin-bottom: 30px;">
+    1개형 또는 슬라이드형 배너를 등록하고, 이미지/HTML 형태와 노출 페이지 경로를 설정할 수 있습니다.
+  </p>
+
+  <div class="section">
+    <h3>배너 등록</h3>
+    <form method="POST" action="/admin/banner-manage/add" class="add-form" id="bannerForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>배너 형태 *</label>
+          <div class="display-type-option">
+            <label><input type="radio" name="display_type" value="single" checked> 1개형</label>
+            <label><input type="radio" name="display_type" value="slide"> 슬라이드형</label>
+          </div>
+        </div>
+        <div class="form-group" id="slideGroupWrap" style="display:none;">
+          <label>슬라이드 그룹</label>
+          <select name="slide_group" id="slideGroupSelect">
+            <option value="">새 그룹 생성</option>
+            {% for g in slide_groups %}
+            <option value="{{ g }}">{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>콘텐츠 형태 *</label>
+        <div class="content-type-toggle">
+          <label><input type="radio" name="content_type" value="image" checked> 이미지</label>
+          <label><input type="radio" name="content_type" value="html"> HTML</label>
+        </div>
+      </div>
+
+      <div class="form-group" id="imageWrap">
+        <label>이미지 *</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageFile').click()">
+          <p style="margin:0;color:#666;">클릭하거나 드래그하여 업로드</p>
+          <p style="margin:5px 0 0 0;font-size:12px;color:#999;">최대 5MB, JPG, PNG, GIF</p>
+        </div>
+        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
+        <input type="hidden" id="imageUrl" name="image_url" />
+        <img id="imagePreview" class="image-preview" alt="미리보기" />
+      </div>
+
+      <div class="form-group" id="htmlWrap" style="display:none;">
+        <label>HTML 내용 *</label>
+        <textarea name="html_content" id="htmlContent" placeholder="<div>...</div>"></textarea>
+        <div class="html-preview" id="htmlPreview">미리보기</div>
+      </div>
+
+      <div class="form-group">
+        <label>링크 URL</label>
+        <input type="url" name="link_url" placeholder="https://example.com" />
+      </div>
+
+      <div class="form-group">
+        <label>노출 페이지 경로 *</label>
+        <p style="font-size:12px;color:#666;margin:0 0 8px 0;">예: /, /stocks, /news, /board</p>
+        <div class="page-path-input-row">
+          <input type="text" id="pathInput" placeholder="/ 또는 /stocks" />
+          <button type="button" class="btn-add" style="padding:8px 16px;font-size:14px;" onclick="addPath()">추가</button>
+        </div>
+        <div class="path-list" id="pathList"></div>
+        <input type="hidden" name="page_paths" id="pagePaths" required />
+      </div>
+
+      <button type="submit" class="btn-add" id="submitBtn">배너 등록</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h3>배너 목록 ({{ banners|length }}개)</h3>
+    {% if banners %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>순서</th>
+          <th>형태</th>
+          <th>콘텐츠</th>
+          <th>미리보기</th>
+          <th>링크</th>
+          <th>노출 경로</th>
+          <th>상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in banners %}
+        <tr>
+          <td>{{ b.order_index + 1 }}</td>
+          <td>{{ '1개형' if b.display_type == 'single' else '슬라이드' }}{% if b.slide_group %} ({{ b.slide_group }}){% endif %}</td>
+          <td>{{ '이미지' if b.content_type == 'image' else 'HTML' }}</td>
+          <td>
+            {% if b.content_type == 'image' and b.image_url %}
+            <img src="{{ b.image_url }}" alt="" class="banner-thumb" />
+            {% elif b.content_type == 'html' %}
+            <span style="font-size:12px;color:#666;">HTML</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if b.link_url %}
+            <a href="{{ b.link_url }}" target="_blank" rel="noopener" style="color:#3498db;">{{ b.link_url[:40] }}{% if b.link_url|length > 40 %}...{% endif %}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="path-tags">
+              {% for p in b.page_paths_list %}
+              <span class="path-tag">{{ p }}</span>
+              {% endfor %}
+              {% if not b.page_paths_list %}—{% endif %}
+            </div>
+          </td>
+          <td>
+            <span class="status-badge {% if b.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">
+              {{ '활성' if b.is_active == 'active' else '비활성' }}
+            </span>
+          </td>
+          <td>
+            <a href="/admin/banner-manage/edit/{{ b.id }}" class="btn-edit">수정</a>
+            <a href="/admin/banner-manage/delete/{{ b.id }}" class="btn-del" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>등록된 배너가 없습니다.</p>
+      <p>위 폼으로 배너를 등록해주세요.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('input[name="display_type"]').forEach(el => {
+  el.addEventListener('change', () => {
+    document.getElementById('slideGroupWrap').style.display = el.value === 'slide' ? 'block' : 'none';
+  });
+});
+document.querySelectorAll('input[name="content_type"]').forEach(el => {
+  el.addEventListener('change', () => {
+    const isImage = el.value === 'image';
+    document.getElementById('imageWrap').style.display = isImage ? 'block' : 'none';
+    document.getElementById('htmlWrap').style.display = isImage ? 'none' : 'block';
+    document.getElementById('imageUrl').removeAttribute('required');
+    document.getElementById('htmlContent').removeAttribute('required');
+    if (isImage) document.getElementById('imageUrl').setAttribute('required', 'required');
+    else document.getElementById('htmlContent').setAttribute('required', 'required');
+  });
+});
+
+let paths = [];
+
+function addPath() {
+  const inp = document.getElementById('pathInput');
+  let v = (inp.value || '').trim();
+  if (!v) return;
+  if (!v.startsWith('/')) v = '/' + v;
+  if (paths.includes(v)) return;
+  paths.push(v);
+  inp.value = '';
+  renderPaths();
+}
+
+function removePath(p) {
+  paths = paths.filter(x => x !== p);
+  renderPaths();
+}
+
+function renderPaths() {
+  const list = document.getElementById('pathList');
+  const hidden = document.getElementById('pagePaths');
+  list.innerHTML = paths.map(p => `<span class="path-chip">${p} <button type="button" onclick="removePath('${p.replace(/'/g, "\\'")}')">&times;</button></span>`).join('');
+  hidden.value = JSON.stringify(paths);
+}
+
+document.getElementById('pathInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addPath(); }
+});
+
+document.getElementById('bannerForm').addEventListener('submit', function(e) {
+  if (paths.length === 0) {
+    e.preventDefault();
+    alert('노출 페이지 경로를 최소 1개 이상 추가해주세요.');
+    return false;
+  }
+  const ct = document.querySelector('input[name="content_type"]:checked').value;
+  if (ct === 'image' && !document.getElementById('imageUrl').value) {
+    e.preventDefault();
+    alert('이미지를 업로드해주세요.');
+    return false;
+  }
+  if (ct === 'html' && !document.getElementById('htmlContent').value.trim()) {
+    e.preventDefault();
+    alert('HTML 내용을 입력해주세요.');
+    return false;
+  }
+  document.getElementById('pagePaths').value = JSON.stringify(paths);
+  return true;
+});
+
+let isUploading = false;
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('5MB 이하만 가능합니다.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('imagePreview').src = e.target.result;
+    document.getElementById('imagePreview').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  const fd = new FormData();
+  fd.append('file', file);
+  isUploading = true;
+  const btn = document.getElementById('submitBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '업로드 중...';
+  fetch('/api/upload-image', { method: 'POST', body: fd, credentials: 'include' })
+    .then(r => r.json())
+    .then(data => { document.getElementById('imageUrl').value = data.url; })
+    .catch(err => alert('업로드 실패: ' + err.message))
+    .finally(() => { isUploading = false; btn.disabled = false; btn.textContent = orig; });
+}
+
+document.getElementById('htmlContent').addEventListener('input', function() {
+  const preview = document.getElementById('htmlPreview');
+  try {
+    preview.innerHTML = this.value || '미리보기';
+  } catch (_) {
+    preview.textContent = '미리보기';
+  }
+});
+
+const uploadArea = document.getElementById('uploadArea');
+if (uploadArea) {
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); });
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) handleFileSelect({ target: { files: [f] } });
+  });
+}
+</script>
+{% endblock %}
