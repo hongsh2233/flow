@@ -162,6 +162,7 @@ async def get_fsc_stock_price(
     min_flt_rt: Optional[float] = Query(None, description="최소 등락률 (%)"),
     max_flt_rt: Optional[float] = Query(None, description="최대 등락률 (%)"),
     mrkt_ctg: Optional[str] = Query(None, description="시장구분 (KOSPI, KOSDAQ)"),
+    srtn_cd: Optional[str] = Query(None, description="단축코드 (특정 종목 조회)"),
     order_by: Optional[str] = Query("mrkt_tot_amt", description="정렬 기준 (mrkt_tot_amt, flt_rt)"),
     order_direction: Optional[str] = Query("desc", description="정렬 방향 (asc, desc)"),
     db: Session = Depends(get_db),
@@ -199,6 +200,10 @@ async def get_fsc_stock_price(
     # 시장구분 필터링 (DB 레벨에서 먼저 필터링)
     if mrkt_ctg:
         query = query.filter(models.FscStockPrice.mrkt_ctg == mrkt_ctg)
+    
+    # 단축코드 필터링 (특정 종목 조회)
+    if srtn_cd:
+        query = query.filter(models.FscStockPrice.srtn_cd == srtn_cd)
     
     # 모든 데이터 가져오기 (등락률 필터링은 Python에서 처리)
     all_stocks = query.all()

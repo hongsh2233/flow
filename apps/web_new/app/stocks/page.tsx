@@ -107,10 +107,11 @@ export default function StocksPage() {
 
         const mapKrxToSectors = (arr: unknown[]): SectorItem[] => {
           if (!Array.isArray(arr) || arr.length === 0) return [];
-          return arr.map((it: Record<string, unknown>) => {
-            const name = String(it.IDX_NM ?? it.idx_nm ?? "");
-            const val = parseFloat(String(it.CLSPRC_IDX ?? it.clsprc_idx ?? it.CLPR ?? it.clpr ?? 0).replace(/,/g, "")) || 0;
-            const chg = parseFloat(String(it.FLUC_RT ?? it.fluc_rt ?? it.FLT_RT ?? it.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0;
+          return arr.map((it) => {
+            const rec = it as Record<string, unknown>;
+            const name = String(rec.IDX_NM ?? rec.idx_nm ?? "");
+            const val = parseFloat(String(rec.CLSPRC_IDX ?? rec.clsprc_idx ?? rec.CLPR ?? rec.clpr ?? 0).replace(/,/g, "")) || 0;
+            const chg = parseFloat(String(rec.FLUC_RT ?? rec.fluc_rt ?? rec.FLT_RT ?? rec.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0;
             return { name: name || "지수", value: val, change: chg };
           }).filter((s) => s.name);
         };

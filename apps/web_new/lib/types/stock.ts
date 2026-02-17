@@ -24,7 +24,6 @@ export interface StockDetailModalProps {
   stock: StockDetail | null;
   onClose: () => void;
   onAddFavorite?: (stock: StockDetail) => void;
-  onShowChart?: (stock: StockDetail) => void;
 }
 
 export interface SectorData {
