@@ -42,42 +42,43 @@
   padding: 0 1rem;
 }
 
-/* Sub-tabs (코스피/코스닥) */
+/* Sub-tabs (코스피/코스닥) - 메인 탭과 동일한 pill 스타일 */
 .subTabList {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.25rem;
   margin-bottom: 1rem;
 }
 
 .subTab {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid var(--app-border-light);
-  background: var(--app-card-bg);
-  color: var(--app-text-muted);
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 1rem;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: color 0.2s, box-shadow 0.2s;
+  height: 2.25rem;
+  background: var(--app-bg-secondary);
+  color: var(--app-text-muted);
 }
 
 .subTab:hover {
-  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 .subTabActive {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: 1px solid var(--app-tag-blue);
-  background: var(--app-tag-blue);
+  background: var(--app-accent);
   color: #fff;
-  cursor: pointer;
+  box-shadow: var(--app-card-shadow);
 }
 
 .subTabActive:hover {
-  background: var(--app-tag-blue);
+  background: var(--app-accent-hover);
   color: #fff;
 }
 

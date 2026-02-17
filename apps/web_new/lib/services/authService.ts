@@ -45,6 +45,72 @@ export async function getFavoriteStocks(
 }
 
 /**
+ * 관심종목 추가
+ */
+export async function addFavoriteStock(params: {
+  email: string;
+  stock_code: string;
+}): Promise<ApiResponse<FavoriteStockResponse>> {
+  try {
+    const response = await fetch("/api/auth/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: params.email, stock_code: params.stock_code }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        message: err.detail || "관심종목을 추가할 수 없습니다.",
+        error: String(response.status),
+      };
+    }
+    const data: FavoriteStockResponse = await response.json();
+    return { success: data.success ?? true, message: data.message, data };
+  } catch (error) {
+    return {
+      success: false,
+      message: "관심종목 추가 중 오류가 발생했습니다.",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * 관심종목 삭제
+ */
+export async function removeFavoriteStock(params: {
+  email: string;
+  stock_code: string;
+}): Promise<ApiResponse<FavoriteStockResponse>> {
+  try {
+    const response = await fetch("/api/auth/favorites", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: params.email, stock_code: params.stock_code }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        message: err.detail || "관심종목을 삭제할 수 없습니다.",
+        error: String(response.status),
+      };
+    }
+    const data: FavoriteStockResponse = await response.json();
+    return { success: data.success ?? true, message: data.message, data };
+  } catch (error) {
+    return {
+      success: false,
+      message: "관심종목 삭제 중 오류가 발생했습니다.",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
  * 회원 탈퇴
  * @param email - 회원 이메일
  * @returns 탈퇴 결과

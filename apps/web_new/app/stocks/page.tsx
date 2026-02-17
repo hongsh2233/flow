@@ -8,16 +8,14 @@ import {
   Building2,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { Search } from "../components/module/Search";
 import { StockCard } from "../components/module/StockCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
-import {
-  kospiSectors,
-  kosdaqSectors,
-  favoriteStocksPage as favorite,
-} from "@/lib/data/stocks";
+import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import styles from "./StocksPage.module.css";
 
 const LazyStockDetailModal = dynamic(
@@ -39,11 +37,50 @@ function toStockDetail(s: { name: string; code: string; price: number; change: n
 
 type MarketType = "KOSPI" | "KOSDAQ";
 
+interface SectorItem {
+  name: string;
+  value: number;
+  change: number;
+}
+
 export default function StocksPage() {
+  const { data: session } = useSession();
+  const { favoriteStocks, favCodes, isLoading: favLoading } = useFavoriteStocks();
+
+  const refreshFavorites = useCallback(() => {
+    window.dispatchEvent(new Event("favoritesUpdated"));
+  }, []);
+
+  const handleAddFavorite = useCallback(
+    async (stock: StockDetail) => {
+      if (!session?.user?.email) return;
+      const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
+      if (res.success) {
+        refreshFavorites();
+      }
+    },
+    [session?.user?.email, refreshFavorites]
+  );
+
+  const handleRemoveFavorite = useCallback(
+    async (code: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!session?.user?.email) return;
+      const res = await removeFavoriteStock({ email: session.user.email, stock_code: code });
+      if (res.success) {
+        refreshFavorites();
+      }
+    },
+    [session?.user?.email, refreshFavorites]
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("favorite");
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const handleClose = useCallback(() => setSelectedStock(null), []);
+
+  const [kospiSectors, setKospiSectors] = useState<SectorItem[]>([]);
+  const [kosdaqSectors, setKosdaqSectors] = useState<SectorItem[]>([]);
+  const [marketLoading, setMarketLoading] = useState(false);
 
   const [marketCapTab, setMarketCapTab] = useState<MarketType>("KOSPI");
   const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
@@ -53,6 +90,64 @@ export default function StocksPage() {
   const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
   const [marketCapLoading, setMarketCapLoading] = useState(false);
   const [risingLoading, setRisingLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== "market") return;
+    const load = async () => {
+      setMarketLoading(true);
+      try {
+        const [krxKospi, krxKosdaq, domestic] = await Promise.all([
+          fetch("/api/krx-data?data_type=kospi"),
+          fetch("/api/krx-data?data_type=kosdaq"),
+          fetch("/api/domestic-indices"),
+        ]);
+        const krxKospiJson = await krxKospi.json();
+        const krxKosdaqJson = await krxKosdaq.json();
+        const domesticJson = await domestic.json();
+
+        const mapKrxToSectors = (arr: unknown[]): SectorItem[] => {
+          if (!Array.isArray(arr) || arr.length === 0) return [];
+          return arr.map((it: Record<string, unknown>) => {
+            const name = String(it.IDX_NM ?? it.idx_nm ?? "");
+            const val = parseFloat(String(it.CLSPRC_IDX ?? it.clsprc_idx ?? it.CLPR ?? it.clpr ?? 0).replace(/,/g, "")) || 0;
+            const chg = parseFloat(String(it.FLUC_RT ?? it.fluc_rt ?? it.FLT_RT ?? it.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0;
+            return { name: name || "지수", value: val, change: chg };
+          }).filter((s) => s.name);
+        };
+
+        const extractFirstData = (json: { data?: Array<{ data?: unknown }> }): unknown[] => {
+          const list = json.data ?? [];
+          const rec = list.find((r) => r.data);
+          const d = rec?.data;
+          return Array.isArray(d) ? d : [];
+        };
+
+        let kospiItems = mapKrxToSectors(extractFirstData(krxKospiJson));
+        let kosdaqItems = mapKrxToSectors(extractFirstData(krxKosdaqJson));
+
+        if (kospiItems.length === 0 || kosdaqItems.length === 0) {
+          const data = domesticJson.data ?? [];
+          const kospi = data.find((d: { name: string }) => d.name === "코스피");
+          const kosdaq = data.find((d: { name: string }) => d.name === "코스닥");
+          if (kospiItems.length === 0 && kospi) {
+            kospiItems = [{ name: kospi.name, value: parseFloat(String(kospi.value).replace(/,/g, "")) || 0, change: parseFloat(String(kospi.percent || kospi.change).replace(/[%,+]/g, "")) || 0 }];
+          }
+          if (kosdaqItems.length === 0 && kosdaq) {
+            kosdaqItems = [{ name: kosdaq.name, value: parseFloat(String(kosdaq.value).replace(/,/g, "")) || 0, change: parseFloat(String(kosdaq.percent || kosdaq.change).replace(/[%,+]/g, "")) || 0 }];
+          }
+        }
+
+        setKospiSectors(kospiItems);
+        setKosdaqSectors(kosdaqItems);
+      } catch {
+        setKospiSectors([]);
+        setKosdaqSectors([]);
+      } finally {
+        setMarketLoading(false);
+      }
+    };
+    load();
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "marketcap") return;
@@ -147,8 +242,17 @@ export default function StocksPage() {
 
         {/* 관심종목 */}
         <TabsContent value="favorite" className={styles.tabContent}>
+          {!session?.user ? (
+            <p className={styles.loadingText}>
+              관심종목은 로그인 후 이용할 수 있습니다.
+            </p>
+          ) : favLoading && favoriteStocks.length === 0 ? (
+            <p className={styles.loadingText}>로딩 중...</p>
+          ) : favoriteStocks.length === 0 ? (
+            <p className={styles.loadingText}>등록된 관심종목이 없습니다.</p>
+          ) : (
           <div className={styles.cardList}>
-            {favorite.map((stock) => {
+            {favoriteStocks.map((stock) => {
               const isPositive = stock.change >= 0;
               return (
                 <div
@@ -164,10 +268,10 @@ export default function StocksPage() {
                       <button
                         type="button"
                         className={styles.heartBtn}
-                        aria-label="관심종목"
-                        onClick={(e) => e.stopPropagation()}
+                        aria-label="관심종목 해제"
+                        onClick={(e) => handleRemoveFavorite(stock.code, e)}
                       >
-                        <Heart className={styles.heart} aria-hidden />
+                        <Heart className={styles.heart} aria-hidden fill="currentColor" />
                       </button>
                       <div className={styles.favoriteInfo}>
                         <h4>{stock.name}</h4>
@@ -193,56 +297,71 @@ export default function StocksPage() {
               );
             })}
           </div>
+          )}
         </TabsContent>
 
         {/* 시장현황 */}
         <TabsContent value="market" className={styles.tabContent}>
-          <div className={styles.sectorSection}>
-            <h3 className={styles.sectorTitle}>
-              <BarChart3 className={styles.sectorIconBlue} aria-hidden />
-              코스피 섹터별
-            </h3>
-            <div className={styles.sectorList}>
-              {kospiSectors.map((sector) => {
-                const isPositive = sector.change >= 0;
-                return (
-                  <div key={sector.name} className={styles.sectorCard}>
-                    <div>
-                      <p>{sector.name}</p>
-                      <p>{sector.value}</p>
-                    </div>
-                    <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                      {isPositive ? "+" : ""}
-                      {sector.change}%
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className={styles.sectorSection}>
-            <h3 className={styles.sectorTitle}>
-              <Building2 className={styles.sectorIconPurple} aria-hidden />
-              코스닥 섹터별
-            </h3>
-            <div className={styles.sectorList}>
-              {kosdaqSectors.map((sector) => {
-                const isPositive = sector.change >= 0;
-                return (
-                  <div key={sector.name} className={styles.sectorCard}>
-                    <div>
-                      <p>{sector.name}</p>
-                      <p>{sector.value}</p>
-                    </div>
-                    <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                      {isPositive ? "+" : ""}
-                      {sector.change}%
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {marketLoading && kospiSectors.length === 0 && kosdaqSectors.length === 0 ? (
+            <p className={styles.loadingText}>로딩 중...</p>
+          ) : (
+            <>
+              <div className={styles.sectorSection}>
+                <h3 className={styles.sectorTitle}>
+                  <BarChart3 className={styles.sectorIconBlue} aria-hidden />
+                  코스피
+                </h3>
+                <div className={styles.sectorList}>
+                  {kospiSectors.length === 0 ? (
+                    <p className={styles.loadingText}>데이터가 없습니다.</p>
+                  ) : (
+                    kospiSectors.map((sector) => {
+                      const isPositive = sector.change >= 0;
+                      return (
+                        <div key={sector.name} className={styles.sectorCard}>
+                          <div>
+                            <p>{sector.name}</p>
+                            <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
+                            {isPositive ? "+" : ""}
+                            {sector.change.toFixed(2)}%
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+              <div className={styles.sectorSection}>
+                <h3 className={styles.sectorTitle}>
+                  <Building2 className={styles.sectorIconPurple} aria-hidden />
+                  코스닥
+                </h3>
+                <div className={styles.sectorList}>
+                  {kosdaqSectors.length === 0 ? (
+                    <p className={styles.loadingText}>데이터가 없습니다.</p>
+                  ) : (
+                    kosdaqSectors.map((sector) => {
+                      const isPositive = sector.change >= 0;
+                      return (
+                        <div key={sector.name} className={styles.sectorCard}>
+                          <div>
+                            <p>{sector.name}</p>
+                            <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
+                            {isPositive ? "+" : ""}
+                            {sector.change.toFixed(2)}%
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </TabsContent>
 
         {/* 시가총액 */}
@@ -337,6 +456,7 @@ export default function StocksPage() {
         <LazyStockDetailModal
           stock={selectedStock}
           onClose={handleClose}
+          onAddFavorite={handleAddFavorite}
         />
       )}
     </div>
