@@ -432,6 +432,38 @@ async def get_right_schedule(
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@router.get("/api/divi-info")
+async def get_divi_info(
+    bas_dt: Optional[str] = None,
+    crno: Optional[str] = None,
+    stck_issu_cmpy_nm: Optional[str] = None,
+    page_no: int = 1,
+    num_of_rows: int = 100,
+    auth=Depends(get_current_user_or_api_key_for_fsc),
+):
+    """주식배당정보 조회 (GetStocDiviInfoService getDiviInfo) - 기준일자, 법인등록번호, 주식발행회사명으로 배당정보 조회"""
+    if not stck_issu_cmpy_nm and not crno:
+        return JSONResponse({"error": "주식발행회사명 또는 법인등록번호를 입력해 주세요."}, status_code=400)
+    try:
+        data, total_count = await fsc_api_service.fetch_divi_info(
+            bas_dt=bas_dt or None,
+            crno=crno or None,
+            stck_issu_cmpy_nm=stck_issu_cmpy_nm or None,
+            page_no=page_no,
+            num_of_rows=num_of_rows,
+        )
+        return JSONResponse({
+            "data": data,
+            "total_count": total_count or 0,
+            "count": len(data),
+        })
+    except Exception as e:
+        import traceback
+        print(f"❌ get_divi_info 오류: {str(e)}")
+        print(traceback.format_exc())
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # 재무제표 조회 캐시: (crno, biz_year, types_key) -> (expiry_ts, response_dict), TTL 10분
 _FINA_STAT_CACHE: dict[tuple[str, str, str], tuple[float, dict]] = {}
 _FINA_STAT_CACHE_TTL = 600

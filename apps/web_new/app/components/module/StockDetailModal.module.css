@@ -140,6 +140,22 @@
   border: 1px solid var(--app-border-light);
 }
 
+.tableScrollWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border-light);
+}
+
+.tableScrollWrap .infoTable {
+  min-width: max-content;
+}
+
+.tableScrollWrap .infoTable th,
+.tableScrollWrap .infoTable td {
+  white-space: nowrap;
+}
+
 .infoTable {
   width: 100%;
   border-collapse: collapse;

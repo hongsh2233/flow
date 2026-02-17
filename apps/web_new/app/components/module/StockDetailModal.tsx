@@ -43,6 +43,7 @@ interface FscStockDetail {
 interface RightScheduleItem {
   basDt?: string;
   bas_dt?: string;
+  crno?: string;
   stckIssuCmpyNm?: string;
   stck_issu_cmpy_nm?: string;
   rgtExertRcdNm?: string;
@@ -54,7 +55,26 @@ interface RightScheduleItem {
   [key: string]: unknown;
 }
 
-function getRightScheduleVal(item: RightScheduleItem, ...keys: (keyof RightScheduleItem)[]): string {
+interface DiviInfoItem {
+  basDt?: string;
+  bas_dt?: string;
+  crno?: string;
+  stckIssuCmpyNm?: string;
+  stck_issu_cmpy_nm?: string;
+  divBsisDt?: string;
+  div_bsis_dt?: string;
+  cshrPayDt?: string;
+  cshr_pay_dt?: string;
+  stckDrbDt?: string;
+  stck_drb_dt?: string;
+  stckGenlDiviAmt?: string;
+  stck_genl_divi_amt?: string;
+  stckDiffDiviAmt?: string;
+  stck_diff_divi_amt?: string;
+  [key: string]: unknown;
+}
+
+function getVal(item: Record<string, unknown>, ...keys: string[]): string {
   for (const k of keys) {
     const v = item[k];
     if (v != null && v !== "") return String(v);
@@ -89,8 +109,10 @@ export function StockDetailModal({
 }: StockDetailModalProps) {
   const [detail, setDetail] = useState<FscStockDetail | null>(null);
   const [rightSchedule, setRightSchedule] = useState<RightScheduleItem[]>([]);
+  const [diviInfo, setDiviInfo] = useState<DiviInfoItem[]>([]);
   const [detailLoading, setDetailLoading] = useState(true);
   const [rightLoading, setRightLoading] = useState(true);
+  const [diviLoading, setDiviLoading] = useState(true);
 
   const loadDetail = useCallback(async () => {
     if (!stock?.code) return;
@@ -111,11 +133,12 @@ export function StockDetailModal({
   const loadRightSchedule = useCallback(async () => {
     if (!stock?.name?.trim()) {
       setRightLoading(false);
+      setDiviLoading(false);
       return;
     }
     setRightLoading(true);
     try {
-      const res = await fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(stock.name)}&page_no=1&num_of_rows=1000`);
+      const res = await fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(stock.name)}&page_no=1&num_of_rows=100`);
       const json = await res.json();
       setRightSchedule(Array.isArray(json.data) ? json.data : []);
     } catch {
@@ -125,6 +148,30 @@ export function StockDetailModal({
     }
   }, [stock?.name]);
 
+  const loadDiviInfo = useCallback(
+    async (crnoFromRight?: string, basDtFromDetail?: string) => {
+      if (!stock?.name?.trim()) {
+        setDiviLoading(false);
+        return;
+      }
+      setDiviLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("stck_issu_cmpy_nm", stock.name);
+        if (crnoFromRight) params.set("crno", crnoFromRight);
+        if (basDtFromDetail) params.set("bas_dt", basDtFromDetail);
+        const res = await fetch(`/api/divi-info?${params.toString()}`);
+        const json = await res.json();
+        setDiviInfo(Array.isArray(json.data) ? json.data : []);
+      } catch {
+        setDiviInfo([]);
+      } finally {
+        setDiviLoading(false);
+      }
+    },
+    [stock?.name]
+  );
+
   useEffect(() => {
     loadDetail();
   }, [loadDetail]);
@@ -132,6 +179,16 @@ export function StockDetailModal({
   useEffect(() => {
     loadRightSchedule();
   }, [loadRightSchedule]);
+
+  useEffect(() => {
+    if (!stock?.name?.trim() || rightLoading) {
+      if (!stock?.name?.trim()) setDiviLoading(false);
+      return;
+    }
+    const crno = rightSchedule[0] ? getVal(rightSchedule[0] as Record<string, unknown>, "crno") : undefined;
+    const basDt = detail?.bas_dt;
+    loadDiviInfo(crno !== "-" ? crno : undefined, basDt);
+  }, [stock?.name, detail?.bas_dt, rightSchedule, rightLoading, loadDiviInfo]);
 
   if (!stock) return null;
 
@@ -193,7 +250,7 @@ export function StockDetailModal({
             {detailLoading ? (
               <p className={styles.loadingText}>로딩 중...</p>
             ) : detail ? (
-              <div className={styles.infoTableWrap}>
+              <div className={styles.tableScrollWrap}>
                 <table className={styles.infoTable}>
                   <tbody>
                     {STOCK_INFO_COLUMNS.map(({ key, label }) => {
@@ -214,7 +271,7 @@ export function StockDetailModal({
             )}
           </section>
 
-          {/* 주식권리일정정보 */}
+          {/* 주식권리일정정보 (최신 1건) */}
           <section className={styles.section}>
             <h4 className={styles.sectionTitle}>주식권리일정정보</h4>
             {rightLoading ? (
@@ -222,7 +279,7 @@ export function StockDetailModal({
             ) : rightSchedule.length === 0 ? (
               <p className={styles.loadingText}>조회 결과가 없습니다.</p>
             ) : (
-              <div className={styles.infoTableWrap}>
+              <div className={styles.tableScrollWrap}>
                 <table className={styles.infoTable}>
                   <thead>
                     <tr>
@@ -234,13 +291,54 @@ export function StockDetailModal({
                     </tr>
                   </thead>
                   <tbody>
-                    {rightSchedule.map((item, idx) => (
+                    {(rightSchedule.slice(0, 1)).map((item, idx) => (
                       <tr key={idx}>
-                        <td>{getRightScheduleVal(item, "basDt", "bas_dt")}</td>
-                        <td>{getRightScheduleVal(item, "stckIssuCmpyNm", "stck_issu_cmpy_nm")}</td>
-                        <td>{getRightScheduleVal(item, "rgtExertRcdNm", "rgt_exert_rcd_nm")}</td>
-                        <td>{getRightScheduleVal(item, "rgtExertSttgDt", "rgt_exert_sttg_dt")}</td>
-                        <td>{getRightScheduleVal(item, "rgtExertEdDt", "rgt_exert_ed_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "basDt", "bas_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "stckIssuCmpyNm", "stck_issu_cmpy_nm")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "rgtExertRcdNm", "rgt_exert_rcd_nm")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "rgtExertSttgDt", "rgt_exert_sttg_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "rgtExertEdDt", "rgt_exert_ed_dt")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* 배당정보 */}
+          <section className={styles.section}>
+            <h4 className={styles.sectionTitle}>배당정보</h4>
+            {diviLoading ? (
+              <p className={styles.loadingText}>로딩 중...</p>
+            ) : diviInfo.length === 0 ? (
+              <p className={styles.loadingText}>조회 결과가 없습니다.</p>
+            ) : (
+              <div className={styles.tableScrollWrap}>
+                <table className={styles.infoTable}>
+                  <thead>
+                    <tr>
+                      <th>기준일자</th>
+                      <th>법인등록번호</th>
+                      <th>주식발행회사명</th>
+                      <th>배당기준일자</th>
+                      <th>현금배당지급일자</th>
+                      <th>주식교부일자</th>
+                      <th>주식일반배당금액</th>
+                      <th>주식차등배당금액</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {diviInfo.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{getVal(item as Record<string, unknown>, "basDt", "bas_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "crno")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "stckIssuCmpyNm", "stck_issu_cmpy_nm")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "divBsisDt", "div_bsis_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "cshrPayDt", "cshr_pay_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "stckDrbDt", "stck_drb_dt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "stckGenlDiviAmt", "stck_genl_divi_amt")}</td>
+                        <td>{getVal(item as Record<string, unknown>, "stckDiffDiviAmt", "stck_diff_divi_amt")}</td>
                       </tr>
                     ))}
                   </tbody>

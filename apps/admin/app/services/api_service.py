@@ -766,6 +766,58 @@ class FscApiService:
             print(f"❌ 권리행사사유별일정조회 API 오류: {str(e)}")
             return [], None
 
+    async def fetch_divi_info(
+        self,
+        bas_dt: Optional[str] = None,
+        crno: Optional[str] = None,
+        stck_issu_cmpy_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 100,
+    ) -> tuple[List, Optional[int]]:
+        """
+        주식배당정보 조회 (GetStocDiviInfoService getDiviInfo)
+        기준일자, 법인등록번호, 주식발행회사명으로 배당기준일자, 현금배당지급일자 등 조회
+        """
+        url = "http://apis.data.go.kr/1160100/service/GetStocDiviInfoService/getDiviInfo"
+        params = {
+            "serviceKey": self.api_key,
+            "pageNo": page_no,
+            "numOfRows": num_of_rows,
+            "resultType": "json",
+        }
+        if bas_dt:
+            params["basDt"] = bas_dt
+        if crno:
+            params["crno"] = crno.strip()
+        if stck_issu_cmpy_nm:
+            params["stckIssuCmpyNm"] = stck_issu_cmpy_nm.strip()
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                result = response.json()
+
+                items = []
+                total_count = None
+                if "response" in result:
+                    body = result["response"].get("body", {})
+                    total_count = body.get("totalCount")
+                    if "items" in body and body["items"]:
+                        item_data = body["items"].get("item")
+                        if item_data is None:
+                            pass
+                        elif isinstance(item_data, list):
+                            items = item_data
+                        else:
+                            items = [item_data]
+                if total_count is not None and isinstance(total_count, str) and total_count.isdigit():
+                    total_count = int(total_count)
+                return items, total_count
+        except Exception as e:
+            print(f"❌ 주식배당정보조회 API 오류: {str(e)}")
+            return [], None
+
     _FINA_STAT_BASE = "http://apis.data.go.kr/1160100/service/GetFinaStatInfoService_V2"
 
     async def _fetch_fina_stat_one(
