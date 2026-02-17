@@ -1,62 +1,25 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
-import { ExchangeRates } from "./components/module/home/ExchangeRates";
-import { MarketIndex } from "./components/module/home/MarketIndex";
-import { RealtimeSearch } from "./components/module/home/RealtimeSearch";
-import { TradeRanking } from "./components/module/home/TradeRanking";
+import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import type { StockDetail } from "@/lib/types";
 import { StockTermBox } from "./components/module/stock-term-box";
-import { AdBanner } from "./components/module/AdBanner";
-import type { StockDetail, AdBannerItem } from "@/lib/types";
-import {
-  realtimeSearch,
-  kospiVolume,
-  kosdaqVolume,
-  kospiValue,
-  kosdaqValue,
-  favoriteStocks,
-  exchangeRates,
-  marketIndices,
-} from "@/lib/data/home";
-
-const adBanners: AdBannerItem[] = [
-  {
-    title: "초보 투자자를 위한 무료 강의",
-    description: "주식 기초부터 차트 분석까지 한 번에!",
-    label: "EVENT",
-    emoji: "📚",
-    gradient: "orange",
-    href: "#",
-    closeable: true,
-  },
-  {
-    title: "실시간 시장 알림 받기",
-    description: "관심 종목 가격 변동을 놓치지 마세요",
-    label: "NEW",
-    emoji: "🔔",
-    gradient: "blue",
-    href: "#",
-    closeable: true,
-  },
-  {
-    title: "AI 종목 추천 리포트",
-    description: "나만의 맞춤 포트폴리오를 만들어 보세요",
-    label: "HOT",
-    emoji: "🤖",
-    gradient: "green",
-    href: "#",
-    closeable: true,
-  },
-];
-
+import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
+import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
+import { ForeignIndices } from "./components/module/home/ForeignIndices";
+import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
+import { TradeRankingSection } from "./components/module/home/TradeRankingSection";
+import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }
 );
 
 export default function Home() {
+  const { status } = useSession();
+  const { favoriteStocks, isLoading: isLoadingFavorites } = useFavoriteStocks();
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const handleClose = useCallback(() => setSelectedStock(null), []);
 
@@ -66,26 +29,35 @@ export default function Home() {
         <StockTermBox />
       </div>
 
-      <FavoriteStocks stocks={favoriteStocks} onSelect={setSelectedStock} />
-      <ExchangeRates rates={exchangeRates} />
-      <MarketIndex indices={marketIndices} />
-      <RealtimeSearch items={realtimeSearch} />
-      <TradeRanking
-        kospiVolume={kospiVolume}
-        kosdaqVolume={kosdaqVolume}
-        kospiValue={kospiValue}
-        kosdaqValue={kosdaqValue}
-        onSelect={setSelectedStock}
-      />
+      <ForeignIndices />
+      <MarketIndexSection />
 
-      <AdBanner items={adBanners} autoSlide interval={5000} />
-
-      {selectedStock && (
-        <LazyStockDetailModal
-          stock={selectedStock}
-          onClose={handleClose}
-        />
+      {status === "loading" ? (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          로그인 정보 확인 중...
+        </div>
+      ) : status === "authenticated" ? (
+        isLoadingFavorites ? (
+          <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+            관심종목 불러오는 중...
+          </div>
+        ) : (
+          <FavoriteStocks stocks={favoriteStocks} onSelect={setSelectedStock} />
+        )
+      ) : (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          <p>로그인 후 관심종목을 등록하고 확인할 수 있습니다.</p>
+          <a href="/login" style={{ color: "var(--app-accent)", marginTop: "0.5rem", display: "inline-block" }}>
+            로그인하기
+          </a>
+        </div>
       )}
+
+      <ExchangeRatesSection />
+      <TradeRankingSection onSelect={setSelectedStock} />
+      <RealtimeSearchSection />
+
+      {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
     </div>
   );
 }
