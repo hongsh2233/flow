@@ -19,6 +19,21 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
+/* HTML 배너 (managed) */
+.htmlBanner {
+  padding: 1rem 1.25rem;
+}
+
+.htmlContent {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.htmlContent :global(a) {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* 이미지 배너 */
 .imageBanner img {
   width: 100%;

@@ -1,0 +1,40 @@
+.singleBanner {
+  padding: 0 1rem;
+  margin-top: 1rem;
+}
+
+.inner {
+  display: block;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.inner:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.inner img {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: top;
+}
+
+.htmlContent {
+  padding: 1rem 1.25rem;
+  background: var(--app-card-bg, #fff);
+  border: 1px solid var(--app-border-light, #eee);
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.htmlContent :global(a) {
+  color: var(--app-accent);
+  text-decoration: underline;
+}

@@ -53,16 +53,22 @@ export function AdBanner({ items, autoSlide = true, interval = 4000 }: AdBannerP
     ? { href: item.href, target: "_blank" as const, rel: "noopener noreferrer" }
     : {};
 
+  const bannerClass = item.htmlContent
+    ? `${styles.banner} ${styles.htmlBanner}`
+    : item.imageUrl
+      ? `${styles.banner} ${styles.imageBanner}`
+      : `${styles.banner} ${styles.textBanner} ${gradientMap[item.gradient ?? "orange"] ?? styles.gradientOrange}`;
+
   return (
     <div className={styles.wrap}>
-      <Wrapper
-        className={`${styles.banner} ${
-          item.imageUrl ? styles.imageBanner : `${styles.textBanner} ${gradientMap[item.gradient ?? "orange"] ?? styles.gradientOrange}`
-        }`}
-        {...wrapperProps}
-      >
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} />
+      <Wrapper className={bannerClass} {...wrapperProps}>
+        {item.htmlContent ? (
+          <div
+            className={styles.htmlContent}
+            dangerouslySetInnerHTML={{ __html: item.htmlContent }}
+          />
+        ) : item.imageUrl ? (
+          <img src={item.imageUrl} alt={item.title || "배너"} />
         ) : (
           <>
             <div className={styles.textLeft}>

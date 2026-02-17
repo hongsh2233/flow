@@ -59,6 +59,20 @@ export interface AdBannerItem {
   emoji?: string;
   href?: string;
   imageUrl?: string;
+  htmlContent?: string;
   gradient?: "orange" | "blue" | "green" | "dark";
   closeable?: boolean;
+}
+
+/** 배너관리 API 응답 아이템 (managed) */
+export interface ManagedBannerItem {
+  id: number;
+  display_type: "single" | "slide";
+  content_type: "image" | "html";
+  image_url: string | null;
+  html_content: string | null;
+  link_url: string | null;
+  alt_text: string | null;
+  order_index: number;
+  slide_group: string | null;
 }

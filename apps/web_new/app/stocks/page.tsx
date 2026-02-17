@@ -492,7 +492,7 @@ export default function StocksPage() {
           onClose={handleClose}
           onAddFavorite={handleAddFavorite}
           onRemoveFavorite={(s) => handleRemoveFavorite(s.code)}
-          isFavorited={favCodes.includes(selectedStock.code)}
+          isFavorited={favCodes.has(selectedStock.code)}
         />
       )}
 
