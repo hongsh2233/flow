@@ -46,7 +46,7 @@ export default function Home() {
         )
       ) : (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
-          <p>로그인 후 관심종목을 등록하고 확인할 수 있습니다.</p>
+          <p>관심종목은 로그인 후 이용할 수 있습니다.</p>
           <a href="/login" style={{ color: "var(--app-accent)", marginTop: "0.5rem", display: "inline-block" }}>
             로그인하기
           </a>
@@ -54,8 +54,8 @@ export default function Home() {
       )}
 
       <ExchangeRatesSection />
-      <TradeRankingSection onSelect={setSelectedStock} />
       <RealtimeSearchSection />
+      <TradeRankingSection onSelect={setSelectedStock} />
 
       {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
     </div>
