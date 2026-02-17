@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { getImageUrl } from "@/lib/config/api";
+import { withdrawMember } from "@/lib/services/authService";
 import styles from "./Settings.module.css";
 import {
   Bell,
@@ -30,7 +31,7 @@ const settingsGroups: SettingsGroup[] = [
     title: "내 정보",
     items: [
       { icon: User, label: "프로필 관리", hasArrow: true, href: "/settings/profile" },
-      { icon: UserX, label: "회원 탈퇴", hasArrow: true },
+      { icon: UserX, label: "회원 탈퇴", hasArrow: true, action: "withdraw" },
     ],
   },
   {
@@ -85,7 +86,7 @@ function SettingsScreen() {
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
 
-  const handleItemClick = (href?: string, action?: string) => {
+  const handleItemClick = async (href?: string, action?: string) => {
     if (href) {
       router.push(href);
       return;
@@ -93,6 +94,30 @@ function SettingsScreen() {
     if (action === "privacy" || action === "terms") {
       setTermsTab(action);
       setTermsOpen(true);
+      return;
+    }
+    if (action === "withdraw") {
+      if (!session?.user?.email) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+      const confirmed = window.confirm(
+        "정말 회원탈퇴를 하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 데이터가 삭제됩니다."
+      );
+      if (!confirmed) return;
+      try {
+        const result = await withdrawMember(session.user.email);
+        if (result.success) {
+          alert("회원 탈퇴가 완료되었습니다.");
+          await signOut({ callbackUrl: "/" });
+          router.push("/");
+        } else {
+          alert(result.message ?? "회원 탈퇴에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("회원 탈퇴 오류:", error);
+        alert("회원 탈퇴 중 오류가 발생했습니다.");
+      }
     }
   };
 

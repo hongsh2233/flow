@@ -43,3 +43,46 @@ export async function getFavoriteStocks(
     };
   }
 }
+
+/**
+ * 회원 탈퇴
+ * @param email - 회원 이메일
+ * @returns 탈퇴 결과
+ */
+export async function withdrawMember(
+  email: string
+): Promise<{ success: boolean; message: string; error?: string }> {
+  try {
+    const response = await fetch(
+      `/api/auth/member/withdraw?email=${encodeURIComponent(email)}`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      return {
+        success: false,
+        message: "회원 탈퇴를 처리할 수 없습니다.",
+        error: errorText,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: data.success ?? true,
+      message: data.message ?? "회원 탈퇴가 완료되었습니다.",
+    };
+  } catch (error) {
+    console.error("회원 탈퇴 오류:", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "회원 탈퇴 중 오류가 발생했습니다.",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
