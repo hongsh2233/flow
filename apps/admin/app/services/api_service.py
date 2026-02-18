@@ -22,8 +22,10 @@ class KrxApiService:
     """
     def __init__(self):
         self.base_url = "https://data-dbg.krx.co.kr/svc/apis"
-        # 환경 변수에서 API 키 읽기 (없으면 기본값 사용)
-        self.api_key = os.getenv("KRX_API_KEY", "73346D637E1B47AA8B653668D4D969288CEAB195")
+        # 환경 변수에서 API 키 읽기 (필수, 기본값 없음 - .env.local에 설정)
+        self.api_key = os.getenv("KRX_API_KEY", "").strip()
+        if not self.api_key:
+            raise ValueError("KRX_API_KEY 환경 변수가 설정되지 않았습니다. .env.local에 KRX_API_KEY를 추가하세요.")
         self.timeout = 30.0
         # 보안: API 키는 콘솔에 출력하지 않음
         print(f"🔑 KRX API 키 로드 완료")
