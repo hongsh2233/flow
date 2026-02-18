@@ -60,3 +60,9 @@ export function getWeeksRange(weeksOffset = 5): {
   return { weeks, todayWeekIndex: weeksOffset };
 }
 
+/** 현재 주(일~토)의 날짜 정보를 반환합니다. */
+export function getWeekDates(): WeekDateInfo[] {
+  const today = new Date();
+  const sunday = getSunday(today);
+  return buildWeek(sunday, today);
+}

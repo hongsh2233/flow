@@ -94,7 +94,7 @@ class KrxApiService:
             endpoint: API 엔드포인트 경로 (예: '/idx/kospi_dd_trd')
             bas_dd: 기준일자 (YYYYMMDD 형식, None이면 오늘 날짜부터 조회)
             db: 데이터베이스 세션 (제공되면 DB 조회/저장 수행)
-            data_type: 데이터 타입 ('kospi', 'kosdaq')
+            data_type: 데이터 타입 ('kospi', 'kosdaq', 'etf')
 
         Returns:
             List: 지수 데이터 리스트 (OutBlock_1 내부 데이터)
@@ -232,6 +232,20 @@ class KrxApiService:
         kosdaq_data = await self.fetch_kosdaq_index(bas_dd, db)
         return {"kospi": kospi_data, "kosdaq": kosdaq_data}
 
+    async def fetch_etf_data(self, bas_dd: Optional[str] = None, db: Optional[Session] = None) -> List:
+        """
+        ETF 일별매매정보 조회
+
+        ETF(상장지수펀드)의 매매정보를 조회합니다. ('10년01월04일 데이터부터 제공)
+
+        Args:
+            bas_dd: 기준일자 (YYYYMMDD 형식, None이면 오늘 날짜부터 조회)
+            db: 데이터베이스 세션 (제공되면 DB 조회/저장 수행)
+
+        Returns:
+            List: ETF 매매정보 데이터 리스트
+        """
+        return await self._fetch_krx_data("/etp/etf_bydd_trd", bas_dd, db, "etf")
 
 krx_api_service = KrxApiService()
 
@@ -766,58 +780,6 @@ class FscApiService:
             print(f"❌ 권리행사사유별일정조회 API 오류: {str(e)}")
             return [], None
 
-    async def fetch_divi_info(
-        self,
-        bas_dt: Optional[str] = None,
-        crno: Optional[str] = None,
-        stck_issu_cmpy_nm: Optional[str] = None,
-        page_no: int = 1,
-        num_of_rows: int = 100,
-    ) -> tuple[List, Optional[int]]:
-        """
-        주식배당정보 조회 (GetStocDiviInfoService getDiviInfo)
-        기준일자, 법인등록번호, 주식발행회사명으로 배당기준일자, 현금배당지급일자 등 조회
-        """
-        url = "http://apis.data.go.kr/1160100/service/GetStocDiviInfoService/getDiviInfo"
-        params = {
-            "serviceKey": self.api_key,
-            "pageNo": page_no,
-            "numOfRows": num_of_rows,
-            "resultType": "json",
-        }
-        if bas_dt:
-            params["basDt"] = bas_dt
-        if crno:
-            params["crno"] = crno.strip()
-        if stck_issu_cmpy_nm:
-            params["stckIssuCmpyNm"] = stck_issu_cmpy_nm.strip()
-
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                result = response.json()
-
-                items = []
-                total_count = None
-                if "response" in result:
-                    body = result["response"].get("body", {})
-                    total_count = body.get("totalCount")
-                    if "items" in body and body["items"]:
-                        item_data = body["items"].get("item")
-                        if item_data is None:
-                            pass
-                        elif isinstance(item_data, list):
-                            items = item_data
-                        else:
-                            items = [item_data]
-                if total_count is not None and isinstance(total_count, str) and total_count.isdigit():
-                    total_count = int(total_count)
-                return items, total_count
-        except Exception as e:
-            print(f"❌ 주식배당정보조회 API 오류: {str(e)}")
-            return [], None
-
     _FINA_STAT_BASE = "http://apis.data.go.kr/1160100/service/GetFinaStatInfoService_V2"
 
     async def _fetch_fina_stat_one(
@@ -1004,98 +966,6 @@ class FscApiService:
         except Exception as e:
             print(f"❌ 재무제표 API 호출 오류 ({fs_type}): {str(e)}")
             raise
-
-    # ==================== 대차거래 (GetCMStckLnbInfoService) ====================
-    _STCK_LNB_BASE = "https://apis.data.go.kr/1160100/service/GetCMStckLnbInfoService"
-
-    async def _fetch_stck_lnb(
-        self,
-        endpoint: str,
-        bas_dt: Optional[str] = None,
-        isin_cd: Optional[str] = None,
-        itms_nm: Optional[str] = None,
-        page_no: int = 1,
-        num_of_rows: int = 100,
-    ) -> tuple[List, Optional[int]]:
-        """대차거래 API 공통 호출 메서드."""
-        url = f"{self._STCK_LNB_BASE}/{endpoint}"
-        params = {
-            "serviceKey": self.api_key,
-            "pageNo": page_no,
-            "numOfRows": num_of_rows,
-            "resultType": "json",
-        }
-        if bas_dt:
-            params["basDt"] = bas_dt
-        if isin_cd:
-            params["isinCd"] = isin_cd
-        if itms_nm:
-            params["itmsNm"] = itms_nm
-
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                result = response.json()
-
-                items = []
-                total_count = None
-                if "response" in result:
-                    body = result["response"].get("body", {})
-                    total_count = body.get("totalCount")
-                    if "items" in body:
-                        items_obj = body["items"]
-                        if "item" in items_obj:
-                            item_data = items_obj["item"]
-                            items = item_data if isinstance(item_data, list) else [item_data]
-
-                if total_count is not None and isinstance(total_count, str):
-                    total_count = int(total_count) if total_count.isdigit() else None
-                print(f"✅ 대차거래 {endpoint} 성공: {len(items)}건 (totalCount: {total_count})")
-                return items, total_count
-        except Exception as e:
-            print(f"❌ 대차거래 {endpoint} API 오류: {str(e)}")
-            return [], None
-
-    async def fetch_stck_lnb_detail(
-        self,
-        bas_dt: Optional[str] = None,
-        isin_cd: Optional[str] = None,
-        itms_nm: Optional[str] = None,
-        page_no: int = 1,
-        num_of_rows: int = 100,
-    ) -> tuple[List, Optional[int]]:
-        """주식 대차거래내역 조회 (getStckLnbDetail)"""
-        return await self._fetch_stck_lnb(
-            "getStckLnbDetail", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
-        )
-
-    async def fetch_stck_lnb_progress(
-        self,
-        bas_dt: Optional[str] = None,
-        isin_cd: Optional[str] = None,
-        itms_nm: Optional[str] = None,
-        page_no: int = 1,
-        num_of_rows: int = 100,
-    ) -> tuple[List, Optional[int]]:
-        """주식 대차거래추이 조회 (getStckLnbProgress)"""
-        return await self._fetch_stck_lnb(
-            "getStckLnbProgress", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
-        )
-
-    async def fetch_stck_lnb_invpn_detail(
-        self,
-        bas_dt: Optional[str] = None,
-        isin_cd: Optional[str] = None,
-        itms_nm: Optional[str] = None,
-        page_no: int = 1,
-        num_of_rows: int = 100,
-    ) -> tuple[List, Optional[int]]:
-        """참여자별주식대차거래내역 조회 (getStckLnbInvpnDetail)"""
-        return await self._fetch_stck_lnb(
-            "getStckLnbInvpnDetail", bas_dt, isin_cd, itms_nm, page_no, num_of_rows
-        )
-
 
 fsc_api_service = FscApiService()
 
