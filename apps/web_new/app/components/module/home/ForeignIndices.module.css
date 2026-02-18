@@ -19,12 +19,32 @@
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
   gap: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border-light) transparent;
+}
+
+.grid::-webkit-scrollbar {
+  height: 4px;
+}
+
+.grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.grid::-webkit-scrollbar-thumb {
+  background: var(--app-border-light);
+  border-radius: 2px;
 }
 
 .card {
+  flex-shrink: 0;
+  min-width: 130px;
   background: var(--app-card-bg);
   border-radius: 0.75rem;
   padding: 0.75rem;
