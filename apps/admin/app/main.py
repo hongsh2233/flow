@@ -137,6 +137,12 @@ def run_migrations():
         migrate_schedule_detail()
     except Exception as e:
         print(f"⚠️ 일정 detail 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_schedule_time_column import migrate_schedule_time
+        migrate_schedule_time()
+    except Exception as e:
+        print(f"⚠️ 일정 scheduled_time 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
     
     try:
         from app.migrations.add_member_columns import migrate_member_table

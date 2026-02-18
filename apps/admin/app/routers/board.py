@@ -504,9 +504,17 @@ async def admin_create_post(
         )
         db.add(new_post)
         db.flush()  # post.id를 얻기 위해 flush
-        
+
         db.commit()
         print(f"[DEBUG] 게시글 저장 완료: post_id={new_post.id}, 첨부파일={len(uploaded_files)}개")
+
+        # 시황 게시판 새 글 시 푸시 알림 (B003 제외)
+        try:
+            from app.services.push_service import maybe_send_push_on_new_post
+            await maybe_send_push_on_new_post(board_id, title.strip(), new_post.id)
+        except Exception as push_err:
+            print(f"[DEBUG] 푸시 알림 호출 생략: {push_err}")
+
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
         db.rollback()

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import type { ScheduleItem } from "@/lib/types";
 import { getWeeksRange, toIsoDateLocal } from "@/lib/utils/calendar";
 import { fetchSchedules } from "@/lib/services/scheduleService";
+import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
 import { ScheduleCard } from "./ScheduleCard";
 import styles from "./Calendar.module.css";
 
@@ -44,6 +46,9 @@ function getMonthLabel(weekDates: { fullDate: Date }[]): string {
 }
 
 export function Calendar() {
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const { scheduleAlarmEnabled } = useNotificationSettings();
   const { weeks, todayWeekIndex } = useMemo(() => getWeeksRange(5), []);
   const [weekIndex, setWeekIndex] = useState(todayWeekIndex);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -76,6 +81,7 @@ export function Calendar() {
           subject: s.subject,
           date: formatDateDisplay(new Date(s.date)),
           dateIso: s.date,
+          time: s.scheduled_time || undefined,
           content: s.content || undefined,
           detail: s.detail != null && s.detail !== "" ? String(s.detail) : undefined,
         }));
@@ -240,7 +246,11 @@ export function Calendar() {
         ) : (
           <div className={styles.scheduleList}>
             {schedules.map((schedule) => (
-              <ScheduleCard key={schedule.id} schedule={schedule} />
+              <ScheduleCard
+                key={schedule.id}
+                schedule={schedule}
+                canUseAlarm={isLoggedIn && scheduleAlarmEnabled}
+              />
             ))}
           </div>
         )}

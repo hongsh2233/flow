@@ -15,6 +15,20 @@ from app import models
 from app.services.schedule_api_service import schedule_api_service
 
 router = APIRouter()
+
+
+def _valid_time(s: str) -> bool:
+    """HH:mm 형식 검증"""
+    if not s or len(s) != 5:
+        return False
+    parts = s.split(":")
+    if len(parts) != 2:
+        return False
+    try:
+        h, m = int(parts[0]), int(parts[1])
+        return 0 <= h <= 23 and 0 <= m <= 59
+    except ValueError:
+        return False
 templates = Jinja2Templates(directory="dashboard/templates")
 
 # --- 프론트엔드 호출용 API 엔드포인트는 api.py에서 통합 관리 ---
@@ -39,6 +53,7 @@ async def schedule_page(
         {
             "id": s.id,
             "date": s.date.isoformat() if s.date else None,
+            "scheduled_time": getattr(s, "scheduled_time", None) or "",
             "subject": s.subject,
             "content": s.content or "",
             "detail": getattr(s, "detail", None) or "",
@@ -61,6 +76,7 @@ VALID_SCHEDULE_TYPES = {"api", "earnings", "ipo", "dividend", "news", "etc", "ma
 @router.post("/admin/schedule/add")
 async def add_schedule(
     date: str = Form(...),
+    scheduled_time: str = Form(None),
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
@@ -73,6 +89,9 @@ async def add_schedule(
         return RedirectResponse(url="/", status_code=303)
     
     schedule_type = schedule_type_param if schedule_type_param in VALID_SCHEDULE_TYPES else "etc"
+    time_val = (scheduled_time or "").strip() or None
+    if time_val and not _valid_time(time_val):
+        time_val = None
     
     try:
         # 날짜 문자열을 date 객체로 변환
@@ -81,6 +100,7 @@ async def add_schedule(
         # 새 일정 생성
         new_schedule = models.Schedule(
             date=date_obj,
+            scheduled_time=time_val,
             subject=subject,
             content=content or "",
             detail=detail or None,
@@ -129,6 +149,7 @@ async def delete_schedule(
 async def update_schedule(
     sch_id: int = Form(...),
     date: str = Form(...),
+    scheduled_time: str = Form(None),
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
@@ -147,6 +168,9 @@ async def update_schedule(
         raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
     
     schedule_type = schedule_type_param if schedule_type_param in VALID_SCHEDULE_TYPES else schedule.type or "etc"
+    time_val = (scheduled_time or "").strip() or None
+    if time_val and not _valid_time(time_val):
+        time_val = None
     
     try:
         # 날짜 문자열을 date 객체로 변환
@@ -154,6 +178,7 @@ async def update_schedule(
         
         # 일정 정보 업데이트
         schedule.date = date_obj
+        schedule.scheduled_time = time_val
         schedule.subject = subject
         schedule.content = content or ""
         schedule.detail = detail or None

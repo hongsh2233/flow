@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
 import { getImageUrl } from "@/lib/config/api";
 import { withdrawMember } from "@/lib/services/authService";
 import styles from "./Settings.module.css";
@@ -37,8 +38,8 @@ const settingsGroups: SettingsGroup[] = [
   {
     title: "알림 설정",
     items: [
-      { icon: Bell, label: "푸시 알림", hasSwitch: true, enabled: true },
-      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, enabled: false },
+      { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: true },
+      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
     ],
   },
   {
@@ -59,8 +60,15 @@ const settingsGroups: SettingsGroup[] = [
   },
 ];
 
-// 비로그인 시 보여줄 그룹 (앱 설정에서 간편 비밀번호 제외, 내 정보/알림 설정 숨김)
+// 비로그인 시 보여줄 그룹 (앱 설정에서 간편 비밀번호 제외, 내 정보 숨김, 알림 설정은 표시하되 로그인 후 이용)
 const guestSettingsGroups: SettingsGroup[] = [
+  {
+    title: "알림 설정",
+    items: [
+      { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: false },
+      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
+    ],
+  },
   {
     title: "앱 설정",
     items: [
@@ -83,6 +91,12 @@ function SettingsScreen() {
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isDark, toggle } = useThemeContext();
+  const {
+    scheduleAlarmEnabled,
+    pushEnabled,
+    setScheduleAlarmEnabled,
+    setPushEnabled,
+  } = useNotificationSettings();
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
 
@@ -210,8 +224,29 @@ function SettingsScreen() {
                       {item.hasSwitch && item.action === "darkmode" && (
                         <Switch checked={isDark} onChange={toggle} />
                       )}
-                      {item.hasSwitch && item.action !== "darkmode" && (
-                        <Switch defaultChecked={item.enabled} />
+                      {item.hasSwitch && item.action === "scheduleAlarm" && (
+                        <Switch
+                          checked={isLoggedIn ? scheduleAlarmEnabled : false}
+                          onChange={(checked) => {
+                            if (!isLoggedIn) {
+                              alert("로그인 이후 이용할 수 있습니다.");
+                              return;
+                            }
+                            setScheduleAlarmEnabled(checked);
+                          }}
+                        />
+                      )}
+                      {item.hasSwitch && item.action === "push" && (
+                        <Switch
+                          checked={isLoggedIn ? pushEnabled : false}
+                          onChange={(checked) => {
+                            if (!isLoggedIn) {
+                              alert("로그인 이후 이용할 수 있습니다.");
+                              return;
+                            }
+                            setPushEnabled(checked);
+                          }}
+                        />
                       )}
                       {item.hasArrow && (
                         <ChevronRight className={styles.chevronIcon} />

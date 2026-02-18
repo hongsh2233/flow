@@ -114,6 +114,7 @@ class Schedule(Base):
     __tablename__ = "schedules"
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, index=True)
+    scheduled_time = Column(String(5), nullable=True)  # HH:mm (선택)
     subject = Column(String(255), nullable=False)
     content = Column(String(500))  # 요약 내용
     detail = Column(Text)  # 상세 내용

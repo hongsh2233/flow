@@ -17,7 +17,11 @@ const NOTIFY_OPTIONS: { value: NotifyTiming; label: string }[] = [
   { value: "2day", label: "2일 전" },
 ];
 
-function NotifyButton() {
+function NotifyButton({
+  onLoginRequired,
+}: {
+  onLoginRequired?: () => void;
+}) {
   const [selected, setSelected] = useState<NotifyTiming | null>(null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -35,8 +39,21 @@ function NotifyButton() {
   }, [open]);
 
   const handleSelect = (value: NotifyTiming) => {
+    if (onLoginRequired) {
+      onLoginRequired();
+      setOpen(false);
+      return;
+    }
     setSelected(selected === value ? null : value);
     setOpen(false);
+  };
+
+  const handleToggle = () => {
+    if (onLoginRequired) {
+      onLoginRequired();
+      return;
+    }
+    setOpen((prev) => !prev);
   };
 
   return (
@@ -44,7 +61,7 @@ function NotifyButton() {
       <button
         type="button"
         className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""}`}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleToggle}
         aria-label="알림 설정"
       >
         {selected ? (
@@ -97,9 +114,11 @@ function isEmptyHtml(html: string): boolean {
 
 export interface ScheduleCardProps {
   schedule: ScheduleItem;
+  /** 설정에서 일정알림을 켰고 로그인한 경우에만 알림 버튼 활성화 */
+  canUseAlarm?: boolean;
 }
 
-export function ScheduleCard({ schedule }: ScheduleCardProps) {
+export function ScheduleCard({ schedule, canUseAlarm = false }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
@@ -131,7 +150,15 @@ export function ScheduleCard({ schedule }: ScheduleCardProps) {
                   </p>
                 )}
               </div>
-              <NotifyButton />
+              {canUseAlarm ? (
+                <NotifyButton />
+              ) : (
+                <NotifyButton
+                  onLoginRequired={() =>
+                    alert("로그인 이후 이용할 수 있습니다.")
+                  }
+                />
+              )}
             </div>
             <div className={styles.bottom}>
               {schedule.time && (

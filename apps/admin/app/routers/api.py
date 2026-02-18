@@ -608,6 +608,7 @@ async def get_schedules(
             {
                 "id": schedule.id,
                 "date": serialize_date(schedule.date),
+                "scheduled_time": getattr(schedule, "scheduled_time", None) or "",
                 "subject": schedule.subject,
                 "content": schedule.content or "",
                 "detail": getattr(schedule, "detail", None) or "",
@@ -638,6 +639,7 @@ async def get_schedule(
         "data": {
             "id": schedule.id,
             "date": serialize_date(schedule.date),
+            "scheduled_time": getattr(schedule, "scheduled_time", None) or "",
             "subject": schedule.subject,
             "content": schedule.content or "",
             "detail": getattr(schedule, "detail", None) or "",
