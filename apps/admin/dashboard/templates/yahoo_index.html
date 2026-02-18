@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}야후 지수 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .tab-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
+  .tab-section-header h3 { color: #2c3e50; margin: 0; flex: 1; }
+  .btn-fetch { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+  .btn-fetch:hover { background: #2980b9; }
+  .btn-fetch:disabled { background: #95a5a6; cursor: not-allowed; }
+  .data-table-container { margin-top: 20px; background: white; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table thead { background: #3498db; color: white; }
+  .data-table th { padding: 12px; text-align: left; font-weight: 600; }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid #dee2e6; }
+  .data-table tbody tr:hover { background: #f8f9fa; }
+  .loading { padding: 40px; text-align: center; color: #3498db; font-style: italic; }
+  .empty-message { padding: 40px; text-align: center; color: #6c757d; font-style: italic; }
+  .info-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; margin: 10px 0; }
+  .info-badge.success { background: #d4edda; color: #155724; }
+  .page-links { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .page-links a { padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-size: 14px; border: 1px solid #dee2e6; }
+  .page-links a:hover { background: #e9ecef; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">🌐 야후 지수</h2>
+      <p style="color: #666; margin: 0;">
+        Yahoo Finance에서 수집한 한국·미국 지수 데이터를 확인할 수 있습니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="page-links">
+    <a href="/admin/finance-data">📈 한국거래소</a>
+    <a href="/admin/finance-data2">🏛️ 금융위원회</a>
+    <a href="/admin/naver-ranking">📊 네이버랭킹</a>
+  </div>
+
+  <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px; margin-bottom:14px;">
+    <p style="color:#666; margin:0 0 10px 0;">
+      스케줄러로 저장된 지수(최근 7일)를 표시합니다. (한국: 09:20/11:30/14:00/15:30, 미국: 06:20/00:00/02:00/04:00)
+    </p>
+
+    <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h4 style="margin:0;">🇰🇷 한국 지수 (KOSPI/KOSDAQ)</h4>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-fetch" onclick="manualCollectYahoo('kr')">🧪 한국 수동 수집</button>
+          <button class="btn-fetch" onclick="loadYahooGroup('kr')" style="background:#3498db;">새로고침</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
+        <div style="flex:1; min-width:320px;">
+          <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
+          <div id="yahoo-kr-latest" class="data-table-container"></div>
+        </div>
+        <div style="flex:1; min-width:320px;">
+          <div style="margin:10px 0; font-weight:700;">최근 7일</div>
+          <div id="yahoo-kr-daily" class="data-table-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h4 style="margin:0;">🇺🇸 미국 지수 (S&P500/다우/나스닥)</h4>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-fetch" onclick="manualCollectYahoo('us')" style="background:#2c3e50;">🧪 미국 수동 수집</button>
+          <button class="btn-fetch" onclick="loadYahooGroup('us')" style="background:#3498db;">새로고침</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
+        <div style="flex:1; min-width:320px;">
+          <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
+          <div id="yahoo-us-latest" class="data-table-container"></div>
+        </div>
+        <div style="flex:1; min-width:320px;">
+          <div style="margin:10px 0; font-weight:700;">최근 7일</div>
+          <div id="yahoo-us-daily" class="data-table-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/finance_data.js?v=20260217"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof loadYahooGroup === 'function') {
+      loadYahooGroup('kr');
+      loadYahooGroup('us');
+    }
+  });
+</script>
+{% endblock %}

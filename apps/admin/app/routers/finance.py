@@ -114,6 +114,30 @@ async def finance_data_page(request: Request, user=Depends(get_current_user)):
     })
 
 
+@router.get("/admin/yahoo-index", response_class=HTMLResponse)
+async def yahoo_index_page(request: Request, user=Depends(get_current_user)):
+    """야후 지수 데이터 확인 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("yahoo_index.html", {
+        "request": request,
+        "admin_email": ADMIN_EMAIL,
+        "active_page": "yahoo-index"
+    })
+
+
+@router.get("/admin/naver-ranking", response_class=HTMLResponse)
+async def naver_ranking_page(request: Request, user=Depends(get_current_user)):
+    """네이버 증권 랭킹 데이터 확인 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("naver_ranking.html", {
+        "request": request,
+        "admin_email": ADMIN_EMAIL,
+        "active_page": "naver-ranking"
+    })
+
+
 # =========================================================
 # Yahoo Finance 지수 (DB 저장본 조회용 - Admin UI)
 # =========================================================

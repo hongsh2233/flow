@@ -318,16 +318,18 @@
 
 {% block content %}
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
     <div>
       <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">📈 한국거래소 데이터</h2>
       <p style="color: #666; margin: 0;">
         한국거래소에서 제공하는 지수 데이터를 확인할 수 있습니다.
       </p>
     </div>
-    <a href="/admin/finance-data2" style="padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
-      🏛️ 금융위원회 데이터 보기
-    </a>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <a href="/admin/finance-data2" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">🏛️ 금융위원회</a>
+      <a href="/admin/yahoo-index" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">🌐 야후지수</a>
+      <a href="/admin/naver-ranking" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">📊 네이버랭킹</a>
+    </div>
   </div>
 
   <!-- 하위 탭 버튼 -->
@@ -337,12 +339,6 @@
     </button>
     <button class="tab-button" onclick="switchTab('kosdaq')">
       🚀 코스닥
-    </button>
-    <button class="tab-button" onclick="switchTab('yahoo')">
-      🌐 야후 지수
-    </button>
-    <button class="tab-button" onclick="switchTab('naver-ranking')">
-      📈 네이버 랭킹
     </button>
   </div>
 
@@ -366,289 +362,9 @@
     </div>
   </div>
 
-  <!-- Yahoo 지수 탭 -->
-  <div id="tab-yahoo" class="tab-content">
-    <div class="tab-section">
-      <div class="tab-section-header">
-        <h3>Yahoo Finance 지수 (DB 저장본)</h3>
-      </div>
-      <p style="color:#666; margin:0 0 10px 0;">
-        스케줄러로 저장된 지수(최근 7일)를 표시합니다. (한국: 09:20/11:30/14:00/15:30, 미국: 06:20/00:00/02:00/04:00)
-      </p>
-
-      <!-- KR -->
-      <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px; margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <h4 style="margin:0;">🇰🇷 한국 지수 (KOSPI/KOSDAQ)</h4>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button class="btn-fetch" onclick="manualCollectYahoo('kr')">🧪 한국 수동 수집</button>
-            <button class="btn-fetch" onclick="loadYahooGroup('kr')" style="background:#3498db;">새로고침</button>
-          </div>
-        </div>
-        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
-          <div style="flex:1; min-width:320px;">
-            <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
-            <div id="yahoo-kr-latest" class="data-table-container"></div>
-          </div>
-          <div style="flex:1; min-width:320px;">
-            <div style="margin:10px 0; font-weight:700;">최근 7일</div>
-            <div id="yahoo-kr-daily" class="data-table-container"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- US -->
-      <div style="padding:12px; border:1px solid #e9ecef; border-radius:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <h4 style="margin:0;">🇺🇸 미국 지수 (S&P500/다우/나스닥)</h4>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button class="btn-fetch" onclick="manualCollectYahoo('us')" style="background:#2c3e50;">🧪 미국 수동 수집</button>
-            <button class="btn-fetch" onclick="loadYahooGroup('us')" style="background:#3498db;">새로고침</button>
-          </div>
-        </div>
-        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:10px;">
-          <div style="flex:1; min-width:320px;">
-            <div style="margin:10px 0; font-weight:700;">최신 (일별 마지막값)</div>
-            <div id="yahoo-us-latest" class="data-table-container"></div>
-          </div>
-          <div style="flex:1; min-width:320px;">
-            <div style="margin:10px 0; font-weight:700;">최근 7일</div>
-            <div id="yahoo-us-daily" class="data-table-container"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 네이버 랭킹 탭 -->
-  <div id="tab-naver-ranking" class="tab-content">
-    <div class="tab-section">
-      <div class="tab-section-header">
-        <h3>네이버 증권 랭킹 데이터</h3>
-        <button id="btn-manual-collect-naver" class="btn-fetch" onclick="manualCollectNaverRanking()" style="background: #27ae60;">
-          🔄 데이터 수동 수집
-        </button>
-      </div>
-      
-      <!-- 네이버 랭킹 서브 탭 -->
-      <div class="sub-tab-buttons" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="sub-tab-button active" onclick="switchNaverSubTab('volume')">거래량 상위</button>
-        <button class="sub-tab-button" onclick="switchNaverSubTab('amount')">거래대금 상위</button>
-        <button class="sub-tab-button" onclick="switchNaverSubTab('search')">검색 상위</button>
-      </div>
-      
-      <!-- 거래량/거래대금 상위 시장 선택 -->
-      <div id="naver-market-selector" class="sub-tab-buttons" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="sub-tab-button active" onclick="switchNaverMarket('kospi')">코스피</button>
-        <button class="sub-tab-button" onclick="switchNaverMarket('kosdaq')">코스닥</button>
-        <button class="sub-tab-button" onclick="switchNaverMarket('all')">전체</button>
-      </div>
-      
-      <!-- 시간대 선택 -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-        <label>수집 시간대:</label>
-        <select id="naver-time-selector" onchange="loadNaverRankingData()" style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 14px;">
-          <option value="">최신 데이터</option>
-        </select>
-      </div>
-      
-      <div id="naver-ranking-content"></div>
-    </div>
-  </div>
-
 </div>
 {% endblock %}
 {% block extra_scripts %}
-{# 캐시로 인해 JS 변경사항이 반영되지 않을 수 있어 버전 파라미터 추가 #}
-<script src="/static/js/finance_data.js?v=20260204"></script>
-<script>
-  let currentNaverTab = 'volume';
-  let currentNaverMarket = 'kospi';
-
-  function switchNaverSubTab(tab) {
-    // 서브 탭 버튼 활성화
-    document.querySelectorAll('#tab-naver-ranking .sub-tab-buttons:first-of-type .sub-tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    currentNaverTab = tab;
-    
-    // 검색 상위는 시장 선택 숨기기
-    const marketSelector = document.getElementById('naver-market-selector');
-    if (tab === 'search') {
-      marketSelector.style.display = 'none';
-      currentNaverMarket = 'all';
-    } else {
-      marketSelector.style.display = 'flex';
-    }
-    
-    loadNaverRankingData();
-  }
-
-  function switchNaverMarket(market) {
-    // 시장 선택 버튼 활성화
-    document.querySelectorAll('#naver-market-selector .sub-tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    currentNaverMarket = market;
-    loadNaverRankingData();
-  }
-
-  async function loadNaverTimeOptions() {
-    try {
-      const response = await fetch(`/api/naver-ranking-times?ranking_type=${currentNaverTab}&market_type=${currentNaverMarket}`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        const selector = document.getElementById('naver-time-selector');
-        const firstOption = selector.options[0];
-        selector.innerHTML = '';
-        selector.appendChild(firstOption);
-        
-        result.data.forEach(item => {
-          const option = document.createElement('option');
-          option.value = item.collected_time;
-          option.textContent = `${item.collected_time} (${item.latest_collected_at ? new Date(item.latest_collected_at).toLocaleString('ko-KR') : ''})`;
-          selector.appendChild(option);
-        });
-      }
-    } catch (error) {
-      console.error('수집 시간대 목록 로드 오류:', error);
-    }
-  }
-
-  async function loadNaverRankingData() {
-    const contentDiv = document.getElementById('naver-ranking-content');
-    contentDiv.innerHTML = '<div class="loading">데이터 로딩 중...</div>';
-
-    try {
-      const timeSelector = document.getElementById('naver-time-selector');
-      const collectedTime = timeSelector ? timeSelector.value : null;
-
-      const response = await fetch(
-        `/api/naver-ranking-data?ranking_type=${currentNaverTab}&market_type=${currentNaverMarket}&collected_time=${collectedTime || ''}&limit=50`
-      );
-      const result = await response.json();
-
-      if (result.success && result.data && result.data.length > 0) {
-        await loadNaverTimeOptions();
-
-        let html = `
-          <div class="info-badge success" style="margin-bottom: 15px;">
-            수집 시간: ${result.collected_time || '최신'} | 총 ${result.count}건
-          </div>
-          <div class="data-table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="text-align: center;">순위</th>
-                  <th>종목명</th>
-                  <th style="text-align: right;">현재가</th>
-                  <th style="text-align: right;">전일대비</th>
-                  <th style="text-align: right;">등락률</th>
-                  ${currentNaverTab !== 'search' ? '<th style="text-align: right;">거래량</th>' : ''}
-                  ${currentNaverTab !== 'search' ? '<th style="text-align: right;">거래대금</th>' : ''}
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        result.data.forEach(item => {
-          const changeClass = item.change_percent && item.change_percent.startsWith('-') ? 'down' : 
-                             item.change_percent && item.change_percent.startsWith('+') ? 'up' : '';
-          const changeColor = changeClass === 'down' ? '#3498db' : changeClass === 'up' ? '#e74c3c' : '#2c3e50';
-          
-          html += `
-            <tr>
-              <td style="text-align: center; font-weight: 600; color: #3498db;">${item.rank}</td>
-              <td style="font-weight: 500;">${item.stock_name} (${item.stock_code})</td>
-              <td style="text-align: right; font-weight: 500;">${item.current_price ? Number(item.current_price).toLocaleString('ko-KR') : '-'}</td>
-              <td style="text-align: right; color: ${changeColor}; font-weight: 600;">${item.change || '-'}</td>
-              <td style="text-align: right; color: ${changeColor}; font-weight: 600;">${item.change_percent || '-'}</td>
-              ${currentNaverTab !== 'search' ? `<td style="text-align: right;">${item.volume ? Number(item.volume).toLocaleString('ko-KR') : '-'}</td>` : ''}
-              ${currentNaverTab !== 'search' ? `<td style="text-align: right;">${item.amount ? Number(item.amount).toLocaleString('ko-KR') : '-'}</td>` : ''}
-            </tr>
-          `;
-        });
-
-        html += `
-              </tbody>
-            </table>
-          </div>
-        `;
-
-        contentDiv.innerHTML = html;
-      } else {
-        contentDiv.innerHTML = `
-          <div class="empty-message">
-            <p>데이터가 없습니다.</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">
-              스케줄러가 11시, 16시, 21시에 자동으로 데이터를 수집합니다.<br>
-              또는 "데이터 수동 수집" 버튼을 클릭하여 즉시 수집할 수 있습니다.
-            </p>
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error('데이터 로드 오류:', error);
-      contentDiv.innerHTML = `
-        <div class="error">
-          데이터를 불러오는 중 오류가 발생했습니다: ${error.message}
-        </div>
-      `;
-    }
-  }
-
-  async function manualCollectNaverRanking() {
-    const btn = document.getElementById('btn-manual-collect-naver');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '수집 중...';
-
-    try {
-      const response = await fetch('/api/naver-ranking-manual-collect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(`✅ 데이터 수집 완료!\n\n거래량 상위: ${result.volume_count || 0}건\n거래대금 상위: ${result.amount_count || 0}건\n검색 상위: ${result.search_count || 0}건`);
-        // 데이터 새로고침
-        loadNaverRankingData();
-      } else {
-        alert(`❌ 데이터 수집 실패: ${result.message || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      console.error('수동 수집 오류:', error);
-      alert(`❌ 데이터 수집 중 오류가 발생했습니다: ${error.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  }
-
-  // 네이버 랭킹 탭이 활성화될 때 데이터 로드
-  const originalSwitchTab = window.switchTab;
-  window.switchTab = function(tab) {
-    if (originalSwitchTab) {
-      originalSwitchTab(tab);
-    } else {
-      // 기본 탭 전환 로직
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(`tab-${tab}`).classList.add('active');
-    }
-    
-    // 네이버 랭킹 탭이 활성화되면 데이터 로드
-    if (tab === 'naver-ranking') {
-      loadNaverRankingData();
-    }
-  };
-</script>
+<script src="/static/js/finance_data.js?v=20260217"></script>
 {% endblock %}
 
