@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
-import type { StockDetail } from "@/lib/types";
 import { StockTermBox } from "./components/module/stock-term-box";
+import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import type { StockDetail, AdBannerItem, ManagedBannerItem } from "@/lib/types";
+import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
 import { ForeignIndices } from "./components/module/home/ForeignIndices";
@@ -17,18 +18,43 @@ const LazyStockDetailModal = dynamic(
   { ssr: false }
 );
 
+function managedToAdBannerItem(item: ManagedBannerItem): AdBannerItem {
+  return {
+    title: item.alt_text || "배너",
+    imageUrl: item.image_url || undefined,
+    htmlContent: item.html_content || undefined,
+    href: item.link_url || undefined,
+    closeable: false,
+  };
+}
+
 export default function Home() {
   const { status } = useSession();
   const { favoriteStocks, isLoading: isLoadingFavorites } = useFavoriteStocks();
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
+  const [mainSlideItems, setMainSlideItems] = useState<AdBannerItem[]>([]);
   const handleClose = useCallback(() => setSelectedStock(null), []);
+
+  useEffect(() => {
+    fetch(`/api/banners/managed?page_path=${encodeURIComponent("/")}`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data?.slides) {
+          const items = (result.data.slides as { items: ManagedBannerItem[] }[])
+            .flatMap((s) => s.items ?? [])
+            .sort((a, b) => a.order_index - b.order_index)
+            .map(managedToAdBannerItem);
+          setMainSlideItems(items);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="content__wrap">
       <div className="home-term-wrap">
         <StockTermBox />
       </div>
-
       <ForeignIndices />
       <MarketIndexSection />
 
@@ -54,6 +80,11 @@ export default function Home() {
       )}
 
       <ExchangeRatesSection />
+      {mainSlideItems.length > 0 && (
+        <section style={{ margin: "1rem 0" }}>
+          <AdBanner items={mainSlideItems} autoSlide interval={5000} />
+        </section>
+      )}
       <RealtimeSearchSection />
       <TradeRankingSection onSelect={setSelectedStock} />
 
