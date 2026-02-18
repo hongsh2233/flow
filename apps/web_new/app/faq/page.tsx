@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown } from "lucide-react";
+import { StockTermBox } from "../components/module/stock-term-box";
 import styles from "./Faq.module.css";
 
 interface FaqItem {
@@ -115,6 +116,9 @@ export default function FaqPage() {
               </div>
             </div>
           ))}
+        </div>
+        <div style={{ marginTop: "1.5rem" }}>
+          <StockTermBox />
         </div>
       </div>
     </div>

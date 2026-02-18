@@ -12,6 +12,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Search } from "../components/module/Search";
+import { StockTermBox } from "../components/module/stock-term-box";
 import { StockCard } from "../components/module/StockCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
@@ -484,6 +485,10 @@ export default function StocksPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <div style={{ marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
 
       {/* 모달 */}
       {selectedStock && (

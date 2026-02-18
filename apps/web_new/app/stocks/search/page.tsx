@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Search } from "../../components/module/Search";
+import { StockTermBox } from "../../components/module/stock-term-box";
 import styles from "./StocksSearchPage.module.css";
 
 function getCellVal(row: Record<string, unknown>, camelKey: string): string {
@@ -164,6 +165,9 @@ function SearchResultsContent() {
           {!hasAnyData && <p className={styles.loadingText}>검색 결과가 없습니다.</p>}
         </>
       )}
+      <div style={{ marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
     </div>
   );
 }

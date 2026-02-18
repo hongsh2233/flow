@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import BoardDetail from "../../components/module/board/BoardDetail";
+import { StockTermBox } from "../../components/module/stock-term-box";
 import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import { postToDetail } from "@/lib/services/boardService";
 import type { PostFromApi } from "@/lib/types/board";
@@ -45,12 +46,17 @@ export default async function BoardDetailPage({ params, searchParams }: BoardDet
   const backHref = from ? `/board?board=${from}` : "/board";
 
   return (
-    <main>
-      <BoardDetail
-        post={post}
-        backHref={backHref}
-        backLabel="목록으로"
-      />
-    </main>
+    <>
+      <main>
+        <BoardDetail
+          post={post}
+          backHref={backHref}
+          backLabel="목록으로"
+        />
+      </main>
+      <div style={{ padding: "1rem", marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
+    </>
   );
 }

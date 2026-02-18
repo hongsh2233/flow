@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { StockTermBox } from "../../components/module/stock-term-box";
 import { getAuthHeaders, getImageUrl } from "@/lib/config/api";
 import styles from "./ProfileEdit.module.css";
 
@@ -323,6 +324,9 @@ export default function ProfileEditPage() {
             </form>
           </div>
         </section>
+        <div style={{ marginTop: "1.5rem" }}>
+          <StockTermBox />
+        </div>
       </div>
     </div>
   );

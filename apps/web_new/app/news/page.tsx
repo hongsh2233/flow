@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { News } from "../components/module/news/News";
+import { StockTermBox } from "../components/module/stock-term-box";
 
 function NewsContent() {
   const searchParams = useSearchParams();
@@ -24,6 +25,9 @@ export default function NewsPage() {
       <Suspense fallback={<div style={{ padding: "2rem", textAlign: "center" }}>로딩 중...</div>}>
         <NewsContent />
       </Suspense>
+      <div style={{ marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
     </div>
   );
 }

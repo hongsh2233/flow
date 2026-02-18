@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Header from "./Header";
 import BottomNavigation from "./BottomNavigation";
 import { ManagedBannerSection } from "../module/home/ManagedBannerSection";
+import { PageBottomBanner } from "../module/home/PageBottomBanner";
 import PinLockScreen from "../ui/PinLockScreen";
 import { isPinSet } from "@/lib/utils/pin";
 
@@ -50,6 +51,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       {!isAuthPage && <Header />}
       {!isAuthPage && <ManagedBannerSection />}
       {children}
+      {!isAuthPage && <PageBottomBanner />}
       {!isAuthPage && <BottomNavigation />}
     </div>
   );

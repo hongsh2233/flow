@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import styles from "./Report.module.css";
 import BoardList from "../components/module/board/BoardList";
+import { StockTermBox } from "../components/module/stock-term-box";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { fetchBoards } from "@/lib/services/boardService";
 import type { Board } from "@/lib/types/board";
@@ -20,31 +21,44 @@ export default function ReportPage() {
     });
   }, []);
 
+  const termBox = (
+    <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
+      <StockTermBox />
+    </div>
+  );
+
   // 게시판이 없으면 빈 상태 표시
   if (boards.length === 0) {
     return (
-      <main className={styles.wrap}>
-        <BoardList emptyMessage="등록된 게시판이 없습니다." />
-      </main>
+      <>
+        <main className={styles.wrap}>
+          <BoardList emptyMessage="등록된 게시판이 없습니다." />
+        </main>
+        {termBox}
+      </>
     );
   }
 
   // 게시판이 1개면 탭 없이 바로 표시
   if (boards.length === 1) {
     return (
-      <main className={styles.wrap}>
-        <BoardList
-          boardId={boards[0].id}
-          detailHref={(id) => `/report/${id}`}
-        />
-      </main>
+      <>
+        <main className={styles.wrap}>
+          <BoardList
+            boardId={boards[0].id}
+            detailHref={(id) => `/report/${id}`}
+          />
+        </main>
+        {termBox}
+      </>
     );
   }
 
   // 게시판이 여러 개면 탭으로 표시
   return (
-    <main className={styles.wrap}>
-      <Tabs defaultValue={boards[0].id}>
+    <>
+      <main className={styles.wrap}>
+        <Tabs defaultValue={boards[0].id}>
         <TabsList>
           {boards.map((board) => (
             <TabsTrigger key={board.id} value={board.id}>
@@ -62,5 +76,7 @@ export default function ReportPage() {
         ))}
       </Tabs>
     </main>
+    {termBox}
+    </>
   );
 }

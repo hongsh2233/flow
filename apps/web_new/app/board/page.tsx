@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import styles from "./Board.module.css";
 import BoardList from "../components/module/board/BoardList";
+import { StockTermBox } from "../components/module/stock-term-box";
 import type { Board } from "@/lib/types/board";
 
 function BoardPageContent() {
@@ -25,20 +26,30 @@ function BoardPageContent() {
 
   if (!boardId) {
     return (
-      <main className={styles.wrap}>
-        <BoardList emptyMessage="게시판을 선택해주세요." />
-      </main>
+      <>
+        <main className={styles.wrap}>
+          <BoardList emptyMessage="게시판을 선택해주세요." />
+        </main>
+        <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
+          <StockTermBox />
+        </div>
+      </>
     );
   }
 
   return (
-    <main className={styles.wrap}>
-      {board && <h2 className={styles.pageTitle}>{board.name}</h2>}
-      <BoardList
-        boardId={boardId}
-        detailHref={(id) => `/board/${id}?from=${boardId}`}
-      />
-    </main>
+    <>
+      <main className={styles.wrap}>
+        {board && <h2 className={styles.pageTitle}>{board.name}</h2>}
+        <BoardList
+          boardId={boardId}
+          detailHref={(id) => `/board/${id}?from=${boardId}`}
+        />
+      </main>
+      <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
+    </>
   );
 }
 

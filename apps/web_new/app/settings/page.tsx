@@ -22,6 +22,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
+import { StockTermBox } from "../components/module/stock-term-box";
 import { useThemeContext } from "../components/providers/ThemeProvider";
 import TermsModal from "../components/ui/TermsModal";
 import type { TermsTab } from "../components/ui/TermsModal";
@@ -302,6 +303,9 @@ export default function SettingsPage() {
   return (
     <div className="content__wrap">
       <SettingsScreen />
+      <div style={{ marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
     </div>
   );
 }
