@@ -324,9 +324,7 @@ export default function ProfileEditPage() {
             </form>
           </div>
         </section>
-        <div style={{ marginTop: "1.5rem" }}>
-          <StockTermBox />
-        </div>
+        <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
       </div>
     </div>
   );

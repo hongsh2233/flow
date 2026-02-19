@@ -4,13 +4,23 @@ import { PriceChange } from "@/app/components/ui/PriceChange";
 import type { RealtimeSearchProps } from "@/lib/types";
 import styles from "./RealtimeSearch.module.css";
 
-export const RealtimeSearch = memo(function RealtimeSearch({ items }: RealtimeSearchProps) {
+function formatBaseTimestamp(ts: string | null | undefined): string {
+  if (!ts) return "";
+  return `${ts}분 기준 데이터`;
+}
+
+export const RealtimeSearch = memo(function RealtimeSearch({ items, baseTimestamp }: RealtimeSearchProps) {
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <SearchIcon className={styles.headingIcon} />
-        실시간 검색 상위
-      </h3>
+      <div className={styles.headingRow}>
+        <h3 className={styles.heading}>
+          <SearchIcon className={styles.headingIcon} />
+          검색 상위
+        </h3>
+        {baseTimestamp && (
+          <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
+        )}
+      </div>
 
       <div className={styles.card}>
         <div className={styles.grid}>

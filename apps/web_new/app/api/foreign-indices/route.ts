@@ -56,6 +56,8 @@ export async function GET(_request: NextRequest) {
       );
     }
 
+    const baseTimestamp = (json as { base_timestamp?: string }).base_timestamp ?? null;
+
     const validResults = json.data
       .filter(
         (
@@ -90,6 +92,7 @@ export async function GET(_request: NextRequest) {
       success: true,
       message: "지수를 성공적으로 가져왔습니다.",
       data: validResults,
+      base_timestamp: baseTimestamp,
     });
   } catch (error) {
     console.error("Foreign Indices API Error (BO proxy):", error);

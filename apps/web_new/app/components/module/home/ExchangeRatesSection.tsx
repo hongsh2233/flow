@@ -9,6 +9,7 @@ import type { ExchangeRateItem } from "@/lib/types";
  */
 export function ExchangeRatesSection() {
   const [rates, setRates] = useState<ExchangeRateItem[]>([]);
+  const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,8 +21,10 @@ export function ExchangeRatesSection() {
 
         if (result.success && result.data?.length > 0) {
           setRates(result.data);
+          setBaseTimestamp(result.base_timestamp ?? null);
         } else {
           setRates([]);
+          setBaseTimestamp(null);
         }
       } catch (err) {
         console.error("환율 로딩 실패:", err);
@@ -32,8 +35,6 @@ export function ExchangeRatesSection() {
     };
 
     fetchRates();
-    const interval = setInterval(fetchRates, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading && rates.length === 0) {
@@ -44,5 +45,5 @@ export function ExchangeRatesSection() {
     );
   }
 
-  return <ExchangeRates rates={rates} />;
+  return <ExchangeRates rates={rates} baseTimestamp={baseTimestamp} />;
 }

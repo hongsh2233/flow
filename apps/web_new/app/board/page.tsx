@@ -30,9 +30,7 @@ function BoardPageContent() {
         <main className={styles.wrap}>
           <BoardList emptyMessage="게시판을 선택해주세요." />
         </main>
-        <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
-          <StockTermBox />
-        </div>
+        <StockTermBox wrapperStyle={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }} />
       </>
     );
   }
@@ -46,9 +44,7 @@ function BoardPageContent() {
           detailHref={(id) => `/board/${id}?from=${boardId}`}
         />
       </main>
-      <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
-        <StockTermBox />
-      </div>
+      <StockTermBox wrapperStyle={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }} />
     </>
   );
 }

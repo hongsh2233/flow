@@ -61,18 +61,27 @@ const RankingList = memo(function RankingList({
   );
 });
 
+function formatBaseTimestamp(ts: string | null | undefined): string {
+  if (!ts) return "";
+  return `${ts}분 기준 데이터`;
+}
+
 export const TradeRanking = memo(function TradeRanking({
   kospiVolume,
   kosdaqVolume,
   kospiValue,
   kosdaqValue,
   onSelect,
+  baseTimestamp,
 }: TradeRankingProps) {
   return (
     <div className={styles.section}>
       <Tabs defaultValue="kospi-volume" variant="underline">
         <div className={styles.header}>
           <h3 className={styles.heading}>거래 상위</h3>
+          {baseTimestamp && (
+            <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
+          )}
         </div>
         <TabsList className={styles.tabsList}>
           <TabsTrigger value="kospi-volume">

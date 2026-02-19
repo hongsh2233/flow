@@ -54,9 +54,7 @@ export default async function BoardDetailPage({ params, searchParams }: BoardDet
           backLabel="목록으로"
         />
       </main>
-      <div style={{ padding: "1rem", marginTop: "1.5rem" }}>
-        <StockTermBox />
-      </div>
+      <StockTermBox wrapperStyle={{ padding: "1rem", marginTop: "1.5rem" }} />
     </>
   );
 }

@@ -23,7 +23,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
 
 # 라우터 import
 from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
     krx_scheduler.start()
     naver_ranking_scheduler.start()
     yahoo_index_scheduler.start()
+    exchange_rate_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -61,6 +62,7 @@ async def lifespan(app: FastAPI):
     krx_scheduler.shutdown()
     naver_ranking_scheduler.shutdown()
     yahoo_index_scheduler.shutdown()
+    exchange_rate_scheduler.shutdown()
 
 
 # FastAPI 앱 생성
@@ -302,6 +304,12 @@ def run_migrations():
         add_banner_columns_migration()
     except Exception as e:
         print(f"⚠️ 배너 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_exchange_rate_snapshot import run_migration as exchange_rate_migration
+        exchange_rate_migration()
+    except Exception as e:
+        print(f"⚠️ 환율 스냅샷 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():

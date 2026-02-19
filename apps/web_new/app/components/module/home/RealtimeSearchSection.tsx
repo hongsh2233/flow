@@ -18,6 +18,7 @@ interface NaverSearchItem {
  */
 export function RealtimeSearchSection() {
   const [items, setItems] = useState<RealtimeSearchItem[]>([]);
+  const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,8 +40,10 @@ export function RealtimeSearchSection() {
             };
           });
           setItems(mapped);
+          setBaseTimestamp(result.base_timestamp ?? null);
         } else {
           setItems([]);
+          setBaseTimestamp(null);
         }
       } catch (err) {
         console.error("검색 상위 로딩 실패:", err);
@@ -56,10 +59,10 @@ export function RealtimeSearchSection() {
   if (loading && items.length === 0) {
     return (
       <div style={{ padding: "1rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
-        실시간 검색 상위 불러오는 중...
+        검색 상위 불러오는 중...
       </div>
     );
   }
 
-  return <RealtimeSearch items={items} />;
+  return <RealtimeSearch items={items} baseTimestamp={baseTimestamp} />;
 }

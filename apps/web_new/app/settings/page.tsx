@@ -303,9 +303,7 @@ export default function SettingsPage() {
   return (
     <div className="content__wrap">
       <SettingsScreen />
-      <div style={{ marginTop: "1.5rem" }}>
-        <StockTermBox />
-      </div>
+      <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
     </div>
   );
 }

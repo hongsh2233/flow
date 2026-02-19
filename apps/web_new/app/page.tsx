@@ -52,9 +52,7 @@ export default function Home() {
 
   return (
     <div className="content__wrap">
-      <div className="home-term-wrap">
-        <StockTermBox />
-      </div>
+      <StockTermBox wrapperClassName="home-term-wrap" />
       <ForeignIndices />
       <MarketIndexSection />
 

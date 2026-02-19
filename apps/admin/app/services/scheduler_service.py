@@ -21,11 +21,13 @@ from sqlalchemy import func
 from app.database import SessionLocal
 from app.services.api_service import fsc_api_service, krx_api_service
 from app.services.naver_finance_service import naver_finance_service
+from app.services.exchange_rate_service import fetch_and_save_exchange_rates
 from app.services.yahoo_index_service import (
     fetch_indices,
     upsert_indices_to_db,
     DEFAULT_US_INDICES,
     DEFAULT_KR_INDICES,
+    DEFAULT_FOREIGN_INDICES,
 )
 from app.models import FscStockPrice, FscRisingStock, KrxData
 
@@ -621,7 +623,14 @@ class NaverRankingScheduler:
         
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
         
-        # 하루에 3번 실행: 11시, 16시, 21시
+        # 06:30, 11시, 16시, 21시 (한국시간)
+        self.scheduler.add_job(
+            collect_naver_ranking_data,
+            trigger=CronTrigger(hour=6, minute=30, timezone=self.kst),
+            id='naver_ranking_0630',
+            name='네이버 증권 랭킹 데이터 수집 (06:30)',
+            replace_existing=True
+        )
         self.scheduler.add_job(
             collect_naver_ranking_data,
             trigger=CronTrigger(hour=11, minute=0, timezone=self.kst),
@@ -629,7 +638,6 @@ class NaverRankingScheduler:
             name='네이버 증권 랭킹 데이터 수집 (11시)',
             replace_existing=True
         )
-        
         self.scheduler.add_job(
             collect_naver_ranking_data,
             trigger=CronTrigger(hour=16, minute=0, timezone=self.kst),
@@ -637,7 +645,6 @@ class NaverRankingScheduler:
             name='네이버 증권 랭킹 데이터 수집 (16시)',
             replace_existing=True
         )
-        
         self.scheduler.add_job(
             collect_naver_ranking_data,
             trigger=CronTrigger(hour=21, minute=0, timezone=self.kst),
@@ -647,7 +654,7 @@ class NaverRankingScheduler:
         )
         
         self.scheduler.start()
-        print("✅ 네이버 증권 랭킹 데이터 수집 스케줄러 시작 (11시, 16시, 21시)")
+        print("✅ 네이버 증권 랭킹 데이터 수집 스케줄러 시작 (06:30, 11시, 16시, 21시)")
         print(f"   - 주말 및 공휴일 제외")
         print(f"   - 거래량 상위, 거래대금 상위, 검색 상위 수집\n")
     
@@ -681,6 +688,28 @@ async def collect_yahoo_us_indices():
             print("⚠️ Yahoo(US) 지수 수집 결과 없음")
     except Exception as e:
         print(f"❌ Yahoo(US) 지수 수집 오류: {e}")
+    finally:
+        db.close()
+
+
+async def collect_yahoo_foreign_indices():
+    """
+    Yahoo Finance 해외지수 수집/저장 (메인 페이지용)
+    - 00:00, 05:00, 06:30 (KST)
+    - YahooIndexSnapshot에 group='foreign'으로 저장
+    """
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n🌐 Yahoo(해외) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        items = await fetch_indices(DEFAULT_FOREIGN_INDICES)
+        if items:
+            upsert_indices_to_db(db, items, collected_at=now, keep_days=7)
+            print(f"✅ Yahoo(해외) 지수 저장 완료: {len(items)}개")
+        else:
+            print("⚠️ Yahoo(해외) 지수 수집 결과 없음")
+    except Exception as e:
+        print(f"❌ Yahoo(해외) 지수 수집 오류: {e}")
     finally:
         db.close()
 
@@ -728,6 +757,38 @@ class YahooIndexScheduler:
             return
 
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
+
+        # 해외지수(메인용): 00:00, 05:00, 06:30 (KST)
+        self.scheduler.add_job(
+            collect_yahoo_foreign_indices,
+            CronTrigger(hour=0, minute=0, timezone=self.kst),
+            id="yahoo_foreign_0000",
+            name="Yahoo 해외지수 (00:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_foreign_indices,
+            CronTrigger(hour=5, minute=0, timezone=self.kst),
+            id="yahoo_foreign_0500",
+            name="Yahoo 해외지수 (05:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_foreign_indices,
+            CronTrigger(hour=6, minute=30, timezone=self.kst),
+            id="yahoo_foreign_0630",
+            name="Yahoo 해외지수 (06:30)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
 
         # US: 06:20, 00:00, 02:00, 04:00 (KST)
         self.scheduler.add_job(
@@ -815,6 +876,7 @@ class YahooIndexScheduler:
 
         self.scheduler.start()
         print("✅ Yahoo 지수 수집 스케줄러 시작")
+        print("   - 해외(메인): 00:00 / 05:00 / 06:30 (KST)")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
         print("   - KR: 09:20 / 11:30 / 14:00 / 15:30 (KST)")
         print("   - 최근 7일치만 유지\n")
@@ -827,6 +889,59 @@ class YahooIndexScheduler:
 
 
 yahoo_index_scheduler = YahooIndexScheduler()
+
+
+# =========================================================
+# 환율 수집 스케줄러 (30분마다)
+# =========================================================
+
+async def collect_exchange_rates():
+    """30분마다 Yahoo Finance에서 환율 수집 후 DB 저장"""
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n💱 환율 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        ok = await fetch_and_save_exchange_rates(db)
+        if ok:
+            print("✅ 환율 저장 완료")
+        else:
+            print("⚠️ 환율 수집 결과 없음")
+    except Exception as e:
+        print(f"❌ 환율 수집 오류: {e}")
+    finally:
+        db.close()
+
+
+class ExchangeRateScheduler:
+    """환율 30분마다 수집 스케줄러"""
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            print("⚠️ 환율 스케줄러가 이미 실행 중입니다.")
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_exchange_rates,
+            CronTrigger(minute="0,30", timezone=self.kst),
+            id="exchange_rate",
+            name="환율 수집 (30분마다)",
+            replace_existing=True,
+            max_instances=1,
+        )
+        self.scheduler.start()
+        print("✅ 환율 수집 스케줄러 시작 (30분마다)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 환율 수집 스케줄러 종료")
+
+
+exchange_rate_scheduler = ExchangeRateScheduler()
 
 
 # 전역 스케줄러 인스턴스

@@ -22,10 +22,8 @@ function NewsContent() {
 export default function NewsPage() {
   return (
     <div className="content__wrap">
+      <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
       <Suspense fallback={<div style={{ padding: "2rem", textAlign: "center" }}>로딩 중...</div>}>
-      <div style={{ margin: "0 0 1rem" }}>
-        <StockTermBox />  
-      </div>
         <NewsContent />
       </Suspense>
     </div>

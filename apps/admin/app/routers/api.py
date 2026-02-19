@@ -1151,12 +1151,54 @@ async def get_domestic_indices(
 
 @router.get("/api/foreign-indices")
 async def get_foreign_indices(
+    db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key)
 ):
     """
-    Yahoo Finance API를 통해 해외지수 데이터를 조회합니다.
-    12개 주요 지수를 순차 조회하여 반환합니다 (rate limit 방지).
+    해외지수 데이터 조회.
+    - DB에 저장된 데이터가 있으면 반환 (00:00, 05:00, 06:30 KST 수집분)
+    - 없으면 Yahoo Finance 실시간 조회 (fallback)
     """
+    # 1) DB에서 최신 해외지수 조회 (group='foreign')
+    try:
+        latest = db.query(func.max(models.YahooIndexSnapshot.collected_at)).filter(
+            models.YahooIndexSnapshot.group == "foreign"
+        ).scalar()
+        if latest:
+            rows = db.query(models.YahooIndexSnapshot).filter(
+                models.YahooIndexSnapshot.group == "foreign",
+                models.YahooIndexSnapshot.collected_at == latest,
+            ).order_by(models.YahooIndexSnapshot.symbol).all()
+            if rows:
+                results = []
+                for r in rows:
+                    if r.price is not None and r.change is not None and r.change_percent is not None:
+                        results.append({
+                            "symbol": r.symbol,
+                            "name": r.name,
+                            "market": r.market,
+                            "price": round(r.price, 2),
+                            "change": round(r.change, 2),
+                            "change_percent": round(r.change_percent, 2),
+                            "currency": r.currency or "USD",
+                            "exchange": "",
+                            "timestamp": None,
+                        })
+                if results:
+                    r0 = rows[0]
+                    c_date = r0.collected_date
+                    c_time = r0.collected_time or "00:00"
+                    base_timestamp = f"{c_date.strftime('%Y-%m-%d')} {c_time}"
+                    return {
+                        "success": True,
+                        "data": results,
+                        "count": len(results),
+                        "base_timestamp": base_timestamp,
+                    }
+    except Exception as e:
+        print(f"⚠️ foreign-indices DB 조회 실패: {e}")
+
+    # 2) Fallback: Yahoo 실시간 조회
     cached = _get_cached("foreign-indices")
     if cached is not None:
         return cached
@@ -1277,6 +1319,44 @@ async def get_foreign_indices(
 # =========================================================
 # 네이버 증권 랭킹 데이터 API
 # =========================================================
+
+@router.get("/api/exchange-rate")
+async def get_exchange_rate(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    환율 조회 - DB에 저장된 최신 데이터 반환 (30분마다 수집)
+    """
+    try:
+        latest = db.query(func.max(models.ExchangeRateSnapshot.collected_at)).scalar()
+        if latest:
+            rows = db.query(models.ExchangeRateSnapshot).filter(
+                models.ExchangeRateSnapshot.collected_at == latest,
+            ).all()
+            if rows:
+                r0 = rows[0]
+                base_timestamp = f"{r0.collected_date.strftime('%Y-%m-%d')} {r0.collected_time}"
+                currency_names = {"USD": "미국 USD", "JPY": "일본 JPY (100엔)", "EUR": "유럽 EUR"}
+                results = []
+                for r in rows:
+                    rate_str = f"{r.rate:,.2f}"
+                    change_str = f"+{r.change_val:.2f}" if r.change_val >= 0 else f"{r.change_val:.2f}"
+                    results.append({
+                        "currency": currency_names.get(r.currency, r.currency),
+                        "rate": rate_str,
+                        "change": change_str,
+                        "isPositive": r.change_val >= 0,
+                    })
+                return {
+                    "success": True,
+                    "data": results,
+                    "base_timestamp": base_timestamp,
+                }
+    except Exception as e:
+        print(f"⚠️ exchange-rate DB 조회 실패: {e}")
+    return {"success": False, "data": [], "base_timestamp": None}
+
 
 @router.get("/api/holidays")
 async def get_holidays(

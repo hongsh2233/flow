@@ -182,9 +182,7 @@ export default function PinSettingsPage() {
               </>
             )}
           </div>
-          <div style={{ marginTop: "1.5rem" }}>
-            <StockTermBox />
-          </div>
+          <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
         </div>
       </div>
     );
@@ -232,9 +230,7 @@ export default function PinSettingsPage() {
               설정으로 돌아가기
             </Button>
           </div>
-          <div style={{ marginTop: "1.5rem" }}>
-            <StockTermBox />
-          </div>
+          <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
         </div>
       </div>
     );
@@ -274,9 +270,7 @@ export default function PinSettingsPage() {
           }}
           onComplete={config.onComplete}
         />
-        <div style={{ marginTop: "1.5rem" }}>
-          <StockTermBox />
-        </div>
+        <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
       </div>
     </div>
   );

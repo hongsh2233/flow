@@ -15,6 +15,11 @@
   font-size: 1.125rem;
 }
 
+.baseTimestamp {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+}
+
 .list {
   display: flex;
   flex-direction: column;

@@ -59,6 +59,7 @@ export interface FavoriteStocksProps {
 
 export interface RealtimeSearchProps {
   items: RealtimeSearchItem[];
+  baseTimestamp?: string | null;
 }
 
 export interface TradeRankingProps {
@@ -67,10 +68,12 @@ export interface TradeRankingProps {
   kospiValue: ValueStock[];
   kosdaqValue: ValueStock[];
   onSelect: (stock: StockDetail) => void;
+  baseTimestamp?: string | null;
 }
 
 export interface ExchangeRatesProps {
   rates: ExchangeRateItem[];
+  baseTimestamp?: string | null;
 }
 
 export interface MarketIndexProps {

@@ -39,6 +39,7 @@ class NavMenuTab(Base):
 
 __all__ = [
     "Base",
+    "ExchangeRateSnapshot",
     "CollectedData",
     "AdminUser",
     "Schedule",
@@ -346,6 +347,19 @@ class YahooIndexDaily(Base):
     last_collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     last_collected_time = Column(String(5), nullable=False)  # 'HH:MM' (KST)
     __table_args__ = (UniqueConstraint('date', 'group', 'symbol', name='uq_yahoo_index_daily'),)
+
+
+class ExchangeRateSnapshot(Base):
+    """환율 스냅샷 (30분마다 Yahoo Finance에서 수집)"""
+    __tablename__ = "exchange_rate_snapshots"
+    id = Column(Integer, primary_key=True, index=True)
+    symbol = Column(String(20), nullable=False, index=True)
+    currency = Column(String(10), nullable=False)
+    rate = Column(Float, nullable=False)
+    change_val = Column(Float, nullable=False)
+    collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    collected_date = Column(Date, nullable=False, index=True)
+    collected_time = Column(String(5), nullable=False)
 
 
 class StockTerm(Base):

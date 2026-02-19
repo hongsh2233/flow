@@ -256,9 +256,7 @@ export default function StocksPage() {
 
   return (
     <div className={styles.page}>
-      <div style={{ margin: "0 0 1rem" }}>
-        <StockTermBox />
-      </div>
+      <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
       {/* 검색 */}
       <div className={styles.searchArea}>
         <Search

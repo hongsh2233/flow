@@ -3,13 +3,23 @@ import { DollarSign } from "lucide-react";
 import type { ExchangeRatesProps } from "@/lib/types";
 import styles from "./ExchangeRates.module.css";
 
-export const ExchangeRates = memo(function ExchangeRates({ rates }: ExchangeRatesProps) {
+function formatBaseTimestamp(ts: string | null | undefined): string {
+  if (!ts) return "";
+  return `${ts}분 기준 데이터`;
+}
+
+export const ExchangeRates = memo(function ExchangeRates({ rates, baseTimestamp }: ExchangeRatesProps) {
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <DollarSign className={styles.headingIcon} />
-        환율 정보
-      </h3>
+      <div className={styles.headingRow}>
+        <h3 className={styles.heading}>
+          <DollarSign className={styles.headingIcon} />
+          환율 정보
+        </h3>
+        {baseTimestamp && (
+          <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
+        )}
+      </div>
 
       <div className={styles.grid}>
         {rates.map((item) => (

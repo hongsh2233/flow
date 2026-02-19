@@ -22,9 +22,7 @@ export default function ReportPage() {
   }, []);
 
   const termBox = (
-    <div style={{ padding: "0 1rem 1.5rem", margin: "0 0 1rem" }}>
-      <StockTermBox />
-    </div>
+    <StockTermBox wrapperStyle={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }} />
   );
 
   // 게시판이 없으면 빈 상태 표시

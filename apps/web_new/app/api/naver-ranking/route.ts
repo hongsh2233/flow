@@ -36,7 +36,15 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    const collectedAt = data.collected_at as string | undefined;
+    const collectedTime = data.collected_time as string | undefined;
+    let base_timestamp: string | null = null;
+    if (collectedAt && collectedTime) {
+      base_timestamp = `${collectedAt.slice(0, 10)} ${collectedTime}`;
+    } else if (collectedAt) {
+      base_timestamp = collectedAt.slice(0, 16).replace("T", " ");
+    }
+    return NextResponse.json({ ...data, base_timestamp });
   } catch (error) {
     console.error("랭킹 데이터 조회 오류:", error);
     return NextResponse.json(

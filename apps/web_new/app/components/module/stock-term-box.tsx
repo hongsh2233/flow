@@ -57,7 +57,14 @@ const FALLBACK_TERMS: StockTerm[] = [
 
 const AUTO_HIDE_MS = 10_000;
 
-export function StockTermBox() {
+export interface StockTermBoxProps {
+  /** 감싸는 div에 적용할 className */
+  wrapperClassName?: string;
+  /** 감싸는 div에 적용할 style (사라질 때 div까지 함께 제거됨) */
+  wrapperStyle?: React.CSSProperties;
+}
+
+export function StockTermBox({ wrapperClassName, wrapperStyle }: StockTermBoxProps = {}) {
   const [isVisible, setIsVisible] = useState(true);
   const [terms, setTerms] = useState<StockTerm[]>(FALLBACK_TERMS);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -120,7 +127,7 @@ export function StockTermBox() {
     startHideTimer();
   };
 
-  return (
+  const content = (
     <div className={styles.container}>
       <button
         onClick={() => setIsVisible(false)}
@@ -144,4 +151,13 @@ export function StockTermBox() {
       </div>
     </div>
   );
+
+  if (wrapperClassName || wrapperStyle) {
+    return (
+      <div className={wrapperClassName} style={wrapperStyle}>
+        {content}
+      </div>
+    );
+  }
+  return content;
 }

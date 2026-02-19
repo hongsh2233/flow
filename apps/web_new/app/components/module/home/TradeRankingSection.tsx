@@ -30,6 +30,7 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
   const [kosdaqVolume, setKosdaqVolume] = useState<VolumeStock[]>([]);
   const [kospiValue, setKospiValue] = useState<ValueStock[]>([]);
   const [kosdaqValue, setKosdaqValue] = useState<ValueStock[]>([]);
+  const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const mapVolume = useCallback((items: NaverRankingItem[]): VolumeStock[] => {
@@ -68,6 +69,7 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
         setKosdaqVolume(vKosdaq.success && vKosdaq.data ? mapVolume(vKosdaq.data) : []);
         setKospiValue(aKospi.success && aKospi.data ? mapValue(aKospi.data) : []);
         setKosdaqValue(aKosdaq.success && aKosdaq.data ? mapValue(aKosdaq.data) : []);
+        setBaseTimestamp(vKospi.base_timestamp ?? aKospi.base_timestamp ?? null);
       } catch (err) {
         console.error("네이버 랭킹 로딩 실패:", err);
         setKospiVolume([]);
@@ -97,6 +99,7 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
       kospiValue={kospiValue}
       kosdaqValue={kosdaqValue}
       onSelect={onSelect}
+      baseTimestamp={baseTimestamp}
     />
   );
 }

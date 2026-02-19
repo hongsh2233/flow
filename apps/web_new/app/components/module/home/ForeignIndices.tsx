@@ -12,11 +12,17 @@ interface ForeignIndexItem {
   percent: string;
 }
 
+function formatBaseTimestamp(ts: string | null | undefined): string {
+  if (!ts) return "";
+  return `${ts}분 기준 데이터`;
+}
+
 /**
  * 해외지수 - BO /api/foreign-indices 경유 (Yahoo Finance 프록시)
  */
 export function ForeignIndices() {
   const [indices, setIndices] = useState<ForeignIndexItem[]>([]);
+  const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +35,10 @@ export function ForeignIndices() {
 
       if (result.success && result.data?.length > 0) {
         setIndices(result.data);
+        setBaseTimestamp(result.base_timestamp ?? null);
       } else {
         setIndices([]);
+        setBaseTimestamp(null);
       }
     } catch (err) {
       console.error("해외지수 로딩 실패:", err);
@@ -43,8 +51,6 @@ export function ForeignIndices() {
 
   useEffect(() => {
     fetchIndices();
-    const interval = setInterval(fetchIndices, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading && indices.length === 0) {
@@ -73,10 +79,15 @@ export function ForeignIndices() {
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <Globe className={styles.headingIcon} />
-        해외 지수
-      </h3>
+      <div className={styles.headingRow}>
+        <h3 className={styles.heading}>
+          <Globe className={styles.headingIcon} />
+          해외 지수
+        </h3>
+        {baseTimestamp && (
+          <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
+        )}
+      </div>
       <div className={styles.grid}>
         {indices.map((item, idx) => {
           const isUp = item.change.startsWith("+") || parseFloat(item.change) >= 0;
