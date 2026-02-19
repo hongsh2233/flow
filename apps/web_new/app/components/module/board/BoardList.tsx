@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import AccessTime from "@mui/icons-material/AccessTime";
 import Visibility from "@mui/icons-material/Visibility";
+import Group from "@mui/icons-material/Group";
 // import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
 import type { BoardListItem, BoardListProps } from "@/lib/types";
 import { fetchBoardPosts, postToListItem } from "@/lib/services/boardService";
@@ -83,8 +84,8 @@ export function BoardList({
           >
             <div className={styles.cardInner}>
               <div className={styles.content}>
-                {/* 카테고리/태그 영역 */}
-                {(post.category || post.tag) && (
+                {/* 카테고리/태그/회원전용 영역 */}
+                {(post.category || post.tag || post.is_member_only) && (
                   <div className={styles.tags}>
                     {post.category && (
                       <span className={`${styles.category} ${styles.categoryDefault}`}>
@@ -92,6 +93,12 @@ export function BoardList({
                       </span>
                     )}
                     {post.tag && <span className={styles.tag}>{post.tag}</span>}
+                    {post.is_member_only && (
+                      <span className={styles.memberOnly} title="회원전용">
+                        <Group fontSize="inherit" />
+                        회원전용
+                      </span>
+                    )}
                   </div>
                 )}
                 <h3 className={styles.title}>{post.title}</h3>

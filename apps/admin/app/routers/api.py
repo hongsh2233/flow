@@ -485,6 +485,7 @@ async def get_board_posts(
             "author": post.author,
             "views": post.views or 0,
             "is_secret": post.is_secret or "false",
+            "is_member_only": getattr(post, "is_member_only", None) or "false",
             "created_at": serialize_datetime(post.created_at),
             "updated_at": serialize_datetime(post.updated_at),
             "attachments": attachments
@@ -551,6 +552,7 @@ async def get_post(
         "author": post.author,
         "views": post.views or 0,
         "is_secret": post.is_secret or "false",
+        "is_member_only": getattr(post, "is_member_only", None) or "false",
         "created_at": serialize_datetime(post.created_at),
         "updated_at": serialize_datetime(post.updated_at),
         "attachments": attachments

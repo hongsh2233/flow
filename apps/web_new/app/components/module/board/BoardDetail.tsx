@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Visibility from "@mui/icons-material/Visibility";
+import Group from "@mui/icons-material/Group";
 // import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
 import type { BoardDetailProps } from "@/lib/types";
 import { getImageUrl } from "@/lib/config/api";
@@ -23,15 +24,16 @@ export function BoardDetail({
       </div>
 
       <header className={styles.header}>
-        {/* 카테고리/태그 영역 - 카테고리 기능 미구현, 태그만 표시 */}
-        {post.tag && (
+        {/* 카테고리/태그 영역 */}
+        {(post.tag || post.is_member_only) && (
           <div className={styles.tags}>
-            {/* 카테고리 기능 미구현 - 추후 추가 예정
-            <span className={`${styles.category} ${styles.categoryDefault}`}>
-              {post.category}
-            </span>
-            */}
-            <span className={styles.tag}>{post.tag}</span>
+            {post.tag && <span className={styles.tag}>{post.tag}</span>}
+            {post.is_member_only && (
+              <span className={styles.memberOnly} title="회원전용">
+                <Group fontSize="inherit" />
+                회원전용
+              </span>
+            )}
           </div>
         )}
         <h1 className={styles.title}>{post.title}</h1>

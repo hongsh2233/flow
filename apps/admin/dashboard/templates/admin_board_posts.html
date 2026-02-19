@@ -333,6 +333,9 @@
                   {{ post.title }}
                 {% endif %}
               </a>
+              {% if (post.is_member_only|default('false')) == "true" %}
+              <span class="badge type-guest" style="margin-left: 6px;">👤 회원전용</span>
+              {% endif %}
               {% if new_post_ids and (post.id in new_post_ids) %}
               <span class="new-badge">NEW</span>
               {% endif %}

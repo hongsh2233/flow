@@ -159,6 +159,7 @@ class Post(Base):
     author = Column(String(100))
     views = Column(Integer, default=0)
     is_secret = Column(String(20), default="false")
+    is_member_only = Column(String(20), default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     board = relationship("Board", back_populates="posts")

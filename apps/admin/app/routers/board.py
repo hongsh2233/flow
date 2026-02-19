@@ -96,6 +96,7 @@ async def get_board_posts_json(
                 "author": p.author,
                 "views": p.views,
                 "is_secret": p.is_secret or "false",
+                "is_member_only": getattr(p, "is_member_only", None) or "false",
                 "created_at": p.created_at.isoformat(),
                 "content": p.content or "",
                 "category": p.category.name if p.category else None,
@@ -436,6 +437,7 @@ async def admin_create_post(
     title: str = Form(...),
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
+    is_member_only: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -499,6 +501,7 @@ async def admin_create_post(
             content=final_content,  # 파일 정보가 포함된 content 사용
             author=ADMIN_EMAIL,
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
+            is_member_only=is_member_only if is_member_only in ["true", "false"] else "false",
             category_id=category_id if category_id else None,
             created_at=datetime.now()
         )
@@ -604,6 +607,7 @@ async def admin_post_edit(
     title: str = Form(...),
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
+    is_member_only: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -669,6 +673,7 @@ async def admin_post_edit(
         post.title = title.strip()
         post.content = final_content
         post.is_secret = is_secret if is_secret in ["true", "false"] else "false"
+        post.is_member_only = is_member_only if is_member_only in ["true", "false"] else "false"
         post.category_id = category_id if category_id else None
         post.updated_at = datetime.now()
         

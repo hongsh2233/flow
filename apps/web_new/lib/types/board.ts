@@ -49,6 +49,7 @@ export interface PostFromApi {
   author: string;
   views: number;
   is_secret: string;
+  is_member_only?: string;
   created_at: string;
   updated_at: string;
   category?: string | null;
@@ -72,6 +73,7 @@ export interface BoardListItem {
   views: number;
   category?: string | null;
   tag: string | null;
+  is_member_only?: boolean;
 }
 
 export interface BoardListProps {
@@ -93,6 +95,7 @@ export interface BoardPost {
   content: string;
   boardName?: string;
   attachments?: PostAttachment[];
+  is_member_only?: boolean;
 }
 
 export interface BoardDetailProps {

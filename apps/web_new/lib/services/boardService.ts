@@ -80,6 +80,7 @@ export function postToListItem(post: PostFromApi): BoardListItem {
     views: post.views || 0,
     category: post.category || null,
     tag: null,
+    is_member_only: post.is_member_only === 'true',
   }
 }
 
@@ -95,6 +96,7 @@ export function postToDetail(post: PostFromApi): BoardPost {
     content: rewriteUploadUrls(post.content),
     boardName: post.board?.name,
     attachments: post.attachments,
+    is_member_only: post.is_member_only === 'true',
   }
 }
 

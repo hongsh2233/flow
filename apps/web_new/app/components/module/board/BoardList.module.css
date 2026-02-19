@@ -66,6 +66,24 @@
   border-radius: 9999px;
 }
 
+.memberOnly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--app-tag-purple);
+  background: var(--app-tag-purple-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.memberOnly svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  font-size: 0.75rem;
+}
+
 .title {
   font-weight: bold;
   font-size: 1rem;
