@@ -70,7 +70,9 @@ export default function FaqPage() {
           <h2 className={styles.topBarTitle}>자주하는 질문</h2>
           <div className={styles.topBarSpacer} />
         </div>
-
+        <div style={{ marginTop: "1.5rem" }}>
+          <StockTermBox />
+        </div>
         {/* FAQ 목록 */}
         <div className={styles.categories}>
           {faqCategories.map((category, catIdx) => (
@@ -116,9 +118,6 @@ export default function FaqPage() {
               </div>
             </div>
           ))}
-        </div>
-        <div style={{ marginTop: "1.5rem" }}>
-          <StockTermBox />
         </div>
       </div>
     </div>

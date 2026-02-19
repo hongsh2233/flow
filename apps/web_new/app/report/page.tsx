@@ -31,10 +31,11 @@ export default function ReportPage() {
   if (boards.length === 0) {
     return (
       <>
+        {termBox}
         <main className={styles.wrap}>
           <BoardList emptyMessage="등록된 게시판이 없습니다." />
         </main>
-        {termBox}
+        
       </>
     );
   }
@@ -58,6 +59,7 @@ export default function ReportPage() {
   return (
     <>
       <main className={styles.wrap}>
+        {termBox}
         <Tabs defaultValue={boards[0].id}>
         <TabsList>
           {boards.map((board) => (
@@ -75,8 +77,7 @@ export default function ReportPage() {
           </TabsContent>
         ))}
       </Tabs>
-    </main>
-    {termBox}
+    </main>    
     </>
   );
 }

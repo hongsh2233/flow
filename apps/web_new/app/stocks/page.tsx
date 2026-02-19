@@ -256,6 +256,9 @@ export default function StocksPage() {
 
   return (
     <div className={styles.page}>
+      <div style={{ marginTop: "1.5rem" }}>
+        <StockTermBox />
+      </div>
       {/* 검색 */}
       <div className={styles.searchArea}>
         <Search
@@ -485,10 +488,6 @@ export default function StocksPage() {
           )}
         </TabsContent>
       </Tabs>
-
-      <div style={{ marginTop: "1.5rem" }}>
-        <StockTermBox />
-      </div>
 
       {/* 모달 */}
       {selectedStock && (
