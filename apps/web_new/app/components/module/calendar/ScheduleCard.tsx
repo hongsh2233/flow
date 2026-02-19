@@ -116,13 +116,33 @@ export interface ScheduleCardProps {
   schedule: ScheduleItem;
   /** 설정에서 일정알림을 켰고 로그인한 경우에만 알림 버튼 활성화 */
   canUseAlarm?: boolean;
+  /** 로그인 여부 (알림 불가 시 메시지 구분용) */
+  isLoggedIn?: boolean;
+  /** 지난 일정이면 true (알림 아이콘 숨김) */
+  isPast?: boolean;
 }
 
-export function ScheduleCard({ schedule, canUseAlarm = false }: ScheduleCardProps) {
+/** 일정이 이미 지났는지 확인 (dateIso + time 기준) */
+function isSchedulePast(schedule: ScheduleItem): boolean {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const dateIso = schedule.dateIso ?? todayStr;
+  if (dateIso < todayStr) return true;
+  if (dateIso > todayStr) return false;
+  if (!schedule.time) return false;
+  const [h, m] = schedule.time.split(":").map(Number);
+  const scheduleMin = (h ?? 0) * 60 + (m ?? 0);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  return nowMin > scheduleMin;
+}
+
+export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
   const displayTitle = schedule.title || schedule.subject || "";
+  const isPast = isPastProp ?? isSchedulePast(schedule);
+  const showAlarmButton = !isPast;
 
   return (
     <>
@@ -150,14 +170,20 @@ export function ScheduleCard({ schedule, canUseAlarm = false }: ScheduleCardProp
                   </p>
                 )}
               </div>
-              {canUseAlarm ? (
-                <NotifyButton />
-              ) : (
-                <NotifyButton
-                  onLoginRequired={() =>
-                    alert("로그인 이후 이용할 수 있습니다.")
-                  }
-                />
+              {showAlarmButton && (
+                canUseAlarm ? (
+                  <NotifyButton />
+                ) : (
+                  <NotifyButton
+                    onLoginRequired={() =>
+                      alert(
+                        isLoggedIn
+                          ? "설정에서 일정 알림을 켜주세요."
+                          : "로그인 후 이용할 수 있습니다."
+                      )
+                    }
+                  />
+                )
               )}
             </div>
             <div className={styles.bottom}>

@@ -250,6 +250,7 @@ export function Calendar() {
                 key={schedule.id}
                 schedule={schedule}
                 canUseAlarm={isLoggedIn && scheduleAlarmEnabled}
+                isLoggedIn={isLoggedIn}
               />
             ))}
           </div>
