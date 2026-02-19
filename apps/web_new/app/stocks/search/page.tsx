@@ -165,7 +165,7 @@ function SearchResultsContent() {
           {!hasAnyData && <p className={styles.loadingText}>검색 결과가 없습니다.</p>}
         </>
       )}
-      <div style={{ marginTop: "1.5rem" }}>
+      <div style={{ margin: "0 0 1rem" }}>
         <StockTermBox />
       </div>
     </div>

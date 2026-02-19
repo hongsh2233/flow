@@ -256,7 +256,7 @@ export default function StocksPage() {
 
   return (
     <div className={styles.page}>
-      <div style={{ marginTop: "1.5rem" }}>
+      <div style={{ margin: "0 0 1rem" }}>
         <StockTermBox />
       </div>
       {/* 검색 */}

@@ -22,7 +22,7 @@ export default function ReportPage() {
   }, []);
 
   const termBox = (
-    <div style={{ padding: "0 1rem 1.5rem", marginTop: "1.5rem" }}>
+    <div style={{ padding: "0 1rem 1.5rem", margin: "0 0 1rem" }}>
       <StockTermBox />
     </div>
   );

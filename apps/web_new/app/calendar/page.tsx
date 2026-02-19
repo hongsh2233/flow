@@ -6,10 +6,10 @@ import { StockTermBox } from "../components/module/stock-term-box";
 export default function CalendarPage() {
   return (
     <div className="content__wrap">
-      <Calendar />
-      <div style={{ marginTop: "1.5rem" }}>
+      <div style={{ margin: "0 0 1rem" }}>
         <StockTermBox />
       </div>
+      <Calendar />
     </div>
   );
 }
