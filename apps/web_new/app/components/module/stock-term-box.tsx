@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import styles from "./stock-term-box.module.css";
 
@@ -55,10 +55,28 @@ const FALLBACK_TERMS: StockTerm[] = [
   },
 ];
 
+const AUTO_HIDE_MS = 10_000;
+
 export function StockTermBox() {
   const [isVisible, setIsVisible] = useState(true);
   const [terms, setTerms] = useState<StockTerm[]>(FALLBACK_TERMS);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startHideTimer = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setIsVisible(false);
+      hideTimerRef.current = null;
+    }, AUTO_HIDE_MS);
+  };
+
+  useEffect(() => {
+    startHideTimer();
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchTerms = async () => {
@@ -99,6 +117,7 @@ export function StockTermBox() {
   const nextTerm = () => {
     if (safeTerms.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % safeTerms.length);
+    startHideTimer();
   };
 
   return (
