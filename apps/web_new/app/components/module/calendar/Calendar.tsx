@@ -135,6 +135,13 @@ export function Calendar() {
   const monthLabel = getMonthLabel(currentWeek);
   const isThisWeek = weekIndex === todayWeekIndex;
 
+  /* 선택한 날짜부터 이후 일정만 표시 (오늘 이전 날짜 일정 숨김) */
+  const selectedDateIso = toIsoDateLocal(new Date(selectedDate));
+  const filteredSchedules = useMemo(
+    () => schedules.filter((s) => (s.dateIso || "") >= selectedDateIso),
+    [schedules, selectedDateIso]
+  );
+
   return (
     <div className={styles.root}>
       {/* 월 + 네비게이션 */}
@@ -234,18 +241,22 @@ export function Calendar() {
         </div>
       </div>
 
-      {/* 일정 */}
+      {/* 일정 목록: 선택한 날짜부터 이후 일정만 표시 */}
       <div className={styles.scheduleWrap}>
-        <h3 className={styles.scheduleTitle}>이번 주 일정</h3>
+        <h3 className={styles.scheduleTitle}>일정 목록</h3>
         {loading ? (
           <p className={styles.scheduleLoading}>일정을 불러오는 중...</p>
         ) : fetchError ? (
           <p className={styles.scheduleError}>{fetchError}</p>
-        ) : schedules.length === 0 ? (
-          <p className={styles.scheduleEmpty}>해당 기간 일정이 없습니다.</p>
+        ) : filteredSchedules.length === 0 ? (
+          <p className={styles.scheduleEmpty}>
+            {schedules.length === 0
+              ? "해당 기간 일정이 없습니다."
+              : `${selectedDateIso} 이후 일정이 없습니다.`}
+          </p>
         ) : (
           <div className={styles.scheduleList}>
-            {schedules.map((schedule) => (
+            {filteredSchedules.map((schedule) => (
               <ScheduleCard
                 key={schedule.id}
                 schedule={schedule}
