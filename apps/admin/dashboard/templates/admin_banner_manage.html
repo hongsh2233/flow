@@ -206,7 +206,7 @@ document.querySelectorAll('input[name="content_type"]').forEach(el => {
   el.addEventListener('change', () => {
     const isImage = el.value === 'image';
     document.getElementById('imageWrap').style.display = isImage ? 'block' : 'none';
-    document.getElementById('htmlWrap').style.display = isImage ? 'none' : 'block';
+    document.getElementById('htmlWrap').style.display = isImage ? 'none' : 'flex';
     document.getElementById('imageUrl').removeAttribute('required');
     document.getElementById('htmlContent').removeAttribute('required');
     if (isImage) document.getElementById('imageUrl').setAttribute('required', 'required');
