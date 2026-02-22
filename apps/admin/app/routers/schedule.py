@@ -58,7 +58,6 @@ async def schedule_page(
             "content": s.content or "",
             "detail": getattr(s, "detail", None) or "",
             "type": s.type
-            "underwriter": getattr(s, "underwriter", None) or "",
         }
         for s in schedules
     ]
@@ -81,8 +80,6 @@ async def add_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
-    link_url: str = Form(None),
-    underwriter: str = Form(None),
     schedule_type_param: str = Form("etc"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -101,16 +98,12 @@ async def add_schedule(
         date_obj = date_type.fromisoformat(date)
         
         # 새 일정 생성
-        link_val = (link_url or "").strip() or None
-        underwriter_val = (underwriter or "").strip() or None
         new_schedule = models.Schedule(
             date=date_obj,
             scheduled_time=time_val,
             subject=subject,
             content=content or "",
             detail=detail or None,
-            link_url=link_val,
-            underwriter=underwriter_val,
             type=schedule_type
         )
         
@@ -160,8 +153,6 @@ async def update_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
-    link_url: str = Form(None),
-    underwriter: str = Form(None),
     schedule_type_param: str = Form("etc"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -191,8 +182,6 @@ async def update_schedule(
         schedule.subject = subject
         schedule.content = content or ""
         schedule.detail = detail or None
-        schedule.link_url = (link_url or "").strip() or None
-        schedule.underwriter = (underwriter or "").strip() or None
         schedule.type = schedule_type
         
         db.commit()
@@ -205,63 +194,6 @@ async def update_schedule(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"일정 수정 실패: {str(e)}")
-
-
-@router.post("/admin/schedule/sync-ipo-38")
-async def sync_ipo_schedule_38(
-    user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """38커뮤니케이션(38.co.kr)에서 공모청약 일정 크롤링 후 DB 저장 (공모청약 타입)"""
-    if not user:
-        return RedirectResponse(url="/", status_code=303)
-    try:
-        from app.services.ipo_schedule_crawler import fetch_ipo_schedules_38
-        items = await fetch_ipo_schedules_38(max_pages=5)
-        if not items:
-            return RedirectResponse(url="/admin/schedule?error=ipo_sync&reason=no_data", status_code=303)
-        # 기존 ipo 일정 중 (date, subject) 세트로 중복 체크
-        existing_ipo = db.query(models.Schedule).filter(models.Schedule.type == "ipo").all()
-        existing_keys = {(s.date, (s.subject or "").strip()) for s in existing_ipo}
-        added_count = 0
-        skipped_count = 0
-        for item in items:
-            start_date = item.get("date")
-            if not start_date:
-                skipped_count += 1
-                continue
-            company = (item.get("company_name") or "").strip()
-            if not company:
-                skipped_count += 1
-                continue
-            subject = f"{company} 청약"
-            period = item.get("period") or ""
-            price = item.get("price") or ""
-            underwriter = (item.get("underwriter") or "").strip()
-            content = f"{period} / {price} / {underwriter}".strip(" /")
-            if (start_date, subject) in existing_keys:
-                skipped_count += 1
-                continue
-            new_schedule = models.Schedule(
-                date=start_date,
-                subject=subject,
-                content=content,
-                type="ipo",
-                underwriter=underwriter or None,
-            )
-            db.add(new_schedule)
-            existing_keys.add((start_date, subject))
-            added_count += 1
-        db.commit()
-        redirect_url = f"/admin/schedule?success=true&ipo_added={added_count}&ipo_skipped={skipped_count}"
-        return RedirectResponse(url=redirect_url, status_code=303)
-    except Exception as e:
-        if db:
-            db.rollback()
-        print(f"[IPO 동기화] 38.co.kr 크롤링 실패: {e}")
-        import traceback
-        traceback.print_exc()
-        return RedirectResponse(url="/admin/schedule?error=ipo_sync&reason=exception", status_code=303)
 
 
 @router.post("/admin/schedule/sync-api")

@@ -113,11 +113,6 @@
   margin-top: 0.125rem;
 }
 
-.underwriter {
-  font-weight: 500;
-  color: var(--app-text-secondary);
-}
-
 .bottom {
   display: flex;
   align-items: center;

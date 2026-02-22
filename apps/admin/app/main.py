@@ -240,12 +240,6 @@ def run_migrations():
         print(f"⚠️ 게시글 회원전용 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
     
     try:
-        from app.migrations.add_schedule_underwriter import upgrade
-        upgrade()
-    except Exception as e:
-        print(f"⚠️ 일정 underwriter(주관 증권사) 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
-
-    try:
         from app.migrations.add_naver_stock_ranking import upgrade as add_naver_ranking_migration
         add_naver_ranking_migration()
     except Exception as e:
