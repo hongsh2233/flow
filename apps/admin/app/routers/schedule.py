@@ -57,7 +57,8 @@ async def schedule_page(
             "subject": s.subject,
             "content": s.content or "",
             "detail": getattr(s, "detail", None) or "",
-            "type": s.type
+            "type": s.type,
+            "link_url": getattr(s, "link_url", None) or "",
             "underwriter": getattr(s, "underwriter", None) or "",
         }
         for s in schedules
