@@ -164,9 +164,15 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                     </span>
                   )}
                 </button>
-                {(schedule.company || schedule.content) && (
+                {(schedule.company || schedule.content || schedule.underwriter) && (
                   <p className={styles.company}>
-                    {schedule.company || schedule.content}
+                    {schedule.underwriter && (
+                      <span className={styles.underwriter}>주관: {schedule.underwriter}</span>
+                    )}
+                    {schedule.underwriter && (schedule.company || schedule.content) && " · "}
+                    {(schedule.company || schedule.content) && (
+                      <span>{schedule.company || schedule.content}</span>
+                    )}
                   </p>
                 )}
               </div>

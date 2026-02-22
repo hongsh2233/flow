@@ -615,6 +615,7 @@ async def get_schedules(
                 "content": schedule.content or "",
                 "detail": getattr(schedule, "detail", None) or "",
                 "type": schedule.type,
+                "underwriter": getattr(schedule, "underwriter", None) or "",
                 "created_at": serialize_datetime(schedule.created_at),
                 "updated_at": serialize_datetime(schedule.updated_at)
             }
@@ -646,6 +647,8 @@ async def get_schedule(
             "content": schedule.content or "",
             "detail": getattr(schedule, "detail", None) or "",
             "type": schedule.type,
+            "link_url": getattr(schedule, "link_url", None) or "",
+            "underwriter": getattr(schedule, "underwriter", None) or "",
             "created_at": serialize_datetime(schedule.created_at),
             "updated_at": serialize_datetime(schedule.updated_at)
         }

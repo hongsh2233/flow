@@ -84,6 +84,7 @@ export function Calendar() {
           time: s.scheduled_time || undefined,
           content: s.content || undefined,
           detail: s.detail != null && s.detail !== "" ? String(s.detail) : undefined,
+          underwriter: s.underwriter && s.underwriter.trim() ? s.underwriter.trim() : undefined,
         }));
         setSchedules(items);
       } else {

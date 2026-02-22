@@ -20,4 +20,6 @@ export interface ScheduleItem {
   time?: string;
   content?: string;
   detail?: string;
+  /** 주관 증권사 (공모청약 등) */
+  underwriter?: string;
 }
