@@ -278,27 +278,21 @@ async def sync_ipo_dart(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    from app.config import OPENDART_API_KEY, ROOT, ENV_LOCAL_ROOT, ENV_ROOT, BASE_DIR, ENV_FILE
-    api_key = OPENDART_API_KEY
-    # config에서 로드 안 됐으면 .env 파일 직접 읽기 시도
-    if not api_key:
-        from pathlib import Path
-        for path in [ENV_LOCAL_ROOT, ENV_ROOT, ENV_FILE, Path.cwd() / ".env.local", Path.cwd() / ".env"]:
-            if not path.exists():
-                continue
-            try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("OPENDART_API_KEY="):
-                            val = line.split("=", 1)[1].strip().strip('"').strip("'")
-                            if val:
-                                api_key = val
-                                break
-            except Exception:
-                pass
-            if api_key:
-                break
+    import os
+    api_key = (
+        os.environ.get("OPENDART_API_KEY")
+        or os.environ.get("OPENDART")
+        or ""
+    ).strip().strip('"').strip("'")
+
+    # 디버그: Railway 로그에서 키 존재 여부 확인용
+    print(f"[DART sync] OPENDART_API_KEY in env: {'yes' if os.environ.get('OPENDART_API_KEY') else 'no'}")
+    print(f"[DART sync] OPENDART in env: {'yes' if os.environ.get('OPENDART') else 'no'}")
+    print(f"[DART sync] api_key length: {len(api_key)}")
+    # 환경 변수 키 목록 중 DART/OPEN 포함된 것 출력
+    dart_keys = [k for k in os.environ if "DART" in k.upper() or "OPEN" in k.upper()]
+    print(f"[DART sync] env keys with DART/OPEN: {dart_keys}")
+
     if not api_key:
         return RedirectResponse(
             url="/admin/schedule?error=no_data&reason=no_dart_key",

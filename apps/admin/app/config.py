@@ -77,7 +77,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh Token 만료 시간 (30일) - 긴 
 DATA_GO_KR_API_KEY = os.environ.get("DATA_GO_KR_API_KEY")  # 공공데이터포털 API 인증키
 
 # Open DART(금융감독원 전자공시) API 설정
-_raw = os.environ.get("OPENDART_API_KEY") or ""
+_raw = os.environ.get("OPENDART_API_KEY") or os.environ.get("OPENDART") or ""
 OPENDART_API_KEY = (_raw.strip().strip('"').strip("'") or None) if _raw else None
 
 
