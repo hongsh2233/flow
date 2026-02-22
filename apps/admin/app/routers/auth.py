@@ -1,11 +1,13 @@
 """
 인증 관련 라우터
 """
+import os
+import re
 import time
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import timedelta, datetime
 import secrets
 
@@ -35,11 +37,34 @@ class SocialLoginRequest(BaseModel):
     provider_id: str  # 소셜 로그인 제공자의 사용자 고유 ID
 
 
-# 일반 회원가입 요청 모델
+# 일반 회원가입 요청 모델 (서버 측 검증으로 보안 강화)
 class MemberSignupRequest(BaseModel):
     email: str
     password: str
     nickname: str = None  # 프론트에서 전달한 닉네임 (없으면 서버에서 자동 생성)
+
+    @field_validator("email")
+    @classmethod
+    def email_format(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("이메일을 입력해주세요.")
+        v = v.strip().lower()
+        if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", v):
+            raise ValueError("올바른 이메일 형식이 아닙니다.")
+        if len(v) > 255:
+            raise ValueError("이메일이 너무 깁니다.")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if not v:
+            raise ValueError("비밀번호를 입력해주세요.")
+        if len(v) < 8:
+            raise ValueError("비밀번호는 8자 이상이어야 합니다.")
+        if len(v) > 128:
+            raise ValueError("비밀번호가 너무 깁니다.")
+        return v
 
 
 # 일반 회원 로그인 요청 모델
@@ -707,11 +732,11 @@ async def api_social_login(
     }
     ```
     """
-    # Provider 검증
-    if social_request.provider not in ['google', 'naver', 'kakao']:
+    # Provider 검증 (카카오는 비활성화)
+    if social_request.provider not in ['google', 'naver']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="유효하지 않은 provider입니다. 'google', 'naver', 'kakao'만 허용됩니다."
+            detail="유효하지 않은 provider입니다. 'google', 'naver'만 허용됩니다."
         )
     
     # 이메일 또는 provider_id로 기존 회원 찾기
@@ -1433,11 +1458,14 @@ async def api_request_password_reset(
     global _password_reset_codes
     _password_reset_codes[request.email] = (code, expires_at)
 
-    return {
+    # 보안: 프로덕션에서는 응답에 인증코드 포함하지 않음 (이메일로만 전달)
+    res = {
         "success": True,
         "message": "인증코드가 이메일로 발송되었습니다.",
-        "code": code,
     }
+    if os.environ.get("PASSWORD_RESET_DEBUG") == "1":
+        res["code"] = code
+    return res
 
 
 @router.post("/api/auth/member/reset-password")

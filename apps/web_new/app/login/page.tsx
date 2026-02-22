@@ -26,7 +26,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(LAST_LOGIN_KEY) as LoginMethod | null;
-      if (stored && ["credentials", "kakao", "naver", "google"].includes(stored)) {
+      if (stored && ["credentials", "naver", "google"].includes(stored)) {
         setLastLoginProvider(stored);
       }
     }
@@ -145,11 +145,13 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.socialButtons}>
+            {/* 카카오 로그인 비활성화
             <SocialLoginButton
               provider="kakao"
               onClick={() => handleSocialLogin("kakao")}
               recent={lastLoginProvider === "kakao"}
             />
+            */}
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialLogin("naver")}

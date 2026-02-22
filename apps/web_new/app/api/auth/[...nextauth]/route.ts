@@ -1,6 +1,6 @@
 import NextAuth, { type AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import KakaoProvider from 'next-auth/providers/kakao'
+// import KakaoProvider from 'next-auth/providers/kakao' // 카카오 가입 비활성화
 import NaverProvider from 'next-auth/providers/naver'
 import GoogleProvider from 'next-auth/providers/google'
 
@@ -55,10 +55,11 @@ export const authOptions = {
         }
       },
     }),
-    KakaoProvider({
-      clientId: process.env.KAKAO_CLIENT_ID ?? '',
-      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
-    }),
+    // 카카오 가입 비활성화
+    // KakaoProvider({
+    //   clientId: process.env.KAKAO_CLIENT_ID ?? '',
+    //   clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
+    // }),
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID ?? '',
       clientSecret: process.env.NAVER_CLIENT_SECRET ?? '',
@@ -85,7 +86,7 @@ export const authOptions = {
         // 소셜 로그인 시 BO social-login API 연동 (kakao, naver, google)
         token.lastLoginProvider = account?.provider ?? 'credentials'
 
-        if (account && ['kakao', 'naver', 'google'].includes(account.provider)) {
+        if (account && ['naver', 'google'].includes(account.provider)) {
           try {
             const providerId =
               account.providerAccountId ||

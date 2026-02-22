@@ -312,10 +312,12 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.socialButtons}>
+            {/* 카카오 가입 비활성화
             <SocialLoginButton
               provider="kakao"
               onClick={() => handleSocialSignup("kakao")}
             />
+            */}
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialSignup("naver")}
