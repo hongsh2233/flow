@@ -279,33 +279,32 @@ async def sync_ipo_dart(
         return RedirectResponse(url="/", status_code=303)
 
     import os
-    api_key = (
-        os.environ.get("OPENDART_API_KEY")
-        or os.environ.get("OPENDART")
-        or ""
-    ).strip().strip('"').strip("'")
+    from urllib.parse import quote
 
-    # 디버그: Railway 로그에서 키 존재 여부 확인용
-    print(f"[DART sync] OPENDART_API_KEY in env: {'yes' if os.environ.get('OPENDART_API_KEY') else 'no'}")
-    print(f"[DART sync] OPENDART in env: {'yes' if os.environ.get('OPENDART') else 'no'}")
-    print(f"[DART sync] api_key length: {len(api_key)}")
-    # 환경 변수 키 목록 중 DART/OPEN 포함된 것 출력
-    dart_keys = [k for k in os.environ if "DART" in k.upper() or "OPEN" in k.upper()]
-    print(f"[DART sync] env keys with DART/OPEN: {dart_keys}")
+    api_key = (
+        os.environ.get("OPENDART_API_KEY", "").strip()
+        or os.environ.get("OPENDART", "").strip()
+    )
+
+    dart_env_keys = [k for k in os.environ if "DART" in k.upper() or "OPENDART" in k.upper()]
+    print(f"[DART sync] api_key len={len(api_key)}, env keys with DART: {dart_env_keys}")
 
     if not api_key:
+        debug = quote(f"env_keys={dart_env_keys}")
         return RedirectResponse(
-            url="/admin/schedule?error=no_data&reason=no_dart_key",
+            url=f"/admin/schedule?error=no_data&reason=no_dart_key&debug={debug}",
             status_code=303,
         )
 
     try:
         from app.services.opendart_ipo_service import fetch_ipo_schedules_opendart
-        items = await fetch_ipo_schedules_opendart(api_key, months_back=3)
+        items = await fetch_ipo_schedules_opendart(api_key)
     except Exception as e:
         print(f"[Open DART] 동기화 오류: {e}")
+        import traceback
+        traceback.print_exc()
         return RedirectResponse(
-            url="/admin/schedule?error=no_data&reason=dart_failed",
+            url=f"/admin/schedule?error=no_data&reason=dart_failed&detail={quote(str(e)[:200])}",
             status_code=303,
         )
 

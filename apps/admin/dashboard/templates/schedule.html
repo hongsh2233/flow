@@ -226,15 +226,21 @@
   {% elif request.query_params.get('reason') == 'no_dart_key' %}
   <p style="color: #721c24; margin: 5px 0 0 0;">
     <strong>Open DART API 키가 설정되지 않았습니다.</strong><br>
-    .env 또는 .env.local에 <code>OPENDART_API_KEY=발급받은_인증키(40자리)</code>를 추가해주세요.
+    Railway Variables에 <code>OPENDART_API_KEY</code>를 등록해주세요.
+    {% if request.query_params.get('debug') %}
+    <br><small style="color:#888;">{{ request.query_params.get('debug') }}</small>
+    {% endif %}
   </p>
   {% elif request.query_params.get('reason') == 'dart_empty' %}
   <p style="color: #721c24; margin: 5px 0 0 0;">
-    조회 기간(최근 3개월) 내 증권신고(지분증권) 공시가 없거나, 상세 조회 결과가 없습니다.
+    이번 달~연말 기간 내 증권신고(지분증권) 공시가 없거나, 상세 조회 결과가 없습니다.
   </p>
   {% elif request.query_params.get('reason') == 'dart_failed' %}
   <p style="color: #721c24; margin: 5px 0 0 0;">
     Open DART API 요청 실패. API 키·네트워크·일일 한도 확인 후 다시 시도해주세요.
+    {% if request.query_params.get('detail') %}
+    <br><small style="color:#999;">상세: {{ request.query_params.get('detail') }}</small>
+    {% endif %}
   </p>
   {% else %}
   <p style="color: #721c24; margin: 5px 0 0 0;">

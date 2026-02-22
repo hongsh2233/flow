@@ -30,21 +30,11 @@ ENV_LOCAL_ROOT = ROOT / ".env.local"
 ENV_ROOT = ROOT / ".env"
 ENV_FILE = BASE_DIR / ".env"
 
-# 여러 위치에서 .env 로드 (나중에 로드할수록 기존 값 덮어씀)
-def _load_env(path: Path, override: bool = True) -> None:
-    if path.exists():
-        load_dotenv(dotenv_path=path, override=override)
-        print(f"  env 로드: {path}")
-
-_load_env(ENV_LOCAL_ROOT)
-_load_env(ENV_ROOT)
-_load_env(ENV_FILE)
-# 현재 작업 디렉터리(cwd) 기준 .env (서버 실행 위치에 따라 여기 있을 수 있음)
-CWD = Path.cwd()
-_load_env(CWD / ".env.local")
-_load_env(CWD / ".env")
-# dotenv 기본 검색 (cwd 등)
-load_dotenv(override=True)
+# .env 로드: override=False → Railway/시스템 환경변수를 절대 덮어쓰지 않음
+for _p in [ENV_LOCAL_ROOT, ENV_ROOT, ENV_FILE]:
+    if _p.exists():
+        load_dotenv(dotenv_path=_p, override=False)
+        print(f"  env 로드 (override=False): {_p}")
 
 # 관리자 계정 설정
 # 기본값: 환경 변수가 없으면 init_admin_user()와 동일한 기본 이메일 사용
