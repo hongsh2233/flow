@@ -95,21 +95,115 @@ def _parse_row_by_pattern(cells: List[str]) -> Optional[Dict[str, str]]:
     }
 
 
+def _parse_row_from_fund_link(link, row_cells: List[str]) -> Optional[Dict[str, str]]:
+    """기업 상세 링크(o=v&no=)가 있는 행에서 셀 리스트로 레코드 생성."""
+    company = _normalize_cell(link.get_text(strip=True))
+    if not company or "분석" in company or company == "보기":
+        return None
+    parsed = _parse_row_by_pattern(row_cells)
+    if parsed:
+        parsed["company_name"] = company  # 링크 텍스트를 기업명으로 확정
+        return parsed
+    return None
+
+
+def _parse_single_cell_line(line: str) -> Optional[Dict[str, str]]:
+    """한 셀에 '기업명 2026.02.20~02.23 - 12,100~16,600 NH투자증권' 형태로 있을 때."""
+    if not line or len(line) > 500:
+        return None
+    # 청약기간: YYYY.MM.DD~MM.DD 또는 YYYY.MM.DD\~MM.DD 또는 YYYY.MM.DD-MM.DD
+    period_m = re.search(r"(\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2})\s*[\\~\-]\s*(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{1,2})?)", line)
+    if not period_m or _parse_period_to_start_date(period_m.group(1)) is None:
+        return None
+    period_str = period_m.group(0).replace("\\", "").replace("\u2013", "~").replace("\u2014", "~").strip()
+    # 가격: 숫자,쉼표,~ (기간 다음에 오는 부분). 예: - 12,100~16,600 또는 \u2013 2,000~2,000
+    rest_after_period = line[period_m.end() :].strip()
+    price_str = "-"
+    underwriter_str = "-"
+    price_m = re.search(r"[-\s\u2013\u2014]+\s*([\d,]+(?:\s*[~\-\u2013]\s*[\d,]+)?)", rest_after_period)
+    if price_m:
+        price_str = _normalize_cell(price_m.group(1))
+        rest_after_period = rest_after_period[price_m.end() :].strip()
+    # 나머지는 주관사 (증권 포함 또는 쉼표). 끝의 '분석보기' 등 제거
+    if rest_after_period and ("," in rest_after_period or "증권" in rest_after_period or len(rest_after_period) > 2):
+        uw = _normalize_cell(rest_after_period).replace("분석보기", "").replace("[", "").replace("]", "").strip()
+        underwriter_str = uw if uw else "-"
+    # 기업명: 기간 앞 부분 (링크 텍스트만 올 수 있음)
+    before_period = line[: period_m.start()].strip()
+    company = _normalize_cell(before_period)
+    if not company or "분석" in company:
+        return None
+    return {
+        "company_name": company,
+        "period": period_str,
+        "price": price_str,
+        "underwriter": underwriter_str,
+    }
+
+
 def _parse_table_rows(soup: BeautifulSoup) -> List[Dict[str, str]]:
     """
     테이블에서 행별로 기업명, 청약기간, 희망공모가, 주관사 추출.
-    컬럼 순서가 [기업명, 청약기간, 희망공모가, 주관사] 형태이거나,
-    패턴 매칭으로 각 필드를 식별.
+    - 전략 1: o=v&no= 링크로 데이터 행 찾은 뒤 같은 행 셀에서 패턴 파싱
+    - 전략 2: 한 셀에 전체 라인이 있는 경우 _parse_single_cell_line
+    - 전략 3: 기존 테이블 tr/td 고정 순서 및 패턴 매칭
     """
     results = []
+    seen_keys = set()
+
+    # 전략 1: 공모 상세 링크(fund/?o=v&no=)가 있는 a 태그로 행 탐색
+    for a in soup.find_all("a", href=True):
+        href = a.get("href", "")
+        if "o=v" not in href or "no=" not in href or "fund" not in href:
+            continue
+        row = a.find_parent("tr")
+        if not row:
+            # td 안에만 있을 수 있음 -> 부모 td의 텍스트 전체로 파싱
+            parent_td = a.find_parent(["td", "th"])
+            if parent_td:
+                line = _normalize_cell(parent_td.get_text(strip=True))
+                rec = _parse_single_cell_line(line)
+                if rec:
+                    key = (rec["company_name"], rec.get("period"))
+                    if key not in seen_keys:
+                        seen_keys.add(key)
+                        results.append(rec)
+            continue
+        cells = _extract_row_cells(row)
+        if len(cells) >= 3:
+            rec = _parse_row_from_fund_link(a, cells)
+            if rec:
+                key = (rec["company_name"], rec.get("period"))
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    results.append(rec)
+        else:
+            # 행이 셀 하나에 다 들어있는 경우
+            line = _normalize_cell(row.get_text(strip=True))
+            rec = _parse_single_cell_line(line)
+            if rec:
+                key = (rec["company_name"], rec.get("period"))
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    results.append(rec)
+
+    if results:
+        return results
+
+    # 전략 2/3: 기존 테이블 순회
     tables = soup.find_all("table")
     for table in tables:
         rows = table.find_all("tr")
         for tr in rows:
             cells = _extract_row_cells(tr)
             if len(cells) < 3:
+                # 한 셀에 전체 라인
+                full = _normalize_cell(tr.get_text(strip=True))
+                rec = _parse_single_cell_line(full)
+                if rec and (rec["company_name"], rec.get("period")) not in seen_keys:
+                    seen_keys.add((rec["company_name"], rec.get("period")))
+                    results.append(rec)
                 continue
-            # 먼저 고정 순서 시도: 기업명, 청약기간, 희망공모가, 주관사 (나머지 열 무시)
             if len(cells) >= 4:
                 c0, c1, c2, c3 = cells[0], cells[1], cells[2], cells[3]
                 if _looks_like_period(c1) and _parse_period_to_start_date(c1):
@@ -120,12 +214,17 @@ def _parse_table_rows(soup: BeautifulSoup) -> List[Dict[str, str]]:
                         "underwriter": c3,
                     }
                     if rec["company_name"] and rec["period"]:
-                        results.append(rec)
-                        continue
-            # 패턴으로 재해석
+                        key = (rec["company_name"], rec["period"])
+                        if key not in seen_keys:
+                            seen_keys.add(key)
+                            results.append(rec)
+                    continue
             parsed = _parse_row_by_pattern(cells)
             if parsed:
-                results.append(parsed)
+                key = (parsed["company_name"], parsed.get("period"))
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    results.append(parsed)
     return results
 
 
