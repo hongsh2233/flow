@@ -95,56 +95,14 @@ def _parse_row_by_pattern(cells: List[str]) -> Optional[Dict[str, str]]:
     }
 
 
-def _parse_38_fund_table_row(cells: List[str]) -> Optional[Dict[str, str]]:
-    """
-    38.co.kr 공모청약일정 테이블 실제 컬럼 순서:
-    0: 종목명(기업명), 1: 청약기간, 2: 확정공모가, 3: 희망공모가, 4: 청약경쟁률, 5: 주간사, 6: 분석
-    (6열인 경우: 4번 없을 수 있음 → 0,1,2,3,4=주간사,5=분석)
-    """
-    if len(cells) < 5:
-        return None
-    c0 = _normalize_cell(cells[0])  # 기업명
-    c1 = _normalize_cell(cells[1])  # 청약기간
-    if not c0 or not _looks_like_period(c1) or _parse_period_to_start_date(c1) is None:
-        return None
-    # 희망공모가: 7열이면 cells[3], 6열이면 cells[2] 또는 [3]
-    price = "-"
-    underwriter = "-"
-    if len(cells) >= 7:
-        price = _normalize_cell(cells[3]) or _normalize_cell(cells[2]) or "-"
-        underwriter = _normalize_cell(cells[5]) or "-"
-    elif len(cells) >= 6:
-        # 6열: 기업명, 청약기간, 확정, 희망, 주간사, 분석
-        price = _normalize_cell(cells[3]) if _looks_like_price(cells[3]) else (_normalize_cell(cells[2]) or "-")
-        underwriter = _normalize_cell(cells[4]) or "-"
-    elif len(cells) == 5:
-        price = _normalize_cell(cells[2]) if _looks_like_price(cells[2]) else "-"
-        underwriter = _normalize_cell(cells[4]) if _looks_like_underwriter(cells[4]) else "-"
-    if not price or price == "분석":
-        price = "-"
-    if underwriter and ("분석" in underwriter or underwriter == "보기"):
-        underwriter = "-"
-    return {
-        "company_name": c0,
-        "period": c1,
-        "price": price,
-        "underwriter": underwriter,
-    }
-
-
 def _parse_row_from_fund_link(link, row_cells: List[str]) -> Optional[Dict[str, str]]:
     """기업 상세 링크(o=v&no=)가 있는 행에서 셀 리스트로 레코드 생성."""
     company = _normalize_cell(link.get_text(strip=True))
     if not company or "분석" in company or company == "보기":
         return None
-    # 38.co.kr 실제 테이블 7열 구조 우선 적용
-    rec = _parse_38_fund_table_row(row_cells)
-    if rec:
-        rec["company_name"] = company
-        return rec
     parsed = _parse_row_by_pattern(row_cells)
     if parsed:
-        parsed["company_name"] = company
+        parsed["company_name"] = company  # 링크 텍스트를 기업명으로 확정
         return parsed
     return None
 
@@ -246,15 +204,6 @@ def _parse_table_rows(soup: BeautifulSoup) -> List[Dict[str, str]]:
                     seen_keys.add((rec["company_name"], rec.get("period")))
                     results.append(rec)
                 continue
-            # 38.co.kr 실제 7열: 기업명, 청약기간, 확정공모가, 희망공모가, 청약경쟁률, 주간사, 분석
-            if len(cells) >= 5:
-                rec = _parse_38_fund_table_row(cells)
-                if rec and rec["company_name"] and rec["period"]:
-                    key = (rec["company_name"], rec["period"])
-                    if key not in seen_keys:
-                        seen_keys.add(key)
-                        results.append(rec)
-                    continue
             if len(cells) >= 4:
                 c0, c1, c2, c3 = cells[0], cells[1], cells[2], cells[3]
                 if _looks_like_period(c1) and _parse_period_to_start_date(c1):
