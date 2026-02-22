@@ -145,6 +145,12 @@ def run_migrations():
         migrate_schedule_time()
     except Exception as e:
         print(f"⚠️ 일정 scheduled_time 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_schedule_link_url_underwriter import upgrade as add_schedule_link_url_underwriter
+        add_schedule_link_url_underwriter()
+    except Exception as e:
+        print(f"⚠️ 일정 link_url/underwriter 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
     
     try:
         from app.migrations.add_member_columns import migrate_member_table

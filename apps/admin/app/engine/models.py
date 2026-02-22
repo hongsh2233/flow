@@ -120,6 +120,8 @@ class Schedule(Base):
     content = Column(String(500))  # 요약 내용
     detail = Column(Text)  # 상세 내용
     type = Column(String(20), default="manual")
+    link_url = Column(String(500), nullable=True)   # DART/증권사 등 링크 (새 창)
+    underwriter = Column(String(200), nullable=True)  # 주관 증권사 (공모청약 등)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
