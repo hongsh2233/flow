@@ -226,7 +226,7 @@
   {% elif request.query_params.get('reason') == 'no_dart_key' %}
   <p style="color: #721c24; margin: 5px 0 0 0;">
     <strong>Open DART API 키가 설정되지 않았습니다.</strong><br>
-    .env 또는 .env.local에 <code>OPENDART=발급받은_인증키(40자리)</code>를 추가해주세요.
+    .env 또는 .env.local에 <code>OPENDART_API_KEY=발급받은_인증키(40자리)</code>를 추가해주세요.
   </p>
   {% elif request.query_params.get('reason') == 'dart_empty' %}
   <p style="color: #721c24; margin: 5px 0 0 0;">
