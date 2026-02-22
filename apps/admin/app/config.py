@@ -30,21 +30,21 @@ ENV_LOCAL_ROOT = ROOT / ".env.local"
 ENV_ROOT = ROOT / ".env"
 ENV_FILE = BASE_DIR / ".env"
 
-# 1) 루트 .env.local 먼저 로드 (web + admin 공용)
-if ENV_LOCAL_ROOT.exists():
-    load_dotenv(dotenv_path=ENV_LOCAL_ROOT)
-    print(f".env.local 로드 완료 (루트): {ENV_LOCAL_ROOT}")
-# 2) 루트 .env 로드 (보통 .env.local 없을 때 사용)
-if ENV_ROOT.exists():
-    load_dotenv(dotenv_path=ENV_ROOT)
-    print(f".env 로드 완료 (루트): {ENV_ROOT}")
-# 3) admin/.env 있으면 로드 (admin 전용, 루트에 없는 값 보충)
-if ENV_FILE.exists():
-    load_dotenv(dotenv_path=ENV_FILE)
-    print(f".env 로드 완료 (admin): {ENV_FILE}")
-if not ENV_LOCAL_ROOT.exists() and not ENV_ROOT.exists() and not ENV_FILE.exists():
-    load_dotenv()
-    print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
+# 여러 위치에서 .env 로드 (나중에 로드할수록 기존 값 덮어씀)
+def _load_env(path: Path, override: bool = True) -> None:
+    if path.exists():
+        load_dotenv(dotenv_path=path, override=override)
+        print(f"  env 로드: {path}")
+
+_load_env(ENV_LOCAL_ROOT)
+_load_env(ENV_ROOT)
+_load_env(ENV_FILE)
+# 현재 작업 디렉터리(cwd) 기준 .env (서버 실행 위치에 따라 여기 있을 수 있음)
+CWD = Path.cwd()
+_load_env(CWD / ".env.local")
+_load_env(CWD / ".env")
+# dotenv 기본 검색 (cwd 등)
+load_dotenv(override=True)
 
 # 관리자 계정 설정
 # 기본값: 환경 변수가 없으면 init_admin_user()와 동일한 기본 이메일 사용
