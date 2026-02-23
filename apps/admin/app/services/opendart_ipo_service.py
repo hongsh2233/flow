@@ -107,19 +107,17 @@ def _extract_ipo_from_estk_rs(
 ) -> List[Dict[str, Any]]:
     """
     estkRs 응답에서 일반사항(청약기일 sbd, 납입기일 pymd)과 인수인정보(actnmn) 추출.
-    응답 구조(최상위): { status, message, group: [ {title, list: [...]}, ... ] }
+    응답 구조: result.group[] -> title, list[] -> 필드들.
     """
-    results: List[Dict[str, Any]] = []
-    if data.get("status") != "000":
+    results = []
+    if data.get("status") != "000" or "result" not in data:
         return results
-
-    groups = data.get("group") or []
-    if not isinstance(groups, list):
+    res = data["result"]
+    if not isinstance(res, dict):
         return results
-
-    general = None
-    underwriters: List[str] = []
-    offering_price = "-"
+    groups = res.get("group") or []
+    general = None  # 일반사항
+    underwriters = []  # 인수인정보
 
     for g in groups:
         if not isinstance(g, dict):
@@ -133,20 +131,14 @@ def _extract_ipo_from_estk_rs(
         elif "인수인" in title:
             for it in items:
                 actnmn = (it.get("actnmn") or "").strip()
-                if actnmn and actnmn != "-":
+                if actnmn:
                     underwriters.append(actnmn)
-        elif "증권의종류" in title:
-            for it in items:
-                slprc = (it.get("slprc") or "").strip()
-                if slprc and slprc != "-":
-                    offering_price = slprc
-                    break
 
     if not general:
         return results
 
-    sbd = (general.get("sbd") or "").strip()
-    pymd = (general.get("pymd") or "").strip()
+    sbd = (general.get("sbd") or "").strip()  # 청약기일
+    pymd = (general.get("pymd") or "").strip()  # 납입기일
     corp_name = (general.get("corp_name") or corp_name_from_list or "").strip()
 
     start_date = _first_date_from_range(sbd) or _first_date_from_range(pymd)
@@ -155,14 +147,14 @@ def _extract_ipo_from_estk_rs(
 
     period_str = sbd or pymd or "-"
     if sbd and pymd and sbd != pymd:
-        period_str = f"{sbd} ~ {pymd}"
-    underwriter_str = ", ".join(dict.fromkeys(underwriters)) if underwriters else "-"
+        period_str = f"{sbd}~{pymd}"
+    underwriter_str = ",".join(underwriters) if underwriters else "-"
     link_url = DART_VIEWER_URL.format(rcept_no=rcept_no) if rcept_no else None
 
     results.append({
         "company_name": corp_name,
         "period": period_str,
-        "price": offering_price,
+        "price": "-",  # estkRs에는 희망공모가가 다른 그룹에 있을 수 있음
         "underwriter": underwriter_str,
         "date": start_date,
         "link_url": link_url,
@@ -205,13 +197,8 @@ async def fetch_ipo_schedules_opendart(
                 except httpx.HTTPError as e:
                     print(f"[Open DART] list.json 오류: {e}")
                     break
-                st = body.get("status", "")
-                if st in ("010", "011"):
-                    raise ValueError(f"DART API 키 오류: {body.get('message', st)}")
-                if st == "020":
-                    raise ValueError(f"DART API 호출 한도 초과: {body.get('message', st)}")
-                if st != "000":
-                    print(f"[Open DART] list.json status={st}: {body.get('message', '')}")
+                if body.get("status") != "000":
+                    print(f"[Open DART] list.json status: {body.get('message', body)}")
                     break
                 items = body.get("list") or []
                 if not items:
@@ -243,11 +230,9 @@ async def fetch_ipo_schedules_opendart(
             except httpx.HTTPError as e:
                 print(f"[Open DART] estkRs 오류 {corp_name}({corp_code}): {e}")
                 continue
-            status = body.get("status", "")
-            if status == "013":
-                continue
-            if status != "000":
-                print(f"[Open DART] estkRs status={status} msg={body.get('message','')} for {corp_name}")
+            if body.get("status") == "013":
+                continue  # 조회된 데이터 없음
+            if body.get("status") != "000":
                 continue
             rows = _extract_ipo_from_estk_rs(body, corp_name, rcept_no)
             for r in rows:
