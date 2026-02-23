@@ -17,6 +17,10 @@ const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }
 );
+const LazyPopupModal = dynamic(
+  () => import("./components/module/PopupModal").then((m) => ({ default: m.PopupModal })),
+  { ssr: false }
+);
 
 function managedToAdBannerItem(item: ManagedBannerItem): AdBannerItem {
   return {
@@ -87,6 +91,7 @@ export default function Home() {
       <TradeRankingSection onSelect={setSelectedStock} />
 
       {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
+      <LazyPopupModal />
     </div>
   );
 }

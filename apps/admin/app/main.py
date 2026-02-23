@@ -26,7 +26,7 @@ from app.config import ADMIN_EMAIL, ADMIN_PW
 from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms
+from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms, popup
 try:
     from app.routers import profile
 except ImportError as e:
@@ -98,7 +98,7 @@ uploads_dir = "uploads"
 if not os.path.exists(uploads_dir):
     os.makedirs(uploads_dir, exist_ok=True)
     # 하위 디렉토리도 생성
-    for subdir in ["banners", "images", "files"]:
+    for subdir in ["banners", "images", "files", "popups"]:
         subdir_path = os.path.join(uploads_dir, subdir)
         if not os.path.exists(subdir_path):
             os.makedirs(subdir_path, exist_ok=True)
@@ -427,3 +427,4 @@ if stock_terms:
     app.include_router(stock_terms.router)  # 주식용어 관리
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
+app.include_router(popup.router)        # 팝업관리

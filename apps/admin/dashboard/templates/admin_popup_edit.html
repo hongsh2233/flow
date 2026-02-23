@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}팝업 수정 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white; padding: 30px; border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 30px; max-width: 960px;
+  }
+  .section h3 { color: #2c3e50; margin-top: 0; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #3498db; font-size: 1.125rem; }
+  .edit-form { display: flex; flex-direction: column; gap: 20px; padding: 28px; background: #f8f9fa; border-radius: 10px; }
+  .form-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+  .form-group label { font-weight: 500; color: #2c3e50; font-size: 15px; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px;
+  }
+  .form-group textarea { min-height: 180px; font-family: monospace; font-size: 14px; }
+  .content-type-toggle { display: flex; gap: 10px; margin-top: 5px; }
+  .content-type-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 32px 24px; text-align: center; background: #fafafa; cursor: pointer; transition: all .3s; }
+  .upload-area:hover { border-color: #3498db; background: #f0f7ff; }
+  .image-preview { max-width: 560px; max-height: 280px; object-fit: contain; border: 2px dashed #ddd; border-radius: 8px; background: #fafafa; margin-top: 12px; }
+  .html-preview { padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; min-height: 120px; margin-top: 8px; font-size: 14px; }
+  .btn-save { padding: 12px 30px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; align-self: flex-start; }
+  .btn-save:hover { background: #2980b9; }
+  .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-weight: 500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <a href="/admin/popup" class="back-link">← 팝업 목록으로</a>
+  <h1>팝업 수정</h1>
+
+  <div class="section">
+    <h3>{{ popup.title }}</h3>
+    <form method="POST" action="/admin/popup/edit/{{ popup.id }}" class="edit-form" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>제목 *</label>
+        <input type="text" name="title" value="{{ popup.title }}" required />
+      </div>
+
+      <div class="form-group">
+        <label>콘텐츠 형태 *</label>
+        <div class="content-type-toggle">
+          <label><input type="radio" name="content_type" value="html" {{ 'checked' if popup.content_type == 'html' }}> HTML</label>
+          <label><input type="radio" name="content_type" value="image" {{ 'checked' if popup.content_type == 'image' }}> 이미지</label>
+        </div>
+      </div>
+
+      <div class="form-group" id="htmlWrap" style="{{ 'display:none;' if popup.content_type != 'html' }}">
+        <label>HTML 내용</label>
+        <textarea name="html_content" id="htmlContent">{{ popup.html_content or '' }}</textarea>
+        <div class="html-preview" id="htmlPreview">{{ popup.html_content or '미리보기' }}</div>
+      </div>
+
+      <div class="form-group" id="imageWrap" style="{{ 'display:none;' if popup.content_type != 'image' }}">
+        <label>이미지</label>
+        <div class="upload-area" onclick="document.getElementById('imageFile').click()">
+          <p style="margin:0;color:#666;">클릭하여 새 이미지 업로드</p>
+        </div>
+        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
+        <input type="hidden" id="imageUrl" name="image_url" value="{{ popup.image_url or '' }}" />
+        {% if popup.image_url %}
+        <img id="imagePreview" class="image-preview" src="{{ popup.image_url }}" alt="현재 이미지" />
+        {% else %}
+        <img id="imagePreview" class="image-preview" alt="미리보기" style="display:none;" />
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>링크 URL (선택)</label>
+        <input type="url" name="link_url" value="{{ popup.link_url or '' }}" placeholder="https://example.com" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>게시 시작일시 *</label>
+          <input type="datetime-local" name="start_date" value="{{ popup.start_date.strftime('%Y-%m-%dT%H:%M') if popup.start_date else '' }}" required />
+        </div>
+        <div class="form-group">
+          <label>게시 종료일시 *</label>
+          <input type="datetime-local" name="end_date" value="{{ popup.end_date.strftime('%Y-%m-%dT%H:%M') if popup.end_date else '' }}" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="max-width:200px;">
+          <label>표시 순서</label>
+          <input type="number" name="order_index" value="{{ popup.order_index }}" min="0" />
+        </div>
+        <div class="form-group" style="max-width:200px;">
+          <label>상태</label>
+          <select name="is_active">
+            <option value="active" {{ 'selected' if popup.is_active == 'active' }}>활성</option>
+            <option value="inactive" {{ 'selected' if popup.is_active != 'active' }}>비활성</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-save" id="submitBtn">수정 저장</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('input[name="content_type"]').forEach(el => {
+  el.addEventListener('change', () => {
+    const isHtml = el.value === 'html';
+    document.getElementById('htmlWrap').style.display = isHtml ? 'flex' : 'none';
+    document.getElementById('imageWrap').style.display = isHtml ? 'none' : 'flex';
+  });
+});
+
+document.getElementById('htmlContent').addEventListener('input', function() {
+  try { document.getElementById('htmlPreview').innerHTML = this.value || '미리보기'; }
+  catch(_) { document.getElementById('htmlPreview').textContent = '미리보기'; }
+});
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { alert('5MB 이하만 가능합니다.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('imagePreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  const fd = new FormData(); fd.append('file', file);
+  const btn = document.getElementById('submitBtn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '업로드 중...';
+  fetch('/api/upload-image', { method: 'POST', body: fd, credentials: 'include' })
+    .then(r => r.json())
+    .then(data => { document.getElementById('imageUrl').value = data.url; })
+    .catch(err => alert('업로드 실패: ' + err.message))
+    .finally(() => { btn.disabled = false; btn.textContent = orig; });
+}
+</script>
+{% endblock %}

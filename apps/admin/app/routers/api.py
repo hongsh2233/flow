@@ -567,6 +567,41 @@ async def get_post(
 
 
 # =========================================================
+# 팝업 API (Token 또는 API Key 인증)
+# =========================================================
+
+@router.get("/api/popups/active")
+async def get_active_popups(
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key)
+):
+    """현재 게시 중인 활성 팝업 목록 조회"""
+    now = datetime.utcnow()
+    popups = db.query(models.Popup).filter(
+        models.Popup.is_active == "active",
+        models.Popup.start_date <= now,
+        models.Popup.end_date >= now,
+    ).order_by(models.Popup.order_index, models.Popup.id.desc()).all()
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": p.id,
+                "title": p.title,
+                "content_type": p.content_type,
+                "html_content": p.html_content,
+                "image_url": p.image_url,
+                "link_url": p.link_url,
+                "start_date": p.start_date.isoformat() if p.start_date else None,
+                "end_date": p.end_date.isoformat() if p.end_date else None,
+            }
+            for p in popups
+        ],
+    }
+
+
+# =========================================================
 # 일정 관리 API (Token 또는 API Key 인증)
 # =========================================================
 

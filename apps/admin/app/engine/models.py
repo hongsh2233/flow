@@ -55,6 +55,7 @@ __all__ = [
     "StockWord",
     "MainPageItem",
     "Banner",
+    "Popup",
     "NavMenuItem",
     "NavMenuTab",
     "NaverStockRanking",
@@ -286,6 +287,23 @@ class Banner(Base):
     page_paths = Column(String(500), nullable=True)
     # 슬라이드형일 때 같은 그룹끼리 묶음
     slide_group = Column(String(50), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Popup(Base):
+    """메인 페이지 팝업 (모달)"""
+    __tablename__ = "popups"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    content_type = Column(String(20), nullable=False, default="html")  # 'html' | 'image'
+    html_content = Column(Text, nullable=True)
+    image_url = Column(String(500), nullable=True)
+    link_url = Column(String(500), nullable=True)
+    start_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    is_active = Column(String(20), default="active")  # 'active' | 'inactive'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
