@@ -15,6 +15,7 @@ export default function Header() {
 
     const isHome = pathname === "/" || pathname === "";
     const nickname = session?.user?.name || "주린이";
+    const grade = (session?.user as { grade?: string } | undefined)?.grade;
     const greetingTitle = isHome
         ? status === "loading"
             ? "안녕하세요."
@@ -25,7 +26,15 @@ export default function Header() {
 
     return (
         <div className={styles.header__wrap}>
-            <h2 className={styles.title}>{greetingTitle}</h2>
+            <div className={styles.titleRow}>
+                <h2 className={styles.title}>{greetingTitle}</h2>
+                {isHome && session && grade === "vip" && (
+                    <span className={styles.gradeBadgeVip}>VIP</span>
+                )}
+                {isHome && session && grade === "family" && (
+                    <span className={styles.gradeBadgeFamily}>Family</span>
+                )}
+            </div>
             <p className={styles.subtitle}>{currentItem.headerSubtitle}</p>
         </div>
     );

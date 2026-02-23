@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { API_BASE_URL } from '@/lib/config/api'
 
 export async function GET(
@@ -7,6 +9,7 @@ export async function GET(
 ) {
   try {
     const { postId } = await params
+    const session = await getServerSession(authOptions)
 
     const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
@@ -32,6 +35,13 @@ export async function GET(
     }
 
     const data = await response.json()
+
+    if (data.data?.is_member_only === 'true' && !session) {
+      data.data.content = ''
+      data.data._blocked = true
+      data.data._block_reason = 'member_only'
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     console.error('게시글 상세 프록시 오류:', error)

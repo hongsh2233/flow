@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { API_BASE_URL } from '@/lib/config/api'
 
 export async function GET(
@@ -9,6 +11,7 @@ export async function GET(
     const { boardId } = await params
     const searchParams = request.nextUrl.searchParams
     const queryString = searchParams.toString()
+    const session = await getServerSession(authOptions)
 
     const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
@@ -42,6 +45,16 @@ export async function GET(
     }
 
     const data = await response.json()
+
+    if (!session && Array.isArray(data.data)) {
+      data.data = data.data.map((post: Record<string, unknown>) => {
+        if (post.is_member_only === 'true') {
+          return { ...post, content: '', _blocked: true, _block_reason: 'member_only' }
+        }
+        return post
+      })
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     console.error('게시글 목록 프록시 오류:', error)

@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import AccessTime from "@mui/icons-material/AccessTime";
 import Visibility from "@mui/icons-material/Visibility";
 import Group from "@mui/icons-material/Group";
-// import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
+import LockOutlined from "@mui/icons-material/LockOutlined";
 import type { BoardListItem, BoardListProps } from "@/lib/types";
 import { fetchBoardPosts, postToListItem } from "@/lib/services/boardService";
 import styles from "./BoardList.module.css";
@@ -21,6 +23,8 @@ export function BoardList({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const { status } = useSession();
+  const router = useRouter();
 
   const loadPosts = useCallback(async (pageNum: number, append = false) => {
     if (!boardId) return;
@@ -65,6 +69,13 @@ export function BoardList({
     }
   };
 
+  const handleMemberOnlyClick = (e: React.MouseEvent, postId: number) => {
+    if (status !== "authenticated") {
+      e.preventDefault();
+      router.push(`/login?callbackUrl=${encodeURIComponent(detailHref(postId))}`);
+    }
+  };
+
   if (!loading && items.length === 0) {
     return (
       <div className={styles.emptyWrap}>
@@ -76,64 +87,67 @@ export function BoardList({
   return (
     <>
       <div className={styles.listWrap}>
-        {items.map((post) => (
-          <Link
-            key={post.id}
-            href={detailHref(post.id)}
-            className={styles.card}
-          >
-            <div className={styles.cardInner}>
-              <div className={styles.content}>
-                {/* 카테고리/태그/회원전용 영역 */}
-                {(post.category || post.tag || post.is_member_only) && (
-                  <div className={styles.tags}>
-                    {post.category && (
-                      <span className={`${styles.category} ${styles.categoryDefault}`}>
-                        {post.category}
-                      </span>
-                    )}
-                    {post.tag && <span className={styles.tag}>{post.tag}</span>}
-                    {post.is_member_only && (
-                      <span className={styles.memberOnly} title="회원전용">
-                        <Group fontSize="inherit" />
-                        회원전용
-                      </span>
-                    )}
-                  </div>
-                )}
-                <h3 className={styles.title}>{post.title}</h3>
-                <p className={styles.summary}>{post.summary}</p>
-                <div className={styles.row}>
-                  <div className={styles.left}>
-                    <span>{post.author}</span>
-                    <div className={styles.timeWrap}>
-                      <span className={styles.timeIcon}>
-                        <AccessTime fontSize="inherit" />
-                      </span>
-                      <span>{post.time}</span>
+        {items.map((post) => {
+          const isMemberOnlyBlocked = post.is_member_only && status !== "authenticated";
+
+          return (
+            <Link
+              key={post.id}
+              href={detailHref(post.id)}
+              className={styles.card}
+              onClick={post.is_member_only ? (e) => handleMemberOnlyClick(e, post.id) : undefined}
+            >
+              <div className={styles.cardInner}>
+                <div className={styles.content}>
+                  {(post.category || post.tag || post.is_member_only) && (
+                    <div className={styles.tags}>
+                      {post.category && (
+                        <span className={`${styles.category} ${styles.categoryDefault}`}>
+                          {post.category}
+                        </span>
+                      )}
+                      {post.tag && <span className={styles.tag}>{post.tag}</span>}
+                      {post.is_member_only && (
+                        <span className={styles.memberOnly} title="회원전용">
+                          <Group fontSize="inherit" />
+                          회원전용
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <div className={styles.right}>
-                    <span className={styles.stat}>
-                      <span className={styles.statIcon}>
-                        <Visibility fontSize="inherit" />
+                  )}
+                  <h3 className={styles.title}>{post.title}</h3>
+                  {isMemberOnlyBlocked ? (
+                    <p className={styles.lockedSummary}>
+                      <LockOutlined style={{ fontSize: "0.875rem", verticalAlign: "middle", marginRight: "0.25rem" }} />
+                      로그인 후 열람할 수 있습니다
+                    </p>
+                  ) : (
+                    <p className={styles.summary}>{post.summary}</p>
+                  )}
+                  <div className={styles.row}>
+                    <div className={styles.left}>
+                      <span>{post.author}</span>
+                      <div className={styles.timeWrap}>
+                        <span className={styles.timeIcon}>
+                          <AccessTime fontSize="inherit" />
+                        </span>
+                        <span>{post.time}</span>
+                      </div>
+                    </div>
+                    <div className={styles.right}>
+                      <span className={styles.stat}>
+                        <span className={styles.statIcon}>
+                          <Visibility fontSize="inherit" />
+                        </span>
+                        {post.views.toLocaleString()}
                       </span>
-                      {post.views.toLocaleString()}
-                    </span>
-                    {/* 댓글 기능 미구현 - 추후 추가 예정
-                    <span className={styles.stat}>
-                      <span className={styles.statIcon}>
-                        <Comment fontSize="inherit" />
-                      </span>
-                      {post.comments}
-                    </span>
-                    */}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       {hasMore && (

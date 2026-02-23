@@ -60,6 +60,8 @@ export interface PostFromApi {
     name: string;
     type: string;
   };
+  _blocked?: boolean;
+  _block_reason?: string;
 }
 
 // ── UI 컴포넌트 Props 타입 ──
