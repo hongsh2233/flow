@@ -5,6 +5,7 @@
 export interface ScheduleFromApi {
   id: number
   date: string
+  end_date?: string | null
   scheduled_time?: string
   subject: string
   content: string

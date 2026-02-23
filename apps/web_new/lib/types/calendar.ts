@@ -16,7 +16,8 @@ export interface ScheduleItem {
   title: string;
   subject?: string;  // API subject (alias for title)
   date: string;
-  dateIso?: string;  // YYYY-MM-DD for 공휴일 체크
+  dateIso?: string;     // YYYY-MM-DD (시작일) for 공휴일 체크
+  endDateIso?: string;  // YYYY-MM-DD (종료일, 기간 일정)
   time?: string;
   content?: string;
   detail?: string;
