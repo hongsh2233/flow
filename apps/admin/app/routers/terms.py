@@ -1,5 +1,5 @@
 """
-약관 관리 라우터 - 개인정보처리방침, 이용약관
+콘텐츠 관리 라우터 - 개인정보처리방침, 이용약관, 주린이 앱 소개
 """
 from fastapi import APIRouter, Form, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory="dashboard/templates")
 DOC_TYPES = {
     "privacy": ("개인정보처리방침", "privacy"),
     "terms": ("이용약관", "terms"),
+    "about": ("주린이 앱", "about"),
 }
 
 
@@ -102,6 +103,50 @@ async def admin_terms_service_page(
     )
 
 
+@router.get("/admin/terms/about", response_class=HTMLResponse)
+async def admin_terms_about_page(
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """주린이 앱 소개 편집 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    doc = get_or_create_document(db, "about")
+    if not doc.content:
+        doc.content = """주린이 - 주식 초보를 위한 길잡이
+
+주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.
+
+주요 기능
+- 오늘의 시장: 실시간 국내/해외 지수, 환율 정보를 한눈에 확인
+- 일정 캘린더: 실적 발표, 공모 청약, 배당일 등 주요 일정 알림
+- 주식 용어 사전: 어려운 주식 용어를 쉽게 풀어서 설명
+- 커뮤니티: 주린이들끼리 정보 공유 및 질문
+
+문의
+- 이메일: support@jurini.co.kr"""
+
+    return templates.TemplateResponse(
+        "admin_terms_edit.html",
+        {
+            "request": request,
+            "admin_email": ADMIN_EMAIL,
+            "active_page": "terms-about",
+            "doc": doc,
+            "title": "주린이 앱",
+            "doc_type": "about",
+        },
+    )
+
+
+REDIRECT_MAP = {
+    "privacy": "/admin/terms/privacy",
+    "terms": "/admin/terms/service",
+    "about": "/admin/terms/about",
+}
+
+
 @router.post("/admin/terms/{doc_type}/save")
 async def save_terms(
     doc_type: str,
@@ -109,13 +154,13 @@ async def save_terms(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """약관 저장"""
-    if not user or doc_type not in ("privacy", "terms"):
+    """콘텐츠 저장"""
+    if not user or doc_type not in DOC_TYPES:
         return RedirectResponse(url="/")
     doc = get_or_create_document(db, doc_type)
     doc.content = content.strip()
     db.commit()
-    redirect_url = "/admin/terms/privacy" if doc_type == "privacy" else "/admin/terms/service"
+    redirect_url = REDIRECT_MAP.get(doc_type, "/admin/terms/privacy")
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
@@ -126,8 +171,8 @@ async def api_get_legal_document(
     doc_type: str,
     db: Session = Depends(get_db),
 ):
-    """법적 문서 조회 (개인정보처리방침, 이용약관) - FE 공개용"""
-    if doc_type not in ("privacy", "terms"):
+    """법적 문서 조회 (개인정보처리방침, 이용약관, 앱 소개) - FE 공개용"""
+    if doc_type not in DOC_TYPES:
         return {"success": False, "content": ""}
     doc = db.query(models.LegalDocument).filter(models.LegalDocument.doc_type == doc_type).first()
     content = doc.content if doc else ""

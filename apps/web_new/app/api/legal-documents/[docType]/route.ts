@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { docType } = await params;
-    if (docType !== "privacy" && docType !== "terms") {
+    if (docType !== "privacy" && docType !== "terms" && docType !== "about") {
       return NextResponse.json(
         { success: false, content: "" },
         { status: 400 }

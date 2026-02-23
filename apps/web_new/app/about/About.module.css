@@ -1,0 +1,113 @@
+.screen {
+  padding: 0 0 5rem;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  background: var(--app-card-bg);
+  z-index: 10;
+  border-bottom: 1px solid var(--app-border-light);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  background: var(--app-bg-secondary);
+  border-radius: 0.75rem;
+  color: var(--app-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.backBtn:hover {
+  background: var(--app-bg-tertiary);
+}
+
+.topBarTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+.topBarSpacer {
+  width: 2.25rem;
+}
+
+.body {
+  padding: 1.5rem 1rem 0;
+}
+
+.heroCard {
+  background: var(--app-accent-gradient);
+  border-radius: 1.25rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #fff;
+}
+
+.appIcon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 2rem;
+}
+
+.appName {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.appVersion {
+  font-size: 0.8125rem;
+  opacity: 0.8;
+}
+
+.contentCard {
+  background: var(--app-card-bg);
+  border-radius: 1rem;
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--app-card-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.contentText {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--app-text-secondary);
+  white-space: pre-wrap;
+  word-break: keep-all;
+  margin: 0;
+}
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: var(--app-text-placeholder);
+  font-size: 0.875rem;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--app-text-placeholder);
+  padding: 0.5rem 0 1rem;
+}

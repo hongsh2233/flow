@@ -20,6 +20,7 @@ import {
   Shield,
   FileText,
   LogIn,
+  Info,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -57,6 +58,7 @@ const settingsGroups: SettingsGroup[] = [
       { icon: BellRing, label: "주린이 알림", hasArrow: true, href: "/board?board=B003" },
       { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
       { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
+      { icon: Info, label: "주린이 앱 ?", hasArrow: true, href: "/about" },
     ],
   },
 ];
@@ -83,6 +85,7 @@ const guestSettingsGroups: SettingsGroup[] = [
       { icon: BellRing, label: "주린이 알림", hasArrow: true, href: "/board?board=B003" },
       { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
       { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
+      { icon: Info, label: "주린이 앱 ?", hasArrow: true, href: "/about" },
     ],
   },
 ];
