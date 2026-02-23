@@ -329,6 +329,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 일정 end_date 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_member_grade_columns import upgrade as add_member_grade_migration
+        add_member_grade_migration()
+    except Exception as e:
+        print(f"⚠️ 회원 등급 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

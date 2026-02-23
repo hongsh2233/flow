@@ -167,7 +167,15 @@ function SettingsScreen() {
                 )}
               </div>
               <div className={styles.profileText}>
-                <h3 className={styles.profileName}>{session?.user?.name || "주린이"}님</h3>
+                <div className={styles.profileNameRow}>
+                  <h3 className={styles.profileName}>{session?.user?.name || "주린이"}님</h3>
+                  {(session?.user as { grade?: string })?.grade === "vip" && (
+                    <span className={styles.gradeBadgeVip}>V</span>
+                  )}
+                  {(session?.user as { grade?: string })?.grade === "family" && (
+                    <span className={styles.gradeBadgeFamily}>F</span>
+                  )}
+                </div>
               </div>
               <ChevronRight className={styles.profileArrow} />
             </div>

@@ -23,6 +23,20 @@ router = APIRouter()
 _password_reset_codes: dict[str, tuple[str, datetime]] = {}
 
 
+def get_effective_grade(member) -> str:
+    """만료일이 지난 등급은 regular로 반환"""
+    grade = getattr(member, "grade", "regular") or "regular"
+    if grade == "regular":
+        return "regular"
+    expires_at = getattr(member, "grade_expires_at", None)
+    if expires_at is not None:
+        now = datetime.utcnow()
+        expires_naive = expires_at.replace(tzinfo=None) if expires_at.tzinfo else expires_at
+        if expires_naive < now:
+            return "regular"
+    return grade
+
+
 # API 토큰 발급용 요청 모델
 class TokenRequest(BaseModel):
     username: str
@@ -80,6 +94,7 @@ class MemberLoginResponse(BaseModel):
     email: str = None
     nickname: str = None
     profile_image: str = None
+    grade: str = "regular"
 
 
 class TokenResponse(BaseModel):
@@ -97,6 +112,7 @@ class SocialLoginResponse(BaseModel):
     has_nickname: bool = False  # 닉네임이 설정되어 있는지 여부
     nickname: str = None  # 닉네임
     profile_image: str = None  # 프로필 이미지
+    grade: str = "regular"  # 'regular' | 'vip' | 'family'
 
 
 # 회원 정보 업데이트 요청 모델
@@ -767,12 +783,13 @@ async def api_social_login(
             member_id=existing_member.id,
             has_nickname=bool(existing_member.nickname),
             nickname=existing_member.nickname,
-            profile_image=existing_member.profile_image
+            profile_image=existing_member.profile_image,
+            grade=get_effective_grade(existing_member)
         )
     else:
         # 신규 회원: 자동 프로필 생성 (데이터베이스 기반)
         profile = generate_profile(db)
-        
+
         new_member = models.Member(
             email=social_request.email,
             name=profile["name"],  # 캐릭터 이름
@@ -791,7 +808,8 @@ async def api_social_login(
             member_id=new_member.id,
             has_nickname=bool(new_member.nickname),
             nickname=new_member.nickname,
-            profile_image=new_member.profile_image
+            profile_image=new_member.profile_image,
+            grade=get_effective_grade(new_member)
         )
 
 
@@ -848,7 +866,8 @@ async def api_update_member(
         member_id=member.id,
         has_nickname=bool(member.nickname),
         nickname=member.nickname,
-        profile_image=member.profile_image
+        profile_image=member.profile_image,
+        grade=get_effective_grade(member)
     )
 
 
@@ -892,7 +911,8 @@ async def api_get_member_info(
         member_id=member.id,
         has_nickname=bool(member.nickname),
         nickname=member.nickname,
-        profile_image=member.profile_image
+        profile_image=member.profile_image,
+        grade=get_effective_grade(member)
     )
 
 
@@ -1346,7 +1366,8 @@ async def api_member_signup(
         member_id=new_member.id,
         email=new_member.email,
         nickname=new_member.nickname,
-        profile_image=new_member.profile_image
+        profile_image=new_member.profile_image,
+        grade=get_effective_grade(new_member)
     )
 
 
@@ -1387,7 +1408,8 @@ async def api_member_login(
         member_id=member.id,
         email=member.email,
         nickname=member.nickname,
-        profile_image=member.profile_image
+        profile_image=member.profile_image,
+        grade=get_effective_grade(member)
     )
 
 
