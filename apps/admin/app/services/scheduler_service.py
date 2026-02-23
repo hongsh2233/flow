@@ -366,17 +366,17 @@ class FscScheduler:
 
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
 
-        # 매일 오후 1:30에 실행
+        # 매일 오후 2:30에 실행
         self.scheduler.add_job(
             collect_fsc_data,
-            trigger=CronTrigger(hour=13, minute=30, timezone=self.kst),
+            trigger=CronTrigger(hour=14, minute=30, timezone=self.kst),
             id='fsc_data_collection',
             name='FSC 주식시세정보 자동 수집',
             replace_existing=True
         )
 
         self.scheduler.start()
-        print("✅ FSC 데이터 수집 스케줄러 시작 (매일 13:30)")
+        print("✅ FSC 데이터 수집 스케줄러 시작 (매일 14:30)")
         print(f"   - 주말 및 공휴일 제외")
         print(f"   - 최근 3일치 데이터만 유지\n")
 
@@ -474,17 +474,17 @@ class KrxScheduler:
 
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
 
-        # 매일 오후 1:30에 실행
+        # 매일 오후 2:30에 실행
         self.scheduler.add_job(
             collect_krx_data,
-            trigger=CronTrigger(hour=13, minute=30, timezone=self.kst),
+            trigger=CronTrigger(hour=14, minute=30, timezone=self.kst),
             id='krx_data_collection',
             name='KRX 지수 데이터 자동 수집',
             replace_existing=True
         )
 
         self.scheduler.start()
-        print("✅ KRX 데이터 수집 스케줄러 시작 (매일 13:30)")
+        print("✅ KRX 데이터 수집 스케줄러 시작 (매일 14:30)")
         print(f"   - 주말 및 공휴일 제외")
         print(f"   - 최근 3일치 데이터만 유지\n")
 
