@@ -133,6 +133,22 @@ export function Calendar() {
     setSelectedDate(new Date().toDateString());
   }, [todayWeekIndex]);
 
+  /* 날짜별 일정 개수 (기간 일정 포함) */
+  const scheduleDateCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    schedules.forEach((s) => {
+      if (!s.dateIso) return;
+      currentWeek.forEach((d) => {
+        const dIso = toIsoDateLocal(d.fullDate);
+        const covers = s.endDateIso
+          ? s.dateIso! <= dIso && s.endDateIso >= dIso
+          : s.dateIso === dIso;
+        if (covers) counts[dIso] = (counts[dIso] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [schedules, currentWeek]);
+
   const monthLabel = getMonthLabel(currentWeek);
   const isThisWeek = weekIndex === todayWeekIndex;
 
@@ -207,6 +223,7 @@ export function Calendar() {
                 (s) => s.dateIso === dateIso && s.type === "api"
               );
               const isHoliday = isWeekend || isPublicHoliday;
+              const eventCount = Math.min(scheduleDateCounts[dateIso] || 0, 3);
               return (
                 <button
                   key={dateStr}
@@ -220,8 +237,16 @@ export function Calendar() {
                 >
                   <span className={styles.dayLabel}>{dateInfo.day}</span>
                   <span className={styles.dayNum}>{dateInfo.date}</span>
-                  {dateInfo.isToday && !isSelected && (
-                    <span className={styles.todayDot} aria-hidden />
+                  {!isSelected && eventCount > 0 ? (
+                    <span className={styles.dotsRow} aria-hidden>
+                      {Array.from({ length: eventCount }).map((_, i) => (
+                        <span key={i} className={styles.eventDot} />
+                      ))}
+                    </span>
+                  ) : (
+                    dateInfo.isToday && !isSelected && (
+                      <span className={styles.todayDot} aria-hidden />
+                    )
                   )}
                 </button>
               );
