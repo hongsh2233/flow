@@ -53,6 +53,7 @@ async def schedule_page(
         {
             "id": s.id,
             "date": s.date.isoformat() if s.date else None,
+            "end_date": s.end_date.isoformat() if getattr(s, "end_date", None) else "",
             "scheduled_time": getattr(s, "scheduled_time", None) or "",
             "subject": s.subject,
             "content": s.content or "",
@@ -78,6 +79,7 @@ VALID_SCHEDULE_TYPES = {"api", "earnings", "ipo", "dividend", "news", "etc", "ma
 @router.post("/admin/schedule/add")
 async def add_schedule(
     date: str = Form(...),
+    end_date: str = Form(None),
     scheduled_time: str = Form(None),
     subject: str = Form(...),
     content: str = Form(None),
@@ -96,12 +98,14 @@ async def add_schedule(
         time_val = None
     
     try:
-        # 날짜 문자열을 date 객체로 변환
         date_obj = date_type.fromisoformat(date)
+        end_date_obj = None
+        if end_date and end_date.strip():
+            end_date_obj = date_type.fromisoformat(end_date.strip())
         
-        # 새 일정 생성
         new_schedule = models.Schedule(
             date=date_obj,
+            end_date=end_date_obj,
             scheduled_time=time_val,
             subject=subject,
             content=content or "",
@@ -153,6 +157,7 @@ async def delete_schedule(
 async def update_schedule(
     sch_id: int = Form(...),
     date: str = Form(...),
+    end_date: str = Form(None),
     scheduled_time: str = Form(None),
     subject: str = Form(...),
     content: str = Form(None),
@@ -165,7 +170,6 @@ async def update_schedule(
     if not user:
         return RedirectResponse(url="/", status_code=303)
     
-    # 일정 조회
     schedule = db.query(models.Schedule).filter(models.Schedule.id == sch_id).first()
     
     if not schedule:
@@ -177,11 +181,13 @@ async def update_schedule(
         time_val = None
     
     try:
-        # 날짜 문자열을 date 객체로 변환
         date_obj = date_type.fromisoformat(date)
+        end_date_obj = None
+        if end_date and end_date.strip():
+            end_date_obj = date_type.fromisoformat(end_date.strip())
         
-        # 일정 정보 업데이트
         schedule.date = date_obj
+        schedule.end_date = end_date_obj
         schedule.scheduled_time = time_val
         schedule.subject = subject
         schedule.content = content or ""

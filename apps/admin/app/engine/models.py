@@ -115,6 +115,7 @@ class Schedule(Base):
     __tablename__ = "schedules"
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=True)  # 기간 일정의 종료일 (NULL이면 단일 날짜)
     scheduled_time = Column(String(5), nullable=True)  # HH:mm (선택)
     subject = Column(String(255), nullable=False)
     content = Column(String(500))  # 요약 내용

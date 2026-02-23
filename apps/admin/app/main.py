@@ -323,6 +323,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 환율 스냅샷 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_schedule_end_date_column import upgrade as add_schedule_end_date_migration
+        add_schedule_end_date_migration()
+    except Exception as e:
+        print(f"⚠️ 일정 end_date 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

@@ -249,7 +249,11 @@
   <h4>➕ 새 일정 등록</h4>
   <form action="/admin/schedule/add" method="post" class="add-form">
     <div class="add-form-row">
-      <input type="date" name="date" required />
+      <input type="date" name="date" id="add_date" required />
+      <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;">
+        <input type="checkbox" id="add_period_check" style="width: auto; margin: 0;" /> 기간
+      </label>
+      <input type="date" name="end_date" id="add_end_date" style="display: none;" />
       <input type="time" name="scheduled_time" style="width: 120px;" title="시간 선택 (선택)" />
       <select name="schedule_type_param" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
         <option value="earnings">실적발표</option>
@@ -300,7 +304,7 @@
     <tbody>
       {% for s in schedules %}
       <tr>
-        <td style="font-weight: bold">{{ s.date }}</td>
+        <td style="font-weight: bold">{{ s.date }}{% if s.end_date %} ~ {{ s.end_date }}{% endif %}</td>
         <td>{{ s.scheduled_time or '-' }}</td>
         <td>
           {% if s.type == 'api' %}
@@ -333,6 +337,7 @@
             class="btn-edit-schedule"
             data-id="{{ s.id }}"
             data-date="{{ s.date }}"
+            data-end-date="{{ s.end_date or '' }}"
             data-scheduled-time="{{ s.scheduled_time or '' }}"
             data-type="{{ s.type or 'etc' }}"
             data-subject="{{ (s.subject or '')|e }}"
@@ -369,6 +374,10 @@
       <input type="hidden" name="sch_id" id="edit_id" />
       <label>날짜</label>
       <input type="date" name="date" id="edit_date" required />
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 6px 0;">
+        <input type="checkbox" id="edit_period_check" style="width: auto; margin: 0;" /> 기간 일정 (종료일 입력)
+      </label>
+      <input type="date" name="end_date" id="edit_end_date" style="display: none; width: 100%; padding: 10px; margin: 0 0 10px 0; box-sizing: border-box;" />
       <label>시간 (선택)</label>
       <input type="time" name="scheduled_time" id="edit_scheduled_time" style="width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box;" />
       <label>구분</label>
@@ -489,6 +498,24 @@
       document.getElementById('edit_detail').value = quillEdit.root.innerHTML;
     });
 
+    var addPeriodCheck = document.getElementById('add_period_check');
+    var addEndDate = document.getElementById('add_end_date');
+    if (addPeriodCheck && addEndDate) {
+      addPeriodCheck.addEventListener('change', function() {
+        addEndDate.style.display = this.checked ? '' : 'none';
+        if (!this.checked) addEndDate.value = '';
+      });
+    }
+
+    var editPeriodCheck = document.getElementById('edit_period_check');
+    var editEndDate = document.getElementById('edit_end_date');
+    if (editPeriodCheck && editEndDate) {
+      editPeriodCheck.addEventListener('change', function() {
+        editEndDate.style.display = this.checked ? '' : 'none';
+        if (!this.checked) editEndDate.value = '';
+      });
+    }
+
     var btnToggle = document.getElementById('btnDetailToggle');
     var detailWrap = document.getElementById('detailToggleWrap');
     if (btnToggle && detailWrap) {
@@ -507,6 +534,7 @@
         openEditModal(
           id,
           btn.getAttribute('data-date'),
+          btn.getAttribute('data-end-date') || '',
           btn.getAttribute('data-scheduled-time') || '',
           btn.getAttribute('data-type') || 'etc',
           btn.getAttribute('data-subject') || '',
@@ -527,9 +555,20 @@
     });
   });
 
-  function openEditModal(id, date, scheduledTime, type, subject, content, detail) {
+  function openEditModal(id, date, endDate, scheduledTime, type, subject, content, detail) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_date").value = date;
+    var editPeriodCheck = document.getElementById("edit_period_check");
+    var editEndDate = document.getElementById("edit_end_date");
+    if (endDate) {
+      editPeriodCheck.checked = true;
+      editEndDate.style.display = '';
+      editEndDate.value = endDate;
+    } else {
+      editPeriodCheck.checked = false;
+      editEndDate.style.display = 'none';
+      editEndDate.value = '';
+    }
     var timeInput = document.getElementById("edit_scheduled_time");
     if (timeInput) timeInput.value = scheduledTime || '';
     document.getElementById("edit_type").value = type || 'etc';
