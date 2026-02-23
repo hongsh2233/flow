@@ -5,7 +5,7 @@ Open DART(금융감독원 전자공시) API로 공모청약 일정 수집
 참고: https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS006&apiId=2020054
 """
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import List, Dict, Optional, Any
 
 import httpx
@@ -32,22 +32,13 @@ def _parse_yyyymmdd(s: Optional[str]) -> Optional[date]:
 
 
 def _first_date_from_range(s: Optional[str]) -> Optional[date]:
-    """청약기일/납입기일 문자열에서 첫 날짜 추출.
-    예: 20260220, 20260220~20260223, 2019년 04월 03일
-    """
+    """청약기일/납입기일 문자열에서 첫 날짜 추출. 예: 20260220 또는 20260220~20260223."""
     if not s or not s.strip():
         return None
     s = s.strip()
     m = re.match(r"(\d{8})", s)
     if m:
         return _parse_yyyymmdd(m.group(1))
-    # estkRs 형식: "2019년 04월 03일"
-    m2 = re.match(r"(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일", s)
-    if m2:
-        try:
-            return date(int(m2.group(1)), int(m2.group(2)), int(m2.group(3)))
-        except ValueError:
-            pass
     return None
 
 
@@ -169,18 +160,16 @@ async def fetch_ipo_schedules_opendart(
 ) -> List[Dict[str, Any]]:
     """
     Open DART로 공모청약(지분증권) 일정 수집.
-    조회 기간: 오늘 기준 이번 달 1일(bgn_de) ~ 올해 12월 31일(end_de).
-    1) list.json으로 증권신고(지분증권) 공시 목록 조회
+    1) list.json으로 증권신고(지분증권) 공시 목록 조회 (최대 3개월)
     2) 각 corp_code별로 estkRs 조회해 청약기일·인수인 등 추출
     """
     if not api_key or len(api_key) < 10:
         return []
 
-    today = date.today()
-    # 시작: 이번 달 1일 (예: 2/22 → 20260201)
-    bgn_de = today.replace(day=1).strftime("%Y%m%d")
-    # 마감: 올해 12월 31일 (예: 20261231)
-    end_de = date(today.year, 12, 31).strftime("%Y%m%d")
+    end = date.today()
+    start = end - timedelta(days=min(months_back * 31, 90))
+    bgn_de = start.strftime("%Y%m%d")
+    end_de = end.strftime("%Y%m%d")
 
     # 1) 공시 목록 수집 (C001 지분증권, C006 소액공모 지분증권)
     seen_corp = set()

@@ -278,28 +278,8 @@ async def sync_ipo_dart(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    from app.config import OPENDART_API_KEY, ROOT, ENV_LOCAL_ROOT, ENV_ROOT, BASE_DIR, ENV_FILE
-    api_key = OPENDART_API_KEY
-    # config에서 로드 안 됐으면 .env 파일 직접 읽기 시도
-    if not api_key:
-        from pathlib import Path
-        for path in [ENV_LOCAL_ROOT, ENV_ROOT, ENV_FILE, Path.cwd() / ".env.local", Path.cwd() / ".env"]:
-            if not path.exists():
-                continue
-            try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("OPENDART_API_KEY="):
-                            val = line.split("=", 1)[1].strip().strip('"').strip("'")
-                            if val:
-                                api_key = val
-                                break
-            except Exception:
-                pass
-            if api_key:
-                break
-    if not api_key:
+    from app.config import OPENDART_API_KEY
+    if not OPENDART_API_KEY:
         return RedirectResponse(
             url="/admin/schedule?error=no_data&reason=no_dart_key",
             status_code=303,
@@ -307,7 +287,7 @@ async def sync_ipo_dart(
 
     try:
         from app.services.opendart_ipo_service import fetch_ipo_schedules_opendart
-        items = await fetch_ipo_schedules_opendart(api_key, months_back=3)
+        items = await fetch_ipo_schedules_opendart(OPENDART_API_KEY, months_back=3)
     except Exception as e:
         print(f"[Open DART] 동기화 오류: {e}")
         return RedirectResponse(
