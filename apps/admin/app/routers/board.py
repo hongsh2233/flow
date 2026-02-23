@@ -511,6 +511,23 @@ async def admin_create_post(
         db.commit()
         print(f"[DEBUG] 게시글 저장 완료: post_id={new_post.id}, 첨부파일={len(uploaded_files)}개")
 
+        # 앱 내 알림 생성 (비밀글 제외)
+        try:
+            if is_secret != "true":
+                board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
+                board_name = board_obj.name if board_obj else board_id
+                noti = models.Notification(
+                    type="new_post",
+                    title=f"[{board_name}] {title.strip()}",
+                    message=title.strip(),
+                    link_url=f"/board/{new_post.id}?from={board_id}",
+                    is_global="true",
+                )
+                db.add(noti)
+                db.commit()
+        except Exception as noti_err:
+            print(f"[DEBUG] 앱 알림 생성 생략: {noti_err}")
+
         # 시황 게시판 새 글 시 푸시 알림 (B003 제외)
         try:
             from app.services.push_service import maybe_send_push_on_new_post

@@ -21,6 +21,8 @@ from app.engine.models import (
     MainPageItem,
     Banner,
     Popup,
+    Notification,
+    NotificationRead,
     NavMenuItem,
     NavMenuTab,
     NaverStockRanking,
@@ -35,7 +37,8 @@ from app.engine.models import (
 __all__ = [
     "Base", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
-    "Character", "StockWord", "MainPageItem", "Banner", "Popup", "NavMenuItem", "NavMenuTab", "NaverStockRanking",
+    "Character", "StockWord", "MainPageItem", "Banner", "Popup", "Notification", "NotificationRead",
+    "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
     "FaqCategory", "FaqItem", "LegalDocument",
 ]

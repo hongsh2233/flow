@@ -56,6 +56,8 @@ __all__ = [
     "MainPageItem",
     "Banner",
     "Popup",
+    "Notification",
+    "NotificationRead",
     "NavMenuItem",
     "NavMenuTab",
     "NaverStockRanking",
@@ -289,6 +291,28 @@ class Banner(Base):
     slide_group = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Notification(Base):
+    """앱 내 알림 (새 게시글, 공지 등)"""
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String(30), nullable=False, default="new_post")  # 'new_post' | 'notice' | 'system'
+    title = Column(String(255), nullable=False)
+    message = Column(String(500), nullable=True)
+    link_url = Column(String(500), nullable=True)
+    is_global = Column(String(10), nullable=False, default="true")  # 모든 회원 대상
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class NotificationRead(Base):
+    """회원별 알림 읽음 기록"""
+    __tablename__ = "notification_reads"
+    id = Column(Integer, primary_key=True, index=True)
+    notification_id = Column(Integer, ForeignKey("notifications.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_email = Column(String(100), nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint('notification_id', 'member_email', name='uq_notification_read'),)
 
 
 class Popup(Base):

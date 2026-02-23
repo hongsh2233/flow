@@ -567,6 +567,105 @@ async def get_post(
 
 
 # =========================================================
+# 알림 API (Token 또는 API Key 인증)
+# =========================================================
+
+class MarkReadRequest(BaseModel):
+    notification_ids: list[int]
+
+@router.get("/api/notifications")
+async def get_notifications(
+    email: Optional[str] = Query(None, description="회원 이메일 (읽음 확인용)"),
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """최근 알림 목록 조회 (최대 30일 이내)"""
+    from datetime import timedelta
+    cutoff = datetime.utcnow() - timedelta(days=30)
+
+    notifications = db.query(models.Notification).filter(
+        models.Notification.created_at >= cutoff,
+    ).order_by(models.Notification.created_at.desc()).limit(limit).all()
+
+    read_ids: set[int] = set()
+    if email:
+        reads = db.query(models.NotificationRead.notification_id).filter(
+            models.NotificationRead.member_email == email,
+            models.NotificationRead.notification_id.in_([n.id for n in notifications]),
+        ).all()
+        read_ids = {r[0] for r in reads}
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": n.id,
+                "type": n.type,
+                "title": n.title,
+                "message": n.message,
+                "link_url": n.link_url,
+                "is_read": n.id in read_ids,
+                "created_at": n.created_at.isoformat() if n.created_at else None,
+            }
+            for n in notifications
+        ],
+        "unread_count": sum(1 for n in notifications if n.id not in read_ids),
+    }
+
+
+@router.post("/api/notifications/read")
+async def mark_notifications_read(
+    body: MarkReadRequest,
+    email: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """알림 읽음 처리"""
+    if not email:
+        return {"success": False, "message": "email 파라미터가 필요합니다."}
+
+    for nid in body.notification_ids:
+        existing = db.query(models.NotificationRead).filter(
+            models.NotificationRead.notification_id == nid,
+            models.NotificationRead.member_email == email,
+        ).first()
+        if not existing:
+            db.add(models.NotificationRead(notification_id=nid, member_email=email))
+
+    db.commit()
+    return {"success": True}
+
+
+@router.post("/api/notifications/read-all")
+async def mark_all_notifications_read(
+    email: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """모든 알림 읽음 처리"""
+    if not email:
+        return {"success": False, "message": "email 파라미터가 필요합니다."}
+
+    from datetime import timedelta
+    cutoff = datetime.utcnow() - timedelta(days=30)
+    notifications = db.query(models.Notification.id).filter(
+        models.Notification.created_at >= cutoff,
+    ).all()
+
+    for (nid,) in notifications:
+        existing = db.query(models.NotificationRead).filter(
+            models.NotificationRead.notification_id == nid,
+            models.NotificationRead.member_email == email,
+        ).first()
+        if not existing:
+            db.add(models.NotificationRead(notification_id=nid, member_email=email))
+
+    db.commit()
+    return {"success": True}
+
+
+# =========================================================
 # 팝업 API (Token 또는 API Key 인증)
 # =========================================================
 
