@@ -81,6 +81,7 @@ export function Calendar() {
           subject: s.subject,
           date: formatDateDisplay(new Date(s.date)),
           dateIso: s.date,
+          endDateIso: s.end_date ?? undefined,
           time: s.scheduled_time || undefined,
           content: s.content || undefined,
           detail: s.detail != null && s.detail !== "" ? String(s.detail) : undefined,
@@ -138,7 +139,13 @@ export function Calendar() {
   /* 선택한 날짜부터 이후 일정만 표시 (오늘 이전 날짜 일정 숨김) */
   const selectedDateIso = toIsoDateLocal(new Date(selectedDate));
   const filteredSchedules = useMemo(
-    () => schedules.filter((s) => (s.dateIso || "") >= selectedDateIso),
+    () =>
+      schedules.filter((s) => {
+        // 기간 일정(endDateIso 있음): 종료일이 선택 날짜 이후면 표시
+        if (s.endDateIso) return s.endDateIso >= selectedDateIso;
+        // 단일 일정: 시작일이 선택 날짜 이후면 표시
+        return (s.dateIso || "") >= selectedDateIso;
+      }),
     [schedules, selectedDateIso]
   );
 

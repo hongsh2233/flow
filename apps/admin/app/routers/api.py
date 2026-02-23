@@ -7,7 +7,7 @@ REST API 라우터 - 프론트엔드용
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import distinct, cast, Integer, Float, func
+from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_
 from typing import Optional
 from datetime import datetime, date
 import json
@@ -584,10 +584,17 @@ async def get_schedules(
     if start_date:
         try:
             start = date.fromisoformat(start_date)
-            query = query.filter(models.Schedule.date >= start)
+            # 기간 일정(end_date 있음): end_date >= start (범위가 겹침)
+            # 단일 일정(end_date 없음): date >= start
+            query = query.filter(
+                or_(
+                    models.Schedule.end_date >= start,
+                    and_(models.Schedule.end_date == None, models.Schedule.date >= start),
+                )
+            )
         except ValueError:
             raise HTTPException(status_code=400, detail="잘못된 시작 날짜 형식입니다. (YYYY-MM-DD)")
-    
+
     if end_date:
         try:
             end = date.fromisoformat(end_date)
