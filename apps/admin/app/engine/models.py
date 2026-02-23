@@ -96,6 +96,8 @@ class Member(Base):
     provider = Column(String(20), nullable=False, index=True)
     provider_id = Column(String(255), nullable=True, index=True)  # 일반 로그인 시 NULL 허용
     status = Column(String(20), default="active")
+    grade = Column(String(20), nullable=False, default="regular")  # 'regular' | 'vip' | 'family'
+    grade_expires_at = Column(DateTime(timezone=True), nullable=True)  # NULL = 무기한
     favorite_stocks = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

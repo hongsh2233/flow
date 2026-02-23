@@ -49,6 +49,7 @@ export const authOptions = {
             email: data.email,
             name: data.nickname,
             image: data.profile_image,
+            grade: data.grade ?? 'regular',
           }
         } catch {
           return null
@@ -82,6 +83,7 @@ export const authOptions = {
         token.email = user.email
         token.name = user.name
         token.picture = user.image
+        token.grade = (user as { grade?: string }).grade ?? 'regular'
 
         // 소셜 로그인 시 BO social-login API 연동 (kakao, naver, google)
         token.lastLoginProvider = account?.provider ?? 'credentials'
@@ -121,6 +123,7 @@ export const authOptions = {
               token.picture = data.profile_image || user.image
               token.nickname = data.nickname || null
               token.profileImage = data.profile_image || null
+              token.grade = data.grade ?? 'regular'
             } else {
               token.isNewUser = true
             }
@@ -147,6 +150,7 @@ export const authOptions = {
         if (token.lastLoginProvider) {
           ;(session as { lastLoginProvider?: string }).lastLoginProvider = token.lastLoginProvider as string
         }
+        ;(session.user as { grade?: string }).grade = (token.grade as string) ?? 'regular'
       }
       return session
     },

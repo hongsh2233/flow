@@ -22,17 +22,19 @@ model AdminUser {
 }
 
 model Member {
-  id             Int      @id @default(autoincrement())
-  email          String   @unique @db.VarChar(100)
-  name           String   @db.VarChar(50)
-  nickname       String?  @db.VarChar(50)
-  profile_image  String?  @db.VarChar(500)
-  provider       String   @db.VarChar(20)
-  provider_id    String   @db.VarChar(255)
-  status         String   @default("active") @db.VarChar(20)
-  favorite_stocks String?  @db.Text
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  email            String    @unique @db.VarChar(100)
+  name             String    @db.VarChar(50)
+  nickname         String?   @db.VarChar(50)
+  profile_image    String?   @db.VarChar(500)
+  provider         String    @db.VarChar(20)
+  provider_id      String    @db.VarChar(255)
+  status           String    @default("active") @db.VarChar(20)
+  grade            String    @default("regular") @db.VarChar(20)
+  grade_expires_at DateTime? @db.Timestamptz
+  favorite_stocks  String?   @db.Text
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 }
 
 model Board {
