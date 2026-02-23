@@ -27,22 +27,17 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT = BASE_DIR.parent.parent  # jurin-i 루트
 ENV_LOCAL_ROOT = ROOT / ".env.local"
-ENV_ROOT = ROOT / ".env"
 ENV_FILE = BASE_DIR / ".env"
 
 # 1) 루트 .env.local 먼저 로드 (web + admin 공용)
 if ENV_LOCAL_ROOT.exists():
     load_dotenv(dotenv_path=ENV_LOCAL_ROOT)
     print(f".env.local 로드 완료 (루트): {ENV_LOCAL_ROOT}")
-# 2) 루트 .env 로드 (보통 .env.local 없을 때 사용)
-if ENV_ROOT.exists():
-    load_dotenv(dotenv_path=ENV_ROOT)
-    print(f".env 로드 완료 (루트): {ENV_ROOT}")
-# 3) admin/.env 있으면 로드 (admin 전용, 루트에 없는 값 보충)
+# 2) admin/.env 있으면 로드 (admin 전용, 루트에 없는 값 보충)
 if ENV_FILE.exists():
     load_dotenv(dotenv_path=ENV_FILE)
     print(f".env 로드 완료 (admin): {ENV_FILE}")
-if not ENV_LOCAL_ROOT.exists() and not ENV_ROOT.exists() and not ENV_FILE.exists():
+if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
     load_dotenv()
     print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
 
@@ -77,8 +72,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh Token 만료 시간 (30일) - 긴 
 DATA_GO_KR_API_KEY = os.environ.get("DATA_GO_KR_API_KEY")  # 공공데이터포털 API 인증키
 
 # Open DART(금융감독원 전자공시) API 설정
-_raw = os.environ.get("OPENDART_API_KEY") or ""
-OPENDART_API_KEY = (_raw.strip().strip('"').strip("'") or None) if _raw else None
+OPENDART_API_KEY = os.environ.get("OPENDART")  # Open DART 인증키 (40자리)
 
 
 # 디버깅: API 키 로드 확인 (서버 시작 시 한 번만 출력)
@@ -90,5 +84,5 @@ else:
 if OPENDART_API_KEY:
     print(f"OPENDART API 키 로드됨 (길이: {len(OPENDART_API_KEY)}자)")
 else:
-    print("경고: OPENDART_API_KEY(공모청약 DART)가 설정되지 않았습니다.")
+    print("경고: OPENDART(공모청약 DART) API 키가 설정되지 않았습니다.")
 
