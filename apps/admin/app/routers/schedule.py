@@ -102,6 +102,8 @@ async def add_schedule(
         end_date_obj = None
         if end_date and end_date.strip():
             end_date_obj = date_type.fromisoformat(end_date.strip())
+            if end_date_obj < date_obj:
+                raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
         
         new_schedule = models.Schedule(
             date=date_obj,
@@ -185,6 +187,8 @@ async def update_schedule(
         end_date_obj = None
         if end_date and end_date.strip():
             end_date_obj = date_type.fromisoformat(end_date.strip())
+            if end_date_obj < date_obj:
+                raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
         
         schedule.date = date_obj
         schedule.end_date = end_date_obj
@@ -275,72 +279,4 @@ async def sync_api_schedule(
         raise HTTPException(status_code=500, detail=f"API 동기화 실패: {str(e)}")
 
 
-@router.post("/admin/schedule/sync-ipo-dart")
-async def sync_ipo_dart(
-    user=Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Open DART(금융감독원 전자공시) API에서 공모청약(지분증권) 일정 동기화"""
-    if not user:
-        return RedirectResponse(url="/", status_code=303)
-
-    from app.config import OPENDART_API_KEY
-    if not OPENDART_API_KEY:
-        return RedirectResponse(
-            url="/admin/schedule?error=no_data&reason=no_dart_key",
-            status_code=303,
-        )
-
-    try:
-        from app.services.opendart_ipo_service import fetch_ipo_schedules_opendart
-        items = await fetch_ipo_schedules_opendart(OPENDART_API_KEY, months_back=3)
-    except Exception as e:
-        print(f"[Open DART] 동기화 오류: {e}")
-        return RedirectResponse(
-            url="/admin/schedule?error=no_data&reason=dart_failed",
-            status_code=303,
-        )
-
-    if not items:
-        return RedirectResponse(
-            url="/admin/schedule?error=no_data&reason=dart_empty",
-            status_code=303,
-        )
-
-    # 기존 ipo 타입 일정 중 (date, subject) 중복 방지
-    existing_ipo = {
-        (s.date, s.subject)
-        for s in db.query(models.Schedule).filter(models.Schedule.type == "ipo").all()
-    }
-    added_count = 0
-    skipped_count = 0
-
-    for item in items:
-        try:
-            date_val = item.get("date")
-            if not date_val:
-                continue
-            date_obj = date_val if hasattr(date_val, "isoformat") else date_type.fromisoformat(str(date_val)[:10])
-            subject = item.get("subject") or f"{item.get('company_name', '')} 청약"
-            if (date_obj, subject) in existing_ipo:
-                skipped_count += 1
-                continue
-            new_schedule = models.Schedule(
-                date=date_obj,
-                subject=subject,
-                content=item.get("content") or "",
-                type="ipo",
-                link_url=item.get("link_url"),
-                underwriter=item.get("underwriter") or None,
-            )
-            db.add(new_schedule)
-            existing_ipo.add((date_obj, subject))
-            added_count += 1
-        except (ValueError, KeyError) as e:
-            print(f"[Open DART] 항목 처리 실패: {item}, 오류: {e}")
-            continue
-
-    db.commit()
-    redirect_url = f"/admin/schedule?sync_dart=1&added={added_count}&skipped={skipped_count}"
-    return RedirectResponse(url=redirect_url, status_code=303)
 
