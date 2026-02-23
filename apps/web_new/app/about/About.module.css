@@ -105,6 +105,55 @@
   font-size: 0.875rem;
 }
 
+.htmlContent {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--app-text-secondary);
+  word-break: keep-all;
+}
+
+.htmlContent h1,
+.htmlContent h2,
+.htmlContent h3 {
+  color: var(--app-text);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.htmlContent h1 { font-size: 1.375rem; }
+.htmlContent h2 { font-size: 1.125rem; }
+.htmlContent h3 { font-size: 1rem; }
+
+.htmlContent p {
+  margin: 0.5rem 0;
+}
+
+.htmlContent ul,
+.htmlContent ol {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.htmlContent li {
+  margin-bottom: 0.25rem;
+}
+
+.htmlContent img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.htmlContent a {
+  color: var(--app-accent);
+  text-decoration: underline;
+}
+
+.htmlContent strong {
+  font-weight: 700;
+  color: var(--app-text);
+}
+
 .copyright {
   text-align: center;
   font-size: 0.75rem;

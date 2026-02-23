@@ -5,28 +5,25 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import styles from "./About.module.css";
 
-const FALLBACK_CONTENT = `주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.
-
-주요 기능
-- 오늘의 시장: 실시간 국내/해외 지수, 환율 정보를 한눈에 확인
-- 일정 캘린더: 실적 발표, 공모 청약, 배당일 등 주요 일정 알림
-- 주식 용어 사전: 어려운 주식 용어를 쉽게 풀어서 설명
-- 커뮤니티: 주린이들끼리 정보 공유 및 질문`;
+const FALLBACK_HTML = `<p>주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.</p>`;
 
 export default function AboutPage() {
   const router = useRouter();
-  const [content, setContent] = useState(FALLBACK_CONTENT);
+  const [html, setHtml] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/legal-documents/about")
       .then((res) => res.json())
       .then((json) => {
-        if (json.success && json.content) setContent(json.content);
+        if (json.success && json.content) setHtml(json.content);
+        else setHtml(FALLBACK_HTML);
       })
-      .catch(() => {})
+      .catch(() => setHtml(FALLBACK_HTML))
       .finally(() => setLoading(false));
   }, []);
+
+  const isHtmlContent = html.includes("<");
 
   return (
     <div className="content__wrap">
@@ -55,7 +52,14 @@ export default function AboutPage() {
             <div className={styles.loadingWrap}>불러오는 중...</div>
           ) : (
             <div className={styles.contentCard}>
-              <pre className={styles.contentText}>{content}</pre>
+              {isHtmlContent ? (
+                <div
+                  className={styles.htmlContent}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              ) : (
+                <pre className={styles.contentText}>{html}</pre>
+              )}
             </div>
           )}
 

@@ -128,7 +128,7 @@ async def admin_terms_about_page(
 - 이메일: support@jurini.co.kr"""
 
     return templates.TemplateResponse(
-        "admin_terms_edit.html",
+        "admin_terms_html_edit.html",
         {
             "request": request,
             "admin_email": ADMIN_EMAIL,
