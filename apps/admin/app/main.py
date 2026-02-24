@@ -23,7 +23,8 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, schedule_alarm_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
+from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
 from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms, popup
