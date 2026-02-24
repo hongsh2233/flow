@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { navItems } from "@/config/nav";
+import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
 import styles from "./Header.module.css";
 
 interface NotificationItem {
@@ -42,6 +43,7 @@ export default function Header() {
     const currentItem =
         navItems.find((item) => item.href === pathname) ?? defaultItem;
 
+    const { pushEnabled } = useNotificationSettings();
     const isHome = pathname === "/" || pathname === "";
     const nickname = session?.user?.name || "주린이";
     const grade = (session?.user as { grade?: string } | undefined)?.grade;
@@ -54,7 +56,7 @@ export default function Header() {
         : currentItem.headerTitle;
 
     const fetchNotifications = useCallback(async () => {
-        if (status !== "authenticated") return;
+        if (status !== "authenticated" || !pushEnabled) return;
         try {
             const res = await fetch("/api/notifications", { cache: "no-store" });
             const data = await res.json();
@@ -63,13 +65,18 @@ export default function Header() {
                 setUnreadCount(data.unread_count ?? 0);
             }
         } catch { /* ignore */ }
-    }, [status]);
+    }, [status, pushEnabled]);
 
     useEffect(() => {
+        if (!pushEnabled) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 60_000);
         return () => clearInterval(interval);
-    }, [fetchNotifications]);
+    }, [fetchNotifications, pushEnabled]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -84,6 +91,10 @@ export default function Header() {
     const handleBellClick = () => {
         if (status !== "authenticated") {
             router.push("/login");
+            return;
+        }
+        if (!pushEnabled) {
+            router.push("/settings");
             return;
         }
         setPanelOpen((prev) => !prev);
@@ -130,9 +141,10 @@ export default function Header() {
 
                 <div className={styles.bellWrap} ref={panelRef}>
                     <button
-                        className={styles.bellBtn}
+                        className={`${styles.bellBtn} ${!pushEnabled ? styles.bellBtnDisabled : ""}`}
                         onClick={handleBellClick}
-                        aria-label="알림"
+                        aria-label={pushEnabled ? "알림" : "알림 (설정에서 활성화)"}
+                        title={!pushEnabled ? "설정에서 푸시 알림을 활성화하세요" : undefined}
                     >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

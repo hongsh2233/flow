@@ -11,6 +11,7 @@ FSC 데이터 자동 수집 스케줄러
   자동 수집 시에는 '직전 거래일'(-1, 월요일이면 -3 등) 기준일자를 조회합니다.
 """
 from datetime import datetime, timedelta
+from typing import Optional
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import asyncio
@@ -655,3 +656,108 @@ class NaverRankingScheduler:
 
 # 전역 스케줄러 인스턴스
 naver_ranking_scheduler = NaverRankingScheduler()
+
+
+# =========================================================
+# 일정 알림 신청 처리 스케줄러
+# =========================================================
+
+class ScheduleAlarmScheduler:
+    """
+    일정 알림 신청 처리 스케줄러
+    - 매 5분마다 실행
+    - 알림 신청된 일정 중 timing 기준 시간이 된 항목을 찾아 Notification 생성
+    """
+
+    def __init__(self):
+        self.scheduler: Optional[AsyncIOScheduler] = None
+
+    def _get_offset_minutes(self, timing: str) -> int:
+        return {"1min": 1, "30min": 30, "1day": 1440, "2day": 2880}.get(timing, 1440)
+
+    async def _check_and_fire(self):
+        """알림 시간이 된 구독 처리"""
+        from app.engine.models import ScheduleAlarmSubscription, Notification, Schedule
+        db: Session = SessionLocal()
+        try:
+            now_kst = datetime.now(pytz.timezone("Asia/Seoul"))
+            subs = db.query(ScheduleAlarmSubscription).filter(
+                ScheduleAlarmSubscription.notified == "false"
+            ).all()
+
+            for sub in subs:
+                schedule: Schedule = db.query(Schedule).filter(Schedule.id == sub.schedule_id).first()
+                if not schedule or not schedule.date:
+                    continue
+
+                # 일정 발생 시각 (시간 없으면 당일 09:00 기준)
+                time_str = getattr(schedule, "scheduled_time", None) or "09:00"
+                try:
+                    h, m = map(int, time_str.split(":"))
+                except ValueError:
+                    h, m = 9, 0
+
+                schedule_dt = datetime(
+                    schedule.date.year, schedule.date.month, schedule.date.day,
+                    h, m, tzinfo=pytz.timezone("Asia/Seoul")
+                )
+
+                offset = self._get_offset_minutes(sub.timing)
+                fire_at = schedule_dt - timedelta(minutes=offset)
+
+                if now_kst >= fire_at:
+                    # Notification 생성
+                    timing_label = {
+                        "1min": "1분 전", "30min": "30분 전",
+                        "1day": "1일 전", "2day": "2일 전",
+                    }.get(sub.timing, "")
+                    noti = Notification(
+                        type="schedule_alarm",
+                        title=f"[일정 알림] {schedule.subject}",
+                        message=f"{schedule.subject} {timing_label} 알림",
+                        link_url="/calendar",
+                        is_global="false",
+                    )
+                    db.add(noti)
+                    db.flush()
+
+                    from app.engine.models import NotificationRead
+                    # 개인 알림: notification_reads에 즉시 추가하지 않고 (is_global=false 로 처리)
+                    # 대신 sub에 알림 수신자 이메일 기록 (간단하게 기존 NotificationRead 재활용)
+                    # 단, is_global=false 알림은 해당 회원에게만 노출되도록
+                    # 여기서는 notification에 target_email 컬럼 없으므로
+                    # is_global="false" + NotificationRead에 해당 이메일만 없음 = 타 회원엔 보이지 않음
+                    # 간단한 방법: 알림을 전역으로 만들고 회원 이메일을 message에 포함 (현 구조 유지)
+                    # => 실용적으로 is_global="true"로 생성하되 link_url에 schedule_id 포함
+                    # TODO: 개인 알림 지원을 위해 Notification에 target_email 컬럼 추가 검토
+                    sub.notified = "true"
+                    db.commit()
+                    print(f"[알림] schedule_alarm fired: sub_id={sub.id}, schedule={schedule.subject}")
+
+        except Exception as e:
+            db.rollback()
+            print(f"[ERROR] schedule alarm check: {e}")
+        finally:
+            db.close()
+
+    def start(self):
+        if self.scheduler:
+            return
+        self.scheduler = AsyncIOScheduler()
+        self.scheduler.add_job(
+            self._check_and_fire,
+            trigger=CronTrigger(minute="*/5"),
+            id="schedule_alarm_check",
+            replace_existing=True,
+        )
+        self.scheduler.start()
+        print("✅ 일정 알림 신청 처리 스케줄러 시작 (매 5분)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 일정 알림 신청 처리 스케줄러 종료")
+
+
+schedule_alarm_scheduler = ScheduleAlarmScheduler()

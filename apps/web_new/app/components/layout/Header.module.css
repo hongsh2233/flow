@@ -90,6 +90,15 @@
     background: rgba(255, 255, 255, 0.25);
 }
 
+.bellBtnDisabled {
+    opacity: 0.45;
+    cursor: pointer;
+}
+
+.bellBtnDisabled:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .badge {
     position: absolute;
     top: -2px;

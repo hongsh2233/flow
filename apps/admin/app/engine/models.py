@@ -58,6 +58,7 @@ __all__ = [
     "Popup",
     "Notification",
     "NotificationRead",
+    "ScheduleAlarmSubscription",
     "NavMenuItem",
     "NavMenuTab",
     "NaverStockRanking",
@@ -313,6 +314,20 @@ class NotificationRead(Base):
     member_email = Column(String(100), nullable=False, index=True)
     read_at = Column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (UniqueConstraint('notification_id', 'member_email', name='uq_notification_read'),)
+
+
+class ScheduleAlarmSubscription(Base):
+    """회원별 일정 알림 신청 내역"""
+    __tablename__ = "schedule_alarm_subscriptions"
+    id = Column(Integer, primary_key=True, index=True)
+    member_email = Column(String(100), nullable=False, index=True)
+    schedule_id = Column(Integer, ForeignKey("schedules.id", ondelete="CASCADE"), nullable=False, index=True)
+    # "1min" | "30min" | "1day" | "2day"
+    timing = Column(String(10), nullable=False, default="1day")
+    # 알림 발송 여부
+    notified = Column(String(10), nullable=False, default="false")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint('member_email', 'schedule_id', name='uq_schedule_alarm_sub'),)
 
 
 class Popup(Base):

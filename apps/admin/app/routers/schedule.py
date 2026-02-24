@@ -120,7 +120,25 @@ async def add_schedule(
         db.add(new_schedule)
         db.commit()
         db.refresh(new_schedule)
-        
+
+        # 앱 내 알림 생성
+        try:
+            type_label = {
+                "earnings": "실적발표", "ipo": "공모청약", "dividend": "배당",
+                "news": "소식", "etc": "기타", "manual": "기타", "api": "공휴일",
+            }.get(schedule_type, schedule_type)
+            noti = models.Notification(
+                type="new_schedule",
+                title=f"[{type_label}] {subject.strip()}",
+                message=subject.strip(),
+                link_url="/calendar",
+                is_global="true",
+            )
+            db.add(noti)
+            db.commit()
+        except Exception as noti_err:
+            print(f"[DEBUG] 캘린더 알림 생성 생략: {noti_err}")
+
         return RedirectResponse(url="/admin/schedule", status_code=303)
     except ValueError as e:
         db.rollback()
