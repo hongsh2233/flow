@@ -16,8 +16,6 @@ const POPULAR_TERMS = [
   "상한가", "거래량", "ETF",
 ];
 
-const CATEGORIES = ["전체", "기본개념", "매매/거래", "차트/기술분석", "재무/펀더멘털", "파생상품", "기타"];
-
 export default function FloatingButtons() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -71,21 +69,20 @@ export default function FloatingButtons() {
 
 function StockTermSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("전체");
   const [terms, setTerms] = useState<StockTerm[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [searched, setSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const fetchTerms = useCallback(async (q: string, cat: string, p: number, append = false) => {
+  const fetchTerms = useCallback(async (q: string, p: number, append = false) => {
+    if (!q.trim()) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
-      if (cat && cat !== "전체") params.set("category", cat);
+      params.set("q", q.trim());
       params.set("page", String(p));
       params.set("per_page", "20");
 
@@ -99,45 +96,45 @@ function StockTermSheet({ open, onClose }: { open: boolean; onClose: () => void 
         setTerms(items);
       }
       setTotal(data.total ?? 0);
+      setSearched(true);
     } catch {
       if (!append) setTerms([]);
     } finally {
       setLoading(false);
-      setInitialLoad(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTerms("", "전체", 1);
-  }, [fetchTerms]);
-
-  useEffect(() => {
-    if (initialLoad) return;
     clearTimeout(debounceRef.current);
+    if (!query.trim()) {
+      setTerms([]);
+      setTotal(0);
+      setSearched(false);
+      return;
+    }
     debounceRef.current = setTimeout(() => {
       setPage(1);
-      fetchTerms(query, category, 1);
+      fetchTerms(query, 1);
     }, 300);
     return () => clearTimeout(debounceRef.current);
-  }, [query, category]);
+  }, [query, fetchTerms]);
 
   const handleChipClick = (term: string) => {
     setQuery(term);
-    setCategory("전체");
     inputRef.current?.focus();
   };
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchTerms(query, category, nextPage, true);
+    fetchTerms(query, nextPage, true);
   };
 
   const hasMore = terms.length < total;
-  const showPopular = !query.trim() && category === "전체";
+  const hasQuery = query.trim().length > 0;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="주식용어사전">
+    <BottomSheet open={open} onClose={onClose} title="주식용어사전" halfHeight>
       {/* 검색 */}
       <div className={styles.searchWrap}>
         <input
@@ -164,8 +161,8 @@ function StockTermSheet({ open, onClose }: { open: boolean; onClose: () => void 
         )}
       </div>
 
-      {/* 인기 검색어 */}
-      {showPopular && (
+      {/* 검색어 없을 때: 인기 검색어만 표시 */}
+      {!hasQuery && (
         <div className={styles.popularSection}>
           <p className={styles.sectionTitle}>인기 검색어</p>
           <div className={styles.chipWrap}>
@@ -178,52 +175,41 @@ function StockTermSheet({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
       )}
 
-      {/* 카테고리 필터 */}
-      <div className={styles.categoryWrap}>
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            className={`${styles.categoryBtn} ${category === c ? styles.categoryBtnActive : ""}`}
-            onClick={() => setCategory(c)}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
+      {/* 검색어 있을 때: 결과 표시 */}
+      {hasQuery && (
+        <>
+          {searched && total > 0 && (
+            <p className={styles.totalCount}>총 {total}개의 용어</p>
+          )}
 
-      {/* 결과 */}
-      {!initialLoad && total > 0 && (
-        <p className={styles.totalCount}>총 {total}개의 용어</p>
-      )}
-
-      {initialLoad || (loading && terms.length === 0) ? (
-        <div className={styles.loading}>검색 중...</div>
-      ) : terms.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📖</div>
-          <p className={styles.emptyText}>
-            {query ? `"${query}"에 대한 결과가 없습니다` : "등록된 용어가 없습니다"}
-          </p>
-        </div>
-      ) : (
-        <div className={styles.resultList}>
-          {terms.map((t) => (
-            <div key={t.id} className={styles.resultItem}>
-              <p className={styles.termName}>
-                {t.term}
-                {t.category && <span className={styles.termCategory}>{t.category}</span>}
-              </p>
-              <p className={styles.termDesc}>{t.description}</p>
+          {loading && terms.length === 0 ? (
+            <div className={styles.loading}>검색 중...</div>
+          ) : searched && terms.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📖</div>
+              <p className={styles.emptyText}>&ldquo;{query}&rdquo;에 대한 결과가 없습니다</p>
             </div>
-          ))}
-          {hasMore && (
-            <div className={styles.loadMoreWrap}>
-              <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loading}>
-                {loading ? "불러오는 중..." : "더보기"}
-              </button>
+          ) : (
+            <div className={styles.resultList}>
+              {terms.map((t) => (
+                <div key={t.id} className={styles.resultItem}>
+                  <p className={styles.termName}>
+                    {t.term}
+                    {t.category && <span className={styles.termCategory}>{t.category}</span>}
+                  </p>
+                  <p className={styles.termDesc}>{t.description}</p>
+                </div>
+              ))}
+              {hasMore && (
+                <div className={styles.loadMoreWrap}>
+                  <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loading}>
+                    {loading ? "불러오는 중..." : "더보기"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
     </BottomSheet>
   );

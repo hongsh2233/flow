@@ -27,6 +27,11 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.sheetHalf {
+  composes: sheet;
+  max-height: 50vh;
+}
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }

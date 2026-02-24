@@ -8,10 +8,11 @@ export interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  halfHeight?: boolean;
   children: React.ReactNode;
 }
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, halfHeight, children }: BottomSheetProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) onClose();
@@ -40,7 +41,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
   return createPortal(
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
-        className={styles.sheet}
+        className={halfHeight ? styles.sheetHalf : styles.sheet}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
