@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
+import {
+  useNotificationSettings,
+  isJurinAppWebView,
+  requestAndroidNotificationPermission,
+} from "@/lib/hooks/useNotificationSettings";
 import { getImageUrl } from "@/lib/config/api";
 import { withdrawMember } from "@/lib/services/authService";
 import styles from "./Settings.module.css";
@@ -251,10 +255,21 @@ function SettingsScreen() {
                       {item.hasSwitch && item.action === "push" && (
                         <Switch
                           checked={isLoggedIn ? pushEnabled : false}
-                          onChange={(checked) => {
+                          onChange={async (checked) => {
                             if (!isLoggedIn) {
                               alert("로그인 이후 이용할 수 있습니다.");
                               return;
+                            }
+                            if (checked && isJurinAppWebView()) {
+                              // JurinApp 네이티브 환경: Android 알림 권한 먼저 요청
+                              const granted = await requestAndroidNotificationPermission();
+                              if (!granted) {
+                                alert(
+                                  "알림 권한이 없어 푸시 알림을 켤 수 없습니다.\n" +
+                                  "기기 설정 > 앱 > 주린이 > 알림에서 허용해 주세요."
+                                );
+                                return;
+                              }
                             }
                             setPushEnabled(checked);
                           }}
