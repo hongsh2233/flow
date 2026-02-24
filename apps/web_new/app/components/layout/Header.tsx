@@ -100,10 +100,6 @@ export default function Header() {
             router.push("/login");
             return;
         }
-        if (!pushEnabled) {
-            router.push("/settings");
-            return;
-        }
         setPanelOpen((prev) => !prev);
     };
 
