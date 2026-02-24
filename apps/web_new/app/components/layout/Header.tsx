@@ -100,6 +100,11 @@ export default function Header() {
             router.push("/login");
             return;
         }
+        // NOTIFICATION.md: pushEnabled=false → 설정 페이지로 이동
+        if (!pushEnabled) {
+            router.push("/settings");
+            return;
+        }
         setPanelOpen((prev) => !prev);
     };
 
