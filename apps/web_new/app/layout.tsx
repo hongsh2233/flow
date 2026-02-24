@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import LayoutShell from "./components/layout/LayoutShell";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import { ThemeProvider } from "./components/providers/ThemeProvider";
 import { CapacitorProvider } from "./components/providers/CapacitorProvider";
 import type { RootLayoutProps } from "@/lib/types";
 import "../assets/css/index.css";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: '주리니',
