@@ -666,6 +666,147 @@ async def mark_all_notifications_read(
 
 
 # =========================================================
+# 일정 알림 신청 API
+# =========================================================
+
+VALID_TIMING = {"1min", "30min", "1day", "2day"}
+
+class ScheduleAlarmRequest(BaseModel):
+    schedule_id: int
+    timing: str  # "1min" | "30min" | "1day" | "2day"
+
+
+@router.post("/api/schedule-alarms")
+async def subscribe_schedule_alarm(
+    body: ScheduleAlarmRequest,
+    email: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """일정 알림 신청"""
+    if not email:
+        return {"success": False, "message": "email 파라미터가 필요합니다."}
+    if body.timing not in VALID_TIMING:
+        return {"success": False, "message": f"timing은 {VALID_TIMING} 중 하나여야 합니다."}
+
+    schedule = db.query(models.Schedule).filter(models.Schedule.id == body.schedule_id).first()
+    if not schedule:
+        return {"success": False, "message": "일정을 찾을 수 없습니다."}
+
+    existing = db.query(models.ScheduleAlarmSubscription).filter(
+        models.ScheduleAlarmSubscription.member_email == email,
+        models.ScheduleAlarmSubscription.schedule_id == body.schedule_id,
+    ).first()
+
+    if existing:
+        existing.timing = body.timing
+        existing.notified = "false"
+        db.commit()
+        return {"success": True, "action": "updated"}
+
+    sub = models.ScheduleAlarmSubscription(
+        member_email=email,
+        schedule_id=body.schedule_id,
+        timing=body.timing,
+    )
+    db.add(sub)
+    db.commit()
+    return {"success": True, "action": "created"}
+
+
+@router.delete("/api/schedule-alarms/{schedule_id}")
+async def unsubscribe_schedule_alarm(
+    schedule_id: int,
+    email: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """일정 알림 취소"""
+    if not email:
+        return {"success": False, "message": "email 파라미터가 필요합니다."}
+
+    deleted = db.query(models.ScheduleAlarmSubscription).filter(
+        models.ScheduleAlarmSubscription.member_email == email,
+        models.ScheduleAlarmSubscription.schedule_id == schedule_id,
+    ).first()
+
+    if deleted:
+        db.delete(deleted)
+        db.commit()
+    return {"success": True}
+
+
+@router.get("/api/schedule-alarms")
+async def get_schedule_alarms(
+    email: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """내 일정 알림 신청 목록 조회"""
+    if not email:
+        return {"success": True, "data": []}
+
+    subs = db.query(models.ScheduleAlarmSubscription).filter(
+        models.ScheduleAlarmSubscription.member_email == email,
+    ).all()
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": s.id,
+                "schedule_id": s.schedule_id,
+                "timing": s.timing,
+                "notified": s.notified,
+            }
+            for s in subs
+        ],
+    }
+
+
+# =========================================================
+# FCM 토큰 관리 API (Capacitor APK용)
+# =========================================================
+
+class FcmTokenRequest(BaseModel):
+    email: str
+    token: str
+
+
+@router.post("/api/fcm-token")
+async def register_fcm_token(
+    body: FcmTokenRequest,
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """FCM 토큰 등록/갱신"""
+    existing = db.query(models.MemberFcmToken).filter(
+        models.MemberFcmToken.member_email == body.email,
+        models.MemberFcmToken.token == body.token,
+    ).first()
+
+    if not existing:
+        db.add(models.MemberFcmToken(member_email=body.email, token=body.token))
+        db.commit()
+    return {"success": True}
+
+
+@router.delete("/api/fcm-token")
+async def delete_fcm_token(
+    body: FcmTokenRequest,
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """FCM 토큰 삭제 (알림 OFF)"""
+    db.query(models.MemberFcmToken).filter(
+        models.MemberFcmToken.member_email == body.email,
+        models.MemberFcmToken.token == body.token,
+    ).delete()
+    db.commit()
+    return {"success": True}
+
+
+# =========================================================
 # 팝업 API (Token 또는 API Key 인증)
 # =========================================================
 

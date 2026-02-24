@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import AccessTime from "@mui/icons-material/AccessTime";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import NotificationsNone from "@mui/icons-material/NotificationsNone";
@@ -18,12 +18,15 @@ const NOTIFY_OPTIONS: { value: NotifyTiming; label: string }[] = [
 ];
 
 function NotifyButton({
+  scheduleId,
   onLoginRequired,
 }: {
+  scheduleId?: number;
   onLoginRequired?: () => void;
 }) {
   const [selected, setSelected] = useState<NotifyTiming | null>(null);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,15 +41,40 @@ function NotifyButton({
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [open]);
 
-  const handleSelect = (value: NotifyTiming) => {
+  const handleSelect = useCallback(async (value: NotifyTiming) => {
     if (onLoginRequired) {
       onLoginRequired();
       setOpen(false);
       return;
     }
-    setSelected(selected === value ? null : value);
-    setOpen(false);
-  };
+    if (!scheduleId) return;
+
+    setLoading(true);
+    try {
+      if (selected === value) {
+        // 알림 취소
+        await fetch("/api/schedule-alarms", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule_id: scheduleId }),
+        });
+        setSelected(null);
+      } else {
+        // 알림 신청
+        await fetch("/api/schedule-alarms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule_id: scheduleId, timing: value }),
+        });
+        setSelected(value);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  }, [scheduleId, selected, onLoginRequired]);
 
   const handleToggle = () => {
     if (onLoginRequired) {
@@ -63,6 +91,7 @@ function NotifyButton({
         className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""}`}
         onClick={handleToggle}
         aria-label="알림 설정"
+        disabled={loading}
       >
         {selected ? (
           <NotificationsActive fontSize="small" />
@@ -89,6 +118,16 @@ function NotifyButton({
               )}
             </button>
           ))}
+          {selected && (
+            <button
+              type="button"
+              className={styles.notifyOption}
+              style={{ color: "var(--color-error, #e53935)", marginTop: "4px" }}
+              onClick={() => handleSelect(selected)}
+            >
+              알림 취소
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -172,9 +211,10 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
               </div>
               {showAlarmButton && (
                 canUseAlarm ? (
-                  <NotifyButton />
+                  <NotifyButton scheduleId={schedule.id} />
                 ) : (
                   <NotifyButton
+                    scheduleId={schedule.id}
                     onLoginRequired={() =>
                       alert(
                         isLoggedIn

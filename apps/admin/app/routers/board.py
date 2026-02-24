@@ -535,6 +535,21 @@ async def admin_create_post(
         except Exception as push_err:
             print(f"[DEBUG] 푸시 알림 호출 생략: {push_err}")
 
+        # FCM 전체 푸시 (비밀글 제외)
+        if is_secret != "true":
+            try:
+                from app.services.fcm_service import send_push_to_all
+                board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
+                board_name = board_obj.name if board_obj else board_id
+                await send_push_to_all(
+                    db,
+                    title=f"[{board_name}] 새 글이 등록됐습니다",
+                    body=title.strip(),
+                    data={"link_url": f"/board/{new_post.id}?from={board_id}", "type": "new_post"},
+                )
+            except Exception as fcm_err:
+                print(f"[DEBUG] FCM 전송 생략: {fcm_err}")
+
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
         db.rollback()

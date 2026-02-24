@@ -23,7 +23,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, schedule_alarm_scheduler
 
 # 라우터 import
 from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms, popup
@@ -55,6 +55,7 @@ async def lifespan(app: FastAPI):
     naver_ranking_scheduler.start()
     yahoo_index_scheduler.start()
     exchange_rate_scheduler.start()
+    schedule_alarm_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -63,6 +64,7 @@ async def lifespan(app: FastAPI):
     naver_ranking_scheduler.shutdown()
     yahoo_index_scheduler.shutdown()
     exchange_rate_scheduler.shutdown()
+    schedule_alarm_scheduler.shutdown()
 
 
 # FastAPI 앱 생성
@@ -334,6 +336,18 @@ def run_migrations():
         add_member_grade_migration()
     except Exception as e:
         print(f"⚠️ 회원 등급 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_schedule_alarm_subscriptions import upgrade as add_schedule_alarm_migration
+        add_schedule_alarm_migration()
+    except Exception as e:
+        print(f"⚠️ 일정 알림 신청 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_member_fcm_tokens import upgrade as add_fcm_tokens_migration
+        add_fcm_tokens_migration()
+    except Exception as e:
+        print(f"⚠️ FCM 토큰 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():
