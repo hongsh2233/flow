@@ -59,6 +59,7 @@ __all__ = [
     "Notification",
     "NotificationRead",
     "ScheduleAlarmSubscription",
+    "MemberFcmToken",
     "NavMenuItem",
     "NavMenuTab",
     "NaverStockRanking",
@@ -328,6 +329,17 @@ class ScheduleAlarmSubscription(Base):
     notified = Column(String(10), nullable=False, default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (UniqueConstraint('member_email', 'schedule_id', name='uq_schedule_alarm_sub'),)
+
+
+class MemberFcmToken(Base):
+    """회원 FCM 푸시 토큰 (Capacitor APK용)"""
+    __tablename__ = "member_fcm_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    member_email = Column(String(100), nullable=False, index=True)
+    token = Column(String(500), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (UniqueConstraint('member_email', 'token', name='uq_member_fcm_token'),)
 
 
 class Popup(Base):

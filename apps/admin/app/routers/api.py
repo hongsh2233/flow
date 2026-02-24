@@ -765,6 +765,48 @@ async def get_schedule_alarms(
 
 
 # =========================================================
+# FCM 토큰 관리 API (Capacitor APK용)
+# =========================================================
+
+class FcmTokenRequest(BaseModel):
+    email: str
+    token: str
+
+
+@router.post("/api/fcm-token")
+async def register_fcm_token(
+    body: FcmTokenRequest,
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """FCM 토큰 등록/갱신"""
+    existing = db.query(models.MemberFcmToken).filter(
+        models.MemberFcmToken.member_email == body.email,
+        models.MemberFcmToken.token == body.token,
+    ).first()
+
+    if not existing:
+        db.add(models.MemberFcmToken(member_email=body.email, token=body.token))
+        db.commit()
+    return {"success": True}
+
+
+@router.delete("/api/fcm-token")
+async def delete_fcm_token(
+    body: FcmTokenRequest,
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """FCM 토큰 삭제 (알림 OFF)"""
+    db.query(models.MemberFcmToken).filter(
+        models.MemberFcmToken.member_email == body.email,
+        models.MemberFcmToken.token == body.token,
+    ).delete()
+    db.commit()
+    return {"success": True}
+
+
+# =========================================================
 # 팝업 API (Token 또는 API Key 인증)
 # =========================================================
 

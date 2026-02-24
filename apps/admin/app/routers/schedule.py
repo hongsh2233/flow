@@ -139,6 +139,22 @@ async def add_schedule(
         except Exception as noti_err:
             print(f"[DEBUG] 캘린더 알림 생성 생략: {noti_err}")
 
+        # FCM 전체 푸시
+        try:
+            from app.services.fcm_service import send_push_to_all
+            type_label = {
+                "earnings": "실적발표", "ipo": "공모청약", "dividend": "배당",
+                "news": "소식", "etc": "기타", "manual": "기타", "api": "공휴일",
+            }.get(schedule_type, schedule_type)
+            await send_push_to_all(
+                db,
+                title=f"[{type_label}] 새 일정이 등록됐습니다",
+                body=subject.strip(),
+                data={"link_url": "/calendar", "type": "new_schedule"},
+            )
+        except Exception as fcm_err:
+            print(f"[DEBUG] FCM 전송 생략: {fcm_err}")
+
         return RedirectResponse(url="/admin/schedule", status_code=303)
     except ValueError as e:
         db.rollback()

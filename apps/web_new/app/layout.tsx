@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import LayoutShell from "./components/layout/LayoutShell";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import { ThemeProvider } from "./components/providers/ThemeProvider";
+import { CapacitorProvider } from "./components/providers/CapacitorProvider";
 import type { RootLayoutProps } from "@/lib/types";
 import "../assets/css/index.css";
 
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         <NextAuthProvider>
           <ThemeProvider>
-            <LayoutShell>{children}</LayoutShell>
+            <CapacitorProvider>
+              <LayoutShell>{children}</LayoutShell>
+            </CapacitorProvider>
           </ThemeProvider>
         </NextAuthProvider>
       </body>

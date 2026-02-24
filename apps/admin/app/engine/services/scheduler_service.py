@@ -734,6 +734,23 @@ class ScheduleAlarmScheduler:
                     db.commit()
                     print(f"[알림] schedule_alarm fired: sub_id={sub.id}, schedule={schedule.subject}")
 
+                    # FCM 개인 푸시
+                    try:
+                        from app.services.fcm_service import send_push_to_email
+                        timing_label = {
+                            "1min": "1분 전", "30min": "30분 전",
+                            "1day": "1일 전", "2day": "2일 전",
+                        }.get(sub.timing, "")
+                        await send_push_to_email(
+                            db,
+                            email=sub.member_email,
+                            title=f"[일정 알림] {schedule.subject}",
+                            body=f"{timing_label} 알림입니다.",
+                            data={"link_url": "/calendar", "type": "schedule_alarm"},
+                        )
+                    except Exception as fcm_err:
+                        print(f"[ERROR] FCM schedule_alarm 전송 실패: {fcm_err}")
+
         except Exception as e:
             db.rollback()
             print(f"[ERROR] schedule alarm check: {e}")

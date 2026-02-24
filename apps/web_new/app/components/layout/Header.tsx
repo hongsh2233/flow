@@ -78,6 +78,13 @@ export default function Header() {
         return () => clearInterval(interval);
     }, [fetchNotifications, pushEnabled]);
 
+    // Capacitor FCM 포그라운드 알림 수신 시 즉시 갱신
+    useEffect(() => {
+        const handler = () => fetchNotifications();
+        window.addEventListener("fcm-notification", handler);
+        return () => window.removeEventListener("fcm-notification", handler);
+    }, [fetchNotifications]);
+
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
