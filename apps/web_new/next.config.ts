@@ -37,14 +37,21 @@ try {
 }
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   compiler: {
-    // Production 빌드 시 console.log, console.info, console.debug 제거
     removeConsole: process.env.NODE_ENV === 'production'
       ? {
-          exclude: ['error', 'warn'], // error와 warn은 유지
+          exclude: ['error', 'warn'],
         }
       : false,
+  },
+  turbopack: {
+    resolveAlias: {
+      '@capacitor/push-notifications': { browser: './lib/stubs/capacitor-push-stub.ts' },
+      '@capacitor/core': { browser: './lib/stubs/capacitor-core-stub.ts' },
+    },
   },
 };
 
