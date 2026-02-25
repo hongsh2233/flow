@@ -69,6 +69,11 @@ function rewriteUploadUrls(html: string): string {
 
 // ── API → UI 변환 ──
 
+function isNewPost(dateStr: string, hoursThreshold = 24): boolean {
+  const created = new Date(dateStr).getTime()
+  return Date.now() - created < hoursThreshold * 60 * 60 * 1000
+}
+
 export function postToListItem(post: PostFromApi): BoardListItem {
   const plainContent = stripHtml(post.content || '')
   return {
@@ -79,7 +84,7 @@ export function postToListItem(post: PostFromApi): BoardListItem {
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
     category: post.category || null,
-    tag: null,
+    tag: isNewPost(post.created_at) ? 'NEW' : null,
     is_member_only: post.is_member_only === 'true',
   }
 }

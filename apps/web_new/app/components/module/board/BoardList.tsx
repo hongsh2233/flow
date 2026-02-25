@@ -106,7 +106,11 @@ export function BoardList({
                           {post.category}
                         </span>
                       )}
-                      {post.tag && <span className={styles.tag}>{post.tag}</span>}
+                      {post.tag && (
+                        <span className={post.tag === 'NEW' ? styles.newBadge : styles.tag}>
+                          {post.tag}
+                        </span>
+                      )}
                       {post.is_member_only && (
                         <span className={styles.memberOnly} title="회원전용">
                           <Group fontSize="inherit" />

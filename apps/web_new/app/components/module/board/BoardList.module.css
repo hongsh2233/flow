@@ -66,6 +66,17 @@
   border-radius: 9999px;
 }
 
+.newBadge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #fff;
+  background: #ff4757;
+  padding: 0.125rem 0.4rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
 .memberOnly {
   display: inline-flex;
   align-items: center;
