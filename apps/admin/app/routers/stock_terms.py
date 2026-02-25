@@ -1,8 +1,10 @@
 """
 주식용어 관리 라우터 (용어 CRUD + 검색)
 """
+import csv
+import io
 from fastapi import APIRouter, Form, Query, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -257,6 +259,47 @@ async def bulk_add_stock_terms(
 
     return HTMLResponse(
         f"<script>alert('{message}'); location.href='/admin/stock-terms';</script>"
+    )
+
+
+# ==================== 다운로드 ====================
+
+
+@router.get("/admin/stock-terms/download")
+async def download_stock_terms(
+    fmt: str = Query("csv", description="다운로드 형식 (csv, txt)"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """주식용어 전체 다운로드 (CSV 또는 TXT)"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    terms = db.query(models.StockTerm).order_by(models.StockTerm.term).all()
+
+    if fmt == "txt":
+        lines = []
+        for t in terms:
+            cat = t.category or ""
+            lines.append(f"{t.term}|{t.description}|{cat}")
+        content = "\n".join(lines)
+        return StreamingResponse(
+            io.BytesIO(content.encode("utf-8-sig")),
+            media_type="text/plain; charset=utf-8",
+            headers={"Content-Disposition": "attachment; filename=stock_terms.txt"},
+        )
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["용어", "설명", "카테고리"])
+    for t in terms:
+        writer.writerow([t.term, t.description, t.category or ""])
+
+    output = buf.getvalue().encode("utf-8-sig")
+    return StreamingResponse(
+        io.BytesIO(output),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=stock_terms.csv"},
     )
 
 
