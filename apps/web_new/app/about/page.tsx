@@ -54,11 +54,6 @@ export default function AboutPage() {
         </div>
 
         <div className={styles.body}>
-          <div className={styles.heroCard}>
-            <div className={styles.appIcon}>📈</div>
-            <h1 className={styles.appName}>주린이</h1>
-            <p className={styles.appVersion}>v1.0.0</p>
-          </div>
 
           {loading ? (
             <div className={styles.loadingWrap}>불러오는 중...</div>
