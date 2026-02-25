@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL } from "@/lib/config/api";
+import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
 
 /**
- * 법적 문서 조회 (개인정보처리방침, 이용약관)
+ * 법적 문서 조회 (개인정보처리방침, 이용약관, 앱 소개)
  * BO /api/legal-documents/{docType} 프록시
  */
 export async function GET(
@@ -18,11 +18,17 @@ export async function GET(
       );
     }
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (API_SECRET_KEY) headers["X-API-KEY"] = API_SECRET_KEY;
+
     const url = `${API_BASE_URL}/api/legal-documents/${docType}`;
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { headers, cache: "no-store" });
     const data = await res.json();
 
     if (!res.ok) {
+      console.error(`Legal document API(${docType}) 실패:`, res.status, data);
       return NextResponse.json(
         { success: false, content: "" },
         { status: res.status }

@@ -37,7 +37,7 @@ export default function AboutPage() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h2 className={styles.topBarTitle}>주린이 앱</h2>
+          <h2 className={styles.topBarTitle}>주린이 앱 소개</h2>
           <div className={styles.topBarSpacer} />
         </div>
 
