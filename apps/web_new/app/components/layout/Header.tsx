@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { navItems } from "@/config/nav";
-import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
 import styles from "./Header.module.css";
 
 interface NotificationItem {
@@ -43,7 +42,6 @@ export default function Header() {
     const currentItem =
         navItems.find((item) => item.href === pathname) ?? defaultItem;
 
-    const { pushEnabled } = useNotificationSettings();
     const isHome = pathname === "/" || pathname === "";
     const nickname = session?.user?.name || "주린이";
     const grade = (session?.user as { grade?: string } | undefined)?.grade;
@@ -56,7 +54,7 @@ export default function Header() {
         : currentItem.headerTitle;
 
     const fetchNotifications = useCallback(async () => {
-        if (status !== "authenticated" || !pushEnabled) return;
+        if (status !== "authenticated") return;
         try {
             const res = await fetch("/api/notifications", { cache: "no-store" });
             const data = await res.json();
@@ -65,18 +63,14 @@ export default function Header() {
                 setUnreadCount(data.unread_count ?? 0);
             }
         } catch { /* ignore */ }
-    }, [status, pushEnabled]);
+    }, [status]);
 
     useEffect(() => {
-        if (!pushEnabled) {
-            setNotifications([]);
-            setUnreadCount(0);
-            return;
-        }
+        if (status !== "authenticated") return;
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 60_000);
         return () => clearInterval(interval);
-    }, [fetchNotifications, pushEnabled]);
+    }, [fetchNotifications, status]);
 
     // Capacitor FCM 포그라운드 알림 수신 시 즉시 갱신
     useEffect(() => {
@@ -98,11 +92,6 @@ export default function Header() {
     const handleBellClick = () => {
         if (status !== "authenticated") {
             router.push("/login");
-            return;
-        }
-        // NOTIFICATION.md: pushEnabled=false → 설정 페이지로 이동
-        if (!pushEnabled) {
-            router.push("/settings");
             return;
         }
         setPanelOpen((prev) => !prev);
@@ -149,10 +138,9 @@ export default function Header() {
 
                 <div className={styles.bellWrap} ref={panelRef}>
                     <button
-                        className={`${styles.bellBtn} ${!pushEnabled ? styles.bellBtnDisabled : ""}`}
+                        className={styles.bellBtn}
                         onClick={handleBellClick}
-                        aria-label={pushEnabled ? "알림" : "알림 (설정에서 활성화)"}
-                        title={!pushEnabled ? "설정에서 푸시 알림을 활성화하세요" : undefined}
+                        aria-label="알림"
                     >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

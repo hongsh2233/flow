@@ -1,0 +1,19 @@
+---
+description: Rules for the Header notification bell button
+globs:
+  - apps/web_new/app/components/layout/Header.tsx
+---
+
+# Header Notification Bell Rules
+
+## Bell Button Behavior
+- The bell button must ALWAYS open the notification dropdown panel when the user is authenticated.
+- The bell button must NEVER redirect to /settings or any other page for authenticated users.
+- `pushEnabled` / `useNotificationSettings` must NOT be used in Header.tsx — push notification settings only control whether push messages are sent to the device, NOT whether the user can view notifications in the app.
+
+## Notification Fetching
+- `fetchNotifications` must only check `status === "authenticated"`, nothing else.
+- Do NOT gate notification fetching behind `pushEnabled` or any localStorage flag.
+
+## Summary of Past Bug
+- Previously, `pushEnabled` (from localStorage `push_notification_enabled`) was used to gate the bell click, causing it to redirect to `/settings` when the flag was `false` (default for most users). This bug has been fixed multiple times and must not be reintroduced.
