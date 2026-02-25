@@ -163,10 +163,15 @@
   transition: all 0.2s;
 }
 
-.notifyBtn:hover {
+.notifyBtn:hover:not(:disabled) {
   background: var(--app-bg-hover);
   color: var(--app-text-muted);
   border-color: var(--app-text-faint);
+}
+
+.notifyBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .notifyBtn svg {
