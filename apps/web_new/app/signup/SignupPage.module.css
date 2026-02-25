@@ -16,9 +16,26 @@
 }
 
 .header {
+  position: relative;
   background: var(--app-header-gradient);
   padding: 2rem;
   text-align: center;
+}
+
+.backLink {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.25rem;
+}
+
+.backLink:hover {
+  color: #fff;
 }
 
 .iconWrap {

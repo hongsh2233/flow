@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Mail, Lock } from "lucide-react";
+import { BarChart3, Mail, Lock, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -66,6 +66,9 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.header}>
+          <Link href="/" className={styles.backLink} aria-label="홈으로">
+            <Home size={20} />
+          </Link>
           <div className={styles.iconWrap}>
             <div className={styles.iconBox}>
               <BarChart3 aria-hidden />
