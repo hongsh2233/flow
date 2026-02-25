@@ -3,6 +3,7 @@
 """
 import csv
 import io
+import json
 from fastapi import APIRouter, Form, Query, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -17,6 +18,22 @@ from app.config import ADMIN_EMAIL
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
+
+
+def _js_alert_redirect(message: str, url: str = "/admin/stock-terms") -> HTMLResponse:
+    safe_msg = json.dumps(message, ensure_ascii=False)
+    safe_url = json.dumps(url, ensure_ascii=False)
+    return HTMLResponse(
+        f"<script>alert({safe_msg}); location.href={safe_url};</script>"
+    )
+
+
+def _js_alert_back(message: str) -> HTMLResponse:
+    safe_msg = json.dumps(message, ensure_ascii=False)
+    return HTMLResponse(
+        f"<script>alert({safe_msg}); history.back();</script>"
+    )
+
 
 # 카테고리 목록 (고정)
 CATEGORIES = [
@@ -102,9 +119,7 @@ async def add_stock_term(
 
     existing = db.query(models.StockTerm).filter(models.StockTerm.term == term.strip()).first()
     if existing:
-        return HTMLResponse(
-            "<script>alert('이미 존재하는 용어입니다.'); history.back();</script>"
-        )
+        return _js_alert_back("이미 존재하는 용어입니다.")
 
     new_term = models.StockTerm(
         term=term.strip(),
@@ -132,9 +147,7 @@ async def update_stock_term(
 
     stock_term = db.query(models.StockTerm).filter(models.StockTerm.id == term_id).first()
     if not stock_term:
-        return HTMLResponse(
-            "<script>alert('용어를 찾을 수 없습니다.'); history.back();</script>"
-        )
+        return _js_alert_back("용어를 찾을 수 없습니다.")
 
     # 중복 확인 (자기 자신 제외)
     existing = (
@@ -143,9 +156,7 @@ async def update_stock_term(
         .first()
     )
     if existing:
-        return HTMLResponse(
-            "<script>alert('이미 존재하는 용어입니다.'); history.back();</script>"
-        )
+        return _js_alert_back("이미 존재하는 용어입니다.")
 
     stock_term.term = term.strip()
     stock_term.description = description.strip()
@@ -180,7 +191,7 @@ async def bulk_add_stock_terms(
     db: Session = Depends(get_db),
 ):
     """주식용어 일괄 등록
-    
+
     형식: 각 줄마다 "용어|설명|카테고리" 또는 "용어|설명"
     예시:
     PER|주가를 주당순이익으로 나눈 값. 숫자가 낮을수록 저평가된 주식일 수 있어요.|재무/펀더멘털
@@ -190,26 +201,23 @@ async def bulk_add_stock_terms(
         return RedirectResponse(url="/", status_code=303)
 
     if not bulk_data or not bulk_data.strip():
-        return HTMLResponse(
-            "<script>alert('입력된 데이터가 없습니다.'); history.back();</script>"
-        )
+        return _js_alert_back("입력된 데이터가 없습니다.")
 
-    lines = [line.strip() for line in bulk_data.strip().split('\n') if line.strip()]
+    raw = bulk_data.replace("\r\n", "\n").replace("\r", "\n")
+    lines = [line.strip() for line in raw.strip().split("\n") if line.strip()]
     if not lines:
-        return HTMLResponse(
-            "<script>alert('입력된 데이터가 없습니다.'); history.back();</script>"
-        )
+        return _js_alert_back("입력된 데이터가 없습니다.")
 
     success_count = 0
     error_count = 0
-    errors = []
+    errors: list[str] = []
 
     for line_num, line in enumerate(lines, 1):
-        parts = [p.strip() for p in line.split('|')]
-        
+        parts = [p.strip() for p in line.split("|")]
+
         if len(parts) < 2:
             error_count += 1
-            errors.append(f"{line_num}번째 줄: 형식이 올바르지 않습니다 (용어|설명|카테고리 형식 필요)")
+            errors.append(f"{line_num}번째 줄: 형식 오류 (용어|설명|카테고리)")
             continue
 
         term = parts[0]
@@ -221,11 +229,10 @@ async def bulk_add_stock_terms(
             errors.append(f"{line_num}번째 줄: 용어와 설명은 필수입니다")
             continue
 
-        # 중복 확인
         existing = db.query(models.StockTerm).filter(models.StockTerm.term == term).first()
         if existing:
             error_count += 1
-            errors.append(f"{line_num}번째 줄: '{term}' 이미 존재하는 용어입니다")
+            errors.append(f"{line_num}번째 줄: [{term}] 이미 존재")
             continue
 
         try:
@@ -238,28 +245,23 @@ async def bulk_add_stock_terms(
             success_count += 1
         except Exception as e:
             error_count += 1
-            errors.append(f"{line_num}번째 줄: 오류 발생 - {str(e)}")
+            errors.append(f"{line_num}번째 줄: 오류 - {str(e)}")
 
     try:
         db.commit()
     except Exception as e:
         db.rollback()
-        return HTMLResponse(
-            f"<script>alert('일괄 등록 중 오류가 발생했습니다: {str(e)}'); history.back();</script>"
-        )
+        return _js_alert_back(f"일괄 등록 중 오류가 발생했습니다: {str(e)}")
 
-    # 결과 메시지 생성
     if error_count == 0:
         message = f"성공적으로 {success_count}개의 용어가 등록되었습니다."
     else:
-        error_msg = "\\n".join(errors[:10])  # 최대 10개만 표시
+        error_msg = "\n".join(errors[:10])
         if len(errors) > 10:
-            error_msg += f"\\n... 외 {len(errors) - 10}개 오류"
-        message = f"등록 완료: {success_count}개 성공, {error_count}개 실패\\n\\n오류 목록:\\n{error_msg}"
+            error_msg += f"\n... 외 {len(errors) - 10}개 오류"
+        message = f"등록 완료: {success_count}개 성공, {error_count}개 실패\n\n오류 목록:\n{error_msg}"
 
-    return HTMLResponse(
-        f"<script>alert('{message}'); location.href='/admin/stock-terms';</script>"
-    )
+    return _js_alert_redirect(message)
 
 
 # ==================== 다운로드 ====================
