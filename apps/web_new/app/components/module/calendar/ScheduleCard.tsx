@@ -79,7 +79,10 @@ function NotifyButton({
   }, [scheduleId, selected, onLoginRequired]);
 
   const handleToggle = () => {
-    if (isPast) return;
+    if (isPast) {
+      alert("지난 일정은 알림을 설정할 수 없습니다.");
+      return;
+    }
     if (onLoginRequired) {
       onLoginRequired();
       return;
@@ -91,10 +94,10 @@ function NotifyButton({
     <div className={styles.notifyWrap} ref={ref}>
       <button
         type="button"
-        className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""}`}
+        className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""} ${isPast ? styles.notifyBtnPast : ""}`}
         onClick={handleToggle}
         aria-label="알림 설정"
-        disabled={loading || isPast}
+        disabled={loading}
       >
         {selected ? (
           <NotificationsActive fontSize="small" />
