@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
+
+const API_BASE_URL =
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:8080";
+
+const API_KEY = process.env.NEXT_PUBLIC_X_API_KEY || "";
 
 /**
  * 법적 문서 조회 (개인정보처리방침, 이용약관, 앱 소개)
@@ -13,7 +19,7 @@ export async function GET(
     const { docType } = await params;
     if (docType !== "privacy" && docType !== "terms" && docType !== "about") {
       return NextResponse.json(
-        { success: false, content: "" },
+        { success: false, content: null },
         { status: 400 }
       );
     }
@@ -21,26 +27,31 @@ export async function GET(
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (API_SECRET_KEY) headers["X-API-KEY"] = API_SECRET_KEY;
+    if (API_KEY) headers["X-API-KEY"] = API_KEY;
 
-    const url = `${API_BASE_URL}/api/legal-documents/${docType}`;
+    const baseUrl = API_BASE_URL.replace(/\/+$/, "");
+    const url = `${baseUrl}/api/legal-documents/${docType}`;
     const res = await fetch(url, { headers, cache: "no-store" });
-    const data = await res.json();
 
     if (!res.ok) {
-      console.error(`Legal document API(${docType}) 실패:`, res.status, data);
+      console.error(`Legal document API(${docType}) 실패: ${res.status}`);
       return NextResponse.json(
-        { success: false, content: "" },
+        { success: false, content: null },
         { status: res.status }
       );
     }
 
-    return NextResponse.json(data);
+    const data = await res.json();
+    return NextResponse.json({
+      success: true,
+      content: data.content ?? null,
+      api_base_url: baseUrl,
+    });
   } catch (error) {
     console.error("Legal document API 프록시 오류:", error);
     return NextResponse.json(
-      { success: false, content: "" },
-      { status: 500 }
+      { success: false, content: null },
+      { status: 502 }
     );
   }
 }

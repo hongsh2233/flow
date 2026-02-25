@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, verify_api_key
 from app.config import ADMIN_EMAIL
 
 router = APIRouter()
@@ -169,11 +169,12 @@ async def save_terms(
 @router.get("/api/legal-documents/{doc_type}")
 async def api_get_legal_document(
     doc_type: str,
+    _=Depends(verify_api_key),
     db: Session = Depends(get_db),
 ):
-    """법적 문서 조회 (개인정보처리방침, 이용약관, 앱 소개) - FE 공개용"""
+    """법적 문서 조회 (개인정보처리방침, 이용약관, 앱 소개) - FE용"""
     if doc_type not in DOC_TYPES:
-        return {"success": False, "content": ""}
+        return {"success": False, "content": None}
     doc = db.query(models.LegalDocument).filter(models.LegalDocument.doc_type == doc_type).first()
-    content = doc.content if doc else ""
+    content = doc.content if doc else None
     return {"success": True, "content": content}
