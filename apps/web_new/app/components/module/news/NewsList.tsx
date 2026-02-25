@@ -55,7 +55,7 @@ function getDisplaySource(link: string): string {
 }
 
 interface NewsListProps {
-  items: (NewsItem & { stockCode?: string })[];
+  items: (NewsItem & { stockCode?: string; stockName?: string })[];
 }
 
 export function NewsList({ items }: NewsListProps) {
@@ -69,6 +69,9 @@ export function NewsList({ items }: NewsListProps) {
           rel="noopener noreferrer"
           className={styles.newsItem}
         >
+          {item.stockName && (
+            <span className={styles.stockTag}>{item.stockName}</span>
+          )}
           <h4 className={styles.newsTitle}>{item.title}</h4>
           {item.description && (
             <p className={styles.newsDesc}>{item.description}</p>

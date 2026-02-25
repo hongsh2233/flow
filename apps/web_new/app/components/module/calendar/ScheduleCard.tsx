@@ -19,9 +19,11 @@ const NOTIFY_OPTIONS: { value: NotifyTiming; label: string }[] = [
 
 function NotifyButton({
   scheduleId,
+  isPast = false,
   onLoginRequired,
 }: {
   scheduleId?: number;
+  isPast?: boolean;
   onLoginRequired?: () => void;
 }) {
   const [selected, setSelected] = useState<NotifyTiming | null>(null);
@@ -77,6 +79,10 @@ function NotifyButton({
   }, [scheduleId, selected, onLoginRequired]);
 
   const handleToggle = () => {
+    if (isPast) {
+      alert("지난 일정은 알림을 설정할 수 없습니다.");
+      return;
+    }
     if (onLoginRequired) {
       onLoginRequired();
       return;
@@ -88,7 +94,7 @@ function NotifyButton({
     <div className={styles.notifyWrap} ref={ref}>
       <button
         type="button"
-        className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""}`}
+        className={`${styles.notifyBtn} ${selected ? styles.notifyBtnActive : ""} ${isPast ? styles.notifyBtnPast : ""}`}
         onClick={handleToggle}
         aria-label="알림 설정"
         disabled={loading}
@@ -181,7 +187,6 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
   const displayTitle = schedule.title || schedule.subject || "";
   const isPast = isPastProp ?? isSchedulePast(schedule);
-  const showAlarmButton = !isPast;
 
   return (
     <>
@@ -209,21 +214,20 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                   </p>
                 )}
               </div>
-              {showAlarmButton && (
-                canUseAlarm ? (
-                  <NotifyButton scheduleId={schedule.id} />
-                ) : (
-                  <NotifyButton
-                    scheduleId={schedule.id}
-                    onLoginRequired={() =>
-                      alert(
-                        isLoggedIn
-                          ? "설정에서 일정 알림을 켜주세요."
-                          : "로그인 후 이용할 수 있습니다."
-                      )
-                    }
-                  />
-                )
+              {canUseAlarm ? (
+                <NotifyButton scheduleId={schedule.id} isPast={isPast} />
+              ) : (
+                <NotifyButton
+                  scheduleId={schedule.id}
+                  isPast={isPast}
+                  onLoginRequired={() =>
+                    alert(
+                      isLoggedIn
+                        ? "설정에서 일정 알림을 켜주세요."
+                        : "로그인 후 이용할 수 있습니다."
+                    )
+                  }
+                />
               )}
             </div>
             <div className={styles.bottom}>
