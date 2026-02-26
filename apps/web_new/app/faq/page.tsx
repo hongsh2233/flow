@@ -29,7 +29,7 @@ const FALLBACK_FAQ: FaqCategory[] = [
     title: "주식 정보",
     items: [
       { question: "주가 정보는 실시간인가요?", answer: "주가 정보는 약 15~20분 지연된 데이터입니다." },
-      { question: "관심 종목은 몇 개까지 등록할 수 있나요?", answer: "관심 종목은 최대 50개까지 등록할 수 있습니다." },
+      { question: "관심 종목은 몇 개까지 등록할 수 있나요?", answer: "일반 회원은 최대 6개, VIP 등급 이상 회원은 최대 16개까지 등록할 수 있습니다." },
     ],
   },
 ];

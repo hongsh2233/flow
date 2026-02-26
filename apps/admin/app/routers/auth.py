@@ -974,7 +974,7 @@ async def api_add_favorite_stock(
     """
     관심종목 추가 API 엔드포인트
     
-    회원의 관심종목을 추가합니다. (최대 5개)
+    회원의 관심종목을 추가합니다. (일반 회원 6개, VIP 등급 이상 16개)
     
     사용 예시:
     ```json
@@ -1025,11 +1025,13 @@ async def api_add_favorite_stock(
             favorite_stocks=favorite_stocks
         )
     
-    # 최대 5개 제한 확인
-    if len(favorite_stocks) >= 5:
+    # 등급별 최대 개수 제한 확인 (일반 6개, VIP 이상 16개)
+    effective_grade = get_effective_grade(member)
+    max_count = 16 if effective_grade in ("vip", "family") else 6
+    if len(favorite_stocks) >= max_count:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="최대 5개 종목까지만 등록할 수 있습니다."
+            detail=f"최대 {max_count}개 종목까지만 등록할 수 있습니다."
         )
     
     # 관심종목 추가
