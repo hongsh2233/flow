@@ -717,19 +717,11 @@ class ScheduleAlarmScheduler:
                         message=f"{schedule.subject} {timing_label} 알림",
                         link_url="/calendar",
                         is_global="false",
+                        target_email=sub.member_email,
                     )
                     db.add(noti)
                     db.flush()
 
-                    from app.engine.models import NotificationRead
-                    # 개인 알림: notification_reads에 즉시 추가하지 않고 (is_global=false 로 처리)
-                    # 대신 sub에 알림 수신자 이메일 기록 (간단하게 기존 NotificationRead 재활용)
-                    # 단, is_global=false 알림은 해당 회원에게만 노출되도록
-                    # 여기서는 notification에 target_email 컬럼 없으므로
-                    # is_global="false" + NotificationRead에 해당 이메일만 없음 = 타 회원엔 보이지 않음
-                    # 간단한 방법: 알림을 전역으로 만들고 회원 이메일을 message에 포함 (현 구조 유지)
-                    # => 실용적으로 is_global="true"로 생성하되 link_url에 schedule_id 포함
-                    # TODO: 개인 알림 지원을 위해 Notification에 target_email 컬럼 추가 검토
                     sub.notified = "true"
                     db.commit()
                     print(f"[알림] schedule_alarm fired: sub_id={sub.id}, schedule={schedule.subject}")

@@ -304,6 +304,7 @@ class Notification(Base):
     message = Column(String(500), nullable=True)
     link_url = Column(String(500), nullable=True)
     is_global = Column(String(10), nullable=False, default="true")  # 모든 회원 대상
+    target_email = Column(String(100), nullable=True, index=True)  # 개인 알림 대상 (is_global="false" 시 사용)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

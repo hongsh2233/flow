@@ -528,13 +528,6 @@ async def admin_create_post(
         except Exception as noti_err:
             print(f"[DEBUG] 앱 알림 생성 생략: {noti_err}")
 
-        # 시황 게시판 새 글 시 푸시 알림 (B003 제외)
-        try:
-            from app.services.push_service import maybe_send_push_on_new_post
-            await maybe_send_push_on_new_post(board_id, title.strip(), new_post.id)
-        except Exception as push_err:
-            print(f"[DEBUG] 푸시 알림 호출 생략: {push_err}")
-
         # FCM 전체 푸시 (비밀글 제외)
         if is_secret != "true":
             try:

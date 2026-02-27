@@ -580,12 +580,19 @@ async def get_notifications(
     db: Session = Depends(get_db),
     auth = Depends(get_current_user_or_api_key),
 ):
-    """최근 알림 목록 조회 (최대 30일 이내)"""
+    """최근 알림 목록 조회 (최대 30일 이내, 개인 알림은 본인만)"""
     from datetime import timedelta
     cutoff = datetime.utcnow() - timedelta(days=30)
 
     notifications = db.query(models.Notification).filter(
         models.Notification.created_at >= cutoff,
+        or_(
+            models.Notification.is_global == "true",
+            and_(
+                models.Notification.is_global == "false",
+                models.Notification.target_email == email,
+            ),
+        ),
     ).order_by(models.Notification.created_at.desc()).limit(limit).all()
 
     read_ids: set[int] = set()
