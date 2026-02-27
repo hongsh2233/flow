@@ -16,7 +16,7 @@ import {
   BellRing,
   Moon,
   CalendarCheck,
-  KeyRound,
+  // KeyRound,
   MessageCircleQuestion,
   ChevronRight,
   User,
@@ -42,17 +42,12 @@ const settingsGroups: SettingsGroup[] = [
     ],
   },
   {
-    title: "알림 설정",
+    title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: true },
       { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
-    ],
-  },
-  {
-    title: "앱 설정",
-    items: [
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
-      { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
+      // { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
     ],
   },
   {
@@ -67,18 +62,13 @@ const settingsGroups: SettingsGroup[] = [
   },
 ];
 
-// 비로그인 시 보여줄 그룹 (앱 설정에서 간편 비밀번호 제외, 내 정보 숨김, 알림 설정은 표시하되 로그인 후 이용)
+// 비로그인 시 보여줄 그룹 (내 정보 숨김, 알림은 표시하되 로그인 후 이용)
 const guestSettingsGroups: SettingsGroup[] = [
   {
-    title: "알림 설정",
+    title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: false },
       { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
-    ],
-  },
-  {
-    title: "앱 설정",
-    items: [
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
     ],
   },
