@@ -11,8 +11,8 @@ import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
 import { ForeignIndices } from "./components/module/home/ForeignIndices";
 import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
-import { TradeRankingSection } from "./components/module/home/TradeRankingSection";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
+import { JubtiSection } from "./components/module/home/JubtiSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }
@@ -58,6 +58,7 @@ export default function Home() {
     <div className="content__wrap">
       <StockTermBox wrapperClassName="home-term-wrap" />
       <ForeignIndices />
+      <ExchangeRatesSection />
       <MarketIndexSection />
 
       {status === "loading" ? (
@@ -81,14 +82,13 @@ export default function Home() {
         </div>
       )}
 
-      <ExchangeRatesSection />
+      <RealtimeSearchSection />
+      <JubtiSection />
       {mainSlideItems.length > 0 && (
         <section style={{ margin: "1rem 0" }}>
           <AdBanner items={mainSlideItems} autoSlide interval={5000} />
         </section>
       )}
-      <RealtimeSearchSection />
-      <TradeRankingSection onSelect={setSelectedStock} />
 
       {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
       <LazyPopupModal />
