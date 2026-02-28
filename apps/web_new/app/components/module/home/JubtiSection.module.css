@@ -1,0 +1,414 @@
+.section {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ----- 접힌 상태: 주BTI 진입 버튼 ----- */
+.collapsedBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 2px solid var(--jubti-border, #fed7aa);
+  background: linear-gradient(to bottom right, var(--jubti-bg-start, #fff7ed), var(--jubti-bg-end, #fdf2f8));
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.08s ease;
+}
+
+.collapsedBtn:hover {
+  box-shadow: var(--app-card-shadow-hover, 0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+.collapsedBtn:active {
+  transform: scale(0.99);
+}
+
+.collapsedInner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.iconBox {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: linear-gradient(to bottom right, #fb923c, #ec4899);
+  color: #fff;
+}
+
+.collapsedText {
+  text-align: left;
+}
+
+.collapsedTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--app-text-primary, #1f2937);
+}
+
+.collapsedSubtitle {
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.collapsedChevron {
+  color: var(--app-text-muted, #9ca3af);
+  display: flex;
+  align-items: center;
+}
+
+/* ----- 카드 & 헤더 ----- */
+.card {
+  background: var(--app-card-bg, #fff);
+  border-radius: 1rem;
+  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0, 0, 0, 0.06));
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  overflow: hidden;
+}
+
+.headerStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--jubti-border, #fed7aa);
+  background: linear-gradient(to bottom right, var(--jubti-bg-start, #fff7ed), var(--jubti-bg-end, #fdf2f8));
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerIcon {
+  color: #ea580c;
+  display: flex;
+  align-items: center;
+}
+
+.headerTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--app-text-primary);
+}
+
+.headerSubtitle {
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0;
+  color: var(--app-text-muted);
+}
+
+.collapseBtn {
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.collapseBtn:hover {
+  color: var(--app-text-primary);
+}
+
+/* ----- 퀴즈 영역 ----- */
+.quizBody {
+  padding: 1rem;
+}
+
+.questionMeta {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.progressTrack {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--app-border-light);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to right, #fb923c, #ec4899);
+  transition: width 0.25s ease-out;
+}
+
+.questionText {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  color: var(--app-text-primary);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.optionButton {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.optionButton:hover {
+  border-color: var(--jubti-border, #fed7aa);
+  background: var(--app-card-bg);
+}
+
+.optionSelected {
+  border-color: #fb923c;
+  background: #fff7ed;
+}
+
+/* ----- 결과 영역 ----- */
+.resultBody {
+  padding: 1.25rem;
+}
+
+.resultMeta {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ea580c;
+  margin-bottom: 0.75rem;
+}
+
+.resultHero {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.resultHeroTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+}
+
+.resultHeroTypeA {
+  background: linear-gradient(to bottom right, #f87171, #fb923c);
+}
+
+.resultHeroTypeD {
+  background: linear-gradient(to bottom right, #60a5fa, #4ade80);
+}
+
+.resultHeroTypeN {
+  background: linear-gradient(to bottom right, #a78bfa, #60a5fa);
+}
+
+.resultHeroTypeI {
+  background: linear-gradient(to bottom right, #4ade80, #2dd4bf);
+}
+
+.resultBlock {
+  margin-bottom: 1rem;
+}
+
+.resultBlockLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--app-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.resultSubCard {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+}
+
+.resultSubTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
+  color: var(--app-text-primary);
+}
+
+.resultSubDesc {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--app-text-muted);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.adviceCard {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--app-border-light);
+  background: var(--app-card-bg);
+}
+
+.adviceText {
+  font-size: 0.75rem;
+  margin: 0;
+  line-height: 1.6;
+  color: var(--app-text-primary);
+}
+
+.knowledgeList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.knowledgeItem {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  padding: 0.25rem 0;
+  padding-left: 1rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.knowledgeItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #fb923c;
+}
+
+.tipsBox {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+}
+
+.tipsText {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  margin: 0;
+  color: #92400e;
+}
+
+.loginMessageStrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-accent);
+  background: rgba(47, 128, 237, 0.08);
+}
+
+.loginMessageText {
+  font-size: 0.8rem;
+  margin: 0;
+  color: var(--app-text-primary);
+}
+
+.loginMessageLink {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--app-accent);
+  text-decoration: none;
+}
+
+.loginMessageLink:hover {
+  text-decoration: underline;
+}
+
+.loginMessageClose {
+  margin-left: auto;
+  padding: 0 0.35rem;
+  border: none;
+  background: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+
+.loginMessageClose:hover {
+  color: var(--app-text-primary);
+}
+
+.actionRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--app-card-bg);
+  border-color: var(--app-text-muted);
+}
+
+.primaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: linear-gradient(to right, #fb923c, #ec4899);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.08s ease;
+}
+
+.primaryButton:hover {
+  box-shadow: 0 4px 14px rgba(251, 146, 60, 0.4);
+}
+
+.primaryButton:active {
+  transform: scale(0.98);
+}

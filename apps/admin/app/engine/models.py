@@ -104,6 +104,7 @@ class Member(Base):
     grade = Column(String(20), nullable=False, default="regular")  # 'regular' | 'vip' | 'family'
     grade_expires_at = Column(DateTime(timezone=True), nullable=True)  # NULL = 무기한
     favorite_stocks = Column(Text, nullable=True)
+    jubti_type = Column(String(10), nullable=True)  # 주BTI 성향: A | D | N | I
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
