@@ -21,7 +21,8 @@ uvicorn>=0.23.0,<0.41.0
 sqlalchemy>=2.0.0,<3.0.0
 psycopg2-binary>=2.9.0,<3.0.0
 python-jose[cryptography]>=3.3.0,<4.0.0
-bcrypt>=4.0.0,<5.0.0
+# passlib가 bcrypt.__about__.__version__을 참조하므로 4.1 미만으로 고정 (4.1+에서 제거됨)
+bcrypt>=4.0.0,<4.1
 passlib>=1.7.0,<2.0.0
 apscheduler>=3.10.0,<4.0.0
 pytz>=2023.0
