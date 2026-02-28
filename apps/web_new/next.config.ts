@@ -36,6 +36,8 @@ try {
   console.warn("dotenv 모듈을 찾을 수 없습니다. Next.js 기본 환경 변수 로딩을 사용합니다.");
 }
 
+const projectRoot = __dirname;
+
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -49,9 +51,18 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     resolveAlias: {
-      '@capacitor/push-notifications': { browser: './lib/stubs/capacitor-push-stub.ts' },
-      '@capacitor/core': { browser: './lib/stubs/capacitor-core-stub.ts' },
+      '@capacitor/push-notifications': './lib/stubs/capacitor-push-stub.ts',
+      '@capacitor/core': './lib/stubs/capacitor-core-stub.ts',
     },
+  },
+  webpack: (config) => {
+    config.resolve ??= {};
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@capacitor/push-notifications': path.join(projectRoot, 'lib/stubs/capacitor-push-stub.ts'),
+      '@capacitor/core': path.join(projectRoot, 'lib/stubs/capacitor-core-stub.ts'),
+    };
+    return config;
   },
 };
 

@@ -122,6 +122,19 @@ class UpdateMemberRequest(BaseModel):
     profile_image: str = None
 
 
+# 주BTI 성향 저장 요청 모델
+class JubtiUpdateRequest(BaseModel):
+    email: str
+    jubti_type: str  # A | D | N | I
+
+    @field_validator("jubti_type")
+    @classmethod
+    def jubti_type_must_be_valid(cls, v: str) -> str:
+        if v not in ("A", "D", "N", "I"):
+            raise ValueError("jubti_type must be one of A, D, N, I")
+        return v
+
+
 # 관심종목 관련 요청/응답 모델
 class FavoriteStockRequest(BaseModel):
     email: str
@@ -869,6 +882,26 @@ async def api_update_member(
         profile_image=member.profile_image,
         grade=get_effective_grade(member)
     )
+
+
+@router.put("/api/auth/member/jubti")
+async def api_update_member_jubti(
+    request: JubtiUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    회원 주BTI(투자 성향) 저장 API
+    """
+    member = db.query(models.Member).filter(models.Member.email == request.email).first()
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="회원을 찾을 수 없습니다."
+        )
+    member.jubti_type = request.jubti_type
+    db.commit()
+    db.refresh(member)
+    return {"success": True, "message": "주BTI 성향이 저장되었습니다.", "jubti_type": member.jubti_type}
 
 
 @router.get("/api/auth/member/info", response_model=SocialLoginResponse)
