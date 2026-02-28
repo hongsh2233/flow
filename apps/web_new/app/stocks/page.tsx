@@ -102,6 +102,7 @@ export default function StocksPage() {
   const [kosdaqSectors, setKosdaqSectors] = useState<SectorItem[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
 
+  const [marketSectorTab, setMarketSectorTab] = useState<MarketType>("KOSPI");
   const [marketCapTab, setMarketCapTab] = useState<MarketType>("KOSPI");
   const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
   const [marketCapKospi, setMarketCapKospi] = useState<MarketCapStock[]>([]);
@@ -143,7 +144,10 @@ export default function StocksPage() {
           return Array.isArray(d) ? d : [];
         };
 
-        let kospiItems = mapKrxToSectors(extractFirstData(krxKospiJson));
+        const hideSector = (name: string) =>
+          name.includes("외국인포함") || name.trim() === "코스피(외국인포함)";
+        let kospiItems = mapKrxToSectors(extractFirstData(krxKospiJson))
+          .filter((s) => !hideSector(s.name));
         let kosdaqItems = mapKrxToSectors(extractFirstData(krxKosdaqJson));
 
         if (kospiItems.length === 0 || kosdaqItems.length === 0) {
@@ -268,12 +272,12 @@ export default function StocksPage() {
       </div>
 
       {/* 탭 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
         <TabsList className={styles.tabList}>
-          <TabsTrigger value="favorite">관심종목</TabsTrigger>
-          <TabsTrigger value="market">시장현황</TabsTrigger>
-          <TabsTrigger value="marketcap">시총상위</TabsTrigger>
-          <TabsTrigger value="rising">상승종목</TabsTrigger>
+          <TabsTrigger value="favorite" className={styles.tab}>관심종목</TabsTrigger>
+          <TabsTrigger value="market" className={styles.tab}>시장현황</TabsTrigger>
+          <TabsTrigger value="marketcap" className={styles.tab}>시총상위</TabsTrigger>
+          <TabsTrigger value="rising" className={styles.tab}>상승종목</TabsTrigger>
         </TabsList>
 
         {/* 관심종목 */}
@@ -342,57 +346,66 @@ export default function StocksPage() {
             <p className={styles.loadingText}>로딩 중...</p>
           ) : (
             <>
-              <div className={styles.sectorSection}>
-                <h3 className={styles.sectorTitle}>
-                  <BarChart3 className={styles.sectorIconBlue} aria-hidden />
+              <div className={styles.subTabList}>
+                <button
+                  type="button"
+                  className={marketSectorTab === "KOSPI" ? styles.subTabActive : styles.subTab}
+                  onClick={() => setMarketSectorTab("KOSPI")}
+                >
                   코스피
-                </h3>
-                <div className={styles.sectorList}>
-                  {kospiSectors.length === 0 ? (
-                    <p className={styles.loadingText}>데이터가 없습니다.</p>
-                  ) : (
-                    kospiSectors.map((sector) => {
-                      const isPositive = sector.change >= 0;
-                      return (
-                        <div key={sector.name} className={styles.sectorCard}>
-                          <div>
-                            <p>{sector.name}</p>
-                            <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                          </div>
-                          <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                            {isPositive ? "+" : ""}
-                            {sector.change.toFixed(2)}%
-                          </p>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                </button>
+                <button
+                  type="button"
+                  className={marketSectorTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
+                  onClick={() => setMarketSectorTab("KOSDAQ")}
+                >
+                  코스닥
+                </button>
               </div>
               <div className={styles.sectorSection}>
-                <h3 className={styles.sectorTitle}>
-                  <Building2 className={styles.sectorIconPurple} aria-hidden />
-                  코스닥
-                </h3>
                 <div className={styles.sectorList}>
-                  {kosdaqSectors.length === 0 ? (
+                  {marketSectorTab === "KOSPI" ? (
+                    kospiSectors.length === 0 ? (
+                      <p className={styles.loadingText}>데이터가 없습니다.</p>
+                    ) : (
+                      kospiSectors
+                        .filter((s) => !s.name.includes("외국인포함") && s.name.trim() !== "코스피(외국인포함)")
+                        .map((sector) => {
+                          const isPositive = sector.change >= 0;
+                          return (
+                            <div key={sector.name} className={styles.sectorCard}>
+                              <div>
+                                <p>{sector.name}</p>
+                                <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                              </div>
+                              <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
+                                {isPositive ? "+" : ""}
+                                {sector.change.toFixed(2)}%
+                              </p>
+                            </div>
+                          );
+                        })
+                    )
+                  ) : kosdaqSectors.length === 0 ? (
                     <p className={styles.loadingText}>데이터가 없습니다.</p>
                   ) : (
-                    kosdaqSectors.map((sector) => {
-                      const isPositive = sector.change >= 0;
-                      return (
-                        <div key={sector.name} className={styles.sectorCard}>
-                          <div>
-                            <p>{sector.name}</p>
-                            <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    kosdaqSectors
+                      .filter((s) => !s.name.includes("외국인포함"))
+                      .map((sector) => {
+                        const isPositive = sector.change >= 0;
+                        return (
+                          <div key={sector.name} className={styles.sectorCard}>
+                            <div>
+                              <p>{sector.name}</p>
+                              <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                            </div>
+                            <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
+                              {isPositive ? "+" : ""}
+                              {sector.change.toFixed(2)}%
+                            </p>
                           </div>
-                          <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                            {isPositive ? "+" : ""}
-                            {sector.change.toFixed(2)}%
-                          </p>
-                        </div>
-                      );
-                    })
+                        );
+                      })
                   )}
                 </div>
               </div>

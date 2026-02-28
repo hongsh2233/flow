@@ -28,14 +28,40 @@
   padding: 0 1rem 1rem;
 }
 
-/* Tabs */
+/* Tabs - briefing과 동일 underline 스타일 */
 .tabList {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  width: 100%;
-  gap: 0.25rem;
-  margin-bottom: 1rem;
-  padding: 0 1rem;
+  border-bottom: 1px solid var(--app-border-light);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0 1rem 0.2rem;
+  display: flex;
+  overflow-x: auto;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex-shrink: 0;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab[data-state="active"] {
+  color: var(--app-accent) !important;
+  border-bottom-color: var(--app-accent) !important;
+  font-weight: 600;
 }
 
 .tabContent {
@@ -330,7 +356,7 @@
 
 .sectorCard p:last-child {
   font-size: 0.75rem;
-  color: var(--app-text-muted);
+  /* color: var(--app-text-muted); */
 }
 
 .sectorChange {
@@ -339,11 +365,11 @@
 }
 
 .sectorChangeUp {
-  color: var(--app-up);
+  color: #ef4444; /* 상승: 빨간색 */
 }
 
 .sectorChangeDown {
-  color: var(--app-down);
+  color: #3b82f6; /* 하락: 파란색 */
 }
 
 /* Market cap card */
