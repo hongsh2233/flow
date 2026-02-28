@@ -178,7 +178,13 @@ def run_migrations():
         upgrade()
     except Exception as e:
         print(f"⚠️ 관심종목 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
-    
+
+    try:
+        from app.migrations.add_jubti_type_column import upgrade as upgrade_jubti_type
+        upgrade_jubti_type()
+    except Exception as e:
+        print(f"⚠️ 주BTI(jubti_type) 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
     try:
         from app.migrations.init_characters_and_words import init_characters_and_words
         init_characters_and_words()
