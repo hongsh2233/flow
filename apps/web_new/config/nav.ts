@@ -5,8 +5,8 @@
 import Home from '@mui/icons-material/Home'
 import CalendarToday from '@mui/icons-material/CalendarToday'
 import Article from '@mui/icons-material/Article'
-import Description from '@mui/icons-material/Description'
-import FolderOpen from '@mui/icons-material/FolderOpen'
+import TrendingUp from '@mui/icons-material/TrendingUp'
+import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
 import Settings from '@mui/icons-material/Settings'
 import navData from './nav-items.json'
 
@@ -22,10 +22,10 @@ interface NavItemData {
 
 const iconMap: Record<string, IconComponent> = {
   home: Home,
+  briefing: Article,
   calendar: CalendarToday,
-  news: Article,
-  market: Description,
-  stocks: FolderOpen,
+  market: TrendingUp,
+  stockChat: ChatBubbleOutline,
   settings: Settings,
 }
 

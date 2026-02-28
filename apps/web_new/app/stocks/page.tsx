@@ -272,7 +272,7 @@ export default function StocksPage() {
         <TabsList className={styles.tabList}>
           <TabsTrigger value="favorite">관심종목</TabsTrigger>
           <TabsTrigger value="market">시장현황</TabsTrigger>
-          <TabsTrigger value="marketcap">시가총액</TabsTrigger>
+          <TabsTrigger value="marketcap">시총상위</TabsTrigger>
           <TabsTrigger value="rising">상승종목</TabsTrigger>
         </TabsList>
 
@@ -400,7 +400,7 @@ export default function StocksPage() {
           )}
         </TabsContent>
 
-        {/* 시가총액 */}
+        {/* 시총상위 */}
         <TabsContent value="marketcap" className={styles.tabContent}>
           <div className={styles.subTabList}>
             <button
