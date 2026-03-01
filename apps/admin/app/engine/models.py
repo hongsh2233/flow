@@ -292,6 +292,8 @@ class Banner(Base):
     page_paths = Column(String(500), nullable=True)
     # 슬라이드형일 때 같은 그룹끼리 묶음
     slide_group = Column(String(50), nullable=True)
+    # 노출 위치: top(최상단), bottom(최하단)
+    display_position = Column(String(20), default="bottom")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

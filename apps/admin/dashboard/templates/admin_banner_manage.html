@@ -118,6 +118,14 @@
       </div>
 
       <div class="form-group">
+        <label>노출 위치 *</label>
+        <div class="display-type-option">
+          <label><input type="radio" name="display_position" value="top"> 화면 최상단</label>
+          <label><input type="radio" name="display_position" value="bottom" checked> 화면 최하단</label>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>노출 페이지 경로 *</label>
         <p style="font-size:12px;color:#666;margin:0 0 8px 0;">예: /, /stocks, /news, /board</p>
         <div class="page-path-input-row">
@@ -140,6 +148,7 @@
         <tr>
           <th>순서</th>
           <th>형태</th>
+          <th>노출 위치</th>
           <th>콘텐츠</th>
           <th>미리보기</th>
           <th>링크</th>
@@ -153,6 +162,7 @@
         <tr>
           <td>{{ b.order_index + 1 }}</td>
           <td>{{ '1개형' if b.display_type == 'single' else '슬라이드' }}{% if b.slide_group %} ({{ b.slide_group }}){% endif %}</td>
+          <td>{{ '최상단' if b.display_position == 'top' else '최하단' }}</td>
           <td>{{ '이미지' if b.content_type == 'image' else 'HTML' }}</td>
           <td>
             {% if b.content_type == 'image' and b.image_url %}

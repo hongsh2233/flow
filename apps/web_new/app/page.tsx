@@ -32,24 +32,37 @@ function managedToAdBannerItem(item: ManagedBannerItem): AdBannerItem {
   };
 }
 
+function byOrder(a: ManagedBannerItem, b: ManagedBannerItem) {
+  return a.order_index - b.order_index;
+}
+
 export default function Home() {
   const { status } = useSession();
   const { favoriteStocks, isLoading: isLoadingFavorites } = useFavoriteStocks();
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
-  const [mainSlideItems, setMainSlideItems] = useState<AdBannerItem[]>([]);
+  const [bannerTop, setBannerTop] = useState<AdBannerItem[]>([]);
+  const [bannerBottom, setBannerBottom] = useState<AdBannerItem[]>([]);
   const handleClose = useCallback(() => setSelectedStock(null), []);
 
   useEffect(() => {
     fetch(`/api/banners/managed?page_path=${encodeURIComponent("/")}`)
       .then((res) => res.json())
       .then((result) => {
-        if (result.success && result.data?.slides) {
-          const items = (result.data.slides as { items: ManagedBannerItem[] }[])
-            .flatMap((s) => s.items ?? [])
-            .sort((a, b) => a.order_index - b.order_index)
-            .map(managedToAdBannerItem);
-          setMainSlideItems(items);
-        }
+        if (!result.success || !result.data) return;
+        const singles = (result.data.singles ?? []) as ManagedBannerItem[];
+        const slides = (result.data.slides ?? []) as { items: ManagedBannerItem[] }[];
+        const topSingles = singles.filter((s) => (s.display_position ?? "bottom") === "top").sort(byOrder);
+        const bottomSingles = singles.filter((s) => (s.display_position ?? "bottom") === "bottom").sort(byOrder);
+        const topSlideItems = slides
+          .filter((s) => s.items?.length && ((s.items[0] as ManagedBannerItem).display_position ?? "bottom") === "top")
+          .flatMap((s) => s.items ?? [])
+          .sort(byOrder);
+        const bottomSlideItems = slides
+          .filter((s) => s.items?.length && ((s.items[0] as ManagedBannerItem).display_position ?? "bottom") !== "top")
+          .flatMap((s) => s.items ?? [])
+          .sort(byOrder);
+        setBannerTop([...topSingles, ...topSlideItems].map(managedToAdBannerItem));
+        setBannerBottom([...bottomSingles, ...bottomSlideItems].map(managedToAdBannerItem));
       })
       .catch(() => {});
   }, []);
@@ -57,6 +70,11 @@ export default function Home() {
   return (
     <div className="content__wrap">
       <StockTermBox wrapperClassName="home-term-wrap" />
+      {bannerTop.length > 0 && (
+        <section style={{ margin: "0 0 1rem 0" }}>
+          <AdBanner items={bannerTop} autoSlide interval={5000} />
+        </section>
+      )}
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />
@@ -84,9 +102,9 @@ export default function Home() {
 
       <RealtimeSearchSection />
       <JubtiSection />
-      {mainSlideItems.length > 0 && (
+      {bannerBottom.length > 0 && (
         <section style={{ margin: "1rem 0" }}>
-          <AdBanner items={mainSlideItems} autoSlide interval={5000} />
+          <AdBanner items={bannerBottom} autoSlide interval={5000} />
         </section>
       )}
 

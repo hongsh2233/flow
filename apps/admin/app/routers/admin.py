@@ -156,20 +156,15 @@ async def add_banner(
             if not image_file.content_type or not image_file.content_type.startswith('image/'):
                 return HTMLResponse("<script>alert('이미지 파일만 업로드 가능합니다.'); history.back();</script>")
             
-            # uploads/banners 디렉토리 생성
-            upload_dir = "uploads/banners"
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # 파일명 생성
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "banners"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
             safe_filename = f"{timestamp}_{safe_name}"
-            file_path = os.path.join(upload_dir, safe_filename)
-            
-            # 파일 저장
+            file_path = upload_dir / safe_filename
             with open(file_path, "wb") as f:
                 f.write(file_content)
-            
             final_image_url = f"/uploads/banners/{safe_filename}"
         except Exception as e:
             return HTMLResponse(f"<script>alert('이미지 업로드 실패: {str(e)}'); history.back();</script>")
@@ -230,20 +225,15 @@ async def update_banner(
             if not image_file.content_type or not image_file.content_type.startswith('image/'):
                 return HTMLResponse("<script>alert('이미지 파일만 업로드 가능합니다.'); history.back();</script>")
             
-            # uploads/banners 디렉토리 생성
-            upload_dir = "uploads/banners"
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # 파일명 생성
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "banners"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
             safe_filename = f"{timestamp}_{safe_name}"
-            file_path = os.path.join(upload_dir, safe_filename)
-            
-            # 파일 저장
+            file_path = upload_dir / safe_filename
             with open(file_path, "wb") as f:
                 f.write(file_content)
-            
             final_image_url = f"/uploads/banners/{safe_filename}"
         except Exception as e:
             return HTMLResponse(f"<script>alert('이미지 업로드 실패: {str(e)}'); history.back();</script>")
@@ -367,6 +357,7 @@ async def add_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
+    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     image_file: Optional[UploadFile] = File(None),
     user=Depends(get_current_user),
@@ -386,12 +377,13 @@ async def add_managed_banner(
                     return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
                 if not image_file.content_type or not image_file.content_type.startswith("image/"):
                     return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                upload_dir = "uploads/banners"
-                os.makedirs(upload_dir, exist_ok=True)
+                from app.config import UPLOADS_DIR
+                upload_dir = UPLOADS_DIR / "banners"
+                upload_dir.mkdir(parents=True, exist_ok=True)
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
                 safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
                 fn = f"{ts}_{safe}"
-                with open(os.path.join(upload_dir, fn), "wb") as f:
+                with open(upload_dir / fn, "wb") as f:
                     f.write(file_content)
                 final_image_url = f"/uploads/banners/{fn}"
             except Exception as e:
@@ -409,6 +401,9 @@ async def add_managed_banner(
         sg = f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     last = db.query(models.Banner).filter(models.Banner.type == "managed").order_by(models.Banner.order_index.desc()).first()
     next_order = (last.order_index + 1) if last else 0
+    pos = (display_position or "bottom").strip().lower()
+    if pos not in ("top", "bottom"):
+        pos = "bottom"
     new_banner = models.Banner(
         type="managed",
         display_type=display_type or "single",
@@ -420,6 +415,7 @@ async def add_managed_banner(
         slide_group=sg,
         order_index=next_order,
         is_active="active",
+        display_position=pos,
     )
     db.add(new_banner)
     db.commit()
@@ -468,6 +464,7 @@ async def update_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
+    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
     image_file: Optional[UploadFile] = File(None),
@@ -491,12 +488,13 @@ async def update_managed_banner(
                     return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
                 if not image_file.content_type or not image_file.content_type.startswith("image/"):
                     return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                upload_dir = "uploads/banners"
-                os.makedirs(upload_dir, exist_ok=True)
+                from app.config import UPLOADS_DIR
+                upload_dir = UPLOADS_DIR / "banners"
+                upload_dir.mkdir(parents=True, exist_ok=True)
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
                 safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
                 fn = f"{ts}_{safe}"
-                with open(os.path.join(upload_dir, fn), "wb") as f:
+                with open(upload_dir / fn, "wb") as f:
                     f.write(file_content)
                 final_image_url = f"/uploads/banners/{fn}"
             except Exception as e:
@@ -516,6 +514,8 @@ async def update_managed_banner(
     banner.link_url = link_url or ""
     banner.page_paths = json.dumps(paths)
     banner.is_active = is_active
+    pos = (display_position or "bottom").strip().lower()
+    banner.display_position = pos if pos in ("top", "bottom") else "bottom"
     if display_type == "slide":
         banner.slide_group = (slide_group or "").strip() or f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     else:

@@ -1223,6 +1223,7 @@ async def get_managed_banners(
             "alt_text": b.alt_text or None,
             "order_index": b.order_index,
             "slide_group": getattr(b, "slide_group", None),
+            "display_position": getattr(b, "display_position", None) or "bottom",
         }
     return {
         "success": True,
