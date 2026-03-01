@@ -6,6 +6,7 @@ import ChevronRight from "@mui/icons-material/ChevronRight";
 import NotificationsNone from "@mui/icons-material/NotificationsNone";
 import NotificationsActive from "@mui/icons-material/NotificationsActive";
 import type { ScheduleItem, NotifyTiming } from "@/lib/types";
+import { useAlarmStore } from "@/lib/stores/useAlarmStore";
 import { BottomSheet } from "@/app/components/ui/BottomSheet/BottomSheet";
 import { API_BASE_URL } from "@/lib/config/api";
 import styles from "./ScheduleCard.module.css";
@@ -21,18 +22,16 @@ function NotifyButton({
   scheduleId,
   isPast = false,
   onLoginRequired,
-  initialTiming = null,
 }: {
   scheduleId?: number;
   isPast?: boolean;
   onLoginRequired?: () => void;
-  initialTiming?: NotifyTiming | null;
 }) {
-  const [selected, setSelected] = useState<NotifyTiming | null>(initialTiming);
-
-  useEffect(() => {
-    setSelected(initialTiming ?? null);
-  }, [initialTiming]);
+  // store에서 직접 현재 알람 상태 구독 (페이지 이동 후 복귀 시에도 유지)
+  const selected = useAlarmStore((s) =>
+    scheduleId != null ? (s.alarmMap[scheduleId] ?? null) : null
+  );
+  const { setAlarm, clearAlarm } = useAlarmStore();
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,7 +55,7 @@ function NotifyButton({
       setOpen(false);
       return;
     }
-    if (!scheduleId) return;
+    if (scheduleId == null) return;
 
     setLoading(true);
     try {
@@ -67,7 +66,7 @@ function NotifyButton({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ schedule_id: scheduleId }),
         });
-        setSelected(null);
+        clearAlarm(scheduleId);
       } else {
         // 알림 신청
         await fetch("/api/schedule-alarms", {
@@ -75,7 +74,7 @@ function NotifyButton({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ schedule_id: scheduleId, timing: value }),
         });
-        setSelected(value);
+        setAlarm(scheduleId, value);
       }
     } catch {
       /* ignore */
@@ -83,7 +82,7 @@ function NotifyButton({
       setLoading(false);
       setOpen(false);
     }
-  }, [scheduleId, selected, onLoginRequired]);
+  }, [scheduleId, selected, onLoginRequired, setAlarm, clearAlarm]);
 
   const handleToggle = () => {
     if (isPast) {
@@ -172,8 +171,6 @@ export interface ScheduleCardProps {
   isLoggedIn?: boolean;
   /** 지난 일정이면 true (알림 아이콘 숨김) */
   isPast?: boolean;
-  /** DB에서 불러온 기존 알림 구독 타이밍 */
-  existingAlarmTiming?: NotifyTiming | null;
 }
 
 /** 일정이 이미 지났는지 확인 (dateIso + time 기준) */
@@ -190,7 +187,7 @@ function isSchedulePast(schedule: ScheduleItem): boolean {
   return nowMin > scheduleMin;
 }
 
-export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp, existingAlarmTiming }: ScheduleCardProps) {
+export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
@@ -224,7 +221,7 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                 )}
               </div>
               {canUseAlarm ? (
-                <NotifyButton scheduleId={schedule.id} isPast={isPast} initialTiming={existingAlarmTiming} />
+                <NotifyButton scheduleId={schedule.id} isPast={isPast} />
               ) : (
                 <NotifyButton
                   scheduleId={schedule.id}
