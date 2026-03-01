@@ -70,7 +70,7 @@
         <div class="upload-area" onclick="document.getElementById('imageFile').click()">클릭하여 변경</div>
         <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
         <input type="hidden" id="imageUrl" name="image_url" value="{{ banner.image_url or '' }}" />
-        <img id="imagePreview" class="image-preview" src="{{ banner.image_url or '' }}" alt="" {% if not banner.image_url %}style="display:none"{% endif %} />
+        <img id="imagePreview" class="image-preview" src="{{ (site_base_url or '') }}{{ banner.image_url or '' }}" alt="" {% if not banner.image_url %}style="display:none"{% endif %} />
       </div>
 
       <div class="form-group" id="htmlWrap" style="display:{% if banner.content_type == 'html' %}flex{% else %}none{% endif %}">

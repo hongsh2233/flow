@@ -51,14 +51,15 @@ export default function Home() {
         if (!result.success || !result.data) return;
         const singles = (result.data.singles ?? []) as ManagedBannerItem[];
         const slides = (result.data.slides ?? []) as { items: ManagedBannerItem[] }[];
-        const topSingles = singles.filter((s) => (s.display_position ?? "bottom") === "top").sort(byOrder);
-        const bottomSingles = singles.filter((s) => (s.display_position ?? "bottom") === "bottom").sort(byOrder);
+        const pos = (s: ManagedBannerItem) => ((s.display_position ?? "bottom") + "").toLowerCase();
+        const topSingles = singles.filter((s) => pos(s) === "top").sort(byOrder);
+        const bottomSingles = singles.filter((s) => pos(s) === "bottom").sort(byOrder);
         const topSlideItems = slides
-          .filter((s) => s.items?.length && ((s.items[0] as ManagedBannerItem).display_position ?? "bottom") === "top")
+          .filter((s) => s.items?.length && pos(s.items[0] as ManagedBannerItem) === "top")
           .flatMap((s) => s.items ?? [])
           .sort(byOrder);
         const bottomSlideItems = slides
-          .filter((s) => s.items?.length && ((s.items[0] as ManagedBannerItem).display_position ?? "bottom") !== "top")
+          .filter((s) => s.items?.length && pos(s.items[0] as ManagedBannerItem) !== "top")
           .flatMap((s) => s.items ?? [])
           .sort(byOrder);
         setBannerTop([...topSingles, ...topSlideItems].map(managedToAdBannerItem));

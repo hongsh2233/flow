@@ -340,12 +340,14 @@ async def admin_banner_manage_page(
             if b.slide_group
         }
     )
+    base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_manage.html", {
         "request": request,
         "admin_email": ADMIN_EMAIL,
         "banners": banners,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",
+        "site_base_url": base_url,
     })
 
 
@@ -446,12 +448,14 @@ async def edit_managed_banner_page(
     )
     if banner.slide_group and banner.slide_group not in slide_groups:
         slide_groups.append(banner.slide_group)
+    base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_edit.html", {
         "request": request,
         "admin_email": ADMIN_EMAIL,
         "banner": banner,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",
+        "site_base_url": base_url,
     })
 
 

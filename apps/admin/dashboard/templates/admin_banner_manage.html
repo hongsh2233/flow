@@ -166,7 +166,7 @@
           <td>{{ '이미지' if b.content_type == 'image' else 'HTML' }}</td>
           <td>
             {% if b.content_type == 'image' and b.image_url %}
-            <img src="{{ b.image_url }}" alt="" class="banner-thumb" />
+            <img src="{{ (site_base_url or '') }}{{ b.image_url }}" alt="" class="banner-thumb" />
             {% elif b.content_type == 'html' %}
             <span style="font-size:12px;color:#666;">HTML</span>
             {% else %}—{% endif %}
