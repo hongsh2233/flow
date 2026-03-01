@@ -49,13 +49,15 @@ export async function saveFcmToken(token: string): Promise<void> {
   }
 }
 
-/** FCM 토큰을 백엔드에서 삭제 (알림 OFF 시) */
-export async function deleteFcmToken(token: string): Promise<void> {
+/** FCM 토큰을 백엔드에서 삭제 (알림 OFF 시)
+ * token 없으면 로그인된 email의 모든 토큰 삭제
+ */
+export async function deleteFcmToken(token?: string): Promise<void> {
   try {
     await fetch("/api/fcm-token", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify(token ? { token } : {}),
     });
   } catch {
     /* ignore */
@@ -81,15 +83,16 @@ export async function registerJurinAppPushNotifications(): Promise<string | null
   return token;
 }
 
-/** JurinApp WebView: FCM 토큰 백엔드 삭제 (알림 OFF) */
+/** JurinApp WebView: FCM 토큰 백엔드 삭제 (알림 OFF)
+ * 토큰을 얻지 못해도 email 기반으로 서버에서 전체 삭제 시도
+ */
 export async function unregisterJurinAppPushNotifications(): Promise<void> {
   const bridge = getJurinAppBridge();
   if (!bridge) return;
 
   const token = bridge.getFcmToken();
-  if (!token) return;
-
-  await deleteFcmToken(token);
+  // 토큰이 있으면 특정 토큰만, 없으면 email로 전체 삭제 (server-side에서 email 기반 삭제)
+  await deleteFcmToken(token || undefined);
 }
 
 // ──────────────────────────────────────────────────────────────

@@ -25,13 +25,22 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
   const { pushEnabled } = useNotificationSettings();
   const initialized = useRef(false);
 
+  // 최신 상태를 ref로 유지 (콜백 클로저에서 stale closure 방지)
+  const pushEnabledRef = useRef(pushEnabled);
+  const statusRef = useRef(status);
+  const sessionRef = useRef(session);
+
+  useEffect(() => { pushEnabledRef.current = pushEnabled; }, [pushEnabled]);
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { sessionRef.current = session; }, [session]);
+
   // Capacitor 포그라운드 핸들러 1회 등록
   useEffect(() => {
     setupForegroundHandler();
   }, []);
 
   // JurinApp WebView: Android이 FCM 토큰을 발급·갱신할 때 window.__onFcmToken(token) 호출
-  // → 백엔드에 자동 저장 (pushEnabled이고 로그인 상태일 때만)
+  // → 콜백을 한 번만 등록하고 ref를 통해 최신 상태 참조 (레이스 컨디션 방지)
   useEffect(() => {
     if (!isJurinAppWebView()) return;
 
@@ -40,7 +49,11 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
     };
 
     w.__onFcmToken = (token: string) => {
-      if (pushEnabled && status === "authenticated" && session?.user?.email) {
+      if (
+        pushEnabledRef.current &&
+        statusRef.current === "authenticated" &&
+        sessionRef.current?.user?.email
+      ) {
         saveFcmToken(token);
       }
     };
@@ -48,7 +61,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
     return () => {
       w.__onFcmToken = undefined;
     };
-  }, [pushEnabled, status, session]);
+  }, []); // 빈 deps: 콜백은 한 번만 등록, 내부에서 ref로 최신 상태 참조
 
   // pushEnabled 변경 시 FCM 토큰 등록/해제
   useEffect(() => {

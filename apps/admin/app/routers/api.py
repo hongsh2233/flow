@@ -777,7 +777,7 @@ async def get_schedule_alarms(
 
 class FcmTokenRequest(BaseModel):
     email: str
-    token: str
+    token: Optional[str] = None  # 삭제 시 None이면 해당 email의 모든 토큰 삭제
 
 
 @router.post("/api/fcm-token")
@@ -787,6 +787,8 @@ async def register_fcm_token(
     auth = Depends(get_current_user_or_api_key),
 ):
     """FCM 토큰 등록/갱신"""
+    if not body.token:
+        return {"success": False, "message": "token이 필요합니다."}
     existing = db.query(models.MemberFcmToken).filter(
         models.MemberFcmToken.member_email == body.email,
         models.MemberFcmToken.token == body.token,
@@ -804,11 +806,16 @@ async def delete_fcm_token(
     db: Session = Depends(get_db),
     auth = Depends(get_current_user_or_api_key),
 ):
-    """FCM 토큰 삭제 (알림 OFF)"""
-    db.query(models.MemberFcmToken).filter(
+    """FCM 토큰 삭제 (알림 OFF)
+    - token 지정: 특정 토큰만 삭제
+    - token 없음: 해당 email의 모든 토큰 삭제 (알림 OFF 시 토큰 미취득 상황 대응)
+    """
+    q = db.query(models.MemberFcmToken).filter(
         models.MemberFcmToken.member_email == body.email,
-        models.MemberFcmToken.token == body.token,
-    ).delete()
+    )
+    if body.token:
+        q = q.filter(models.MemberFcmToken.token == body.token)
+    q.delete()
     db.commit()
     return {"success": True}
 

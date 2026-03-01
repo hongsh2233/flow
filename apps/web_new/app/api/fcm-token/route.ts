@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** FCM 토큰 삭제 (알림 OFF) */
+/** FCM 토큰 삭제 (알림 OFF)
+ * token 있으면 특정 토큰만 삭제, 없으면 해당 email의 모든 토큰 삭제
+ */
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -47,12 +49,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, message: '로그인이 필요합니다.' }, { status: 401 })
     }
 
-    const { token } = await request.json()
+    let token: string | undefined
+    try {
+      const body = await request.json()
+      token = body?.token || undefined
+    } catch {
+      // body 없어도 email로 전체 삭제
+    }
+
     const url = `${API_BASE_URL}/api/fcm-token`
     const response = await fetch(url, {
       method: 'DELETE',
       headers: makeHeaders(),
-      body: JSON.stringify({ email, token }),
+      body: JSON.stringify({ email, ...(token ? { token } : {}) }),
     })
     const data = await response.json()
     return NextResponse.json(data)
