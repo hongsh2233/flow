@@ -21,12 +21,19 @@ function NotifyButton({
   scheduleId,
   isPast = false,
   onLoginRequired,
+  initialTiming = null,
 }: {
   scheduleId?: number;
   isPast?: boolean;
   onLoginRequired?: () => void;
+  initialTiming?: NotifyTiming | null;
 }) {
-  const [selected, setSelected] = useState<NotifyTiming | null>(null);
+  const [selected, setSelected] = useState<NotifyTiming | null>(initialTiming);
+
+  useEffect(() => {
+    setSelected(initialTiming ?? null);
+  }, [initialTiming]);
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -159,12 +166,14 @@ function isEmptyHtml(html: string): boolean {
 
 export interface ScheduleCardProps {
   schedule: ScheduleItem;
-  /** 설정에서 일정알림을 켰고 로그인한 경우에만 알림 버튼 활성화 */
+  /** 로그인한 경우에만 알림 버튼 활성화 */
   canUseAlarm?: boolean;
   /** 로그인 여부 (알림 불가 시 메시지 구분용) */
   isLoggedIn?: boolean;
   /** 지난 일정이면 true (알림 아이콘 숨김) */
   isPast?: boolean;
+  /** DB에서 불러온 기존 알림 구독 타이밍 */
+  existingAlarmTiming?: NotifyTiming | null;
 }
 
 /** 일정이 이미 지났는지 확인 (dateIso + time 기준) */
@@ -181,7 +190,7 @@ function isSchedulePast(schedule: ScheduleItem): boolean {
   return nowMin > scheduleMin;
 }
 
-export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp }: ScheduleCardProps) {
+export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp, existingAlarmTiming }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
@@ -215,17 +224,13 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                 )}
               </div>
               {canUseAlarm ? (
-                <NotifyButton scheduleId={schedule.id} isPast={isPast} />
+                <NotifyButton scheduleId={schedule.id} isPast={isPast} initialTiming={existingAlarmTiming} />
               ) : (
                 <NotifyButton
                   scheduleId={schedule.id}
                   isPast={isPast}
                   onLoginRequired={() =>
-                    alert(
-                      isLoggedIn
-                        ? "설정에서 일정 알림을 켜주세요."
-                        : "로그인 후 이용할 수 있습니다."
-                    )
+                    alert("로그인 후 이용할 수 있습니다.")
                   }
                 />
               )}
