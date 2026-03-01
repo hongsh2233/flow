@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import styles from "./JubtiSection.module.css";
@@ -125,25 +125,9 @@ function LightbulbIcon() {
   );
 }
 
-function BookmarkIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function RotateIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-
 export function JubtiSection() {
   const { data: session, status } = useSession();
+  const [savedJubtiType, setSavedJubtiType] = useState<Dimension | null | "loading">("loading");
   const [isExpanded, setIsExpanded] = useState(false);
   const [questionsForRun, setQuestionsForRun] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -155,18 +139,56 @@ export function JubtiSection() {
   });
   const [finished, setFinished] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
-  const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const initQuestions = useCallback(() => {
-    setQuestionsForRun(getRandomQuestions());
-  }, []);
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.email) {
+      const next = status === "unauthenticated" ? null : "loading";
+      queueMicrotask(() => setSavedJubtiType(next));
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/auth/member/jubti")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const t = data?.jubti_type;
+        setSavedJubtiType(t && ["A", "D", "N", "I"].includes(t) ? t : null);
+      })
+      .catch(() => { if (!cancelled) setSavedJubtiType(null); });
+    return () => { cancelled = true; };
+  }, [status, session?.user?.email]);
+
+  const isLoggedIn = status === "authenticated";
+  const hasCompletedTest = savedJubtiType !== null && savedJubtiType !== "loading";
 
   const totalQuestions = questionsForRun.length;
   const currentQuestion = questionsForRun[currentIndex] ?? questionsForRun[0];
-
   const mainType = useMemo(() => pickMainType(scores), [scores]);
   const meta = TYPE_META[mainType];
+
+  useEffect(() => {
+    if (!isExpanded || !isLoggedIn || hasCompletedTest || questionsForRun.length > 0) return;
+    queueMicrotask(() => setQuestionsForRun(getRandomQuestions()));
+  }, [isExpanded, isLoggedIn, hasCompletedTest, questionsForRun.length]);
+
+  useEffect(() => {
+    if (!finished || !isLoggedIn || hasCompletedTest || isSaving) return;
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) setIsSaving(true); });
+    fetch("/api/auth/member/jubti", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jubti_type: mainType }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data?.success) setSavedJubtiType(mainType);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsSaving(false); });
+    return () => { cancelled = true; };
+  }, [finished, isLoggedIn, hasCompletedTest, isSaving, mainType]);
 
   const handleSelect = (option: QuestionOption, index: number) => {
     setSelectedOptionIndex(index);
@@ -186,52 +208,18 @@ export function JubtiSection() {
     setSelectedOptionIndex(null);
   };
 
-  const handleRestart = () => {
-    setScores({ A: 0, D: 0, N: 0, I: 0 });
-    setCurrentIndex(0);
-    setFinished(false);
-    setSelectedOptionIndex(null);
-    setShowLoginMessage(false);
-    initQuestions();
-  };
-
-  const handleSaveResult = async () => {
-    if (status === "loading") return;
-    if (!session?.user?.email) {
-      setShowLoginMessage(true);
-      return;
-    }
-    setIsSaving(true);
-    setShowLoginMessage(false);
-    try {
-      const res = await fetch("/api/auth/member/jubti", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jubti_type: mainType }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        alert("결과가 저장되었습니다!");
-        setIsExpanded(false);
-      } else {
-        alert(data.message ?? "저장에 실패했습니다.");
-      }
-    } catch {
-      alert("저장 중 오류가 발생했습니다.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   if (!isExpanded) {
+    const subtitle =
+      !isLoggedIn
+        ? "로그인 후 테스트를 이용할 수 있습니다"
+        : hasCompletedTest
+          ? "저장된 결과 보기"
+          : "재미로 하는 투자 성향 테스트";
     return (
       <section className={styles.section}>
         <button
           type="button"
-          onClick={() => {
-            setQuestionsForRun(getRandomQuestions());
-            setIsExpanded(true);
-          }}
+          onClick={() => setIsExpanded(true)}
           className={styles.collapsedBtn}
         >
           <div className={styles.collapsedInner}>
@@ -240,13 +228,99 @@ export function JubtiSection() {
             </div>
             <div className={styles.collapsedText}>
               <h3 className={styles.collapsedTitle}>주BTI</h3>
-              <p className={styles.collapsedSubtitle}>재미로 하는 투자 성향 테스트</p>
+              <p className={styles.collapsedSubtitle}>{subtitle}</p>
             </div>
           </div>
           <span className={styles.collapsedChevron}>
             <ChevronDownIcon />
           </span>
         </button>
+      </section>
+    );
+  }
+
+  if (hasCompletedTest) {
+    const meta = TYPE_META[savedJubtiType as Dimension];
+    return (
+      <section className={styles.section}>
+        <div className={styles.card}>
+          <div className={styles.headerStrip}>
+            <div className={styles.headerLeft}>
+              <span className={styles.headerIcon}>
+                <LightbulbIcon />
+              </span>
+              <div>
+                <h3 className={styles.headerTitle}>주BTI</h3>
+                <p className={styles.headerSubtitle}>저장된 결과</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className={styles.collapseBtn}
+              aria-label="접기"
+            >
+              <ChevronUpIcon />
+            </button>
+          </div>
+          <div className={styles.resultBody}>
+            <p className={styles.resultSummary}>
+              테스트 결과는 <strong>{meta.characterName} · {meta.label}</strong> 입니다.
+            </p>
+            <div className={styles.actionRow}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => setIsExpanded(false)}
+              >
+                <span>다시보기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <section className={styles.section}>
+        <div className={styles.card}>
+          <div className={styles.headerStrip}>
+            <div className={styles.headerLeft}>
+              <span className={styles.headerIcon}>
+                <LightbulbIcon />
+              </span>
+              <div>
+                <h3 className={styles.headerTitle}>주BTI</h3>
+                <p className={styles.headerSubtitle}>재미로 하는 투자 성향 테스트</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className={styles.collapseBtn}
+              aria-label="접기"
+            >
+              <ChevronUpIcon />
+            </button>
+          </div>
+          <div className={styles.resultBody}>
+            <p className={styles.loginMessageText}>로그인 후 주BTI 테스트를 이용할 수 있습니다.</p>
+            <Link href="/login" className={styles.loginMessageLink}>
+              로그인하기
+            </Link>
+            <div className={styles.actionRow}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => setIsExpanded(false)}
+              >
+                <span>닫기</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
     );
   }
@@ -311,79 +385,17 @@ export function JubtiSection() {
           )
         ) : (
           <div className={styles.resultBody}>
-            <p className={styles.resultMeta}>나의 투자 성향</p>
-            <div className={`${styles.resultHero} ${styles[`resultHeroType${mainType}`]}`}>
-              <h3 className={styles.resultHeroTitle}>
-                {meta.characterName} · {meta.label}
-              </h3>
-            </div>
-
-            <div className={styles.resultBlock}>
-              <h4 className={styles.resultBlockLabel}>나와 닮은 투자 대가</h4>
-              <div className={styles.resultSubCard}>
-                <p className={styles.resultSubTitle}>{meta.master}</p>
-                <p className={styles.resultSubDesc}>&quot;{meta.quote}&quot;</p>
-              </div>
-            </div>
-
-            <div className={styles.resultBlock}>
-              <h4 className={styles.resultBlockLabel}>지금 당신에게 필요한 한 마디</h4>
-              <div className={styles.adviceCard}>
-                <p className={styles.adviceText}>{meta.advice}</p>
-              </div>
-            </div>
-
-            <div className={styles.resultBlock}>
-              <h4 className={styles.resultBlockLabel}>당신에게 필요한 지식</h4>
-              <ul className={styles.knowledgeList}>
-                {meta.recommendedConcepts.map((concept) => (
-                  <li key={concept} className={styles.knowledgeItem}>
-                    {concept}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className={styles.tipsBox}>
-              <p className={styles.tipsText}>💡 {meta.tips}</p>
-            </div>
-
-            {showLoginMessage && (
-              <div className={styles.loginMessageStrip} role="alert">
-                <p className={styles.loginMessageText}>
-                  로그인 후 이용 가능합니다.
-                </p>
-                <Link href="/login" className={styles.loginMessageLink}>
-                  로그인하기
-                </Link>
-                <button
-                  type="button"
-                  className={styles.loginMessageClose}
-                  onClick={() => setShowLoginMessage(false)}
-                  aria-label="닫기"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
+            <p className={styles.resultSummary}>
+              테스트 결과는 <strong>{meta.characterName} · {meta.label}</strong> 입니다.
+              {isSaving && " (저장 중...)"}
+            </p>
             <div className={styles.actionRow}>
               <button
                 type="button"
-                className={styles.secondaryButton}
-                onClick={handleRestart}
-              >
-                <RotateIcon />
-                <span>다시하기</span>
-              </button>
-              <button
-                type="button"
                 className={styles.primaryButton}
-                onClick={handleSaveResult}
-                disabled={isSaving}
+                onClick={() => setIsExpanded(false)}
               >
-                <BookmarkIcon />
-                <span>{isSaving ? "저장 중..." : "저장하기"}</span>
+                <span>다시보기</span>
               </button>
             </div>
           </div>

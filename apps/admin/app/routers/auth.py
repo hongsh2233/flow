@@ -113,6 +113,7 @@ class SocialLoginResponse(BaseModel):
     nickname: str = None  # 닉네임
     profile_image: str = None  # 프로필 이미지
     grade: str = "regular"  # 'regular' | 'vip' | 'family'
+    jubti_type: str = None  # 주BTI 성향: A | D | N | I (없으면 None)
 
 
 # 회원 정보 업데이트 요청 모델
@@ -945,7 +946,8 @@ async def api_get_member_info(
         has_nickname=bool(member.nickname),
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        jubti_type=getattr(member, "jubti_type", None),
     )
 
 
