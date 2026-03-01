@@ -75,4 +75,6 @@ export interface ManagedBannerItem {
   alt_text: string | null;
   order_index: number;
   slide_group: string | null;
+  /** 노출 위치: top(최상단), bottom(최하단) */
+  display_position?: "top" | "bottom";
 }

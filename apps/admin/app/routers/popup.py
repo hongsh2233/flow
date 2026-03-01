@@ -55,12 +55,13 @@ async def admin_popup_add(
 
     final_image_url = image_url
     if content_type == "image" and image_file and image_file.filename:
-        upload_dir = "uploads/popups"
-        os.makedirs(upload_dir, exist_ok=True)
+        from app.config import UPLOADS_DIR
+        upload_dir = UPLOADS_DIR / "popups"
+        upload_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ")
         filename = f"{ts}_{safe_name}"
-        filepath = os.path.join(upload_dir, filename)
+        filepath = upload_dir / filename
         data = await image_file.read()
         with open(filepath, "wb") as f:
             f.write(data)
@@ -135,12 +136,13 @@ async def admin_popup_edit(
     else:
         popup.html_content = None
         if image_file and image_file.filename:
-            upload_dir = "uploads/popups"
-            os.makedirs(upload_dir, exist_ok=True)
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "popups"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ")
             filename = f"{ts}_{safe_name}"
-            filepath = os.path.join(upload_dir, filename)
+            filepath = upload_dir / filename
             data = await image_file.read()
             with open(filepath, "wb") as f:
                 f.write(data)

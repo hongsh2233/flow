@@ -398,17 +398,13 @@ async def upload_image(
         raise HTTPException(status_code=400, detail="파일 크기는 5MB 이하여야 합니다.")
     
     try:
-        # uploads/images 디렉토리 생성
-        upload_dir = "uploads/images"
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        # 파일명 생성
+        from app.config import UPLOADS_DIR
+        upload_dir = UPLOADS_DIR / "images"
+        upload_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ") if file.filename else "image"
         safe_filename = f"{timestamp}_{safe_name}"
-        file_path = os.path.join(upload_dir, safe_filename)
-        
-        # 파일 저장
+        file_path = upload_dir / safe_filename
         with open(file_path, "wb") as f:
             f.write(file_content)
         
@@ -453,18 +449,15 @@ async def admin_create_post(
         final_content = content  # 최종 content
         
         if files:
-            # uploads/files 디렉토리 생성
-            upload_dir = "uploads/files"
-            os.makedirs(upload_dir, exist_ok=True)
-            
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "files"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             for file in files:
                 if file and file.filename:
-                    # 파일명 중복 방지를 위해 타임스탬프 추가
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                    # 파일명에서 특수문자 제거
                     safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ")
                     safe_filename = f"{timestamp}_{safe_name}"
-                    file_path = os.path.join(upload_dir, safe_filename)
+                    file_path = upload_dir / safe_filename
                     
                     # 파일 저장
                     try:
@@ -656,16 +649,15 @@ async def admin_post_edit(
         final_content = content
         
         if files:
-            upload_dir = "uploads/files"
-            os.makedirs(upload_dir, exist_ok=True)
-            
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "files"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             for file in files:
                 if file and file.filename:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
                     safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ")
                     safe_filename = f"{timestamp}_{safe_name}"
-                    file_path = os.path.join(upload_dir, safe_filename)
-                    
+                    file_path = upload_dir / safe_filename
                     try:
                         with open(file_path, "wb") as f:
                             content_data = await file.read()

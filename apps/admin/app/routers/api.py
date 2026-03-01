@@ -1226,6 +1226,9 @@ async def get_managed_banners(
             slide_groups[sg].append(b)
     slides = [{"slide_group": k, "items": v} for k, v in sorted(slide_groups.items(), key=lambda x: x[1][0].order_index)]
     def _item(b):
+        raw_pos = (getattr(b, "display_position", None) or "bottom")
+        pos = (raw_pos if isinstance(raw_pos, str) else "bottom").strip().lower()
+        display_position = "top" if pos == "top" else "bottom"
         return {
             "id": b.id,
             "display_type": getattr(b, "display_type", "single"),

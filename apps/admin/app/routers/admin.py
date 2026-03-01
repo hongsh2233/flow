@@ -156,20 +156,15 @@ async def add_banner(
             if not image_file.content_type or not image_file.content_type.startswith('image/'):
                 return HTMLResponse("<script>alert('이미지 파일만 업로드 가능합니다.'); history.back();</script>")
             
-            # uploads/banners 디렉토리 생성
-            upload_dir = "uploads/banners"
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # 파일명 생성
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "banners"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
             safe_filename = f"{timestamp}_{safe_name}"
-            file_path = os.path.join(upload_dir, safe_filename)
-            
-            # 파일 저장
+            file_path = upload_dir / safe_filename
             with open(file_path, "wb") as f:
                 f.write(file_content)
-            
             final_image_url = f"/uploads/banners/{safe_filename}"
         except Exception as e:
             return HTMLResponse(f"<script>alert('이미지 업로드 실패: {str(e)}'); history.back();</script>")
@@ -230,20 +225,15 @@ async def update_banner(
             if not image_file.content_type or not image_file.content_type.startswith('image/'):
                 return HTMLResponse("<script>alert('이미지 파일만 업로드 가능합니다.'); history.back();</script>")
             
-            # uploads/banners 디렉토리 생성
-            upload_dir = "uploads/banners"
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # 파일명 생성
+            from app.config import UPLOADS_DIR
+            upload_dir = UPLOADS_DIR / "banners"
+            upload_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_name = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
             safe_filename = f"{timestamp}_{safe_name}"
-            file_path = os.path.join(upload_dir, safe_filename)
-            
-            # 파일 저장
+            file_path = upload_dir / safe_filename
             with open(file_path, "wb") as f:
                 f.write(file_content)
-            
             final_image_url = f"/uploads/banners/{safe_filename}"
         except Exception as e:
             return HTMLResponse(f"<script>alert('이미지 업로드 실패: {str(e)}'); history.back();</script>")
@@ -350,12 +340,14 @@ async def admin_banner_manage_page(
             if b.slide_group
         }
     )
+    base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_manage.html", {
         "request": request,
         "admin_email": ADMIN_EMAIL,
         "banners": banners,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",
+        "site_base_url": base_url,
     })
 
 
@@ -367,6 +359,7 @@ async def add_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
+    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     position: str = Form("top"),
     user=Depends(get_current_user),
@@ -392,6 +385,9 @@ async def add_managed_banner(
         sg = f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     last = db.query(models.Banner).filter(models.Banner.type == "managed").order_by(models.Banner.order_index.desc()).first()
     next_order = (last.order_index + 1) if last else 0
+    pos = (display_position or "bottom").strip().lower()
+    if pos not in ("top", "bottom"):
+        pos = "bottom"
     new_banner = models.Banner(
         type="managed",
         display_type=display_type or "single",
@@ -434,12 +430,14 @@ async def edit_managed_banner_page(
     )
     if banner.slide_group and banner.slide_group not in slide_groups:
         slide_groups.append(banner.slide_group)
+    base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_edit.html", {
         "request": request,
         "admin_email": ADMIN_EMAIL,
         "banner": banner,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",
+        "site_base_url": base_url,
     })
 
 
@@ -452,6 +450,7 @@ async def update_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
+    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
     position: str = Form("top"),

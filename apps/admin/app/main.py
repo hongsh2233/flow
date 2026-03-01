@@ -22,7 +22,7 @@ import os
 from app import models
 from app.database import engine, get_db
 from app import utils
-from app.config import ADMIN_EMAIL, ADMIN_PW
+from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
 from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
@@ -94,24 +94,22 @@ app.add_middleware(
     allow_headers=["*"],  # 모든 헤더 허용
 )
 
-# 정적 파일 서빙 설정
-# uploads 디렉토리: 업로드된 이미지 및 파일
-# 디렉토리가 없으면 생성
-uploads_dir = "uploads"
+# 정적 파일 서빙 설정 (UPLOADS_DIR 사용 → 빌드/실행 경로와 무관하게 이미지 정상 노출)
+uploads_dir = str(UPLOADS_DIR)
 if not os.path.exists(uploads_dir):
     os.makedirs(uploads_dir, exist_ok=True)
-    # 하위 디렉토리도 생성
-    for subdir in ["banners", "images", "files", "popups"]:
-        subdir_path = os.path.join(uploads_dir, subdir)
-        if not os.path.exists(subdir_path):
-            os.makedirs(subdir_path, exist_ok=True)
+for subdir in ["banners", "images", "files", "popups"]:
+    subdir_path = os.path.join(uploads_dir, subdir)
+    if not os.path.exists(subdir_path):
+        os.makedirs(subdir_path, exist_ok=True)
 
 if os.path.exists(uploads_dir):
     app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 # dashboard/static: JavaScript, CSS 등 정적 리소스 (캐릭터 이미지 포함)
-if os.path.exists("dashboard/static"):
-    app.mount("/static", StaticFiles(directory="dashboard/static"), name="static")
+dashboard_static = BASE_DIR / "dashboard" / "static"
+if dashboard_static.exists():
+    app.mount("/static", StaticFiles(directory=str(dashboard_static)), name="static")
 
 # 데이터베이스 초기화: 서버 시작 시 테이블 생성
 # models.py에 정의된 모든 모델의 테이블이 자동으로 생성됩니다.
@@ -327,10 +325,10 @@ def run_migrations():
         print(f"⚠️ 배너 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
-        from app.migrations.add_banner_position_column import upgrade as add_banner_position_migration
-        add_banner_position_migration()
+        from app.migrations.add_banner_display_position import upgrade as add_banner_display_position_migration
+        add_banner_display_position_migration()
     except Exception as e:
-        print(f"⚠️ 배너 position 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+        print(f"⚠️ 배너 display_position 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
         from app.migrations.add_exchange_rate_snapshot import run_migration as exchange_rate_migration
