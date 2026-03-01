@@ -40,30 +40,22 @@ export default function Home() {
   const { status } = useSession();
   const { favoriteStocks, isLoading: isLoadingFavorites } = useFavoriteStocks();
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
-  const [bannerTop, setBannerTop] = useState<AdBannerItem[]>([]);
   const [bannerBottom, setBannerBottom] = useState<AdBannerItem[]>([]);
   const handleClose = useCallback(() => setSelectedStock(null), []);
 
+  /* 메인 페이지 하단 배너 (상단은 LayoutShell의 ManagedBannerSection이 처리) */
   useEffect(() => {
-    fetch(`/api/banners/managed?page_path=${encodeURIComponent("/")}`)
+    fetch(`/api/banners/managed?page_path=${encodeURIComponent("/")}&position=bottom`)
       .then((res) => res.json())
       .then((result) => {
         if (!result.success || !result.data) return;
         const singles = (result.data.singles ?? []) as ManagedBannerItem[];
         const slides = (result.data.slides ?? []) as { items: ManagedBannerItem[] }[];
-        const pos = (s: ManagedBannerItem) => ((s.display_position ?? "bottom") + "").toLowerCase();
-        const topSingles = singles.filter((s) => pos(s) === "top").sort(byOrder);
-        const bottomSingles = singles.filter((s) => pos(s) === "bottom").sort(byOrder);
-        const topSlideItems = slides
-          .filter((s) => s.items?.length && pos(s.items[0] as ManagedBannerItem) === "top")
-          .flatMap((s) => s.items ?? [])
-          .sort(byOrder);
-        const bottomSlideItems = slides
-          .filter((s) => s.items?.length && pos(s.items[0] as ManagedBannerItem) !== "top")
-          .flatMap((s) => s.items ?? [])
-          .sort(byOrder);
-        setBannerTop([...topSingles, ...topSlideItems].map(managedToAdBannerItem));
-        setBannerBottom([...bottomSingles, ...bottomSlideItems].map(managedToAdBannerItem));
+        const items = [
+          ...singles.sort(byOrder),
+          ...slides.flatMap((s) => s.items ?? []).sort(byOrder),
+        ].map(managedToAdBannerItem);
+        setBannerBottom(items);
       })
       .catch(() => {});
   }, []);
@@ -71,11 +63,6 @@ export default function Home() {
   return (
     <div className="content__wrap">
       <StockTermBox wrapperClassName="home-term-wrap" />
-      {bannerTop.length > 0 && (
-        <section style={{ margin: "0 0 1rem 0" }}>
-          <AdBanner items={bannerTop} autoSlide interval={5000} />
-        </section>
-      )}
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />
