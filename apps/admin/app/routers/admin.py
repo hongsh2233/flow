@@ -361,7 +361,7 @@ async def add_managed_banner(
     page_paths: str = Form(...),
     display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
-    image_file: Optional[UploadFile] = File(None),
+    position: str = Form("top"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -372,26 +372,8 @@ async def add_managed_banner(
         return HTMLResponse("<script>alert('노출 페이지 경로를 1개 이상 추가해주세요.'); history.back();</script>")
     if content_type == "image":
         final_image_url = (image_url or "").strip()
-        if image_file and image_file.filename:
-            try:
-                file_content = await image_file.read()
-                if len(file_content) > 5 * 1024 * 1024:
-                    return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
-                if not image_file.content_type or not image_file.content_type.startswith("image/"):
-                    return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                from app.config import UPLOADS_DIR
-                upload_dir = UPLOADS_DIR / "banners"
-                upload_dir.mkdir(parents=True, exist_ok=True)
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
-                fn = f"{ts}_{safe}"
-                with open(upload_dir / fn, "wb") as f:
-                    f.write(file_content)
-                final_image_url = f"/uploads/banners/{fn}"
-            except Exception as e:
-                return HTMLResponse(f"<script>alert('업로드 실패: {str(e)}'); history.back();</script>")
         if not final_image_url:
-            return HTMLResponse("<script>alert('이미지를 업로드해주세요.'); history.back();</script>")
+            return HTMLResponse("<script>alert('이미지 URL을 입력해주세요.'); history.back();</script>")
         html_content = None
     else:
         html_content = (html_content or "").strip()
@@ -417,7 +399,7 @@ async def add_managed_banner(
         slide_group=sg,
         order_index=next_order,
         is_active="active",
-        display_position=pos,
+        position=position if position in ("top", "bottom") else "top",
     )
     db.add(new_banner)
     db.commit()
@@ -471,7 +453,7 @@ async def update_managed_banner(
     display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
-    image_file: Optional[UploadFile] = File(None),
+    position: str = Form("top"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -485,26 +467,8 @@ async def update_managed_banner(
         return HTMLResponse("<script>alert('노출 페이지 경로를 1개 이상 추가해주세요.'); history.back();</script>")
     if content_type == "image":
         final_image_url = (image_url or "").strip()
-        if image_file and image_file.filename:
-            try:
-                file_content = await image_file.read()
-                if len(file_content) > 5 * 1024 * 1024:
-                    return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
-                if not image_file.content_type or not image_file.content_type.startswith("image/"):
-                    return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                from app.config import UPLOADS_DIR
-                upload_dir = UPLOADS_DIR / "banners"
-                upload_dir.mkdir(parents=True, exist_ok=True)
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
-                fn = f"{ts}_{safe}"
-                with open(upload_dir / fn, "wb") as f:
-                    f.write(file_content)
-                final_image_url = f"/uploads/banners/{fn}"
-            except Exception as e:
-                return HTMLResponse(f"<script>alert('업로드 실패: {str(e)}'); history.back();</script>")
         if not final_image_url and not banner.image_url:
-            return HTMLResponse("<script>alert('이미지를 업로드해주세요.'); history.back();</script>")
+            return HTMLResponse("<script>alert('이미지 URL을 입력해주세요.'); history.back();</script>")
         banner.image_url = final_image_url or banner.image_url
         banner.html_content = None
     else:
@@ -518,8 +482,7 @@ async def update_managed_banner(
     banner.link_url = link_url or ""
     banner.page_paths = json.dumps(paths)
     banner.is_active = is_active
-    pos = (display_position or "bottom").strip().lower()
-    banner.display_position = pos if pos in ("top", "bottom") else "bottom"
+    banner.position = position if position in ("top", "bottom") else "top"
     if display_type == "slide":
         banner.slide_group = (slide_group or "").strip() or f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     else:

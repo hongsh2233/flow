@@ -35,7 +35,7 @@ export function PageBottomBanner() {
     const fetchBanners = async () => {
       try {
         const res = await fetch(
-          `/api/banners/managed?page_path=${encodeURIComponent(pagePath)}`
+          `/api/banners/managed?page_path=${encodeURIComponent(pagePath)}&position=bottom`
         );
         const result = await res.json();
 

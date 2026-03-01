@@ -34,7 +34,7 @@ export function ManagedBannerSection() {
     const fetchBanners = async () => {
       try {
         const res = await fetch(
-          `/api/banners/managed?page_path=${encodeURIComponent(pagePath)}`
+          `/api/banners/managed?page_path=${encodeURIComponent(pagePath)}&position=top`
         );
         const result = await res.json();
 
