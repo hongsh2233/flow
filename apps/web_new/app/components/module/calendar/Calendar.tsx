@@ -4,10 +4,9 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
-import type { ScheduleItem } from "@/lib/types";
+import type { ScheduleItem, NotifyTiming } from "@/lib/types";
 import { getWeeksRange, toIsoDateLocal } from "@/lib/utils/calendar";
 import { fetchSchedules } from "@/lib/services/scheduleService";
-import { useNotificationSettings } from "@/lib/hooks/useNotificationSettings";
 import { ScheduleCard } from "./ScheduleCard";
 import styles from "./Calendar.module.css";
 
@@ -48,18 +47,44 @@ function getMonthLabel(weekDates: { fullDate: Date }[]): string {
 export function Calendar() {
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const { scheduleAlarmEnabled } = useNotificationSettings();
   const { weeks, todayWeekIndex } = useMemo(() => getWeeksRange(5), []);
   const [weekIndex, setWeekIndex] = useState(todayWeekIndex);
   const [filter, setFilter] = useState<FilterType>("all");
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [alarmMap, setAlarmMap] = useState<Record<number, NotifyTiming>>({});
   const currentWeek = weeks[weekIndex];
 
   const [selectedDate, setSelectedDate] = useState<string>(
     () => new Date().toDateString()
   );
+
+  /* 로그인 시 기존 알림 구독 목록 로드 */
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setAlarmMap({});
+      return;
+    }
+    const fetchAlarms = async () => {
+      try {
+        const res = await fetch("/api/schedule-alarms");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          const map: Record<number, NotifyTiming> = {};
+          for (const sub of data.data) {
+            if (sub.notified === "false") {
+              map[sub.schedule_id] = sub.timing as NotifyTiming;
+            }
+          }
+          setAlarmMap(map);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchAlarms();
+  }, [isLoggedIn]);
 
   /* API 일정 로드 */
   const startDate = currentWeek[0]?.fullDate;
@@ -292,8 +317,9 @@ export function Calendar() {
               <ScheduleCard
                 key={schedule.id}
                 schedule={schedule}
-                canUseAlarm={isLoggedIn && scheduleAlarmEnabled}
+                canUseAlarm={isLoggedIn}
                 isLoggedIn={isLoggedIn}
+                existingAlarmTiming={alarmMap[schedule.id] ?? null}
               />
             ))}
           </div>
