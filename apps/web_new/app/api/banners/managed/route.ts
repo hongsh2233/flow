@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const pagePath = searchParams.get("page_path") || "/";
+    const position = searchParams.get("position");
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
       headers["X-API-KEY"] = API_SECRET_KEY;
     }
 
-    const url = `${API_BASE_URL}/api/banners/managed?page_path=${encodeURIComponent(pagePath)}`;
+    let url = `${API_BASE_URL}/api/banners/managed?page_path=${encodeURIComponent(pagePath)}`;
+    if (position) url += `&position=${encodeURIComponent(position)}`;
     const response = await fetch(url, {
       method: "GET",
       headers,

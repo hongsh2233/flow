@@ -88,6 +88,14 @@
       </div>
 
       <div class="form-group">
+        <label>노출 위치 *</label>
+        <div class="display-type-option">
+          <label><input type="radio" name="position" value="top" checked> 페이지 상단</label>
+          <label><input type="radio" name="position" value="bottom"> 페이지 하단</label>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>콘텐츠 형태 *</label>
         <div class="content-type-toggle">
           <label><input type="radio" name="content_type" value="image" checked> 이미지</label>
@@ -138,6 +146,7 @@
         <tr>
           <th>순서</th>
           <th>형태</th>
+          <th>위치</th>
           <th>콘텐츠</th>
           <th>미리보기</th>
           <th>링크</th>
@@ -151,6 +160,7 @@
         <tr>
           <td>{{ b.order_index + 1 }}</td>
           <td>{{ '1개형' if b.display_type == 'single' else '슬라이드' }}{% if b.slide_group %} ({{ b.slide_group }}){% endif %}</td>
+          <td>{{ '상단' if (b.position or 'top') == 'top' else '하단' }}</td>
           <td>{{ '이미지' if b.content_type == 'image' else 'HTML' }}</td>
           <td>
             {% if b.content_type == 'image' and b.image_url %}

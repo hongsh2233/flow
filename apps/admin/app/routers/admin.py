@@ -368,6 +368,7 @@ async def add_managed_banner(
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
     slide_group: Optional[str] = Form(None),
+    position: str = Form("top"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -402,6 +403,7 @@ async def add_managed_banner(
         slide_group=sg,
         order_index=next_order,
         is_active="active",
+        position=position if position in ("top", "bottom") else "top",
     )
     db.add(new_banner)
     db.commit()
@@ -452,6 +454,7 @@ async def update_managed_banner(
     page_paths: str = Form(...),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
+    position: str = Form("top"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -480,6 +483,7 @@ async def update_managed_banner(
     banner.link_url = link_url or ""
     banner.page_paths = json.dumps(paths)
     banner.is_active = is_active
+    banner.position = position if position in ("top", "bottom") else "top"
     if display_type == "slide":
         banner.slide_group = (slide_group or "").strip() or f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     else:

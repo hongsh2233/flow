@@ -58,6 +58,14 @@
       </div>
 
       <div class="form-group">
+        <label>노출 위치 *</label>
+        <div class="display-type-option">
+          <label><input type="radio" name="position" value="top" {% if (banner.position or 'top') == 'top' %}checked{% endif %}> 페이지 상단</label>
+          <label><input type="radio" name="position" value="bottom" {% if banner.position == 'bottom' %}checked{% endif %}> 페이지 하단</label>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>콘텐츠 형태 *</label>
         <div class="content-type-toggle">
           <label><input type="radio" name="content_type" value="image" {% if banner.content_type == 'image' %}checked{% endif %}> 이미지</label>

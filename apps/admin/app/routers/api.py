@@ -1175,13 +1175,15 @@ async def get_banners(
 @router.get("/api/banners/managed")
 async def get_managed_banners(
     page_path: str = Query(..., description="노출할 페이지 경로 (예: /, /stocks, /news)"),
+    position: Optional[str] = Query(None, description="노출 위치: top(상단) 또는 bottom(하단). 미지정 시 전체 반환"),
     db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key)
 ):
     """
     배너관리에서 등록한 배너를 페이지 경로로 조회
-    
+
     - page_path: 현재 페이지 경로 (예: /, /stocks). 해당 경로가 노출 대상에 포함된 배너만 반환
+    - position: top(상단) 또는 bottom(하단). 미지정 시 전체 반환
     - 1개형(single)은 개별 항목, 슬라이드형(slide)은 slide_group별로 묶어서 반환
     """
     if not page_path.startswith("/"):
@@ -1208,6 +1210,10 @@ async def get_managed_banners(
             continue
         if page_path not in paths:
             continue
+        # position 필터: 값이 없으면 'top'으로 간주 (기존 데이터 호환)
+        b_position = getattr(b, "position", None) or "top"
+        if position and b_position != position:
+            continue
         matched.append(b)
     # slide_group별로 묶기
     singles = [b for b in matched if getattr(b, "display_type", "single") == "single"]
@@ -1230,6 +1236,7 @@ async def get_managed_banners(
             "alt_text": b.alt_text or None,
             "order_index": b.order_index,
             "slide_group": getattr(b, "slide_group", None),
+            "position": getattr(b, "position", None) or "top",
         }
     return {
         "success": True,

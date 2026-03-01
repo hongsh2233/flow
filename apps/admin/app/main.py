@@ -327,6 +327,12 @@ def run_migrations():
         print(f"⚠️ 배너 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_banner_position_column import upgrade as add_banner_position_migration
+        add_banner_position_migration()
+    except Exception as e:
+        print(f"⚠️ 배너 position 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.add_exchange_rate_snapshot import run_migration as exchange_rate_migration
         exchange_rate_migration()
     except Exception as e:
