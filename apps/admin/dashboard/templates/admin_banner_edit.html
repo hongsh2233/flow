@@ -93,13 +93,6 @@
         <input type="url" name="link_url" value="{{ banner.link_url or '' }}" placeholder="https://example.com" />
       </div>
 
-      <div class="form-group">
-        <label>노출 위치 *</label>
-        <div class="display-type-option">
-          <label><input type="radio" name="display_position" value="top" {% if banner.display_position == 'top' %}checked{% endif %}> 화면 최상단</label>
-          <label><input type="radio" name="display_position" value="bottom" {% if not banner.display_position or banner.display_position == 'bottom' %}checked{% endif %}> 화면 최하단</label>
-        </div>
-      </div>
 
       <div class="form-group">
         <label>노출 페이지 경로 *</label>

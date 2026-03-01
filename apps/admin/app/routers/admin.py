@@ -359,7 +359,6 @@ async def add_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
-    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     position: str = Form("top"),
     user=Depends(get_current_user),
@@ -385,9 +384,6 @@ async def add_managed_banner(
         sg = f"slide_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     last = db.query(models.Banner).filter(models.Banner.type == "managed").order_by(models.Banner.order_index.desc()).first()
     next_order = (last.order_index + 1) if last else 0
-    pos = (display_position or "bottom").strip().lower()
-    if pos not in ("top", "bottom"):
-        pos = "bottom"
     new_banner = models.Banner(
         type="managed",
         display_type=display_type or "single",
@@ -450,7 +446,6 @@ async def update_managed_banner(
     html_content: Optional[str] = Form(None),
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
-    display_position: str = Form("bottom"),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
     position: str = Form("top"),
