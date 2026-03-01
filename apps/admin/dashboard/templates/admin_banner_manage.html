@@ -67,7 +67,7 @@
 
   <div class="section">
     <h3>배너 등록</h3>
-    <form method="POST" action="/admin/banner-manage/add" class="add-form" id="bannerForm" enctype="multipart/form-data">
+    <form method="POST" action="/admin/banner-manage/add" class="add-form" id="bannerForm">
       <div class="form-row">
         <div class="form-group">
           <label>배너 형태 *</label>
@@ -96,13 +96,11 @@
       </div>
 
       <div class="form-group" id="imageWrap">
-        <label>이미지 *</label>
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageFile').click()">
-          <p style="margin:0;color:#666;">클릭하거나 드래그하여 업로드</p>
-          <p style="margin:5px 0 0 0;font-size:12px;color:#999;">최대 5MB, JPG, PNG, GIF</p>
-        </div>
-        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
-        <input type="hidden" id="imageUrl" name="image_url" />
+        <label>이미지 URL *</label>
+        <p style="font-size:12px;color:#666;margin:0 0 6px 0;">
+          소스코드 <code>apps/web_new/public/images/banners/</code> 폴더에 이미지를 넣고 배포 후 <code>/images/banners/파일명.jpg</code> 입력, 또는 외부 URL 입력
+        </p>
+        <input type="text" id="imageUrl" name="image_url" placeholder="/images/banners/banner.jpg 또는 https://..." oninput="updatePreview(this.value)" />
         <img id="imagePreview" class="image-preview" alt="미리보기" />
       </div>
 
@@ -250,9 +248,9 @@ document.getElementById('bannerForm').addEventListener('submit', function(e) {
     return false;
   }
   const ct = document.querySelector('input[name="content_type"]:checked').value;
-  if (ct === 'image' && !document.getElementById('imageUrl').value) {
+  if (ct === 'image' && !document.getElementById('imageUrl').value.trim()) {
     e.preventDefault();
-    alert('이미지를 업로드해주세요.');
+    alert('이미지 URL을 입력해주세요.');
     return false;
   }
   if (ct === 'html' && !document.getElementById('htmlContent').value.trim()) {
@@ -264,29 +262,15 @@ document.getElementById('bannerForm').addEventListener('submit', function(e) {
   return true;
 });
 
-let isUploading = false;
-function handleFileSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { alert('5MB 이하만 가능합니다.'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('imagePreview').src = e.target.result;
-    document.getElementById('imagePreview').classList.add('show');
-  };
-  reader.readAsDataURL(file);
-  const fd = new FormData();
-  fd.append('file', file);
-  isUploading = true;
-  const btn = document.getElementById('submitBtn');
-  const orig = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '업로드 중...';
-  fetch('/api/upload-image', { method: 'POST', body: fd, credentials: 'include' })
-    .then(r => r.json())
-    .then(data => { document.getElementById('imageUrl').value = data.url; })
-    .catch(err => alert('업로드 실패: ' + err.message))
-    .finally(() => { isUploading = false; btn.disabled = false; btn.textContent = orig; });
+function updatePreview(url) {
+  const img = document.getElementById('imagePreview');
+  if (url && url.trim()) {
+    img.src = url.trim();
+    img.classList.add('show');
+  } else {
+    img.src = '';
+    img.classList.remove('show');
+  }
 }
 
 document.getElementById('htmlContent').addEventListener('input', function() {
@@ -298,16 +282,5 @@ document.getElementById('htmlContent').addEventListener('input', function() {
   }
 });
 
-const uploadArea = document.getElementById('uploadArea');
-if (uploadArea) {
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-  uploadArea.addEventListener('dragleave', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); });
-  uploadArea.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    const f = e.dataTransfer.files[0];
-    if (f && f.type.startsWith('image/')) handleFileSelect({ target: { files: [f] } });
-  });
-}
 </script>
 {% endblock %}

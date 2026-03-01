@@ -368,7 +368,6 @@ async def add_managed_banner(
     link_url: Optional[str] = Form(None),
     page_paths: str = Form(...),
     slide_group: Optional[str] = Form(None),
-    image_file: Optional[UploadFile] = File(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -379,25 +378,8 @@ async def add_managed_banner(
         return HTMLResponse("<script>alert('노출 페이지 경로를 1개 이상 추가해주세요.'); history.back();</script>")
     if content_type == "image":
         final_image_url = (image_url or "").strip()
-        if image_file and image_file.filename:
-            try:
-                file_content = await image_file.read()
-                if len(file_content) > 5 * 1024 * 1024:
-                    return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
-                if not image_file.content_type or not image_file.content_type.startswith("image/"):
-                    return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                upload_dir = "uploads/banners"
-                os.makedirs(upload_dir, exist_ok=True)
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
-                fn = f"{ts}_{safe}"
-                with open(os.path.join(upload_dir, fn), "wb") as f:
-                    f.write(file_content)
-                final_image_url = f"/uploads/banners/{fn}"
-            except Exception as e:
-                return HTMLResponse(f"<script>alert('업로드 실패: {str(e)}'); history.back();</script>")
         if not final_image_url:
-            return HTMLResponse("<script>alert('이미지를 업로드해주세요.'); history.back();</script>")
+            return HTMLResponse("<script>alert('이미지 URL을 입력해주세요.'); history.back();</script>")
         html_content = None
     else:
         html_content = (html_content or "").strip()
@@ -470,7 +452,6 @@ async def update_managed_banner(
     page_paths: str = Form(...),
     slide_group: Optional[str] = Form(None),
     is_active: str = Form("active"),
-    image_file: Optional[UploadFile] = File(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -484,25 +465,8 @@ async def update_managed_banner(
         return HTMLResponse("<script>alert('노출 페이지 경로를 1개 이상 추가해주세요.'); history.back();</script>")
     if content_type == "image":
         final_image_url = (image_url or "").strip()
-        if image_file and image_file.filename:
-            try:
-                file_content = await image_file.read()
-                if len(file_content) > 5 * 1024 * 1024:
-                    return HTMLResponse("<script>alert('5MB 이하만 가능합니다.'); history.back();</script>")
-                if not image_file.content_type or not image_file.content_type.startswith("image/"):
-                    return HTMLResponse("<script>alert('이미지 파일만 가능합니다.'); history.back();</script>")
-                upload_dir = "uploads/banners"
-                os.makedirs(upload_dir, exist_ok=True)
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                safe = "".join(c for c in image_file.filename if c.isalnum() or c in "._- ") if image_file.filename else "image"
-                fn = f"{ts}_{safe}"
-                with open(os.path.join(upload_dir, fn), "wb") as f:
-                    f.write(file_content)
-                final_image_url = f"/uploads/banners/{fn}"
-            except Exception as e:
-                return HTMLResponse(f"<script>alert('업로드 실패: {str(e)}'); history.back();</script>")
         if not final_image_url and not banner.image_url:
-            return HTMLResponse("<script>alert('이미지를 업로드해주세요.'); history.back();</script>")
+            return HTMLResponse("<script>alert('이미지 URL을 입력해주세요.'); history.back();</script>")
         banner.image_url = final_image_url or banner.image_url
         banner.html_content = None
     else:

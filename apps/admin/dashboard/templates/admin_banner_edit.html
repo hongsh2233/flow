@@ -37,7 +37,7 @@
   <h1>배너 수정</h1>
 
   <div class="section">
-    <form method="POST" action="/admin/banner-manage/update/{{ banner.id }}" class="add-form" id="editForm" enctype="multipart/form-data">
+    <form method="POST" action="/admin/banner-manage/update/{{ banner.id }}" class="add-form" id="editForm">
       <div class="form-row">
         <div class="form-group">
           <label>배너 형태 *</label>
@@ -66,11 +66,12 @@
       </div>
 
       <div class="form-group" id="imageWrap" style="display:{% if banner.content_type == 'image' %}block{% else %}none{% endif %}">
-        <label>이미지 *</label>
-        <div class="upload-area" onclick="document.getElementById('imageFile').click()">클릭하여 변경</div>
-        <input type="file" id="imageFile" name="image_file" accept="image/*" style="display:none;" onchange="handleFileSelect(event)" />
-        <input type="hidden" id="imageUrl" name="image_url" value="{{ banner.image_url or '' }}" />
-        <img id="imagePreview" class="image-preview" src="{{ banner.image_url or '' }}" alt="" {% if not banner.image_url %}style="display:none"{% endif %} />
+        <label>이미지 URL *</label>
+        <p style="font-size:12px;color:#666;margin:0 0 6px 0;">
+          소스코드 <code>apps/web_new/public/images/banners/</code> 폴더에 이미지를 넣고 배포 후 <code>/images/banners/파일명.jpg</code> 입력, 또는 외부 URL 입력
+        </p>
+        <input type="text" id="imageUrl" name="image_url" value="{{ banner.image_url or '' }}" placeholder="/images/banners/banner.jpg 또는 https://..." oninput="updatePreview(this.value)" />
+        <img id="imagePreview" class="image-preview" src="{{ banner.image_url or '' }}" alt="" {% if not banner.image_url %}style="display:none"{% else %}style="display:block"{% endif %} />
       </div>
 
       <div class="form-group" id="htmlWrap" style="display:{% if banner.content_type == 'html' %}flex{% else %}none{% endif %}">
@@ -158,9 +159,9 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
     return false;
   }
   const ct = document.querySelector('input[name="content_type"]:checked').value;
-  if (ct === 'image' && !document.getElementById('imageUrl').value) {
+  if (ct === 'image' && !document.getElementById('imageUrl').value.trim()) {
     e.preventDefault();
-    alert('이미지를 업로드해주세요.');
+    alert('이미지 URL을 입력해주세요.');
     return false;
   }
   if (ct === 'html' && !document.getElementById('htmlContent').value.trim()) {
@@ -172,21 +173,15 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
   return true;
 });
 
-function handleFileSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('imagePreview').src = e.target.result;
-    document.getElementById('imagePreview').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-  const fd = new FormData();
-  fd.append('file', file);
-  fetch('/api/upload-image', { method: 'POST', body: fd, credentials: 'include' })
-    .then(r => r.json())
-    .then(data => { document.getElementById('imageUrl').value = data.url; })
-    .catch(err => alert('업로드 실패'));
+function updatePreview(url) {
+  const img = document.getElementById('imagePreview');
+  if (url && url.trim()) {
+    img.src = url.trim();
+    img.style.display = 'block';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+  }
 }
 
 document.getElementById('htmlContent').addEventListener('input', function() {
