@@ -32,9 +32,7 @@ export const useAlarmStore = create<AlarmState>((set) => ({
       if (data.success && Array.isArray(data.data)) {
         const map: Record<number, NotifyTiming> = {};
         for (const sub of data.data) {
-          if (sub.notified === "false") {
-            map[sub.schedule_id] = sub.timing as NotifyTiming;
-          }
+          map[sub.schedule_id] = sub.timing as NotifyTiming;
         }
         set({ alarmMap: map, fetched: true });
       }

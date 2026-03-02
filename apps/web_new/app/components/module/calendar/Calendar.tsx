@@ -67,14 +67,14 @@ export function Calendar() {
 
   /* 로그인 시 알림 구독 목록 로드 (미fetch 상태일 때만 서버 요청) */
   useEffect(() => {
-    if (!email) {
+    if (status === "unauthenticated") {
       reset();
       return;
     }
-    if (!fetched) {
+    if (status === "authenticated" && !fetched) {
       fetchAlarms();
     }
-  }, [email, fetched]);
+  }, [status, fetched]);
 
   /* API 일정 로드 */
   const startDate = currentWeek[0]?.fullDate;
