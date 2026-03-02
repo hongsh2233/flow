@@ -9,19 +9,6 @@ import { StockTermBox } from "../../components/module/stock-term-box";
 import styles from "./StocksSearchPage.module.css";
 
 /* ─────────────────────────────────────────────── 타입 ── */
-interface CorpOutlineItem {
-  crno?: string;
-  corpNm?: string;
-  corpEnNm?: string;
-  ceoNm?: string;
-  bzno?: string;
-  enpBsAbgd?: string;
-  enpEstbDt?: string;
-  adres?: string;
-  homePg?: string;
-  [key: string]: unknown;
-}
-
 interface FscStockDetail {
   bas_dt?: string;
   srtn_cd?: string;
@@ -101,10 +88,6 @@ function SearchResultsContent() {
 
   const [searchTerm, setSearchTerm] = useState(q);
 
-  // 기업기본정보
-  const [corpInfo, setCorpInfo] = useState<CorpOutlineItem[]>([]);
-  const [corpLoading, setCorpLoading] = useState(false);
-
   // 주가정보
   const [stockDetail, setStockDetail] = useState<FscStockDetail | null>(null);
   const [stockLoading, setStockLoading] = useState(false);
@@ -134,14 +117,6 @@ function SearchResultsContent() {
   useEffect(() => {
     if (!q.trim()) return;
     const query = q.trim();
-
-    // 기업기본정보 (data.go.kr)
-    setCorpLoading(true);
-    fetch(`/api/corp-outline?corpNm=${encodeURIComponent(query)}`)
-      .then((r) => r.json())
-      .then((j) => setCorpInfo(Array.isArray(j.data) ? j.data : []))
-      .catch(() => setCorpInfo([]))
-      .finally(() => setCorpLoading(false));
 
     // 주가정보 (FSC)
     setStockLoading(true);
@@ -189,79 +164,7 @@ function SearchResultsContent() {
         <>
           <p className={styles.searchQueryInfo}>검색어: {q}</p>
 
-          {/* 1. 기업기본정보 */}
-          <section className={styles.searchSection}>
-            <h4 className={styles.searchSectionTitle}>기업기본정보</h4>
-            {corpLoading ? (
-              <p className={styles.loadingText}>로딩 중...</p>
-            ) : corpInfo.length === 0 ? (
-              <p className={styles.loadingText}>기업정보를 찾을 수 없습니다.</p>
-            ) : (
-              <div className={styles.corpCards}>
-                {corpInfo.map((corp, idx) => (
-                  <div key={idx} className={styles.corpCard}>
-                    <div className={styles.corpCardRow}>
-                      <span className={styles.corpCardLabel}>법인명</span>
-                      <span className={styles.corpCardValue}>{corp.corpNm ?? "-"}</span>
-                    </div>
-                    {corp.corpEnNm && (
-                      <div className={styles.corpCardRow}>
-                        <span className={styles.corpCardLabel}>영문명</span>
-                        <span className={styles.corpCardValue}>{corp.corpEnNm}</span>
-                      </div>
-                    )}
-                    <div className={styles.corpCardRow}>
-                      <span className={styles.corpCardLabel}>대표자</span>
-                      <span className={styles.corpCardValue}>{corp.ceoNm ?? "-"}</span>
-                    </div>
-                    <div className={styles.corpCardRow}>
-                      <span className={styles.corpCardLabel}>사업자등록번호</span>
-                      <span className={styles.corpCardValue}>{corp.bzno ?? "-"}</span>
-                    </div>
-                    <div className={styles.corpCardRow}>
-                      <span className={styles.corpCardLabel}>법인등록번호</span>
-                      <span className={styles.corpCardValue}>{corp.crno ?? "-"}</span>
-                    </div>
-                    {corp.enpBsAbgd && (
-                      <div className={styles.corpCardRow}>
-                        <span className={styles.corpCardLabel}>업종</span>
-                        <span className={styles.corpCardValue}>{corp.enpBsAbgd}</span>
-                      </div>
-                    )}
-                    {corp.enpEstbDt && (
-                      <div className={styles.corpCardRow}>
-                        <span className={styles.corpCardLabel}>설립일</span>
-                        <span className={styles.corpCardValue}>{corp.enpEstbDt}</span>
-                      </div>
-                    )}
-                    {corp.adres && (
-                      <div className={styles.corpCardRow}>
-                        <span className={styles.corpCardLabel}>주소</span>
-                        <span className={styles.corpCardValue}>{corp.adres}</span>
-                      </div>
-                    )}
-                    {corp.homePg && (
-                      <div className={styles.corpCardRow}>
-                        <span className={styles.corpCardLabel}>홈페이지</span>
-                        <span className={styles.corpCardValue}>
-                          <a
-                            href={corp.homePg.startsWith("http") ? corp.homePg : `https://${corp.homePg}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.corpLink}
-                          >
-                            {corp.homePg}
-                          </a>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* 2. 주가정보 */}
+          {/* 1. 주가정보 */}
           <section className={styles.searchSection}>
             <h4 className={styles.searchSectionTitle}>주가정보</h4>
             {stockLoading ? (
@@ -288,7 +191,7 @@ function SearchResultsContent() {
             )}
           </section>
 
-          {/* 3. 주식권리일정정보 */}
+          {/* 2. 주식권리일정정보 */}
           <section className={styles.searchSection}>
             <h4 className={styles.searchSectionTitle}>주식권리일정정보</h4>
             {rightLoading ? (
@@ -323,7 +226,7 @@ function SearchResultsContent() {
             )}
           </section>
 
-          {/* 4. 관련뉴스 */}
+          {/* 3. 관련뉴스 */}
           <section className={styles.searchSection}>
             <h4 className={styles.searchSectionTitle}>관련뉴스</h4>
             {newsLoading ? (

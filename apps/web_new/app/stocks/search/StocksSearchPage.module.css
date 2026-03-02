@@ -127,11 +127,11 @@
 }
 
 .corpCardRow {
-  display: flex;
-  align-items: flex-start;
-  padding: 0.45rem 0.75rem;
   border-bottom: 1px solid var(--app-border-light);
+  align-items: flex-start;
+  /* padding: .45rem .75rem; */
   font-size: 0.8rem;
+  display: flex;
 }
 
 .corpCardRow:last-child {
@@ -140,16 +140,23 @@
 
 .corpCardLabel {
   width: 8rem;
-  flex-shrink: 0;
-  font-weight: 600;
   color: var(--app-text-muted);
   background: var(--app-bg-secondary);
-  padding: 0.1rem 0;
+  /* flex-shrink: 0; */
+  padding: 2px 15px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  height: 30px;
 }
 
 .corpCardValue {
   color: var(--app-text);
   word-break: break-all;
+  height: 30px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
 }
 
 .corpLink {
