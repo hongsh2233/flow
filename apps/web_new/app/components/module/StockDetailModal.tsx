@@ -40,46 +40,24 @@ interface FscStockDetail {
   mrkt_tot_amt?: string;
 }
 
-interface RightScheduleItem {
-  basDt?: string;
-  bas_dt?: string;
-  crno?: string;
-  stckIssuCmpyNm?: string;
-  stck_issu_cmpy_nm?: string;
-  rgtExertRcdNm?: string;
-  rgt_exert_rcd_nm?: string;
-  rgtExertSttgDt?: string;
-  rgt_exert_sttg_dt?: string;
-  rgtExertEdDt?: string;
-  rgt_exert_ed_dt?: string;
-  [key: string]: unknown;
+interface NewsItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
 }
 
-interface DiviInfoItem {
-  basDt?: string;
-  bas_dt?: string;
-  crno?: string;
-  stckIssuCmpyNm?: string;
-  stck_issu_cmpy_nm?: string;
-  divBsisDt?: string;
-  div_bsis_dt?: string;
-  cshrPayDt?: string;
-  cshr_pay_dt?: string;
-  stckDrbDt?: string;
-  stck_drb_dt?: string;
-  stckGenlDiviAmt?: string;
-  stck_genl_divi_amt?: string;
-  stckDiffDiviAmt?: string;
-  stck_diff_divi_amt?: string;
-  [key: string]: unknown;
-}
-
-function getVal(item: Record<string, unknown>, ...keys: string[]): string {
-  for (const k of keys) {
-    const v = item[k];
-    if (v != null && v !== "") return String(v);
+function formatPubDate(pubDate: string): string {
+  try {
+    return new Date(pubDate).toLocaleString("ko-KR", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return pubDate;
   }
-  return "-";
 }
 
 const STOCK_INFO_COLUMNS: { key: keyof FscStockDetail; label: string }[] = [
@@ -108,11 +86,9 @@ export function StockDetailModal({
   isFavorited = false,
 }: StockDetailModalProps) {
   const [detail, setDetail] = useState<FscStockDetail | null>(null);
-  const [rightSchedule, setRightSchedule] = useState<RightScheduleItem[]>([]);
-  const [diviInfo, setDiviInfo] = useState<DiviInfoItem[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [detailLoading, setDetailLoading] = useState(true);
-  const [rightLoading, setRightLoading] = useState(true);
-  const [diviLoading, setDiviLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
 
   const loadDetail = useCallback(async () => {
     if (!stock?.code) return;
@@ -130,65 +106,32 @@ export function StockDetailModal({
     }
   }, [stock?.code]);
 
-  const loadRightSchedule = useCallback(async () => {
+  const loadNews = useCallback(async () => {
     if (!stock?.name?.trim()) {
-      setRightLoading(false);
-      setDiviLoading(false);
+      setNewsLoading(false);
       return;
     }
-    setRightLoading(true);
+    setNewsLoading(true);
     try {
-      const res = await fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(stock.name)}&page_no=1&num_of_rows=100`);
+      const res = await fetch(
+        `/api/naver-news?query=${encodeURIComponent(stock.name + " 주가")}&display=5&sort=date`
+      );
       const json = await res.json();
-      setRightSchedule(Array.isArray(json.data) ? json.data : []);
+      setNews(Array.isArray(json.data) ? json.data.slice(0, 5) : []);
     } catch {
-      setRightSchedule([]);
+      setNews([]);
     } finally {
-      setRightLoading(false);
+      setNewsLoading(false);
     }
   }, [stock?.name]);
-
-  const loadDiviInfo = useCallback(
-    async (crnoFromRight?: string, basDtFromDetail?: string) => {
-      if (!stock?.name?.trim()) {
-        setDiviLoading(false);
-        return;
-      }
-      setDiviLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.set("stck_issu_cmpy_nm", stock.name);
-        if (crnoFromRight) params.set("crno", crnoFromRight);
-        if (basDtFromDetail) params.set("bas_dt", basDtFromDetail);
-        const res = await fetch(`/api/divi-info?${params.toString()}`);
-        const json = await res.json();
-        setDiviInfo(Array.isArray(json.data) ? json.data : []);
-      } catch {
-        setDiviInfo([]);
-      } finally {
-        setDiviLoading(false);
-      }
-    },
-    [stock?.name]
-  );
 
   useEffect(() => {
     loadDetail();
   }, [loadDetail]);
 
   useEffect(() => {
-    loadRightSchedule();
-  }, [loadRightSchedule]);
-
-  useEffect(() => {
-    if (!stock?.name?.trim() || rightLoading) {
-      if (!stock?.name?.trim()) setDiviLoading(false);
-      return;
-    }
-    const crno = rightSchedule[0] ? getVal(rightSchedule[0] as Record<string, unknown>, "crno") : undefined;
-    const basDt = detail?.bas_dt;
-    loadDiviInfo(crno !== "-" ? crno : undefined, basDt);
-  }, [stock?.name, detail?.bas_dt, rightSchedule, rightLoading, loadDiviInfo]);
+    loadNews();
+  }, [loadNews]);
 
   if (!stock) return null;
 
@@ -214,9 +157,22 @@ export function StockDetailModal({
               <h2 id="stock-modal-title">{stock.name}</h2>
               <p>{stock.code}</p>
             </div>
-            <button type="button" onClick={onClose} className={styles.closeBtn} aria-label="닫기">
-              <X />
-            </button>
+            <div className={styles.headerActions}>
+              <button
+                type="button"
+                className={styles.favBtnTop}
+                onClick={() =>
+                  isFavorited ? onRemoveFavorite?.(stock) : onAddFavorite?.(stock)
+                }
+                aria-label={isFavorited ? "관심해제" : "관심 추가"}
+              >
+                <Heart aria-hidden fill={isFavorited ? "currentColor" : "none"} />
+                {isFavorited ? "관심해제" : "관심 추가"}
+              </button>
+              <button type="button" onClick={onClose} className={styles.closeBtn} aria-label="닫기">
+                <X />
+              </button>
+            </div>
           </div>
 
           <div className={styles.priceCard}>
@@ -271,96 +227,33 @@ export function StockDetailModal({
             )}
           </section>
 
-          {/* 주식권리일정정보 (최신 1건) */}
+          {/* 관련뉴스 5개 */}
           <section className={styles.section}>
-            <h4 className={styles.sectionTitle}>주식권리일정정보</h4>
-            {rightLoading ? (
+            <h4 className={styles.sectionTitle}>관련뉴스</h4>
+            {newsLoading ? (
               <p className={styles.loadingText}>로딩 중...</p>
-            ) : rightSchedule.length === 0 ? (
-              <p className={styles.loadingText}>조회 결과가 없습니다.</p>
+            ) : news.length === 0 ? (
+              <p className={styles.loadingText}>관련 뉴스를 찾을 수 없습니다.</p>
             ) : (
-              <div className={styles.tableScrollWrap}>
-                <table className={styles.infoTable}>
-                  <thead>
-                    <tr>
-                      <th>기준일자</th>
-                      <th>발행회사명</th>
-                      <th>권리행사사유</th>
-                      <th>권리행사시작일</th>
-                      <th>권리행사종료일</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(rightSchedule.slice(0, 1)).map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{getVal(item as Record<string, unknown>, "basDt", "bas_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "stckIssuCmpyNm", "stck_issu_cmpy_nm")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "rgtExertRcdNm", "rgt_exert_rcd_nm")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "rgtExertSttgDt", "rgt_exert_sttg_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "rgtExertEdDt", "rgt_exert_ed_dt")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className={styles.newsList}>
+                {news.map((item, idx) => (
+                  <a
+                    key={idx}
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.newsCard}
+                  >
+                    <p className={styles.newsTitle}>{item.title}</p>
+                    {item.description && (
+                      <p className={styles.newsDesc}>{item.description}</p>
+                    )}
+                    <p className={styles.newsDate}>{formatPubDate(item.pubDate)}</p>
+                  </a>
+                ))}
               </div>
             )}
           </section>
-
-          {/* 배당정보 */}
-          <section className={styles.section}>
-            <h4 className={styles.sectionTitle}>배당정보</h4>
-            {diviLoading ? (
-              <p className={styles.loadingText}>로딩 중...</p>
-            ) : diviInfo.length === 0 ? (
-              <p className={styles.loadingText}>조회 결과가 없습니다.</p>
-            ) : (
-              <div className={styles.tableScrollWrap}>
-                <table className={styles.infoTable}>
-                  <thead>
-                    <tr>
-                      <th>기준일자</th>
-                      <th>법인등록번호</th>
-                      <th>주식발행회사명</th>
-                      <th>배당기준일자</th>
-                      <th>현금배당지급일자</th>
-                      <th>주식교부일자</th>
-                      <th>주식일반배당금액</th>
-                      <th>주식차등배당금액</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {diviInfo.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{getVal(item as Record<string, unknown>, "basDt", "bas_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "crno")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "stckIssuCmpyNm", "stck_issu_cmpy_nm")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "divBsisDt", "div_bsis_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "cshrPayDt", "cshr_pay_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "stckDrbDt", "stck_drb_dt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "stckGenlDiviAmt", "stck_genl_divi_amt")}</td>
-                        <td>{getVal(item as Record<string, unknown>, "stckDiffDiviAmt", "stck_diff_divi_amt")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          {/* 관심 추가 / 관심해제 토글 */}
-          <div className={styles.actionGrid}>
-            <button
-              type="button"
-              className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-              onClick={() =>
-                isFavorited ? onRemoveFavorite?.(stock) : onAddFavorite?.(stock)
-              }
-              aria-label={isFavorited ? "관심해제" : "관심 추가"}
-            >
-              <Heart aria-hidden fill={isFavorited ? "currentColor" : "none"} />
-              {isFavorited ? "관심해제" : "관심 추가"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

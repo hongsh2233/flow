@@ -45,6 +45,36 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.favBtnTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.favBtnTop:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.favBtnTop svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .closeBtn {
   background: transparent;
   border: none;
@@ -132,6 +162,51 @@
   font-size: 0.875rem;
   color: var(--app-text-muted);
   padding: 0.5rem 0;
+}
+
+.newsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.newsCard {
+  display: block;
+  padding: 0.75rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.newsCard:hover {
+  background: var(--app-bg-secondary);
+}
+
+.newsTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.newsDesc {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.newsDate {
+  font-size: 0.7rem;
+  color: var(--app-text-muted);
 }
 
 .infoTableWrap {
