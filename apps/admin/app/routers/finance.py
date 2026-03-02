@@ -11,7 +11,7 @@
     - /api/krx-dates: KRX 데이터가 있는 날짜 목록 조회
     - /api/krx-data-by-date: 특정 날짜의 상세 데이터 조회
 """
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -20,6 +20,7 @@ from sqlalchemy import func, distinct
 from app.dependencies import get_current_user
 from app.database import get_db
 from app.config import ADMIN_EMAIL
+from typing import Optional
 from app.services.api_service import krx_api_service
 from app.models import KrxData
 from datetime import date, timedelta
@@ -653,10 +654,16 @@ async def get_naver_supply_data(
 async def manual_collect_naver_supply(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
+    bizdate: Optional[str] = Query(
+        default=None,
+        description="수집 기준 거래일 (YYYYMMDD). 미입력 시 마지막 거래일 자동 사용.",
+        pattern=r"^\d{8}$",
+    ),
 ):
     """
     수급 동향 데이터 수동 수집.
-    - bizdate는 오늘이 거래일이면 오늘, 주말·공휴일이면 가장 최근 거래일로 자동 설정.
+    - bizdate 미입력: 마지막 거래일 자동 산출 (주말·연속 공휴일 상관없이 직전 거래일)
+    - bizdate 직접 입력: 해당 날짜로 강제 수집 (예: ?bizdate=20260228)
     - collected_time은 'manual' 로 저장되어 스케줄 수집분과 구분됨.
     """
     if not user:
@@ -666,9 +673,14 @@ async def manual_collect_naver_supply(
             collect_all_supply_data,
             get_last_trading_date,
         )
-        bizdate = get_last_trading_date()
-        count = await collect_all_supply_data(db, bizdate=bizdate, collected_time="manual")
-        return JSONResponse({"success": True, "count": count, "bizdate": bizdate})
+        target_date = bizdate if bizdate else get_last_trading_date()
+        count = await collect_all_supply_data(db, bizdate=target_date, collected_time="manual")
+        return JSONResponse({
+            "success": True,
+            "count": count,
+            "bizdate": target_date,
+            "date_source": "입력값" if bizdate else "자동(마지막 거래일)",
+        })
     except Exception as e:
         import traceback
         print(traceback.format_exc())
