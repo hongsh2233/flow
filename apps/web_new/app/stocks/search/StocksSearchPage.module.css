@@ -52,6 +52,7 @@
   border: 1px solid var(--app-border-light);
 }
 
+/* 기본 목록형 테이블 (주식권리일정) */
 .searchTable {
   width: 100%;
   min-width: max-content;
@@ -79,4 +80,129 @@
 
 .searchTable tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* 주가정보 테이블 (key-value 형태) */
+.infoTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.infoTable th,
+.infoTable td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--app-border-light);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.infoTable th {
+  width: 8rem;
+  font-weight: 600;
+  color: var(--app-text-muted);
+  background: var(--app-bg-secondary);
+}
+
+.infoTable td {
+  color: var(--app-text);
+}
+
+.infoTable tbody tr:last-child th,
+.infoTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 기업기본정보 카드 */
+.corpCards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.corpCard {
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.corpCardRow {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--app-border-light);
+  font-size: 0.8rem;
+}
+
+.corpCardRow:last-child {
+  border-bottom: none;
+}
+
+.corpCardLabel {
+  width: 8rem;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--app-text-muted);
+  background: var(--app-bg-secondary);
+  padding: 0.1rem 0;
+}
+
+.corpCardValue {
+  color: var(--app-text);
+  word-break: break-all;
+}
+
+.corpLink {
+  color: var(--app-accent);
+  text-decoration: none;
+}
+
+.corpLink:hover {
+  text-decoration: underline;
+}
+
+/* 관련뉴스 */
+.newsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.newsCard {
+  display: block;
+  padding: 0.75rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.newsCard:hover {
+  background: var(--app-bg-secondary);
+}
+
+.newsTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.newsDesc {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.newsDate {
+  font-size: 0.7rem;
+  color: var(--app-text-muted);
 }
