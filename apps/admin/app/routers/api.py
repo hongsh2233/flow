@@ -358,6 +358,44 @@ async def get_fsc_stock_price_dates(
 
 
 # =========================================================
+# 네이버 수급 동향 API (API Key 인증)
+# =========================================================
+
+@router.get("/api/naver-supply-data")
+async def get_naver_supply_data_public(
+    data_type: str = Query("investor_day", description="데이터 타입 (investor_day)"),
+    market: str = Query("kospi", description="시장구분 (kospi, kosdaq, futures, all)"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    네이버 수급 동향 일자별 데이터 조회 (공개용, API Key 인증)
+    시간별 데이터(investor_time)는 제외하고 일자별 데이터만 제공
+    """
+    from app.models import NaverSupplyData
+    import json as _json
+    try:
+        q = db.query(NaverSupplyData).filter(
+            NaverSupplyData.data_type == data_type,
+            NaverSupplyData.market == market,
+            NaverSupplyData.sub_key.is_(None),
+        )
+        row = q.order_by(NaverSupplyData.collected_at.desc()).first()
+        if not row:
+            return {"success": True, "data": None, "bizdate": None, "collected_at": None}
+        parsed = _json.loads(row.data_json) if row.data_json else {}
+        return {
+            "success": True,
+            "data": parsed,
+            "bizdate": row.bizdate,
+            "collected_time": row.collected_time,
+            "collected_at": row.collected_at.isoformat() if row.collected_at else None,
+        }
+    except Exception as e:
+        return {"success": False, "data": None, "message": str(e)}
+
+
+# =========================================================
 # 게시판 API (기존 Token 인증 + API Key 인증 허용)
 # =========================================================
 
