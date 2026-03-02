@@ -57,9 +57,15 @@ _MARKET_REFERER = {
 # (data_type, market, sub_key, url_path, url_params)
 # bizdate 파라미터가 필요한 경우 url_params에 {bizdate} 포함
 SUPPLY_SOURCES = [
-    # 투자자별 매매동향 시간별
+    # 투자자별 매매동향 시간별 - 전체
     ("investor_time", "all", None,
      "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}"}),
+    # 투자자별 매매동향 시간별 - 코스피
+    ("investor_time", "kospi", None,
+     "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "KOSPI"}),
+    # 투자자별 매매동향 시간별 - 코스닥
+    ("investor_time", "kosdaq", None,
+     "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
     # 투자자별 매매동향 일자별 - 전체(all)
     ("investor_day", "all", None,
      "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}"}),
@@ -96,12 +102,24 @@ SUPPLY_SOURCES = [
     ("deal_rank", "kospi", "inst_sell",
      "/sise/sise_deal_rank_iframe.naver",
      {"sosok": "01", "investor_gubun": "1000", "type": "sell"}),
-    # 프로그램 매매 시간별
+    # 프로그램 매매 시간별 - 전체
     ("program_time", "all", None,
      "/sise/programDealTrendTime.naver", {"bizdate": "{bizdate}"}),
-    # 프로그램 매매 일자별
+    # 프로그램 매매 시간별 - 코스피
+    ("program_time", "kospi", None,
+     "/sise/programDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "KOSPI"}),
+    # 프로그램 매매 시간별 - 코스닥
+    ("program_time", "kosdaq", None,
+     "/sise/programDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
+    # 프로그램 매매 일자별 - 전체
     ("program_day", "all", None,
      "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}"}),
+    # 프로그램 매매 일자별 - 코스피
+    ("program_day", "kospi", None,
+     "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSPI"}),
+    # 프로그램 매매 일자별 - 코스닥
+    ("program_day", "kosdaq", None,
+     "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
 ]
 
 _BASE_HEADERS = {

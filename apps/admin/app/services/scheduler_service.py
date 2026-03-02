@@ -366,7 +366,7 @@ class FscScheduler:
 
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
 
-        # 매일 오후 2:30에 실행
+        # 매일 오후 2:30에 실행 (시가총액 상위)
         self.scheduler.add_job(
             collect_fsc_data,
             trigger=CronTrigger(hour=14, minute=30, timezone=self.kst),
@@ -375,8 +375,19 @@ class FscScheduler:
             replace_existing=True
         )
 
+        # 매일 오후 2:35에 실행 (상승종목) - 시가총액 수집 완료 후 실행
+        self.scheduler.add_job(
+            collect_rising_stocks_data,
+            trigger=CronTrigger(hour=14, minute=35, timezone=self.kst),
+            id='fsc_rising_stocks_collection',
+            name='FSC 상승종목 자동 수집',
+            replace_existing=True
+        )
+
         self.scheduler.start()
         print("✅ FSC 데이터 수집 스케줄러 시작 (매일 14:30)")
+        print(f"   - 시가총액 상위: 14:30")
+        print(f"   - 상승종목: 14:35")
         print(f"   - 주말 및 공휴일 제외")
         print(f"   - 최근 3일치 데이터만 유지\n")
 
