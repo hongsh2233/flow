@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}네이버 증권 랭킹 데이터 - Jurin-i BO{% endblock %}
+{% block title %}네이버 증권 데이터 - Jurin-i BO{% endblock %}
 
 {% block extra_styles %}
 <style>
-  .tab-container {
-    margin-top: 20px;
-  }
+  .tab-container { margin-top: 20px; }
 
   .tab-buttons {
     display: flex;
@@ -30,13 +28,9 @@
     transition: all 0.2s;
     margin-right: 3px;
     border-radius: 4px 4px 0 0;
-    position: relative;
   }
 
-  .tab-button:hover {
-    background: #f1f3f5;
-    color: #495057;
-  }
+  .tab-button:hover { background: #f1f3f5; color: #495057; }
 
   .tab-button.active {
     background: #f8f9fa;
@@ -45,29 +39,23 @@
     font-weight: 600;
   }
 
-  .tab-content {
-    display: none;
-    animation: fadeIn 0.3s;
-  }
-
-  .tab-content.active {
-    display: block;
-  }
+  .tab-content { display: none; animation: fadeIn 0.3s; }
+  .tab-content.active { display: block; }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .sub-tab-buttons {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
   }
 
   .sub-tab-button {
-    padding: 8px 16px;
+    padding: 7px 14px;
     background: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -77,9 +65,7 @@
     transition: all 0.2s;
   }
 
-  .sub-tab-button:hover {
-    background: #e9ecef;
-  }
+  .sub-tab-button:hover { background: #e9ecef; }
 
   .sub-tab-button.active {
     background: #3498db;
@@ -87,24 +73,24 @@
     border-color: #3498db;
   }
 
-  .time-selector {
+  .ctrl-row {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     align-items: center;
     flex-wrap: wrap;
   }
 
-  .time-selector select {
-    padding: 8px 12px;
+  .ctrl-row select, .ctrl-row label {
+    padding: 7px 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
     background: white;
   }
 
   .data-table-container {
-    margin-top: 20px;
+    margin-top: 12px;
     background: white;
     overflow-x: auto;
   }
@@ -112,71 +98,41 @@
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .data-table th {
     background: #f8f9fa;
-    padding: 12px;
-    text-align: left;
+    padding: 10px 8px;
+    text-align: center;
     font-weight: 600;
     color: #2c3e50;
     border-bottom: 2px solid #dee2e6;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    white-space: nowrap;
   }
 
   .data-table td {
-    padding: 12px;
+    padding: 9px 8px;
     border-bottom: 1px solid #e9ecef;
-  }
-
-  .data-table tr:hover {
-    background: #f8f9fa;
-  }
-
-  .data-table .rank {
-    text-align: center;
-    font-weight: 600;
-    color: #3498db;
-  }
-
-  .data-table .stock-name {
-    font-weight: 500;
-    color: #2c3e50;
-  }
-
-  .data-table .price {
     text-align: right;
-    font-weight: 500;
+    white-space: nowrap;
   }
 
-  .data-table .change.up {
-    color: #e74c3c;
-    font-weight: 600;
-  }
+  .data-table td:first-child { text-align: center; }
+  .data-table tr:hover { background: #f8f9fa; }
 
-  .data-table .change.down {
-    color: #3498db;
-    font-weight: 600;
-  }
+  .data-table .rank { text-align: center; font-weight: 600; color: #3498db; }
+  .data-table .stock-name { text-align: left; font-weight: 500; color: #2c3e50; }
 
-  .data-table .volume,
-  .data-table .amount {
-    text-align: right;
-  }
+  .up   { color: #e74c3c; font-weight: 600; }
+  .down { color: #3498db; font-weight: 600; }
 
   .info-box {
     background: #e8f4f8;
     border-left: 4px solid #3498db;
-    padding: 12px 16px;
-    margin-bottom: 20px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
     border-radius: 4px;
-  }
-
-  .info-box p {
-    margin: 4px 0;
     font-size: 13px;
     color: #2c3e50;
   }
@@ -189,261 +145,526 @@
 
   .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 50px 20px;
     color: #6c757d;
   }
 
-  .empty-state-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
+  .empty-state-icon { font-size: 42px; margin-bottom: 12px; }
+
+  /* 수급 동향 제네릭 테이블 */
+  .supply-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
   }
+  .supply-table th {
+    background: #ecf0f1;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #dee2e6;
+    white-space: nowrap;
+  }
+  .supply-table td {
+    padding: 7px 6px;
+    border: 1px solid #e9ecef;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .supply-table td:first-child { text-align: center; }
+  .supply-table tr:hover { background: #f8f9fa; }
+
+  /* 수급 순위 2열 레이아웃 */
+  .deal-rank-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+  }
+  @media (max-width: 900px) {
+    .deal-rank-grid { grid-template-columns: 1fr; }
+  }
+  .deal-rank-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .deal-rank-card-header {
+    background: #2c3e50;
+    color: white;
+    padding: 9px 12px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .deal-rank-card-header.buy  { background: #c0392b; }
+  .deal-rank-card-header.sell { background: #2980b9; }
+  .deal-rank-card-header.inst-buy  { background: #27ae60; }
+  .deal-rank-card-header.inst-sell { background: #8e44ad; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
     <div>
-      <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">📊 네이버 증권 랭킹 데이터</h2>
-      <p style="color: #666; margin: 0;">
-        네이버 증권에서 수집한 거래량 상위, 거래대금 상위, 검색 상위 데이터를 확인할 수 있습니다.
-      </p>
+      <h2 style="color:#2c3e50;margin-top:0;margin-bottom:5px;">📊 네이버 증권 데이터</h2>
+      <p style="color:#666;margin:0;">네이버 증권 랭킹 · 수급 동향 · 프로그램매매 데이터</p>
     </div>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-      <button type="button" id="btn-naver-manual-collect" onclick="manualCollectNaver()" style="padding: 10px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; font-weight: 500; cursor: pointer;">🔄 수동 수집</button>
-      <a href="/admin/finance-data" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">📈 한국거래소</a>
-      <a href="/admin/finance-data2" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">🏛️ 금융위원회</a>
-      <a href="/admin/yahoo-index" style="padding: 10px 16px; background: #f8f9fa; color: #495057; text-decoration: none; border-radius: 4px; font-weight: 500; border: 1px solid #dee2e6;">🌐 야후지수</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button type="button" id="btn-naver-manual-collect"
+              onclick="manualCollectNaver()"
+              style="padding:9px 14px;background:#27ae60;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;">
+        🔄 랭킹 수집
+      </button>
+      <button type="button" id="btn-supply-manual-collect"
+              onclick="manualCollectSupply()"
+              style="padding:9px 14px;background:#2980b9;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;">
+        📡 수급 수집
+      </button>
+      <a href="/admin/finance-data"  style="padding:9px 14px;background:#f8f9fa;color:#495057;text-decoration:none;border-radius:4px;font-weight:500;border:1px solid #dee2e6;">📈 한국거래소</a>
+      <a href="/admin/finance-data2" style="padding:9px 14px;background:#f8f9fa;color:#495057;text-decoration:none;border-radius:4px;font-weight:500;border:1px solid #dee2e6;">🏛️ 금융위원회</a>
     </div>
   </div>
 
-  <!-- 메인 탭 버튼 -->
+  <!-- ── 메인 탭 ── -->
   <div class="tab-buttons">
-    <button class="tab-button active" onclick="switchMainTab('volume')">
-      📈 거래량 상위
-    </button>
-    <button class="tab-button" onclick="switchMainTab('amount')">
-      💰 거래대금 상위
-    </button>
-    <button class="tab-button" onclick="switchMainTab('search')">
-      🔍 검색 상위
-    </button>
+    <button class="tab-button active" onclick="switchMainTab('volume', this)">📈 거래량 상위</button>
+    <button class="tab-button"        onclick="switchMainTab('amount', this)">💰 거래대금 상위</button>
+    <button class="tab-button"        onclick="switchMainTab('search', this)">🔍 검색 상위</button>
+    <button class="tab-button"        onclick="switchMainTab('investor', this)">👥 투자자별 매매동향</button>
+    <button class="tab-button"        onclick="switchMainTab('deal_rank', this)">🏆 수급 순위</button>
+    <button class="tab-button"        onclick="switchMainTab('program', this)">💻 프로그램 매매</button>
   </div>
 
-  <!-- 거래량 상위 탭 -->
+  <!-- ── 거래량 상위 ── -->
   <div id="tab-volume" class="tab-content active">
     <div class="sub-tab-buttons">
-      <button class="sub-tab-button active" onclick="switchSubTab('volume', 'kospi')">코스피</button>
-      <button class="sub-tab-button" onclick="switchSubTab('volume', 'kosdaq')">코스닥</button>
-      <button class="sub-tab-button" onclick="switchSubTab('volume', 'all')">전체</button>
+      <button class="sub-tab-button active" onclick="switchSubTab('volume','kospi',this)">코스피</button>
+      <button class="sub-tab-button"        onclick="switchSubTab('volume','kosdaq',this)">코스닥</button>
+      <button class="sub-tab-button"        onclick="switchSubTab('volume','all',this)">전체</button>
     </div>
-    <div class="time-selector">
+    <div class="ctrl-row">
       <label>수집 시간대:</label>
-      <select id="volume-time-selector" onchange="loadRankingData('volume', 'kospi')">
+      <select id="volume-time-selector" onchange="loadRankingData('volume',currentSubTab.volume)">
         <option value="">최신 데이터</option>
       </select>
     </div>
     <div id="volume-content"></div>
   </div>
 
-  <!-- 거래대금 상위 탭 -->
+  <!-- ── 거래대금 상위 ── -->
   <div id="tab-amount" class="tab-content">
     <div class="sub-tab-buttons">
-      <button class="sub-tab-button active" onclick="switchSubTab('amount', 'kospi')">코스피</button>
-      <button class="sub-tab-button" onclick="switchSubTab('amount', 'kosdaq')">코스닥</button>
-      <button class="sub-tab-button" onclick="switchSubTab('amount', 'all')">전체</button>
+      <button class="sub-tab-button active" onclick="switchSubTab('amount','kospi',this)">코스피</button>
+      <button class="sub-tab-button"        onclick="switchSubTab('amount','kosdaq',this)">코스닥</button>
+      <button class="sub-tab-button"        onclick="switchSubTab('amount','all',this)">전체</button>
     </div>
-    <div class="time-selector">
+    <div class="ctrl-row">
       <label>수집 시간대:</label>
-      <select id="amount-time-selector" onchange="loadRankingData('amount', 'kospi')">
+      <select id="amount-time-selector" onchange="loadRankingData('amount',currentSubTab.amount)">
         <option value="">최신 데이터</option>
       </select>
     </div>
     <div id="amount-content"></div>
   </div>
 
-  <!-- 검색 상위 탭 -->
+  <!-- ── 검색 상위 ── -->
   <div id="tab-search" class="tab-content">
-    <div class="time-selector">
+    <div class="ctrl-row">
       <label>수집 시간대:</label>
-      <select id="search-time-selector" onchange="loadRankingData('search', 'all')">
+      <select id="search-time-selector" onchange="loadRankingData('search','all')">
         <option value="">최신 데이터</option>
       </select>
     </div>
     <div id="search-content"></div>
+  </div>
+
+  <!-- ── 투자자별 매매동향 ── -->
+  <div id="tab-investor" class="tab-content">
+    <div class="sub-tab-buttons">
+      <button class="sub-tab-button active" onclick="switchSupplyMode('investor','time',this)">시간별</button>
+      <button class="sub-tab-button"        onclick="switchSupplyMode('investor','day',this)">일자별</button>
+    </div>
+    <div class="ctrl-row">
+      <label>날짜:</label>
+      <select id="investor-date-sel" onchange="loadSupplyData('investor')">
+        <option value="">최신</option>
+      </select>
+      <label>시간:</label>
+      <select id="investor-time-sel" onchange="loadSupplyData('investor')">
+        <option value="">최신</option>
+      </select>
+    </div>
+    <div id="investor-content"><div class="loading">데이터 로딩 중...</div></div>
+  </div>
+
+  <!-- ── 수급 순위 ── -->
+  <div id="tab-deal_rank" class="tab-content">
+    <div class="ctrl-row">
+      <label>날짜:</label>
+      <select id="deal-date-sel" onchange="loadDealRankAll()">
+        <option value="">최신</option>
+      </select>
+      <label>시간:</label>
+      <select id="deal-time-sel" onchange="loadDealRankAll()">
+        <option value="">최신</option>
+      </select>
+    </div>
+    <div id="deal-rank-content"><div class="loading">데이터 로딩 중...</div></div>
+  </div>
+
+  <!-- ── 프로그램 매매 ── -->
+  <div id="tab-program" class="tab-content">
+    <div class="sub-tab-buttons">
+      <button class="sub-tab-button active" onclick="switchSupplyMode('program','time',this)">시간별</button>
+      <button class="sub-tab-button"        onclick="switchSupplyMode('program','day',this)">일자별</button>
+    </div>
+    <div class="ctrl-row">
+      <label>날짜:</label>
+      <select id="program-date-sel" onchange="loadSupplyData('program')">
+        <option value="">최신</option>
+      </select>
+      <label>시간:</label>
+      <select id="program-time-sel" onchange="loadSupplyData('program')">
+        <option value="">최신</option>
+      </select>
+    </div>
+    <div id="program-content"><div class="loading">데이터 로딩 중...</div></div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  let currentMainTab = 'volume';
-  let currentSubTab = {
-    volume: 'kospi',
-    amount: 'kospi',
-    search: 'all'
-  };
+/* ── 상태 ── */
+let currentMainTab = 'volume';
+let currentSubTab  = { volume: 'kospi', amount: 'kospi', search: 'all' };
+let supplyMode     = { investor: 'time', program: 'time' }; // 'time' | 'day'
 
-  function switchMainTab(tab) {
-    // 탭 버튼 활성화
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+/* ── 랭킹 탭 전환 ── */
+function switchMainTab(tab, btn) {
+  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  currentMainTab = tab;
 
-    // 탭 컨텐츠 표시
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab === 'volume')    loadRankingData('volume', currentSubTab.volume);
+  else if (tab === 'amount') loadRankingData('amount', currentSubTab.amount);
+  else if (tab === 'search') loadRankingData('search', 'all');
+  else if (tab === 'investor') initSupplyTab('investor');
+  else if (tab === 'deal_rank') initDealRankTab();
+  else if (tab === 'program') initSupplyTab('program');
+}
 
-    currentMainTab = tab;
-    loadRankingData(tab, currentSubTab[tab]);
-  }
+function switchSubTab(mainTab, subTab, btn) {
+  const container = document.querySelector('#tab-' + mainTab + ' .sub-tab-buttons');
+  container.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSubTab[mainTab] = subTab;
+  loadRankingData(mainTab, subTab);
+}
 
-  function switchSubTab(mainTab, subTab) {
-    // 서브 탭 버튼 활성화
-    const container = document.querySelector(`#tab-${mainTab} .sub-tab-buttons`);
-    container.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+function switchSupplyMode(section, mode, btn) {
+  const container = document.querySelector('#tab-' + section + ' .sub-tab-buttons');
+  container.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  supplyMode[section] = mode;
+  loadSupplyData(section);
+}
 
-    currentSubTab[mainTab] = subTab;
-    loadRankingData(mainTab, subTab);
-  }
-
-  async function loadTimeOptions(rankingType, marketType) {
-    try {
-      const response = await fetch(`/api/naver-ranking-times?ranking_type=${rankingType}&market_type=${marketType}`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        const selector = document.getElementById(`${rankingType}-time-selector`);
-        if (selector) {
-          // 기존 옵션 유지 (최신 데이터 옵션)
-          const firstOption = selector.options[0];
-          selector.innerHTML = '';
-          selector.appendChild(firstOption);
-          
-          result.data.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.collected_time;
-            option.textContent = `${item.collected_time} (${item.latest_collected_at ? new Date(item.latest_collected_at).toLocaleString('ko-KR') : ''})`;
-            selector.appendChild(option);
-          });
-        }
-      }
-    } catch (error) {
-      console.error('수집 시간대 목록 로드 오류:', error);
+/* ══════════════════════════════════════════════
+   기존 랭킹 (거래량/거래대금/검색)
+═══════════════════════════════════════════════ */
+async function loadTimeOptions(rankingType, marketType) {
+  try {
+    const res  = await fetch(`/api/naver-ranking-times?ranking_type=${rankingType}&market_type=${marketType}`);
+    const data = await res.json();
+    if (data.success && data.data) {
+      const sel = document.getElementById(`${rankingType}-time-selector`);
+      if (!sel) return;
+      const first = sel.options[0];
+      sel.innerHTML = '';
+      sel.appendChild(first);
+      data.data.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.collected_time;
+        opt.textContent = `${item.collected_time} (${item.latest_collected_at ? new Date(item.latest_collected_at).toLocaleString('ko-KR') : ''})`;
+        sel.appendChild(opt);
+      });
     }
-  }
+  } catch (e) { console.error('시간대 로드 오류:', e); }
+}
 
-  async function loadRankingData(rankingType, marketType) {
-    const contentDiv = document.getElementById(`${rankingType}-content`);
-    contentDiv.innerHTML = '<div class="loading">데이터 로딩 중...</div>';
+async function loadRankingData(rankingType, marketType) {
+  const contentDiv = document.getElementById(`${rankingType}-content`);
+  contentDiv.innerHTML = '<div class="loading">로딩 중...</div>';
+  try {
+    const timeSelector = document.getElementById(`${rankingType}-time-selector`);
+    const collectedTime = timeSelector ? timeSelector.value : '';
+    const res  = await fetch(`/api/naver-ranking-data?ranking_type=${rankingType}&market_type=${marketType}&collected_time=${collectedTime}&limit=50`);
+    const data = await res.json();
 
-    try {
-      const timeSelector = document.getElementById(`${rankingType}-time-selector`);
-      const collectedTime = timeSelector ? timeSelector.value : null;
+    if (data.success && data.data && data.data.length > 0) {
+      await loadTimeOptions(rankingType, marketType);
+      let html = `<div class="info-box">수집: ${data.collected_time || '최신'} | 총 ${data.count}건</div>
+        <div class="data-table-container"><table class="data-table"><thead><tr>
+          <th class="rank">순위</th><th>종목명</th><th>현재가</th><th>전일대비</th><th>등락률</th>
+          ${rankingType !== 'search' ? '<th>거래량</th><th>거래대금</th>' : ''}
+        </tr></thead><tbody>`;
 
-      const response = await fetch(
-        `/api/naver-ranking-data?ranking_type=${rankingType}&market_type=${marketType}&collected_time=${collectedTime || ''}&limit=50`
-      );
-      const result = await response.json();
-
-      if (result.success && result.data && result.data.length > 0) {
-        // 시간대 옵션 로드
-        await loadTimeOptions(rankingType, marketType);
-
-        // 테이블 생성
-        let html = `
-          <div class="info-box">
-            <p><strong>수집 시간:</strong> ${result.collected_time || '최신'} | <strong>총 ${result.count}건</strong></p>
-          </div>
-          <div class="data-table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th class="rank">순위</th>
-                  <th>종목명</th>
-                  <th class="price">현재가</th>
-                  <th class="change">전일대비</th>
-                  <th class="change">등락률</th>
-                  ${rankingType !== 'search' ? '<th class="volume">거래량</th>' : ''}
-                  ${rankingType !== 'search' ? '<th class="amount">거래대금</th>' : ''}
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        result.data.forEach(item => {
-          const changeClass = item.change_percent && item.change_percent.startsWith('-') ? 'down' : 
-                             item.change_percent && item.change_percent.startsWith('+') ? 'up' : '';
-          
-          html += `
-            <tr>
-              <td class="rank">${item.rank}</td>
-              <td class="stock-name">${item.stock_name} (${item.stock_code})</td>
-              <td class="price">${item.current_price ? Number(item.current_price).toLocaleString('ko-KR') : '-'}</td>
-              <td class="change ${changeClass}">${item.change || '-'}</td>
-              <td class="change ${changeClass}">${item.change_percent || '-'}</td>
-              ${rankingType !== 'search' ? `<td class="volume">${item.volume ? Number(item.volume).toLocaleString('ko-KR') : '-'}</td>` : ''}
-              ${rankingType !== 'search' ? `<td class="amount">${item.amount ? Number(item.amount).toLocaleString('ko-KR') : '-'}</td>` : ''}
-            </tr>
-          `;
-        });
-
-        html += `
-              </tbody>
-            </table>
-          </div>
-        `;
-
-        contentDiv.innerHTML = html;
-      } else {
-        contentDiv.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📭</div>
-            <p>데이터가 없습니다.</p>
-            <p style="font-size: 12px; color: #999; margin-top: 8px;">
-              스케줄러가 11시, 16시, 21시에 자동으로 데이터를 수집합니다.
-            </p>
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error('데이터 로드 오류:', error);
-      contentDiv.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">❌</div>
-          <p>데이터를 불러오는 중 오류가 발생했습니다.</p>
-          <p style="font-size: 12px; color: #999; margin-top: 8px;">${error.message}</p>
-        </div>
-      `;
+      data.data.forEach(item => {
+        const cls = item.change_percent && item.change_percent.startsWith('-') ? 'down'
+                  : item.change_percent && item.change_percent.startsWith('+') ? 'up' : '';
+        html += `<tr>
+          <td class="rank">${item.rank}</td>
+          <td class="stock-name">${item.stock_name} (${item.stock_code})</td>
+          <td>${item.current_price ? Number(item.current_price).toLocaleString('ko-KR') : '-'}</td>
+          <td class="${cls}">${item.change || '-'}</td>
+          <td class="${cls}">${item.change_percent || '-'}</td>
+          ${rankingType !== 'search' ? `<td>${item.volume ? Number(item.volume).toLocaleString('ko-KR') : '-'}</td><td>${item.amount ? Number(item.amount).toLocaleString('ko-KR') : '-'}</td>` : ''}
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      contentDiv.innerHTML = html;
+    } else {
+      contentDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>데이터가 없습니다.</p><p style="font-size:12px;color:#999;margin-top:8px;">스케줄러가 06:30, 11시, 16시, 21시에 자동 수집합니다.</p></div>`;
     }
+  } catch (e) {
+    contentDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><p>${e.message}</p></div>`;
   }
+}
 
-  async function manualCollectNaver() {
-    const btn = document.getElementById('btn-naver-manual-collect');
-    if (!btn) return;
-    const orig = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '수집 중...';
-    try {
-      const res = await fetch('/api/naver-ranking-manual-collect', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-      const data = await res.json();
-      if (data.success) {
-        alert(`✅ 수집 완료!\n거래량: ${data.volume_count || 0}건, 거래대금: ${data.amount_count || 0}건, 검색: ${data.search_count || 0}건`);
-        loadRankingData(currentMainTab, currentSubTab[currentMainTab]);
-      } else {
-        alert('❌ ' + (data.message || '수집 실패'));
-      }
-    } catch (e) {
-      alert('❌ 오류: ' + e.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = orig;
-    }
+/* ══════════════════════════════════════════════
+   수급 동향 공통 유틸
+═══════════════════════════════════════════════ */
+function renderSupplyTable(parsed) {
+  if (!parsed || !parsed.rows || parsed.rows.length === 0) {
+    return '<div class="empty-state"><div class="empty-state-icon">📭</div><p>데이터가 없습니다.</p></div>';
   }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    loadRankingData('volume', 'kospi');
+  let html = '<div class="data-table-container"><table class="supply-table"><thead><tr>';
+  (parsed.headers || []).forEach(h => { html += `<th>${h}</th>`; });
+  html += '</tr></thead><tbody>';
+  parsed.rows.forEach(row => {
+    html += '<tr>';
+    row.forEach((cell, i) => {
+      const cls = i > 0 && String(cell).startsWith('-') ? ' class="down"'
+                : i > 0 && String(cell).startsWith('+') ? ' class="up"' : '';
+      html += `<td${cls}>${cell}</td>`;
+    });
+    html += '</tr>';
   });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+async function fillDateSel(selId, dataType) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  try {
+    const res  = await fetch(`/api/naver-supply/dates?data_type=${dataType}`);
+    const data = await res.json();
+    if (data.success) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">최신</option>';
+      (data.data || []).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+        if (d === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (e) { console.error('날짜 목록 오류:', e); }
+}
+
+async function fillTimeSel(selId, dataType, market, subKey, bizdate) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  try {
+    let url = `/api/naver-supply/times?data_type=${dataType}&market=${market}`;
+    if (subKey) url += `&sub_key=${subKey}`;
+    if (bizdate) url += `&bizdate=${bizdate}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.success) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">최신</option>';
+      (data.data || []).forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (t === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (e) { console.error('시간 목록 오류:', e); }
+}
+
+/* ══════════════════════════════════════════════
+   투자자별 매매동향 / 프로그램 매매
+═══════════════════════════════════════════════ */
+async function initSupplyTab(section) {
+  const mode = supplyMode[section];
+  const dataType = section === 'investor'
+    ? (mode === 'time' ? 'investor_time' : 'investor_day')
+    : (mode === 'time' ? 'program_time'  : 'program_day');
+
+  await fillDateSel(`${section}-date-sel`, dataType);
+  const bizdate = document.getElementById(`${section}-date-sel`).value;
+  await fillTimeSel(`${section}-time-sel`, dataType, 'all', null, bizdate || null);
+  await loadSupplyData(section);
+}
+
+async function loadSupplyData(section) {
+  const mode = supplyMode[section];
+  const dataType = section === 'investor'
+    ? (mode === 'time' ? 'investor_time' : 'investor_day')
+    : (mode === 'time' ? 'program_time'  : 'program_day');
+
+  const bizdate  = document.getElementById(`${section}-date-sel`)?.value || '';
+  const ctime    = document.getElementById(`${section}-time-sel`)?.value || '';
+  const content  = document.getElementById(`${section}-content`);
+  content.innerHTML = '<div class="loading">로딩 중...</div>';
+
+  let url = `/api/naver-supply/data?data_type=${dataType}&market=all`;
+  if (bizdate) url += `&bizdate=${bizdate}`;
+  if (ctime)   url += `&collected_time=${encodeURIComponent(ctime)}`;
+
+  try {
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (!json.success || !json.data) {
+      content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>데이터가 없습니다.</p><p style="font-size:12px;color:#999;margin-top:6px;">스케줄러가 08:30~20:30 매 30분 자동 수집합니다.</p></div>';
+      return;
+    }
+    let meta = `<div class="info-box">날짜: ${json.bizdate || '-'} | 수집: ${json.collected_time || '-'}</div>`;
+    content.innerHTML = meta + renderSupplyTable(json.data);
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><p>${e.message}</p></div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   수급 순위 (외인/기관 순매수/매도 4종 × 2시장)
+═══════════════════════════════════════════════ */
+const DEAL_RANK_DEFS = [
+  { sub_key: 'foreign_buy',  market: 'kospi',  label: '코스피 외인 순매수', cls: 'buy' },
+  { sub_key: 'foreign_sell', market: 'kospi',  label: '코스피 외인 순매도', cls: 'sell' },
+  { sub_key: 'foreign_buy',  market: 'kosdaq', label: '코스닥 외인 순매수', cls: 'buy' },
+  { sub_key: 'foreign_sell', market: 'kosdaq', label: '코스닥 외인 순매도', cls: 'sell' },
+  { sub_key: 'inst_buy',     market: 'kospi',  label: '기관 순매수',        cls: 'inst-buy' },
+  { sub_key: 'inst_sell',    market: 'kospi',  label: '기관 순매도',        cls: 'inst-sell' },
+];
+
+async function initDealRankTab() {
+  await fillDateSel('deal-date-sel', 'deal_rank');
+  const bizdate = document.getElementById('deal-date-sel').value;
+  await fillTimeSel('deal-time-sel', 'deal_rank', 'kospi', 'foreign_buy', bizdate || null);
+  await loadDealRankAll();
+}
+
+async function loadDealRankAll() {
+  const bizdate = document.getElementById('deal-date-sel')?.value || '';
+  const ctime   = document.getElementById('deal-time-sel')?.value || '';
+  const content = document.getElementById('deal-rank-content');
+  content.innerHTML = '<div class="loading">로딩 중...</div>';
+
+  try {
+    const fetches = DEAL_RANK_DEFS.map(def => {
+      let url = `/api/naver-supply/data?data_type=deal_rank&market=${def.market}&sub_key=${def.sub_key}`;
+      if (bizdate) url += `&bizdate=${bizdate}`;
+      if (ctime)   url += `&collected_time=${encodeURIComponent(ctime)}`;
+      return fetch(url).then(r => r.json()).then(json => ({ ...def, json }));
+    });
+
+    const results = await Promise.all(fetches);
+    let anyData = false;
+    let html = '<div class="deal-rank-grid">';
+
+    results.forEach(({ label, cls, json }) => {
+      html += `<div class="deal-rank-card">
+        <div class="deal-rank-card-header ${cls}">${label}</div>
+        <div style="overflow-x:auto;">`;
+      if (json.success && json.data && json.data.rows && json.data.rows.length > 0) {
+        anyData = true;
+        html += '<table class="supply-table"><thead><tr>';
+        (json.data.headers || []).forEach(h => { html += `<th>${h}</th>`; });
+        html += '</tr></thead><tbody>';
+        json.data.rows.slice(0, 30).forEach(row => {
+          html += '<tr>';
+          row.forEach((cell, i) => {
+            const cls2 = i > 0 && String(cell).startsWith('-') ? ' class="down"'
+                       : i > 0 && String(cell).startsWith('+') ? ' class="up"' : '';
+            html += `<td${cls2}>${cell}</td>`;
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      } else {
+        html += '<p style="padding:12px;color:#999;font-size:12px;">데이터 없음</p>';
+      }
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+
+    if (!anyData) {
+      content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>데이터가 없습니다.</p><p style="font-size:12px;color:#999;margin-top:6px;">스케줄러가 08:30~20:30 매 30분 자동 수집합니다.</p></div>';
+    } else {
+      const first = results.find(r => r.json.bizdate);
+      let meta = '';
+      if (first) meta = `<div class="info-box">날짜: ${first.json.bizdate || '-'} | 수집: ${first.json.collected_time || '-'}</div>`;
+      content.innerHTML = meta + html;
+    }
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><p>${e.message}</p></div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   수동 수집 버튼
+═══════════════════════════════════════════════ */
+async function manualCollectNaver() {
+  const btn = document.getElementById('btn-naver-manual-collect');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '수집 중...';
+  try {
+    const res  = await fetch('/api/naver-ranking-manual-collect', { method: 'POST', headers: {'Content-Type':'application/json'} });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✅ 랭킹 수집 완료!\n거래량: ${data.volume_count||0}건, 거래대금: ${data.amount_count||0}건, 검색: ${data.search_count||0}건`);
+      loadRankingData(currentMainTab, currentSubTab[currentMainTab] || 'all');
+    } else { alert('❌ ' + (data.message || '수집 실패')); }
+  } catch (e) { alert('❌ 오류: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+async function manualCollectSupply() {
+  const btn = document.getElementById('btn-supply-manual-collect');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '수집 중...';
+  try {
+    const res  = await fetch('/api/naver-supply/manual-collect', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✅ 수급 동향 수집 완료! (${data.count}건)`);
+      // 현재 탭 새로고침
+      if (currentMainTab === 'investor') loadSupplyData('investor');
+      else if (currentMainTab === 'deal_rank') loadDealRankAll();
+      else if (currentMainTab === 'program') loadSupplyData('program');
+    } else { alert('❌ ' + (data.message || '수집 실패')); }
+  } catch (e) { alert('❌ 오류: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+/* ── 초기 로드 ── */
+document.addEventListener('DOMContentLoaded', () => {
+  loadRankingData('volume', 'kospi');
+});
 </script>
 {% endblock %}
-

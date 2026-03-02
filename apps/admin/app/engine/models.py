@@ -382,6 +382,38 @@ class NaverStockRanking(Base):
     __table_args__ = (UniqueConstraint('ranking_type', 'market_type', 'rank', 'collected_at', name='uq_naver_ranking'),)
 
 
+class NaverSupplyData(Base):
+    """
+    네이버 수급 동향 데이터
+    - 투자자별 매매동향 (시간별 / 일자별)
+    - 수급 순위 (외인/기관 순매수/매도)
+    - 프로그램 매매 (시간별 / 일자별)
+    data_type 값:
+        'investor_time'  : 투자자별 매매동향 시간별
+        'investor_day'   : 투자자별 매매동향 일자별
+        'deal_rank'      : 수급 순위 (market/investor_type/trade_type 조합)
+        'program_time'   : 프로그램매매 시간별
+        'program_day'    : 프로그램매매 일자별
+    """
+    __tablename__ = "naver_supply_data"
+    id = Column(Integer, primary_key=True, index=True)
+    data_type = Column(String(30), nullable=False, index=True)
+    # 'kospi'|'kosdaq'|'all'  (deal_rank은 'kospi'/'kosdaq')
+    market = Column(String(20), nullable=False, default='all', index=True)
+    # deal_rank용 추가 구분: e.g. 'foreign_buy', 'foreign_sell', 'inst_buy', 'inst_sell'
+    sub_key = Column(String(30), nullable=True, index=True)
+    # 헤더+행 파싱 결과 JSON: {"headers": [...], "rows": [[...]]}
+    data_json = Column(Text, nullable=True)
+    bizdate = Column(String(8), nullable=False, index=True)   # YYYYMMDD (당일)
+    collected_time = Column(String(5), nullable=False, index=True)  # 'HH:MM'
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('data_type', 'market', 'sub_key', 'bizdate', 'collected_time',
+                         name='uq_naver_supply_data'),
+    )
+
+
 class YahooIndexSnapshot(Base):
     """
     Yahoo Finance 지수 스냅샷 (수집 시각별 기록).
