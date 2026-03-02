@@ -218,6 +218,10 @@
               style="padding:9px 14px;background:#27ae60;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;">
         🔄 랭킹 수집
       </button>
+      <input type="text" id="supply-bizdate"
+             placeholder="YYYYMMDD (선택)"
+             maxlength="8"
+             style="padding:9px 10px;border:1px solid #dee2e6;border-radius:4px;font-size:13px;width:130px;" />
       <button type="button" id="btn-supply-manual-collect"
               onclick="manualCollectSupply()"
               style="padding:9px 14px;background:#2980b9;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;">
@@ -646,13 +650,24 @@ async function manualCollectNaver() {
 async function manualCollectSupply() {
   const btn = document.getElementById('btn-supply-manual-collect');
   if (!btn) return;
+
+  const inputVal = (document.getElementById('supply-bizdate')?.value || '').trim();
+  if (inputVal && !/^\d{8}$/.test(inputVal)) {
+    alert('날짜 형식이 올바르지 않습니다. YYYYMMDD (예: 20260228)');
+    return;
+  }
+  const url = inputVal
+    ? `/api/naver-supply/manual-collect?bizdate=${inputVal}`
+    : '/api/naver-supply/manual-collect';
+
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = '수집 중...';
   try {
-    const res  = await fetch('/api/naver-supply/manual-collect', { method: 'POST' });
+    const res  = await fetch(url, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
-      alert(`✅ 수급 동향 수집 완료! (${data.count}건)`);
+      const src = data.date_source || '';
+      alert(`✅ 수급 동향 수집 완료!\n기준일: ${data.bizdate} (${src})\n수집 건수: ${data.count}건`);
       // 현재 탭 새로고침
       if (currentMainTab === 'investor') loadSupplyData('investor');
       else if (currentMainTab === 'deal_rank') loadDealRankAll();
