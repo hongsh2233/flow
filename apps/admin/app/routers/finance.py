@@ -687,3 +687,59 @@ async def manual_collect_naver_supply(
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 
+@router.get("/api/naver-supply/debug-fetch")
+async def debug_naver_supply_fetch(
+    user=Depends(get_current_user),
+    bizdate: str = Query(..., description="수집 기준 거래일 YYYYMMDD"),
+    data_type: str = Query(default="investor_time", description="data_type (investor_time/investor_day/deal_rank/program_time/program_day)"),
+):
+    """
+    수급 동향 단일 소스 디버그 수집.
+    실제 Naver로 요청을 보내고 응답 HTML 앞부분 + 파싱 결과를 반환.
+    """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    import httpx
+    from app.services.naver_supply_service import (
+        BASE_URL, SUPPLY_SOURCES, _BASE_HEADERS, _REFERER, _parse_table
+    )
+    from bs4 import BeautifulSoup
+
+    source = next((s for s in SUPPLY_SOURCES if s[0] == data_type), None)
+    if not source:
+        return JSONResponse({"error": f"알 수 없는 data_type: {data_type}"}, status_code=400)
+
+    _, market, sub_key, url_path, url_params = source
+    params = {
+        k: (v.replace("{bizdate}", bizdate) if isinstance(v, str) else v)
+        for k, v in url_params.items()
+    }
+    url = BASE_URL + url_path
+    headers = {**_BASE_HEADERS, "Referer": _REFERER.get(data_type, "https://finance.naver.com/")}
+
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=20.0, follow_redirects=True) as client:
+            response = await client.get(url, params=params)
+        status = response.status_code
+        try:
+            content = response.content.decode("euc-kr", errors="replace")
+        except Exception:
+            content = response.text
+
+        soup = BeautifulSoup(content, "html.parser")
+        parsed = _parse_table(soup)
+
+        return JSONResponse({
+            "url": str(response.url),
+            "status_code": status,
+            "html_preview": content[:800],
+            "parsed_headers": parsed.get("headers", []),
+            "parsed_row_count": len(parsed.get("rows", [])),
+            "parsed_rows_preview": parsed.get("rows", [])[:3],
+        })
+    except Exception as e:
+        import traceback
+        return JSONResponse({"error": str(e), "traceback": traceback.format_exc()}, status_code=500)
+
+
