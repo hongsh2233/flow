@@ -624,7 +624,18 @@ async function loadSupplyData(section) {
 
   try {
     const res  = await fetch(url);
-    const json = await res.json();
+    let json = await res.json();
+
+    // 선택 시장 데이터 없으면 'all' 데이터로 폴백 (미수집 기간 대비)
+    if ((!json.success || !json.data) && market !== 'all') {
+      let fallbackUrl = `/api/naver-supply/data?data_type=${dataType}&market=all`;
+      if (bizdate) fallbackUrl += `&bizdate=${bizdate}`;
+      if (ctime)   fallbackUrl += `&collected_time=${encodeURIComponent(ctime)}`;
+      const fbRes  = await fetch(fallbackUrl);
+      const fbJson = await fbRes.json();
+      if (fbJson.success && fbJson.data) json = fbJson;
+    }
+
     if (!json.success || !json.data) {
       content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>데이터가 없습니다.</p><p style="font-size:12px;color:#999;margin-top:6px;">스케줄러가 08:30~20:30 매 30분 자동 수집합니다.</p></div>';
       return;
