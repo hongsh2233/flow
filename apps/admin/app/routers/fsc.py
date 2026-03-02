@@ -12,7 +12,7 @@
 """
 import time
 from typing import Optional
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -54,6 +54,45 @@ async def get_fsc_dates(user=Depends(get_current_user), db: Session = Depends(ge
     except Exception as e:
         print(f"❌ get_fsc_dates 오류: {str(e)}")
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/api/corp-outline")
+async def get_corp_outline(
+    corp_nm: Optional[str] = Query(None, alias="corpNm"),
+    page_no: int = 1,
+    num_of_rows: int = 50,
+    auth=Depends(get_current_user_or_api_key_for_fsc),
+):
+    """
+    기업개요조회 - 금융위원회_기업기본정보 getCorpOutline_V2
+
+    종목명(법인명)으로 기업기본정보를 조회합니다.
+    쿠키(관리자) 또는 X-API-KEY(FE) 인증을 모두 허용합니다.
+    """
+    corp_nm = (corp_nm or "").strip()
+    if not corp_nm:
+        return JSONResponse(
+            {"error": "corpNm(법인명)을 입력해 주세요.", "data": []},
+            status_code=400,
+        )
+    try:
+        items, total_count = await fsc_api_service.fetch_corp_outline(
+            corp_nm=corp_nm, page_no=page_no, num_of_rows=num_of_rows
+        )
+        items = items or []
+        return JSONResponse(
+            {
+                "data": items,
+                "total_count": total_count or 0,
+                "count": len(items),
+            }
+        )
+    except Exception as e:
+        import traceback
+
+        print(f"❌ get_corp_outline 오류: {str(e)}")
+        print(traceback.format_exc())
+        return JSONResponse({"error": str(e), "data": []}, status_code=500)
 
 
 @router.get("/api/stock-price")

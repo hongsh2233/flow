@@ -870,7 +870,12 @@ class FscApiService:
         """손익계산서조회 getIncoStat_V2"""
         return await self._fetch_fina_stat_one("getIncoStat_V2", crno, biz_year)
 
-    async def fetch_corp_outline(self) -> tuple[Optional[List], int]:
+    async def fetch_corp_outline(
+        self,
+        corp_nm: Optional[str] = None,
+        page_no: int = 1,
+        num_of_rows: int = 500,
+    ) -> tuple[Optional[List], int]:
         """
         기업개요 목록 조회
 
@@ -884,10 +889,12 @@ class FscApiService:
 
         params = {
             "serviceKey": self.api_key,
-            "pageNo": 1,
-            "numOfRows": 500,  # 최대 500개
-            "resultType": "json"
+            "pageNo": page_no,
+            "numOfRows": num_of_rows,  # 최대 500개
+            "resultType": "json",
         }
+        if corp_nm:
+            params["corpNm"] = corp_nm.strip()
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -928,7 +935,8 @@ class FscApiService:
                         print(f"법인등록번호가 있는 항목: {len(items_with_jurir)}개")
                         print(f"사업자등록번호가 있는 항목: {len(items_with_bizr)}개")
                     
-                    return items[:500], total_count  # 최대 500개로 제한
+                    # num_of_rows 로 제한 (기본 500개)
+                    return items[:num_of_rows], total_count
                 else:
                     print(f"⚠️ 기업개요 데이터가 비어있음")
                     return [], 0

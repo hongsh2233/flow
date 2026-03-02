@@ -1,88 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const DATA_GO_KR_API_KEY = process.env.DATA_GO_KR_API_KEY || "";
-
-const BASE_URL =
-  "https://apis.data.go.kr/1160100/service/GetCorpBasicInfoService_V2/getCorpOutline_V2";
+import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
 
 /**
- * 기업개요조회 - 금융위원회_기업기본정보 getCorpOutline_V2
+ * 기업개요조회 - BO(FastAPI) /api/corp-outline 경유
  *
- * data.go.kr serviceKey 주의사항:
- *   포털에서 제공되는 인코딩(encoded) 키를 그대로 사용할 경우
- *   URLSearchParams 를 거치면 이중 인코딩이 발생하여 API가 거부합니다.
- *   따라서 serviceKey 는 URL 문자열에 직접 이어붙이고,
- *   나머지 파라미터만 URLSearchParams 로 인코딩합니다.
+ * corpNm(법인명)으로 기업기본정보를 조회한다.
+ * BO 쪽에서 data.go.kr 금융위원회_기업기본정보 getCorpOutline_V2 를 호출한다.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const corpNm = searchParams.get("corpNm")?.trim() ?? "";
-
-  if (!corpNm) {
-    return NextResponse.json(
-      { success: false, message: "corpNm 파라미터가 필요합니다.", data: [] },
-      { status: 400 }
-    );
-  }
-
-  if (!DATA_GO_KR_API_KEY) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "DATA_GO_KR_API_KEY 환경변수가 설정되지 않았습니다.",
-        data: [],
-      },
-      { status: 500 }
-    );
-  }
-
   try {
-    // serviceKey 는 직접 붙여 이중 인코딩 방지
-    const otherParams = new URLSearchParams({
-      corpNm,
-      pageNo: "1",
-      numOfRows: "10",
-      resultType: "json",
-    });
-    const url = `${BASE_URL}?serviceKey=${DATA_GO_KR_API_KEY}&${otherParams.toString()}`;
+    const { searchParams } = new URL(request.url);
+    const corpNm = searchParams.get("corpNm")?.trim() ?? "";
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-
-    const text = await response.text();
-
-    // XML 오류 응답 처리 (resultType=json 임에도 XML 로 오는 경우 있음)
-    if (text.trimStart().startsWith("<")) {
-      console.error("Corp outline API returned XML:", text.slice(0, 300));
-      const codeMatch = text.match(/<errMsg>(.*?)<\/errMsg>/);
-      const msg = codeMatch?.[1] ?? "기업정보 조회에 실패했습니다. (XML 오류)";
-      return NextResponse.json({ success: false, message: msg, data: [] }, { status: 502 });
-    }
-
-    const json = JSON.parse(text);
-
-    // 정상 응답 코드 확인
-    const resultCode = json?.response?.header?.resultCode;
-    if (resultCode && resultCode !== "00" && resultCode !== "000") {
-      const resultMsg = json?.response?.header?.resultMsg ?? "알 수 없는 오류";
-      console.error(`Corp outline API resultCode ${resultCode}: ${resultMsg}`);
+    if (!corpNm) {
       return NextResponse.json(
-        { success: false, message: `API 오류 (${resultCode}): ${resultMsg}`, data: [] },
-        { status: 502 }
+        { success: false, message: "corpNm 파라미터가 필요합니다.", data: [] },
+        { status: 400 }
       );
     }
 
-    const raw = json?.response?.body?.items?.item;
-    const list: unknown[] = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
+    const params = new URLSearchParams();
+    searchParams.forEach((value, key) => {
+      params.append(key, value);
+    });
 
-    return NextResponse.json({ success: true, data: list, total: list.length });
+    // 기본 조회 범위 지정 (없으면 BO 기본값 사용)
+    if (!params.has("page_no")) {
+      params.set("page_no", "1");
+    }
+    if (!params.has("num_of_rows")) {
+      params.set("num_of_rows", "50");
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (API_SECRET_KEY) {
+      headers["X-API-KEY"] = API_SECRET_KEY;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/corp-outline?${params.toString()}`,
+      {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          success: false,
+          message: err.error || "기업기본정보 조회에 실패했습니다.",
+          data: [],
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    // BO 응답 그대로 전달 (Search 페이지는 data 배열만 사용)
+    return NextResponse.json({
+      success: true,
+      data: Array.isArray(data.data) ? data.data : [],
+      total: data.total_count ?? data.count ?? 0,
+    });
   } catch (error) {
-    console.error("Corp outline API error:", error);
+    console.error("Corp outline proxy error:", error);
     return NextResponse.json(
-      { success: false, message: "기업정보 조회 중 오류가 발생했습니다.", data: [] },
+      {
+        success: false,
+        message: "기업정보 조회 중 오류가 발생했습니다.",
+        data: [],
+      },
       { status: 500 }
     );
   }
