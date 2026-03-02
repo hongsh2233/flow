@@ -10,11 +10,31 @@ import json
 import httpx
 from bs4 import BeautifulSoup, Tag
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import pytz
 
 from app.models import NaverSupplyData
+
+
+def get_last_trading_date() -> str:
+    """
+    가장 최근 거래일을 YYYYMMDD 형식으로 반환.
+    오늘이 주말·공휴일이면 직전 평일로 거슬러 올라간다.
+    공휴일(고정) 체크만 포함 — 음력 공휴일은 scheduler_service 쪽과 동일하게 최대 14일까지 후퇴.
+    """
+    from app.services.scheduler_service import is_weekend, is_korean_holiday
+
+    kst = pytz.timezone("Asia/Seoul")
+    candidate = datetime.now(kst)
+
+    for _ in range(14):  # 최대 2주 이내에서 거래일 탐색
+        if not is_weekend(candidate) and not is_korean_holiday(candidate):
+            return candidate.strftime("%Y%m%d")
+        candidate -= timedelta(days=1)
+
+    # fallback: 그냥 오늘 날짜
+    return datetime.now(kst).strftime("%Y%m%d")
 
 BASE_URL = "https://finance.naver.com"
 
@@ -252,16 +272,25 @@ def cleanup_old_supply_data(db: Session, keep_days: int = 5) -> None:
         print(f"  ❌ 수급 데이터 정리 오류: {e}")
 
 
-async def collect_all_supply_data(db: Session) -> int:
+async def collect_all_supply_data(
+    db: Session,
+    bizdate: Optional[str] = None,
+    collected_time: Optional[str] = None,
+) -> int:
     """
     모든 수급 동향 데이터 수집 및 저장.
+    - bizdate: 수집 기준 거래일 (YYYYMMDD). None 이면 오늘 날짜 사용 (스케줄러용)
+    - collected_time: 저장 시각 레이블. None 이면 현재 시 기준 :30 사용.
+                      수동 수집 시에는 'manual' 을 권장.
     반환값: 성공 건수
     """
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
-    bizdate = now.strftime("%Y%m%d")
-    # 1시간 단위 기준으로 저장 (ex. 09:37 → '09:30', 스케줄이 매 시 30분에 실행)
-    collected_time = f"{now.hour:02d}:30"
+    if bizdate is None:
+        bizdate = now.strftime("%Y%m%d")
+    if collected_time is None:
+        # 1시간 단위 기준으로 저장 (ex. 09:37 → '09:30', 스케줄이 매 시 30분에 실행)
+        collected_time = f"{now.hour:02d}:30"
 
     success = 0
     for (data_type, market, sub_key, url_path, url_params) in SUPPLY_SOURCES:
