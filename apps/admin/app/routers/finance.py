@@ -654,19 +654,21 @@ async def manual_collect_naver_supply(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """수급 동향 데이터 수동 수집 (주말/공휴일 제외)"""
+    """
+    수급 동향 데이터 수동 수집.
+    - bizdate는 오늘이 거래일이면 오늘, 주말·공휴일이면 가장 최근 거래일로 자동 설정.
+    - collected_time은 'manual' 로 저장되어 스케줄 수집분과 구분됨.
+    """
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
-    from app.services.scheduler_service import should_skip_today
-    if should_skip_today():
-        return JSONResponse({
-            "success": False,
-            "message": "주말 또는 공휴일에는 수집하지 않습니다.",
-        }, status_code=400)
     try:
-        from app.services.naver_supply_service import collect_all_supply_data
-        count = await collect_all_supply_data(db)
-        return JSONResponse({"success": True, "count": count})
+        from app.services.naver_supply_service import (
+            collect_all_supply_data,
+            get_last_trading_date,
+        )
+        bizdate = get_last_trading_date()
+        count = await collect_all_supply_data(db, bizdate=bizdate, collected_time="manual")
+        return JSONResponse({"success": True, "count": count, "bizdate": bizdate})
     except Exception as e:
         import traceback
         print(traceback.format_exc())
