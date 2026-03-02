@@ -45,29 +45,12 @@ function formatDateLabel(dt: string | null | undefined): string {
 }
 
 type MarketType = "KOSPI" | "KOSDAQ";
-type SupplyMarket = "kospi" | "kosdaq" | "futures";
 
 interface SectorItem {
   name: string;
   value: number;
   change: number;
 }
-
-interface SupplyTableData {
-  headers: string[];
-  rows: string[][];
-}
-
-// 투자자별 일자별 순매수 - 고정 헤더 구조 (colspan/rowspan 포함)
-const INVESTOR_DAY_HEADER_GROUPS = [
-  { label: "날짜", rowSpan: 2 },
-  { label: "개인", rowSpan: 2 },
-  { label: "외국인", rowSpan: 2 },
-  { label: "기관계", rowSpan: 2 },
-  { label: "기관", colSpan: 6 },
-  { label: "기타법인", rowSpan: 2 },
-];
-const INVESTOR_DAY_SUB_HEADERS = ["금융투자", "보험", "투신(사모)", "은행", "기타금융기관", "연기금등"];
 
 export default function StocksPage() {
   const router = useRouter();
@@ -132,25 +115,12 @@ export default function StocksPage() {
   const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
   const [marketCapKospi, setMarketCapKospi] = useState<MarketCapStock[]>([]);
   const [marketCapKosdaq, setMarketCapKosdaq] = useState<MarketCapStock[]>([]);
+  const [marketCapDate, setMarketCapDate] = useState<string | null>(null);
   const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
   const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
   const [risingDate, setRisingDate] = useState<string | null>(null);
   const [marketCapLoading, setMarketCapLoading] = useState(false);
   const [risingLoading, setRisingLoading] = useState(false);
-
-  // 수급 탭
-  const [supplyMarket, setSupplyMarket] = useState<SupplyMarket>("kospi");
-  const [supplyData, setSupplyData] = useState<Record<SupplyMarket, SupplyTableData | null>>({
-    kospi: null,
-    kosdaq: null,
-    futures: null,
-  });
-  const [supplyDate, setSupplyDate] = useState<Record<SupplyMarket, string | null>>({
-    kospi: null,
-    kosdaq: null,
-    futures: null,
-  });
-  const [supplyLoading, setSupplyLoading] = useState(false);
 
   useEffect(() => {
     if (activeTab !== "market") return;
@@ -230,8 +200,10 @@ export default function StocksPage() {
           fetch("/api/fsc-stock-price?limit=50&mrkt_ctg=KOSPI&order_by=mrkt_tot_amt&order_direction=desc"),
           fetch("/api/fsc-stock-price?limit=50&mrkt_ctg=KOSDAQ&order_by=mrkt_tot_amt&order_direction=desc"),
         ]);
-        const kospiData = (await kospiRes.json()).data ?? [];
+        const kospiJson = await kospiRes.json();
         const kosdaqData = (await kosdaqRes.json()).data ?? [];
+        const kospiData = kospiJson.data ?? [];
+        if (kospiJson.bas_dt) setMarketCapDate(kospiJson.bas_dt);
         setMarketCapKospi(kospiData.map((r: { srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string; mrkt_tot_amt?: string }, i: number) => ({
           rank: i + 1,
           name: r.itms_nm ?? "",
@@ -299,29 +271,8 @@ export default function StocksPage() {
     load();
   }, [activeTab]);
 
-  useEffect(() => {
-    if (activeTab !== "supply") return;
-    const load = async (market: SupplyMarket) => {
-      try {
-        const res = await fetch(`/api/naver-supply?data_type=investor_day&market=${market}`);
-        const json = await res.json();
-        if (json.success && json.data) {
-          setSupplyData((prev) => ({ ...prev, [market]: json.data as SupplyTableData }));
-          setSupplyDate((prev) => ({ ...prev, [market]: json.bizdate ?? null }));
-        }
-      } catch {
-        // ignore
-      }
-    };
-    setSupplyLoading(true);
-    Promise.all([load("kospi"), load("kosdaq"), load("futures")]).finally(() =>
-      setSupplyLoading(false)
-    );
-  }, [activeTab]);
-
   const marketCapStocks = marketCapTab === "KOSPI" ? marketCapKospi : marketCapKosdaq;
   const risingStocks = risingTab === "KOSPI" ? risingKospi : risingKosdaq;
-
   const handleSearch = useCallback(
     (query: string) => {
       const q = query.trim();
@@ -330,9 +281,6 @@ export default function StocksPage() {
     },
     [router]
   );
-
-  const currentSupplyData = supplyData[supplyMarket];
-  const currentSupplyDate = supplyDate[supplyMarket];
 
   return (
     <div className={styles.page}>
@@ -354,7 +302,6 @@ export default function StocksPage() {
           <TabsTrigger value="market" className={styles.tab}>시장현황</TabsTrigger>
           <TabsTrigger value="marketcap" className={styles.tab}>시총상위</TabsTrigger>
           <TabsTrigger value="rising" className={styles.tab}>상승종목</TabsTrigger>
-          <TabsTrigger value="supply" className={styles.tab}>수급</TabsTrigger>
         </TabsList>
 
         {/* 관심종목 */}
@@ -497,21 +444,26 @@ export default function StocksPage() {
 
         {/* 시총상위 */}
         <TabsContent value="marketcap" className={styles.tabContent}>
-          <div className={styles.subTabList}>
-            <button
-              type="button"
-              className={marketCapTab === "KOSPI" ? styles.subTabActive : styles.subTab}
-              onClick={() => setMarketCapTab("KOSPI")}
-            >
-              코스피
-            </button>
-            <button
-              type="button"
-              className={marketCapTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
-              onClick={() => setMarketCapTab("KOSDAQ")}
-            >
-              코스닥
-            </button>
+          <div className={styles.subTabRow}>
+            <div className={styles.subTabList}>
+              <button
+                type="button"
+                className={marketCapTab === "KOSPI" ? styles.subTabActive : styles.subTab}
+                onClick={() => setMarketCapTab("KOSPI")}
+              >
+                코스피
+              </button>
+              <button
+                type="button"
+                className={marketCapTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
+                onClick={() => setMarketCapTab("KOSDAQ")}
+              >
+                코스닥
+              </button>
+            </div>
+            {marketCapDate && (
+              <span className={styles.dateLabel}>{formatDateLabel(marketCapDate)}</span>
+            )}
           </div>
           {marketCapLoading ? (
             <p className={styles.loadingText}>로딩 중...</p>
@@ -586,76 +538,6 @@ export default function StocksPage() {
           )}
         </TabsContent>
 
-        {/* 수급 */}
-        <TabsContent value="supply" className={styles.tabContent}>
-          <div className={styles.subTabRow}>
-            <div className={styles.subTabList}>
-              <button
-                type="button"
-                className={supplyMarket === "kospi" ? styles.subTabActive : styles.subTab}
-                onClick={() => setSupplyMarket("kospi")}
-              >
-                코스피
-              </button>
-              <button
-                type="button"
-                className={supplyMarket === "kosdaq" ? styles.subTabActive : styles.subTab}
-                onClick={() => setSupplyMarket("kosdaq")}
-              >
-                코스닥
-              </button>
-              <button
-                type="button"
-                className={supplyMarket === "futures" ? styles.subTabActive : styles.subTab}
-                onClick={() => setSupplyMarket("futures")}
-              >
-                선물
-              </button>
-            </div>
-            {currentSupplyDate && (
-              <span className={styles.dateLabel}>{formatDateLabel(currentSupplyDate)}</span>
-            )}
-          </div>
-          {supplyLoading ? (
-            <p className={styles.loadingText}>로딩 중...</p>
-          ) : !currentSupplyData || currentSupplyData.rows.length === 0 ? (
-            <p className={styles.loadingText}>수급 데이터가 없습니다.</p>
-          ) : (
-            <div className={styles.supplyTableWrap}>
-              <table className={styles.supplyTable}>
-                <thead>
-                  <tr>
-                    {INVESTOR_DAY_HEADER_GROUPS.map((h) => (
-                      <th
-                        key={h.label}
-                        rowSpan={h.rowSpan}
-                        colSpan={h.colSpan}
-                      >
-                        {h.label}
-                      </th>
-                    ))}
-                  </tr>
-                  <tr>
-                    {INVESTOR_DAY_SUB_HEADERS.map((h) => (
-                      <th key={h}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentSupplyData.rows.map((row, rowIdx) => (
-                    <tr key={rowIdx}>
-                      {row.map((cell, cellIdx) => (
-                        <td key={cellIdx} className={cellIdx === 0 ? styles.supplyDateCell : undefined}>
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* 모달 */}
