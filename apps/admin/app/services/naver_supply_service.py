@@ -46,6 +46,12 @@ _REFERER = {
     "program_time":   "https://finance.naver.com/sise/programDealTrend.naver",
     "program_day":    "https://finance.naver.com/sise/programDealTrend.naver",
 }
+# 시장별 Referer (sosok 파라미터에 따라 다를 수 있음)
+_MARKET_REFERER = {
+    "kospi":   "https://finance.naver.com/sise/investorDealTrend.naver?sosok=KOSPI",
+    "kosdaq":  "https://finance.naver.com/sise/investorDealTrend.naver?sosok=KOSDAQ",
+    "futures": "https://finance.naver.com/sise/investorDealTrend.naver?sosok=선물",
+}
 
 # 수집할 데이터 소스 정의
 # (data_type, market, sub_key, url_path, url_params)
@@ -54,9 +60,18 @@ SUPPLY_SOURCES = [
     # 투자자별 매매동향 시간별
     ("investor_time", "all", None,
      "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}"}),
-    # 투자자별 매매동향 일자별
+    # 투자자별 매매동향 일자별 - 전체(all)
     ("investor_day", "all", None,
      "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}"}),
+    # 투자자별 매매동향 일자별 - 코스피
+    ("investor_day", "kospi", None,
+     "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSPI"}),
+    # 투자자별 매매동향 일자별 - 코스닥
+    ("investor_day", "kosdaq", None,
+     "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
+    # 투자자별 매매동향 일자별 - 선물
+    ("investor_day", "futures", None,
+     "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "선물"}),
     # 수급 순위 - 코스피 외인 순매수
     ("deal_rank", "kospi", "foreign_buy",
      "/sise/sise_deal_rank_iframe.naver",
@@ -107,6 +122,7 @@ HEADERS = _BASE_HEADERS
 def _parse_table(soup: BeautifulSoup) -> dict:
     """
     HTML에서 테이블을 파싱하여 {"headers": [...], "rows": [[...]]} 반환.
+    colspan/rowspan을 올바르게 처리하여 데이터 행과 정확히 매핑되는 컬럼명 추출.
     blank_08 클래스를 가진 행/셀은 제거.
     """
     # blank_08 행 제거
@@ -131,26 +147,73 @@ def _parse_table(soup: BeautifulSoup) -> dict:
     headers: list[str] = []
     rows: list[list[str]] = []
 
-    # thead 파싱 (multi-row 헤더 처리: rowspan/colspan 무시하고 텍스트만 수집)
+    # 헤더 행 찾기
     thead = table.find("thead")
+    header_rows = []
+    header_row_ids: set = set()
+
     if thead:
-        for tr in thead.find_all("tr"):
-            for th in tr.find_all(["th", "td"]):
-                text = th.get_text(strip=True)
-                if text:
-                    headers.append(text)
+        header_rows = thead.find_all("tr")
+        header_row_ids = {id(tr) for tr in header_rows}
     else:
-        # thead 없으면 첫 tr을 헤더로
-        first_tr = table.find("tr")
-        if first_tr:
-            for th in first_tr.find_all(["th", "td"]):
-                text = th.get_text(strip=True)
-                if text:
-                    headers.append(text)
+        # thead 없으면 th를 포함하는 연속된 row들을 헤더로 처리
+        all_trs = table.find_all("tr")
+        for tr in all_trs:
+            if tr.find("th"):
+                header_rows.append(tr)
+                header_row_ids.add(id(tr))
+            else:
+                break
+
+    # colspan/rowspan 그리드 방식으로 헤더 처리
+    # 각 컬럼에서 가장 깊은(leaf) 실제 텍스트 셀 추출
+    if header_rows:
+        # grid[(row, col)] = {"text": str} 또는 {"occupied": True}
+        grid: dict = {}
+        for row_i, tr in enumerate(header_rows):
+            col_i = 0
+            for cell in tr.find_all(["th", "td"]):
+                # rowspan에 의해 이미 점유된 셀 건너뜀
+                while (row_i, col_i) in grid:
+                    col_i += 1
+                text = cell.get_text(" ", strip=True)
+                try:
+                    rowspan = int(cell.get("rowspan") or 1)
+                except (ValueError, TypeError):
+                    rowspan = 1
+                try:
+                    colspan = int(cell.get("colspan") or 1)
+                except (ValueError, TypeError):
+                    colspan = 1
+
+                # 현재 셀 등록
+                grid[(row_i, col_i)] = {"text": text}
+                # rowspan/colspan에 의해 점유되는 나머지 셀 마킹
+                for r in range(rowspan):
+                    for c in range(colspan):
+                        if r == 0 and c == 0:
+                            continue
+                        grid[(row_i + r, col_i + c)] = {"occupied": True}
+                col_i += colspan
+
+        if grid:
+            max_row = max(r for r, _ in grid.keys())
+            max_col = max(c for _, c in grid.keys())
+            # 각 컬럼에서 가장 아래 행부터 올라가며 실제 텍스트 셀 찾기
+            for col in range(max_col + 1):
+                for row in range(max_row, -1, -1):
+                    cell_data = grid.get((row, col))
+                    if cell_data and not cell_data.get("occupied"):
+                        if cell_data["text"]:
+                            headers.append(cell_data["text"])
+                        break
 
     # tbody 파싱
     tbody = table.find("tbody") or table
     for tr in tbody.find_all("tr"):
+        # 헤더 행은 건너뜀
+        if id(tr) in header_row_ids:
+            continue
         cells = tr.find_all(["td", "th"])
         if not cells:
             continue
@@ -184,7 +247,9 @@ async def fetch_supply_source(
     url = BASE_URL + url_path
 
     # URL별 정확한 Referer 설정 (iframe 페이지 차단 방지)
-    headers = {**_BASE_HEADERS, "Referer": _REFERER.get(data_type, "https://finance.naver.com/")}
+    # 시장별 referer 우선 적용, 없으면 data_type별 referer 사용
+    referer = _MARKET_REFERER.get(market) or _REFERER.get(data_type, "https://finance.naver.com/")
+    headers = {**_BASE_HEADERS, "Referer": referer}
 
     async with httpx.AsyncClient(
         headers=headers, timeout=timeout, follow_redirects=True

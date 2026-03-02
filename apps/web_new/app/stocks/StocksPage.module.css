@@ -68,12 +68,28 @@
   padding: 0 1rem;
 }
 
+/* Sub-tab row (탭 + 날짜 레이블) */
+.subTabRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* 날짜 기준 레이블 */
+.dateLabel {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Sub-tabs (코스피/코스닥) - 메인 탭과 동일한 pill 스타일 */
 .subTabList {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .subTab {
@@ -454,4 +470,54 @@
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--app-kosdaq-label);
+}
+
+/* 수급 테이블 */
+.supplyTableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border-light);
+}
+
+.supplyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  min-width: 600px;
+}
+
+.supplyTable th,
+.supplyTable td {
+  padding: 0.4rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid var(--app-border-light);
+  border-right: 1px solid var(--app-border-light);
+}
+
+.supplyTable th:last-child,
+.supplyTable td:last-child {
+  border-right: none;
+}
+
+.supplyTable th {
+  font-weight: 600;
+  color: var(--app-text-muted);
+  background: var(--app-bg-secondary);
+  text-align: center;
+}
+
+.supplyTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.supplyTable tbody tr:hover {
+  background: var(--app-bg-secondary);
+}
+
+.supplyDateCell {
+  text-align: left !important;
+  font-weight: 500;
+  color: var(--app-text);
 }
