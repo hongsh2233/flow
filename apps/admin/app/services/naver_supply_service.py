@@ -18,9 +18,18 @@ from app.models import NaverSupplyData
 
 BASE_URL = "https://finance.naver.com"
 
+# URL별 정확한 Referer (iframe 페이지 차단 방지)
+_REFERER = {
+    "investor_time":  "https://finance.naver.com/sise/investorDealTrend.naver",
+    "investor_day":   "https://finance.naver.com/sise/investorDealTrend.naver",
+    "deal_rank":      "https://finance.naver.com/sise/sise_deal_rank.naver",
+    "program_time":   "https://finance.naver.com/sise/programDealTrend.naver",
+    "program_day":    "https://finance.naver.com/sise/programDealTrend.naver",
+}
+
 # 수집할 데이터 소스 정의
 # (data_type, market, sub_key, url_path, url_params)
-# bizdate 파라미터가 필요한 경우 url_params에 {} 포함
+# bizdate 파라미터가 필요한 경우 url_params에 {bizdate} 포함
 SUPPLY_SOURCES = [
     # 투자자별 매매동향 시간별
     ("investor_time", "all", None,
@@ -60,7 +69,7 @@ SUPPLY_SOURCES = [
      "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}"}),
 ]
 
-HEADERS = {
+_BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -70,6 +79,9 @@ HEADERS = {
     "Accept-Language": "ko-KR,ko;q=0.9",
     "Referer": "https://finance.naver.com/",
 }
+
+# HEADERS는 fetch_supply_source 에서 data_type별로 Referer를 교체해 사용
+HEADERS = _BASE_HEADERS
 
 
 def _parse_table(soup: BeautifulSoup) -> dict:
@@ -151,8 +163,11 @@ async def fetch_supply_source(
     }
     url = BASE_URL + url_path
 
+    # URL별 정확한 Referer 설정 (iframe 페이지 차단 방지)
+    headers = {**_BASE_HEADERS, "Referer": _REFERER.get(data_type, "https://finance.naver.com/")}
+
     async with httpx.AsyncClient(
-        headers=HEADERS, timeout=timeout, follow_redirects=True
+        headers=headers, timeout=timeout, follow_redirects=True
     ) as client:
         try:
             response = await client.get(url, params=params)
@@ -245,11 +260,8 @@ async def collect_all_supply_data(db: Session) -> int:
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
     bizdate = now.strftime("%Y%m%d")
-    collected_time = now.strftime("%H:%M")
-    # 정각/30분에 맞춰 저장 (ex. 09:37 → '09:30')
-    minute = now.minute
-    rounded_minute = 30 if minute >= 30 else 0
-    collected_time = f"{now.hour:02d}:{rounded_minute:02d}"
+    # 1시간 단위 기준으로 저장 (ex. 09:37 → '09:30', 스케줄이 매 시 30분에 실행)
+    collected_time = f"{now.hour:02d}:30"
 
     success = 0
     for (data_type, market, sub_key, url_path, url_params) in SUPPLY_SOURCES:
