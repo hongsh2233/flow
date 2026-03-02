@@ -664,21 +664,25 @@ async def manual_collect_naver_supply(
     수급 동향 데이터 수동 수집.
     - bizdate 미입력: 마지막 거래일 자동 산출 (주말·연속 공휴일 상관없이 직전 거래일)
     - bizdate 직접 입력: 해당 날짜로 강제 수집 (예: ?bizdate=20260228)
-    - collected_time은 'manual' 로 저장되어 스케줄 수집분과 구분됨.
+    - collected_time은 실제 수집 시각 HH:MM 으로 저장 (String(5) 제약 준수)
     """
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     try:
+        import pytz
+        from datetime import datetime as _dt
         from app.services.naver_supply_service import (
             collect_all_supply_data,
             get_last_trading_date,
         )
         target_date = bizdate if bizdate else get_last_trading_date()
-        count = await collect_all_supply_data(db, bizdate=target_date, collected_time="manual")
+        now_time = _dt.now(pytz.timezone("Asia/Seoul")).strftime("%H:%M")
+        count = await collect_all_supply_data(db, bizdate=target_date, collected_time=now_time)
         return JSONResponse({
             "success": True,
             "count": count,
             "bizdate": target_date,
+            "collected_time": now_time,
             "date_source": "입력값" if bizdate else "자동(마지막 거래일)",
         })
     except Exception as e:
