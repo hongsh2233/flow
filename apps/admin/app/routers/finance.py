@@ -550,4 +550,126 @@ async def manual_collect_naver_ranking(
         }, status_code=500)
 
 
+# =========================================================
+# 네이버 수급 동향 API
+# =========================================================
+
+@router.get("/api/naver-supply/dates")
+async def get_naver_supply_dates(
+    data_type: str = None,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """수급 동향 데이터 보유 bizdate 목록 (최신순)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    from app.models import NaverSupplyData
+    from sqlalchemy import text as sqla_text
+    try:
+        q = db.query(NaverSupplyData.bizdate).distinct()
+        if data_type:
+            q = q.filter(NaverSupplyData.data_type == data_type)
+        dates = [r[0] for r in q.order_by(NaverSupplyData.bizdate.desc()).all()]
+        return JSONResponse({"success": True, "data": dates})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@router.get("/api/naver-supply/times")
+async def get_naver_supply_times(
+    data_type: str,
+    market: str = "all",
+    sub_key: str = None,
+    bizdate: str = None,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """특정 data_type+bizdate의 수집 시간 목록"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    from app.models import NaverSupplyData
+    try:
+        q = db.query(NaverSupplyData.collected_time).filter(
+            NaverSupplyData.data_type == data_type,
+            NaverSupplyData.market == market,
+        )
+        if sub_key:
+            q = q.filter(NaverSupplyData.sub_key == sub_key)
+        if bizdate:
+            q = q.filter(NaverSupplyData.bizdate == bizdate)
+        times = [r[0] for r in q.distinct().order_by(NaverSupplyData.collected_time.desc()).all()]
+        return JSONResponse({"success": True, "data": times})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@router.get("/api/naver-supply/data")
+async def get_naver_supply_data(
+    data_type: str,
+    market: str = "all",
+    sub_key: str = None,
+    bizdate: str = None,
+    collected_time: str = None,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """수급 동향 데이터 조회 (최신 or 특정 날짜/시간)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    from app.models import NaverSupplyData
+    from sqlalchemy import func as sa_func
+    try:
+        q = db.query(NaverSupplyData).filter(
+            NaverSupplyData.data_type == data_type,
+            NaverSupplyData.market == market,
+        )
+        if sub_key:
+            q = q.filter(NaverSupplyData.sub_key == sub_key)
+        elif sub_key is None and data_type != "deal_rank":
+            q = q.filter(NaverSupplyData.sub_key.is_(None))
+        if bizdate:
+            q = q.filter(NaverSupplyData.bizdate == bizdate)
+        if collected_time:
+            q = q.filter(NaverSupplyData.collected_time == collected_time)
+
+        row = q.order_by(NaverSupplyData.collected_at.desc()).first()
+        if not row:
+            return JSONResponse({"success": True, "data": None})
+
+        import json as _json
+        parsed = _json.loads(row.data_json) if row.data_json else {}
+        return JSONResponse({
+            "success": True,
+            "data": parsed,
+            "bizdate": row.bizdate,
+            "collected_time": row.collected_time,
+            "collected_at": row.collected_at.isoformat() if row.collected_at else None,
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@router.post("/api/naver-supply/manual-collect")
+async def manual_collect_naver_supply(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """수급 동향 데이터 수동 수집 (주말/공휴일 제외)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    from app.services.scheduler_service import should_skip_today
+    if should_skip_today():
+        return JSONResponse({
+            "success": False,
+            "message": "주말 또는 공휴일에는 수집하지 않습니다.",
+        }, status_code=400)
+    try:
+        from app.services.naver_supply_service import collect_all_supply_data
+        count = await collect_all_supply_data(db)
+        return JSONResponse({"success": True, "count": count})
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 

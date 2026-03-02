@@ -944,5 +944,92 @@ class ExchangeRateScheduler:
 exchange_rate_scheduler = ExchangeRateScheduler()
 
 
+# =========================================================
+# 네이버 수급 동향 수집 스케줄러
+# 08:30 ~ 20:30, 30분 간격, 월~금, 공휴일 제외
+# =========================================================
+
+async def collect_naver_supply_data():
+    """네이버 수급 동향 전체 수집"""
+    from app.services.naver_supply_service import collect_all_supply_data
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n{'='*60}")
+    print(f"📊 네이버 수급 동향 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}")
+
+    if should_skip_today():
+        print("⏭️ 주말/공휴일 - 수급 동향 수집 건너뜀")
+        return
+
+    db = SessionLocal()
+    try:
+        count = await collect_all_supply_data(db)
+        print(f"✅ 수급 동향 수집 완료: {count}건")
+    except Exception as e:
+        import traceback
+        print(f"❌ 수급 동향 수집 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+    print(f"{'='*60}\n")
+
+
+class NaverSupplyScheduler:
+    """
+    네이버 수급 동향 데이터 수집 스케줄러
+    08:30 ~ 20:30, 30분 간격, 월~금, 공휴일 제외
+    """
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            print("⚠️ 수급 동향 스케줄러가 이미 실행 중입니다.")
+            return
+
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+
+        # 08:30 ~ 20:30, 매 30분 간격
+        # trigger: 분 0,30 / 시 8-20  (08:00 제외 → 08:30부터 시작)
+        # 08:00 는 실행 안 해도 되므로, 08:30 을 별도 등록하고 09:00~20:30 은 cron으로 처리
+
+        # 08:30 단독
+        self.scheduler.add_job(
+            collect_naver_supply_data,
+            trigger=CronTrigger(hour=8, minute=30, timezone=self.kst),
+            id="naver_supply_0830",
+            name="수급 동향 수집 (08:30)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+
+        # 09:00 ~ 20:30: 정각(minute=0)과 30분(minute=30), hour 9~20
+        self.scheduler.add_job(
+            collect_naver_supply_data,
+            trigger=CronTrigger(hour="9-20", minute="0,30", timezone=self.kst),
+            id="naver_supply_half_hourly",
+            name="수급 동향 수집 (09:00~20:30, 30분 간격)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+
+        self.scheduler.start()
+        print("✅ 네이버 수급 동향 스케줄러 시작 (08:30~20:30, 30분 간격, 월~금)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 네이버 수급 동향 스케줄러 종료")
+
+
+naver_supply_scheduler = NaverSupplyScheduler()
+
 # 전역 스케줄러 인스턴스
 naver_ranking_scheduler = NaverRankingScheduler()

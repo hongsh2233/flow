@@ -23,7 +23,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
     fsc_scheduler.start()
     krx_scheduler.start()
     naver_ranking_scheduler.start()
+    naver_supply_scheduler.start()
     yahoo_index_scheduler.start()
     exchange_rate_scheduler.start()
     schedule_alarm_scheduler.start()
@@ -63,6 +64,7 @@ async def lifespan(app: FastAPI):
     fsc_scheduler.shutdown()
     krx_scheduler.shutdown()
     naver_ranking_scheduler.shutdown()
+    naver_supply_scheduler.shutdown()
     yahoo_index_scheduler.shutdown()
     exchange_rate_scheduler.shutdown()
     schedule_alarm_scheduler.shutdown()
@@ -371,6 +373,12 @@ def run_migrations():
         add_notification_target_email_migration()
     except Exception as e:
         print(f"⚠️ 알림 target_email 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_naver_supply_data import upgrade as add_naver_supply_migration
+        add_naver_supply_migration()
+    except Exception as e:
+        print(f"⚠️ 네이버 수급 동향 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():
