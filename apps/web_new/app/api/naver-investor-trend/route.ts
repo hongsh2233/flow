@@ -34,11 +34,17 @@ function fmtTimestamp(bizdate: string | null, collectedTime: string | null): str
   return collectedTime ? `${date} ${collectedTime}` : date;
 }
 
+// 백엔드 기본 API 키 (dependencies.py와 동일한 기본값)
+const FALLBACK_API_KEY = "1978022019820308200705092018111420220303";
+
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get("market") || "kospi";
 
-  const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
-  if (API_SECRET_KEY) reqHeaders["X-API-KEY"] = API_SECRET_KEY;
+  const apiKey = API_SECRET_KEY || FALLBACK_API_KEY;
+  const reqHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-API-KEY": apiKey,
+  };
 
   try {
     const url = `${API_BASE_URL}/api/naver-supply-data?data_type=investor_day&market=${market}`;

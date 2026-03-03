@@ -4,7 +4,7 @@
   border: 1px solid var(--app-border-light);
   box-shadow: var(--app-card-shadow);
   padding: 0.875rem 0.875rem 0.5rem;
-  margin-bottom: 1rem;
+  margin: 0 16px 1rem;
 }
 
 /* 헤더 */
@@ -109,14 +109,41 @@
   overflow: visible;
 }
 
-.loading,
-.empty {
+.loading {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 80px;
   font-size: 0.8rem;
   color: var(--app-text-muted);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 80px;
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+}
+
+.retryBtn {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--app-accent, #3b82f6);
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.retryBtn:hover {
+  opacity: 1;
 }
 
 /* 하단 영역 */

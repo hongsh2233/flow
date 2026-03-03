@@ -122,20 +122,36 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
   const [data, setData] = useState<InvestorTrendItem[]>([]);
   const [timestamp, setTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
     new Set(SERIES.map((s) => s.key))
   );
 
   const fetchData = useCallback(async (m: "kospi" | "kosdaq") => {
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch(`/api/naver-investor-trend?market=${m}`);
       const json = await res.json();
-      setData(json.success && json.data?.length ? json.data : []);
+      const items = json.success && Array.isArray(json.data) && json.data.length > 0
+        ? json.data
+        : [];
+      setData(items);
       setTimestamp(json.timestamp ?? null);
-    } catch {
+      if (items.length === 0) {
+        // 디버깅: 브라우저 콘솔에서 확인 가능
+        console.debug("[InvestorTrend] 데이터 없음", {
+          success: json.success,
+          dataLen: json.data?.length,
+          headers: json.debug_headers,
+          timestamp: json.timestamp,
+        });
+      }
+    } catch (e) {
+      console.error("[InvestorTrend] fetch 오류:", e);
       setData([]);
       setTimestamp(null);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -203,7 +219,16 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
         {loading ? (
           <div className={styles.loading}>불러오는 중...</div>
         ) : data.length === 0 ? (
-          <div className={styles.empty}>데이터가 없습니다</div>
+          <div className={styles.empty}>
+            <span>{fetchError ? "데이터를 불러올 수 없습니다" : "수집된 데이터가 없습니다"}</span>
+            <button
+              type="button"
+              className={styles.retryBtn}
+              onClick={() => fetchData(market)}
+            >
+              다시 시도
+            </button>
+          </div>
         ) : (
           <LineChart data={filteredData} />
         )}
