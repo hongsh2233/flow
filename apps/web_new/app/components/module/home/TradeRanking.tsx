@@ -4,7 +4,6 @@ import { memo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { PriceChange } from "@/app/components/ui/PriceChange";
 import type { TradeRankingProps, VolumeStock, ValueStock, StockDetail } from "@/lib/types";
-import { InvestorTrendChart } from "./InvestorTrendChart";
 import styles from "./TradeRanking.module.css";
 
 const RankingList = memo(function RankingList({
@@ -77,9 +76,6 @@ export const TradeRanking = memo(function TradeRanking({
 }: TradeRankingProps) {
   return (
     <div className={styles.section}>
-      {/* 투자자별 매매동향 5일 선형 차트 */}
-      <InvestorTrendChart />
-
       <Tabs defaultValue="kospi-volume" variant="underline">
         <div className={styles.header}>
           <h3 className={styles.heading}>거래 상위</h3>

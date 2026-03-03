@@ -12,6 +12,7 @@ import { MarketIndexSection } from "./components/module/home/MarketIndexSection"
 import { ForeignIndices } from "./components/module/home/ForeignIndices";
 import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
+import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { JubtiSection } from "./components/module/home/JubtiSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
@@ -66,6 +67,7 @@ export default function Home() {
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />
+      <InvestorTrendChart />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
