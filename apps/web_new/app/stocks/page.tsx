@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Search } from "../components/module/Search";
 import { StockTermBox } from "../components/module/stock-term-box";
+import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { StockCard } from "../components/module/StockCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
@@ -294,6 +295,9 @@ export default function StocksPage() {
           placeholder="종목명 검색 (예: 삼성전자)"
         />
       </div>
+
+      {/* 투자자별 매매동향 차트 */}
+      <InvestorTrendChart />
 
       {/* 탭 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">

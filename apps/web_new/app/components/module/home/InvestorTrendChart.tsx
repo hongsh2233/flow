@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./InvestorTrendChart.module.css";
 
 interface InvestorTrendItem {
@@ -12,10 +13,10 @@ interface InvestorTrendItem {
 }
 
 const SERIES = [
-  { key: "individual" as const, label: "개인",   color: "#3b82f6" },
-  { key: "foreign"    as const, label: "외국인", color: "#f59e0b" },
-  { key: "institution"as const, label: "기관계", color: "#10b981" },
-  { key: "other"      as const, label: "기타법인",color: "#8b5cf6" },
+  { key: "individual"  as const, label: "개인",    color: "#3b82f6" },
+  { key: "foreign"     as const, label: "외국인",  color: "#f59e0b" },
+  { key: "institution" as const, label: "기관계",  color: "#10b981" },
+  { key: "other"       as const, label: "기타법인",color: "#8b5cf6" },
 ] as const;
 
 const W = 320;
@@ -31,18 +32,12 @@ function fmtAmt(v: number): string {
 }
 
 function fmtDate(d: string): string {
-  // "2025.03.03" → "03/03", "20250303" → "03/03"
   const clean = d.replace(/[.\-\/]/g, "");
   if (clean.length === 8) return `${clean.slice(4, 6)}/${clean.slice(6, 8)}`;
-  // e.g. "03.03" already short
   return d.replace(/\./g, "/").slice(-5);
 }
 
-interface LineChartProps {
-  data: InvestorTrendItem[];
-}
-
-function LineChart({ data }: LineChartProps) {
+function LineChart({ data }: { data: InvestorTrendItem[] }) {
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
@@ -56,32 +51,24 @@ function LineChart({ data }: LineChartProps) {
     );
   }
 
-  // 전체 값 범위 계산
-  const allVals = data.flatMap((d) =>
-    SERIES.map((s) => d[s.key])
-  );
+  const allVals = data.flatMap((d) => SERIES.map((s) => d[s.key]));
   const rawMin = Math.min(...allVals);
   const rawMax = Math.max(...allVals);
   const range = rawMax - rawMin || 1;
   const pad = range * 0.15;
   const yMin = rawMin - pad;
   const yMax = rawMax + pad;
-
   const xStep = innerW / (data.length - 1);
 
   const toX = (i: number) => PAD.left + i * xStep;
   const toY = (v: number) => PAD.top + innerH - ((v - yMin) / (yMax - yMin)) * innerH;
 
-  // Y=0 위치 (순매수 기준선)
   const zeroY = toY(0);
   const showZero = zeroY > PAD.top && zeroY < PAD.top + innerH;
-
-  // Y 눈금: 5개
   const yTicks = Array.from({ length: 5 }, (_, i) => yMin + (i / 4) * (yMax - yMin));
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className={styles.svg} aria-label="투자자별 매매동향">
-      {/* Y 눈금 */}
       {yTicks.map((v, i) => {
         const y = toY(v);
         return (
@@ -96,13 +83,11 @@ function LineChart({ data }: LineChartProps) {
         );
       })}
 
-      {/* 0선 강조 */}
       {showZero && (
         <line x1={PAD.left} x2={PAD.left + innerW} y1={zeroY} y2={zeroY}
           stroke="var(--app-text-muted)" strokeWidth="0.8" strokeDasharray="3,3" />
       )}
 
-      {/* X 눈금 (날짜) */}
       {data.map((d, i) => (
         <text key={i} x={toX(i)} y={PAD.top + innerH + 14}
           textAnchor="middle" fontSize="8.5" fill="var(--app-text-muted)">
@@ -110,19 +95,12 @@ function LineChart({ data }: LineChartProps) {
         </text>
       ))}
 
-      {/* 라인 + 점 */}
       {SERIES.map((s) => {
         const pts = data.map((d, i) => `${toX(i)},${toY(d[s.key])}`).join(" ");
         return (
           <g key={s.key}>
-            <polyline
-              points={pts}
-              fill="none"
-              stroke={s.color}
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
+            <polyline points={pts} fill="none" stroke={s.color}
+              strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
             {data.map((d, i) => (
               <circle key={i} cx={toX(i)} cy={toY(d[s.key])} r="2.5"
                 fill={s.color} stroke="var(--app-card-bg)" strokeWidth="1" />
@@ -139,8 +117,10 @@ interface Props {
 }
 
 export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
+  const router = useRouter();
   const [market, setMarket] = useState<"kospi" | "kosdaq">(defaultMarket);
   const [data, setData] = useState<InvestorTrendItem[]>([]);
+  const [timestamp, setTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
     new Set(SERIES.map((s) => s.key))
@@ -152,22 +132,22 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
       const res = await fetch(`/api/naver-investor-trend?market=${m}`);
       const json = await res.json();
       setData(json.success && json.data?.length ? json.data : []);
+      setTimestamp(json.timestamp ?? null);
     } catch {
       setData([]);
+      setTimestamp(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData(market);
-  }, [market, fetchData]);
+  useEffect(() => { fetchData(market); }, [market, fetchData]);
 
   const toggleSeries = (key: string) => {
     setVisibleSeries((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
-        if (next.size > 1) next.delete(key); // 최소 1개 유지
+        if (next.size > 1) next.delete(key);
       } else {
         next.add(key);
       }
@@ -177,30 +157,29 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
 
   const filteredData: InvestorTrendItem[] = data.map((d) => {
     const copy = { ...d };
-    SERIES.forEach((s) => {
-      if (!visibleSeries.has(s.key)) copy[s.key] = 0;
-    });
+    SERIES.forEach((s) => { if (!visibleSeries.has(s.key)) copy[s.key] = 0; });
     return copy;
   });
 
   return (
     <div className={styles.wrapper}>
-      {/* 헤더: 제목 + 마켓 토글 */}
+      {/* 헤더: 제목 + 기준시각 + 마켓 토글 */}
       <div className={styles.header}>
-        <span className={styles.title}>투자자별 매매동향</span>
+        <div className={styles.titleGroup}>
+          <span className={styles.title}>투자자별 매매동향</span>
+          {timestamp && (
+            <span className={styles.timestamp}>({timestamp} 기준)</span>
+          )}
+        </div>
         <div className={styles.marketToggle}>
           <button
             className={`${styles.mBtn} ${market === "kospi" ? styles.mBtnActive : ""}`}
             onClick={() => setMarket("kospi")}
-          >
-            코스피
-          </button>
+          >코스피</button>
           <button
             className={`${styles.mBtn} ${market === "kosdaq" ? styles.mBtnActive : ""}`}
             onClick={() => setMarket("kosdaq")}
-          >
-            코스닥
-          </button>
+          >코스닥</button>
         </div>
       </div>
 
@@ -230,7 +209,17 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
         )}
       </div>
 
-      <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>
+      {/* 하단: 단위 + 수급동향 더보기 */}
+      <div className={styles.footer}>
+        <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>
+        <button
+          type="button"
+          className={styles.moreBtn}
+          onClick={() => router.push("/market")}
+        >
+          수급동향 더보기 →
+        </button>
+      </div>
     </div>
   );
 }
