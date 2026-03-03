@@ -1,7 +1,7 @@
-\"use client\";
+"use client";
 
-import { useEffect, useState } from \"react\";
-import styles from \"./SupplyPage.module.css\";
+import { useEffect, useState } from "react";
+import styles from "./SupplyPage.module.css";
 
 interface TableData {
   headers: string[];
@@ -15,12 +15,12 @@ interface SupplyResponse {
   collected_time?: string | null;
 }
 
-type Market = \"kospi\" | \"kosdaq\";
+type Market = "kospi" | "kosdaq";
 
-type MainTab = \"investor\" | \"deal\" | \"program\";
+type MainTab = "investor" | "deal" | "program";
 
 async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
-  const res = await fetch(`/api/naver-supply?${params.toString()}`, { cache: \"no-store\" });
+  const res = await fetch(`/api/naver-supply-data?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) {
     return { success: false, data: null, bizdate: null };
   }
@@ -45,10 +45,9 @@ function Table({ data }: { data: TableData }) {
           {data.rows.map((row, idx) => (
             <tr key={idx}>
               {row.map((cell, i) => {
-                const isMinus = i > 0 && String(cell).trim().startsWith(\"-\");
-                const isPlus = i > 0 && String(cell).trim().startsWith(\"+\");
-                const cls =
-                  isMinus ? styles.down : isPlus ? styles.up : undefined;
+                const isMinus = i > 0 && String(cell).trim().startsWith("-");
+                const isPlus = i > 0 && String(cell).trim().startsWith("+");
+                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
                 return (
                   <td key={i} className={cls}>
                     {cell}
@@ -64,8 +63,8 @@ function Table({ data }: { data: TableData }) {
 }
 
 export default function SupplyPage() {
-  const [mainTab, setMainTab] = useState<MainTab>(\"investor\");
-  const [market, setMarket] = useState<Market>(\"kospi\");
+  const [mainTab, setMainTab] = useState<MainTab>("investor");
+  const [market, setMarket] = useState<Market>("kospi");
 
   const [investorData, setInvestorData] = useState<Record<Market, SupplyResponse | null>>({
     kospi: null,
@@ -86,40 +85,40 @@ export default function SupplyPage() {
     async function load() {
       setLoading(true);
       try {
-        if (mainTab === \"investor\") {
+        if (mainTab === "investor") {
           if (!investorData[market]) {
             const params = new URLSearchParams({
-              data_type: \"investor_day\",
+              data_type: "investor_day",
               market,
             });
             const json = await fetchTable(params);
             setInvestorData((prev) => ({ ...prev, [market]: json }));
           }
-        } else if (mainTab === \"program\") {
+        } else if (mainTab === "program") {
           if (!programData[market]) {
             const params = new URLSearchParams({
-              data_type: \"program_day\",
+              data_type: "program_day",
               market,
             });
             const json = await fetchTable(params);
             setProgramData((prev) => ({ ...prev, [market]: json }));
           }
-        } else if (mainTab == \"deal\") {
+        } else if (mainTab === "deal") {
           const current = dealData[market];
           if (!current.foreign_buy || !current.foreign_sell || !current.inst_buy || !current.inst_sell) {
-            const keys = [\"foreign_buy\", \"foreign_sell\", \"inst_buy\", \"inst_sell\"] as const;
+            const keys = ["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const;
             const results: Record<string, SupplyResponse | null> = { ...current };
             await Promise.all(
               keys.map(async (key) => {
                 if (results[key]) return;
                 const params = new URLSearchParams({
-                  data_type: \"deal_rank\",
+                  data_type: "deal_rank",
                   market,
                   sub_key: key,
                 });
                 const json = await fetchTable(params);
                 results[key] = json;
-              })
+              }),
             );
             setDealData((prev) => ({ ...prev, [market]: results }));
           }
@@ -141,23 +140,23 @@ export default function SupplyPage() {
 
       <div className={styles.mainTabs}>
         <button
-          type=\"button\"
-          className={mainTab === \"investor\" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab(\"investor\")}
+          type="button"
+          className={mainTab === "investor" ? styles.mainTabActive : styles.mainTab}
+          onClick={() => setMainTab("investor")}
         >
           투자자별 매매동향 (일자별)
         </button>
         <button
-          type=\"button\"
-          className={mainTab === \"deal\" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab(\"deal\")}
+          type="button"
+          className={mainTab === "deal" ? styles.mainTabActive : styles.mainTab}
+          onClick={() => setMainTab("deal")}
         >
           수급 순위
         </button>
         <button
-          type=\"button\"
-          className={mainTab === \"program\" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab(\"program\")}
+          type="button"
+          className={mainTab === "program" ? styles.mainTabActive : styles.mainTab}
+          onClick={() => setMainTab("program")}
         >
           프로그램 매매 (일자별)
         </button>
@@ -165,16 +164,16 @@ export default function SupplyPage() {
 
       <div className={styles.subTabs}>
         <button
-          type=\"button\"
-          className={market === \"kospi\" ? styles.subTabActive : styles.subTab}
-          onClick={() => setMarket(\"kospi\")}
+          type="button"
+          className={market === "kospi" ? styles.subTabActive : styles.subTab}
+          onClick={() => setMarket("kospi")}
         >
           코스피
         </button>
         <button
-          type=\"button\"
-          className={market === \"kosdaq\" ? styles.subTabActive : styles.subTab}
-          onClick={() => setMarket(\"kosdaq\")}
+          type="button"
+          className={market === "kosdaq" ? styles.subTabActive : styles.subTab}
+          onClick={() => setMarket("kosdaq")}
         >
           코스닥
         </button>
@@ -182,10 +181,10 @@ export default function SupplyPage() {
 
       {loading && <p className={styles.loading}>불러오는 중...</p>}
 
-      {!loading && mainTab === \"investor\" && currentInvestor && (
+      {!loading && mainTab === "investor" && currentInvestor && (
         <>
           <p className={styles.meta}>
-            기준일: {currentInvestor.bizdate ?? \"-\"} / 수집: {currentInvestor.collected_time ?? \"-\"}
+            기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
           </p>
           {currentInvestor.success && currentInvestor.data ? (
             <Table data={currentInvestor.data} />
@@ -195,10 +194,10 @@ export default function SupplyPage() {
         </>
       )}
 
-      {!loading && mainTab === \"program\" && currentProgram && (
+      {!loading && mainTab === "program" && currentProgram && (
         <>
           <p className={styles.meta}>
-            기준일: {currentProgram.bizdate ?? \"-\"} / 수집: {currentProgram.collected_time ?? \"-\"}
+            기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
           </p>
           {currentProgram.success && currentProgram.data ? (
             <Table data={currentProgram.data} />
@@ -208,15 +207,15 @@ export default function SupplyPage() {
         </>
       )}
 
-      {!loading && mainTab === \"deal\" && (
+      {!loading && mainTab === "deal" && (
         <div className={styles.dealGrid}>
-          {([\"foreign_buy\", \"foreign_sell\", \"inst_buy\", \"inst_sell\"] as const).map((key) => {
+          {(["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const).map((key) => {
             const entry = currentDeal[key];
             const titleMap: Record<string, string> = {
-              foreign_buy: \"외국인 순매수\",
-              foreign_sell: \"외국인 순매도\",
-              inst_buy: \"기관 순매수\",
-              inst_sell: \"기관 순매도\",
+              foreign_buy: "외국인 순매수",
+              foreign_sell: "외국인 순매도",
+              inst_buy: "기관 순매수",
+              inst_sell: "기관 순매도",
             };
             return (
               <div key={key} className={styles.card}>
@@ -226,7 +225,7 @@ export default function SupplyPage() {
                 ) : entry.success && entry.data ? (
                   <>
                     <p className={styles.meta}>
-                      기준일: {entry.bizdate ?? \"-\"} / 수집: {entry.collected_time ?? \"-\"}
+                      기준일: {entry.bizdate ?? "-"} / 수집: {entry.collected_time ?? "-"}
                     </p>
                     <Table data={entry.data} />
                   </>
