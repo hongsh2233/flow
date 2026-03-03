@@ -1,24 +1,523 @@
-.wrap {
-  padding: 2rem 1rem 5rem;
-  min-height: 60vh;
+.page {
+  min-height: 100vh;
+  background: var(--app-bg, #f5f5f8);
+  padding-bottom: 5rem;
+}
+
+.header {
+  position: relative;
+  padding: 1.75rem 1.25rem 1.5rem;
+  overflow: hidden;
+}
+
+.headerGradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 0 0, #fed7aa 0, transparent 55%),
+              radial-gradient(circle at 100% 0, #bfdbfe 0, transparent 55%),
+              linear-gradient(135deg, #fb923c, #f97373);
+  opacity: 0.9;
+}
+
+.headerContent {
+  position: relative;
+  color: #ffffff;
+}
+
+.headerTitle {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.headerSubtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.main {
+  padding: 0.75rem 1.25rem 0;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: 1.25rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.sectionTitleRow {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.4rem;
 }
 
-.placeholder {
-  text-align: center;
-  padding: 2rem;
-  background: var(--app-card-bg);
-  border-radius: 1rem;
-  border: 1px solid var(--app-border-light);
-  box-shadow: var(--app-card-shadow);
+.sectionIcon {
+  width: 18px;
+  height: 18px;
+  color: #fb923c;
 }
 
-.message {
-  margin: 0;
+.sectionTitle {
   font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.sectionSubtitle {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.sectionMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.sectionMetaIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.sectionQuestion {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: #374151;
   font-weight: 500;
-  color: var(--app-text-secondary);
-  line-height: 1.6;
+}
+
+.voteResult {
+  margin-bottom: 0.75rem;
+}
+
+.voteBar {
+  position: relative;
+  height: 40px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  overflow: hidden;
+  display: flex;
+}
+
+.voteRise {
+  display: flex;
+  align-items: center;
+  padding-left: 0.9rem;
+  background: linear-gradient(90deg, #f97373, #ef4444);
+  transition: width 0.6s ease;
+}
+
+.voteFall {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.9rem;
+  background: linear-gradient(270deg, #60a5fa, #3b82f6);
+  transition: width 0.6s ease;
+}
+
+.voteLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.voteMetaRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.voteTotal {
+  font-weight: 500;
+  color: #374151;
+}
+
+.voteButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.voteButton {
+  border-radius: 0.85rem;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.voteButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.voteButtonRise {
+  background: linear-gradient(90deg, #fb7185, #f97316);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(248, 113, 113, 0.25);
+}
+
+.voteButtonRiseActive {
+  background: linear-gradient(90deg, #ef4444, #ea580c);
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(239, 68, 68, 0.35);
+  transform: scale(1.03);
+}
+
+.voteButtonFall {
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.25);
+}
+
+.voteButtonFallActive {
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(37, 99, 235, 0.35);
+  transform: scale(1.03);
+}
+
+.voteButtonDisabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  box-shadow: none;
+  cursor: default;
+}
+
+.expertList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.expertCard {
+  background: var(--app-card-bg, #ffffff);
+  border-radius: 1.1rem;
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  box-shadow: var(--app-card-shadow, 0 4px 14px rgba(15, 23, 42, 0.05));
+  overflow: hidden;
+}
+
+.expertHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.expertAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #fed7aa;
+}
+
+.expertInfo {
+  min-width: 0;
+}
+
+.expertName {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.expertTitle {
+  margin: 0.05rem 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.expertQuoteBox {
+  padding: 1rem;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.expertQuote {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #374151;
+  font-weight: 500;
+}
+
+.expertFooter {
+  padding: 0.55rem 0.9rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.likeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.likeButtonActive {
+  color: #ef4444;
+}
+
+.likeIcon,
+.likeIconActive {
+  width: 18px;
+  height: 18px;
+}
+
+.likeIconActive {
+  fill: currentColor;
+}
+
+.timeText {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.voiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.voiceCard {
+  background: var(--app-card-bg, #ffffff);
+  border-radius: 1.1rem;
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  box-shadow: var(--app-card-shadow, 0 4px 14px rgba(15, 23, 42, 0.05));
+  padding: 0.85rem 0.9rem;
+}
+
+.voiceMain {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.voiceAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #e5e7eb;
+}
+
+.voiceContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.voiceHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.15rem;
+}
+
+.voiceName {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.voiceTitle {
+  margin: 0.05rem 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.voiceStatement {
+  margin: 0.25rem 0 0.35rem;
+  font-size: 0.86rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.voiceSource {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.writeBox {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 1rem;
+  background: var(--app-card-bg, #ffffff);
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  margin-bottom: 0.75rem;
+}
+
+.writeInput {
+  flex: 1;
+  border-radius: 0.8rem;
+  border: none;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.86rem;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.writeInput::placeholder {
+  color: #9ca3af;
+}
+
+.writeInput:focus-visible {
+  outline: 2px solid #fed7aa;
+  outline-offset: 1px;
+}
+
+.sendButton {
+  border-radius: 0.8rem;
+  border: none;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fb923c, #f97373);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.sendButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.messageCard {
+  background: var(--app-card-bg, #ffffff);
+  border-radius: 0.9rem;
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  padding: 0.65rem 0.75rem 0.7rem;
+}
+
+.messageHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.messageUser {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.jubtiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.jubtiBull {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.jubtiBear {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.jubtiWhale {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.jubtiRabbit {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.jubtiFox {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.jubtiTurtle {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.messageBody {
+  margin: 0 0 0.35rem;
+  font-size: 0.86rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.messageLikeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.messageLikeButtonActive {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.messageLikeIcon,
+.messageLikeIconActive {
+  width: 14px;
+  height: 14px;
+}
+
+.messageLikeIconActive {
+  fill: currentColor;
 }
