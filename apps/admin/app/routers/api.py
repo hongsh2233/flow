@@ -363,26 +363,48 @@ async def get_fsc_stock_price_dates(
 
 @router.get("/api/naver-supply-data")
 async def get_naver_supply_data_public(
-    data_type: str = Query("investor_day", description="데이터 타입 (investor_day)"),
+    data_type: str = Query("investor_day", description="데이터 타입 (investor_day, investor_time, deal_rank, program_day, program_time 등)"),
     market: str = Query("kospi", description="시장구분 (kospi, kosdaq, futures, all)"),
+    sub_key: Optional[str] = Query(
+        default=None,
+        description="서브 키 (deal_rank: foreign_buy/foreign_sell/inst_buy/inst_sell 등, 그 외에는 보통 None)",
+    ),
     db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key),
 ):
     """
-    네이버 수급 동향 일자별 데이터 조회 (공개용, API Key 인증)
-    시간별 데이터(investor_time)는 제외하고 일자별 데이터만 제공
+    네이버 수급 동향 데이터 조회 (공개용, API Key 인증)
+
+    - investor_day / investor_time: 투자자별 매매동향 (일자별 / 시간별)
+    - deal_rank: 수급 순위 (외인/기관 순매수·순매도, sub_key로 구분)
+    - program_day / program_time: 프로그램 매매 (일자별 / 시간별)
+
+    가장 최근(collected_at 기준) 1건만 반환합니다.
     """
     from app.models import NaverSupplyData
     import json as _json
+
     try:
         q = db.query(NaverSupplyData).filter(
             NaverSupplyData.data_type == data_type,
             NaverSupplyData.market == market,
-            NaverSupplyData.sub_key.is_(None),
         )
+
+        if sub_key is not None:
+            q = q.filter(NaverSupplyData.sub_key == sub_key)
+        else:
+            q = q.filter(NaverSupplyData.sub_key.is_(None))
+
         row = q.order_by(NaverSupplyData.collected_at.desc()).first()
         if not row:
-            return {"success": True, "data": None, "bizdate": None, "collected_at": None}
+            return {
+                "success": True,
+                "data": None,
+                "bizdate": None,
+                "collected_time": None,
+                "collected_at": None,
+            }
+
         parsed = _json.loads(row.data_json) if row.data_json else {}
         return {
             "success": True,
