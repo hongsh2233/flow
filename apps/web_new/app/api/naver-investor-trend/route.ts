@@ -123,39 +123,78 @@ export async function GET(request: NextRequest) {
     "X-API-KEY": apiKey,
   };
 
-  try {
-    const url = `${API_BASE_URL}/api/naver-supply-data?data_type=investor_day&market=${market}`;
+  async function fetchAndNormalize(targetMarket: string): Promise<{
+    items: InvestorTrendItem[];
+    timestamp: string | null;
+    rawDataShape: string;
+  }> {
+    const url = `${API_BASE_URL}/api/naver-supply-data?data_type=investor_day&market=${targetMarket}`;
     const res = await fetch(url, { method: "GET", headers: reqHeaders, cache: "no-store" });
 
     if (!res.ok) {
-      return NextResponse.json({ success: false, data: [] }, { status: res.status });
+      return { items: [], timestamp: null, rawDataShape: `http_error_${res.status}` };
     }
 
     const json = await res.json();
     const timestamp = fmtTimestamp(json.bizdate, json.collected_time);
 
     let items: InvestorTrendItem[] = [];
+    const data = json.data;
 
-    // 1) 관리자/기존 형태: { headers, rows }
-    if (json.data && typeof json.data === "object" && !Array.isArray(json.data)) {
-      items = normalizeFromTable(json.data as { headers?: string[]; rows?: string[][] });
+    // 1) 테이블 형태: { headers, rows }
+    if (data && typeof data === "object" && !Array.isArray(data) && "rows" in data) {
+      items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] });
     }
 
-    // 2) 당신이 예시로 준 형태: [{ 날짜:"2026-03-02", 기관:..., 개인:..., 외국인:..., 기타법인:... }, ...]
-    if ((!items || items.length === 0) && Array.isArray(json.data)) {
-      items = normalizeFromObjects(json.data);
+    // 2) 배열 형태: [{ 날짜, 개인, 외국인, 기관/기관계, 기타법인 }, ...]
+    let arr: unknown[] | null = null;
+    if (Array.isArray(data)) {
+      arr = data;
+    } else if (data && typeof data === "object") {
+      const anyData = data as Record<string, unknown>;
+      if (Array.isArray(anyData.items)) arr = anyData.items as unknown[];
+      else if (Array.isArray(anyData.list)) arr = anyData.list as unknown[];
+    }
+    if ((!items || items.length === 0) && arr) {
+      items = normalizeFromObjects(arr);
     }
 
-    if (!items || items.length === 0) {
+    const rawDataShape = Array.isArray(data) ? "array" : String(typeof data);
+    return { items, timestamp, rawDataShape };
+  }
+
+  try {
+    // 1차: 지정된 market (예: kospi/kosdaq)
+    const first = await fetchAndNormalize(market);
+
+    // 데이터가 없고, 시장이 all 이 아니면 → all 로 한 번 더 시도 (admin 페이지 동작과 유사한 폴백)
+    if (first.items.length === 0 && market !== "all") {
+      const fallback = await fetchAndNormalize("all");
+      if (fallback.items.length > 0) {
+        return NextResponse.json({
+          success: true,
+          data: fallback.items,
+          timestamp: fallback.timestamp,
+          used_market: "all",
+        });
+      }
+    }
+
+    if (first.items.length === 0) {
       return NextResponse.json({
         success: true,
         data: [],
-        timestamp,
-        debug_shape: Array.isArray(json.data) ? "array" : typeof json.data,
+        timestamp: first.timestamp,
+        debug_shape: first.rawDataShape,
       });
     }
 
-    return NextResponse.json({ success: true, data: items, timestamp });
+    return NextResponse.json({
+      success: true,
+      data: first.items,
+      timestamp: first.timestamp,
+      used_market: market,
+    });
   } catch (err) {
     console.error("투자자별 매매동향 조회 오류:", err);
     return NextResponse.json(
