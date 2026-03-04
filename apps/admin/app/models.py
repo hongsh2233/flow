@@ -37,6 +37,7 @@ from app.engine.models import (
     LegalDocument,
     MasterPerson,
     MasterQuote,
+    PollVote,
 )
 
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
     "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote",
+    "PollVote",
 ]

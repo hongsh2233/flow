@@ -79,18 +79,50 @@ export default function JuTalkPage() {
 
   const [pollTitle, setPollTitle] = useState("오늘의 투표");
   const [pollQuestion, setPollQuestion] = useState("투표 내용을 불러오는 중입니다.");
+  const [pollId, setPollId] = useState<number | null>(null);
 
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
   const [experts, setExperts] = useState<Expert[]>([]);
 
-  const handleVote = (index: number) => {
+  const handleVote = async (index: number) => {
     if (userVotedIndex !== null) return;
-    setVoteOptions((prev) =>
-      prev.map((opt, i) => (i === index ? { ...opt, count: opt.count + 1 } : opt)),
-    );
-    setUserVotedIndex(index);
+
+    if (pollId == null) {
+      // pollId가 없으면 로컬에서만 처리
+      setVoteOptions((prev) =>
+        prev.map((opt, i) => (i === index ? { ...opt, count: opt.count + 1 } : opt)),
+      );
+      setUserVotedIndex(index);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/poll-vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poll_id: pollId, option_index: index }),
+      });
+      if (!res.ok) {
+        throw new Error("투표 요청 실패");
+      }
+      const json = await res.json();
+      const options = (json?.options as { option_index: number; vote_count: number }[]) ?? [];
+      setVoteOptions((prev) =>
+        prev.map((opt, idx) => {
+          const found = options.find((o) => o.option_index === idx);
+          return found ? { ...opt, count: found.vote_count } : opt;
+        }),
+      );
+      setUserVotedIndex(index);
+    } catch {
+      // 실패 시에도 최소한 로컬에서는 반영
+      setVoteOptions((prev) =>
+        prev.map((opt, i) => (i === index ? { ...opt, count: opt.count + 1 } : opt)),
+      );
+      setUserVotedIndex(index);
+    }
   };
 
   const totalVotes = voteOptions.reduce((sum, opt) => sum + opt.count, 0);
@@ -256,6 +288,7 @@ export default function JuTalkPage() {
             const votePosts = (votePostsJson?.data as BoardPostFromApi[]) ?? [];
             if (votePosts.length > 0) {
               const latest = votePosts[0];
+              setPollId(latest.id);
               if (latest.title) setPollTitle(latest.title);
               const body = stripHtml(latest.content);
               if (body) {
@@ -288,9 +321,32 @@ export default function JuTalkPage() {
       }
     };
 
+    const fetchStatsIfNeeded = async (targetPollId: number | null) => {
+      if (!targetPollId) return;
+      try {
+        const res = await fetch(`/api/poll-stats?poll_id=${targetPollId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const options = (json?.options as { option_index: number; vote_count: number }[]) ?? [];
+        if (!options.length) return;
+        setVoteOptions((prev) =>
+          prev.map((opt, idx) => {
+            const found = options.find((o) => o.option_index === idx);
+            return found ? { ...opt, count: found.vote_count } : opt;
+          }),
+        );
+      } catch {
+        // ignore
+      }
+    };
+
     fetchExpertsFromWiki();
-    fetchBoardsAndContent();
-  }, []);
+    fetchBoardsAndContent().then(() => fetchStatsIfNeeded(pollId)).catch(() => {});
+  }, [pollId]);
 
   return (
     <div className={styles.page}>
@@ -434,7 +490,7 @@ export default function JuTalkPage() {
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>커뮤니티 방명록</h2>
-            <p className={styles.sectionSubtitle}>주린이들의 오늘 한마디</p>
+            <p className={styles.sectionSubtitle}>개미들의 한마디</p>
           </div>
           <div className={styles.writeBox}>
             <textarea

@@ -18,7 +18,13 @@ import httpx
 from app.database import get_db
 from app import models
 from app.routers.board import parse_attached_files, clean_content
-from app.dependencies import get_current_user_from_token, get_current_user_from_token_optional, verify_api_key, API_SECRET_KEY
+from app.dependencies import (
+    get_current_user_from_token,
+    get_current_user_from_token_optional,
+    verify_api_key,
+    API_SECRET_KEY,
+    get_current_user_or_api_key,
+)
 from app.services.api_service import krx_api_service  # 시장현황 데이터 처리를 위한 서비스 임포트
 from pydantic import BaseModel
 
@@ -46,6 +52,11 @@ class MainPageConfigResponse(BaseModel):
     success: bool
     message: str
     items: list[MainPageItemResponse] = []
+
+
+class PollVoteRequest(BaseModel):
+    poll_id: int
+    option_index: int
 
 # ---------------------------------------------------------
 # API 인증 설정
@@ -560,6 +571,90 @@ async def get_board_posts(
             "total_count": total_count,
             "total_pages": (total_count + limit - 1) // limit if total_count > 0 else 0
         }
+    }
+
+
+@router.post("/api/poll-vote")
+async def poll_vote(
+    body: PollVoteRequest,
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """
+    투표 집계 API
+
+    - poll_id: 투표 게시글(Post.id)
+    - option_index: 선택지 인덱스 (0,1,2,...)
+
+    요청이 들어오면 해당 (poll_id, option_index)에 대한 vote_count를 1 증가시키고,
+    전체 옵션별 집계 결과를 반환합니다.
+    """
+    from app.models import PollVote
+
+    if body.option_index < 0:
+        raise HTTPException(status_code=400, detail="option_index는 0 이상의 정수여야 합니다.")
+
+    try:
+        row = (
+            db.query(PollVote)
+            .filter(
+                PollVote.poll_id == body.poll_id,
+                PollVote.option_index == body.option_index,
+            )
+            .with_for_update()
+            .first()
+        )
+        if row:
+            row.vote_count += 1
+        else:
+            row = PollVote(
+                poll_id=body.poll_id,
+                option_index=body.option_index,
+                vote_count=1,
+            )
+            db.add(row)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"투표 저장 중 오류가 발생했습니다: {e}")
+
+    # 최신 집계 결과 반환
+    rows = db.query(PollVote).filter(PollVote.poll_id == body.poll_id).all()
+    options = [
+        {"option_index": r.option_index, "vote_count": r.vote_count}
+        for r in rows
+    ]
+    total = sum(r["vote_count"] for r in options)
+    return {
+        "success": True,
+        "poll_id": body.poll_id,
+        "total_votes": total,
+        "options": options,
+    }
+
+
+@router.get("/api/poll-stats")
+async def poll_stats(
+    poll_id: int = Query(..., description="투표 게시글 ID (Post.id)"),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key),
+):
+    """
+    투표 집계 조회 API
+    """
+    from app.models import PollVote
+
+    rows = db.query(PollVote).filter(PollVote.poll_id == poll_id).all()
+    options = [
+        {"option_index": r.option_index, "vote_count": r.vote_count}
+        for r in rows
+    ]
+    total = sum(r["vote_count"] for r in options)
+    return {
+        "success": True,
+        "poll_id": poll_id,
+        "total_votes": total,
+        "options": options,
     }
 
 

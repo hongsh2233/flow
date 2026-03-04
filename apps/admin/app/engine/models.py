@@ -179,6 +179,26 @@ class Post(Base):
     category = relationship("BoardCategory", back_populates="posts")
 
 
+class PollVote(Base):
+    """
+    게시글(투표 글) 단위 투표 집계 테이블.
+    - poll_id: 투표 게시글(Post.id)
+    - option_index: 선택지 인덱스 (0,1,2,...)
+    - vote_count: 해당 선택지 총 투표 수
+    """
+    __tablename__ = "poll_votes"
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_index = Column(Integer, nullable=False)
+    vote_count = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("poll_id", "option_index", name="uq_pollvote_poll_option"),
+    )
+
+
 class KrxData(Base):
     __tablename__ = "krx_data"
     id = Column(Integer, primary_key=True, index=True)
