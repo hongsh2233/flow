@@ -21,7 +21,7 @@ type Market = "kospi" | "kosdaq";
 type MainTab = "investor" | "deal" | "program";
 
 async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
-  const res = await fetch(`/api/naver-supply-data?${params.toString()}`, { cache: "no-store" });
+  const res = await fetch(`/api/naver-supply?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) {
     return { success: false, data: null, bizdate: null };
   }
