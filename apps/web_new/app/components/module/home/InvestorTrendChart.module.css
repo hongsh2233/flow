@@ -4,7 +4,7 @@
   border: 1px solid var(--app-border-light);
   box-shadow: var(--app-card-shadow);
   padding: 0.875rem 0.875rem 0.5rem;
-  margin: 0 16px 1rem;
+  margin: 0 32px 1rem;
 }
 
 /* 헤더 */
