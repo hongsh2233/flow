@@ -79,6 +79,56 @@ function Table({ data }: { data: TableData }) {
   );
 }
 
+function InvestorTable({ data }: { data: TableData }) {
+  if (!data.rows.length) {
+    return <p className={styles.empty}>데이터가 없습니다.</p>;
+  }
+  return (
+    <div className={styles.tableWrapper}>
+      <table className={styles.table}>
+        <thead>
+          <tr className={styles.investorHeadMain}>
+            <th rowSpan={2} className={styles.investorHeadFirst}>
+              날짜
+            </th>
+            <th rowSpan={2}>개인</th>
+            <th rowSpan={2}>외국인</th>
+            <th rowSpan={2}>기관계</th>
+            <th colSpan={6} className={styles.investorHeadGroup}>
+              기관
+            </th>
+            <th rowSpan={2}>기타법인</th>
+          </tr>
+          <tr className={styles.investorHeadSub}>
+            <th className={styles.investorHeadSubCell}>금융투자</th>
+            <th className={styles.investorHeadSubCell}>보험</th>
+            <th className={styles.investorHeadSubCell}>투신(사모)</th>
+            <th className={styles.investorHeadSubCell}>은행</th>
+            <th className={styles.investorHeadSubCell}>기타금융기관</th>
+            <th className={styles.investorHeadSubCell}>연기금등</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, idx) => (
+            <tr key={idx}>
+              {row.map((cell, i) => {
+                const isMinus = i > 0 && String(cell).trim().startsWith("-");
+                const isPlus = i > 0 && String(cell).trim().startsWith("+");
+                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
+                return (
+                  <td key={i} className={cls}>
+                    {cell}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function SupplyPage() {
   const [mainTab, setMainTab] = useState<MainTab>("investor");
   const [market, setMarket] = useState<Market>("kospi");
@@ -173,7 +223,7 @@ export default function SupplyPage() {
                     기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
                   </p>
                   {currentInvestor.success && currentInvestor.data ? (
-                    <Table data={currentInvestor.data} />
+                    <InvestorTable data={currentInvestor.data} />
                   ) : (
                     <p className={styles.empty}>데이터가 없습니다.</p>
                   )}

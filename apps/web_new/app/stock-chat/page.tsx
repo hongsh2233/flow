@@ -1,69 +1,21 @@
 "use client";
 
 import styles from "./JuTalkPage.module.css";
-import { Clock, ThumbsUp, MessageCircle, Heart } from "lucide-react";
+import { Clock, ThumbsUp, MessageCircle, Heart, Send } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
-
-type JuBTI = "Bull" | "Bear" | "Whale" | "Rabbit" | "Fox" | "Turtle";
-
-interface GuestbookMessage {
-  id: number;
-  user: string;
-  jubti: JuBTI;
-  content: string;
-  time: string;
-  likes: number;
-  isLiked?: boolean;
-}
-
-interface Expert {
-  id: number;
-  name: string;
-  title: string;
-  image: string;
-  quote: string;
-  likes: number;
-}
-
-interface MarketVoice {
-  id: number;
-  name: string;
-  title: string;
-  image: string;
-  statement: string;
-  time: string;
-  source: string;
-}
-
-interface StockTermItem {
-  id: number;
-  name: string;
-  title?: string | null;
-  quote: string;
-  image_url?: string | null;
-}
-
-interface BoardSummary {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface BoardPostFromApi {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  created_at: string;
-}
-
-interface VoteOption {
-  id: number;
-  label: string;
-  count: number;
-}
+import type {
+  JuBTI,
+  GuestbookMessage,
+  Expert,
+  MarketVoice,
+  StockTermItem,
+  BoardSummary,
+  BoardPostFromApi,
+  VoteOption,
+} from "./types";
 
 const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
 const STOCK_CHAT_VOTE_BOARD_ID = "B004";
@@ -116,16 +68,20 @@ const marketVoices: MarketVoice[] = [
 ];
 
 export default function JuTalkPage() {
-  const [voteOptions, setVoteOptions] = useState<VoteOption[]>([
-    { id: 0, label: "상승할 것 같아요", count: 1847 },
-    { id: 1, label: "하락할 것 같아요", count: 1203 },
-  ]);
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+  const nickname =
+    (session?.user as { nickname?: string | null; name?: string | null })?.nickname ||
+    session?.user?.name ||
+    "회원";
+  const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [userVotedIndex, setUserVotedIndex] = useState<number | null>(null);
 
   const [pollTitle, setPollTitle] = useState("오늘 코스피 전망");
   const [pollQuestion, setPollQuestion] = useState("오늘 코스피 마감, 어떻게 예상하시나요?");
 
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
   const [experts, setExperts] = useState<Expert[]>([]);
 
@@ -180,6 +136,33 @@ export default function JuTalkPage() {
       ...prev,
       [id]: !prev[id],
     }));
+  };
+
+  const handleSendMessage = () => {
+    if (!isLoggedIn) {
+      alert("로그인 후 이용해 주세요.");
+      return;
+    }
+    const text = newMessage.trim();
+    if (!text) return;
+
+    const now = new Date();
+    const timeLabel = now.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const newItem: GuestbookMessage = {
+      id: Date.now(),
+      user: nickname,
+      jubti: "Rabbit",
+      content: text,
+      time: timeLabel,
+      likes: 0,
+    };
+
+    setMessages((prev) => [newItem, ...prev]);
+    setNewMessage("");
   };
 
   useEffect(() => {
@@ -451,7 +434,24 @@ export default function JuTalkPage() {
             <h2 className={styles.sectionTitle}>커뮤니티 방명록</h2>
             <p className={styles.sectionSubtitle}>주린이들의 오늘 한마디</p>
           </div>
-
+          <div className={styles.writeBox}>
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={isLoggedIn ? "메시지를 입력하세요" : "로그인 후 작성할 수 있습니다"}
+              className={styles.writeTextarea}
+              rows={3}
+            />
+            <button
+              type="button"
+              className={styles.sendButton}
+              onClick={handleSendMessage}
+              disabled={!isLoggedIn}
+            >
+              <Send className={styles.sendButtonIcon} aria-hidden />
+              <span>작성</span>
+            </button>
+          </div>
           <div className={styles.messageList}>
             {messages.map((message) => {
               const jubtiInfo = jubtiIcons[message.jubti];

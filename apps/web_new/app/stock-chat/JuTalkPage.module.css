@@ -437,6 +437,27 @@
   margin-bottom: 0.75rem;
 }
 
+.writeTextarea {
+  flex: 1;
+  min-height: 72px;
+  resize: none;
+  border-radius: 0.8rem;
+  border: none;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.86rem;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.writeTextarea::placeholder {
+  color: #9ca3af;
+}
+
+.writeTextarea:focus-visible {
+  outline: 2px solid #fed7aa;
+  outline-offset: 1px;
+}
+
 .writeInput {
   flex: 1;
   border-radius: 0.8rem;

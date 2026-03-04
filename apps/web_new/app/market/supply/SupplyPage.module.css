@@ -50,6 +50,25 @@
   white-space: nowrap;
 }
 
+.investorHeadMain th {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.investorHeadFirst {
+  border-right: 1px solid #e5e7eb;
+}
+
+.investorHeadGroup {
+  font-size: 0.78rem;
+}
+
+.investorHeadSub th,
+.investorHeadSubCell {
+  font-size: 0.76rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
 .table tbody td {
   padding: 0.45rem 0.45rem;
   border-bottom: 1px solid #f3f4f6;
