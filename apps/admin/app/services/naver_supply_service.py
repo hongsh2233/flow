@@ -102,6 +102,14 @@ SUPPLY_SOURCES = [
     ("deal_rank", "kospi", "inst_sell",
      "/sise/sise_deal_rank_iframe.naver",
      {"sosok": "01", "investor_gubun": "1000", "type": "sell"}),
+    # 수급 순위 - 코스닥 기관 순매수
+    ("deal_rank", "kosdaq", "inst_buy",
+     "/sise/sise_deal_rank_iframe.naver",
+     {"sosok": "02", "investor_gubun": "1000", "type": "buy"}),
+    # 수급 순위 - 코스닥 기관 순매도
+    ("deal_rank", "kosdaq", "inst_sell",
+     "/sise/sise_deal_rank_iframe.naver",
+     {"sosok": "02", "investor_gubun": "1000", "type": "sell"}),
     # 프로그램 매매 시간별 - 전체
     ("program_time", "all", None,
      "/sise/programDealTrendTime.naver", {"bizdate": "{bizdate}"}),
