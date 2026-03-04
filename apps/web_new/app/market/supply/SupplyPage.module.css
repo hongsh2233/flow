@@ -8,51 +8,8 @@
   margin: 0 0 1rem;
 }
 
-.mainTabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  overflow-x: auto;
-}
-
-.mainTab,
-.mainTabActive {
-  white-space: nowrap;
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.86rem;
-  border: 1px solid #d0d7de;
-  background: #ffffff;
-  color: #4b5563;
-}
-
-.mainTabActive {
-  background: #111827;
-  color: #ffffff;
-  border-color: #111827;
-}
-
-.subTabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.subTab,
-.subTabActive {
-  flex: 0 0 auto;
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #4b5563;
-}
-
-.subTabActive {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #ffffff;
+.marketTabs {
+  margin: 0.75rem 0 0.25rem;
 }
 
 .loading {

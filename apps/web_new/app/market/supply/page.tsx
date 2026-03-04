@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
 import styles from "./SupplyPage.module.css";
 
 interface TableData {
@@ -20,7 +21,7 @@ type Market = "kospi" | "kosdaq";
 type MainTab = "investor" | "deal" | "program";
 
 async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
-  const res = await fetch(`/api/naver-supply-data?${params.toString()}`, { cache: "no-store" });
+  const res = await fetch(`/api/naver-supply?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) {
     return { success: false, data: null, bizdate: null };
   }
@@ -138,105 +139,87 @@ export default function SupplyPage() {
     <div className={styles.page}>
       <h1 className={styles.title}>수급 동향</h1>
 
-      <div className={styles.mainTabs}>
-        <button
-          type="button"
-          className={mainTab === "investor" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab("investor")}
-        >
-          투자자별 매매동향 (일자별)
-        </button>
-        <button
-          type="button"
-          className={mainTab === "deal" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab("deal")}
-        >
-          수급 순위
-        </button>
-        <button
-          type="button"
-          className={mainTab === "program" ? styles.mainTabActive : styles.mainTab}
-          onClick={() => setMainTab("program")}
-        >
-          프로그램 매매 (일자별)
-        </button>
-      </div>
+      <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">
+        <TabsList>
+          <TabsTrigger value="investor">투자자별 매매동향 (일자별)</TabsTrigger>
+          <TabsTrigger value="deal">수급 순위</TabsTrigger>
+          <TabsTrigger value="program">프로그램 매매 (일자별)</TabsTrigger>
+        </TabsList>
 
-      <div className={styles.subTabs}>
-        <button
-          type="button"
-          className={market === "kospi" ? styles.subTabActive : styles.subTab}
-          onClick={() => setMarket("kospi")}
-        >
-          코스피
-        </button>
-        <button
-          type="button"
-          className={market === "kosdaq" ? styles.subTabActive : styles.subTab}
-          onClick={() => setMarket("kosdaq")}
-        >
-          코스닥
-        </button>
-      </div>
-
-      {loading && <p className={styles.loading}>불러오는 중...</p>}
-
-      {!loading && mainTab === "investor" && currentInvestor && (
-        <>
-          <p className={styles.meta}>
-            기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
-          </p>
-          {currentInvestor.success && currentInvestor.data ? (
-            <Table data={currentInvestor.data} />
-          ) : (
-            <p className={styles.empty}>데이터가 없습니다.</p>
-          )}
-        </>
-      )}
-
-      {!loading && mainTab === "program" && currentProgram && (
-        <>
-          <p className={styles.meta}>
-            기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
-          </p>
-          {currentProgram.success && currentProgram.data ? (
-            <Table data={currentProgram.data} />
-          ) : (
-            <p className={styles.empty}>데이터가 없습니다.</p>
-          )}
-        </>
-      )}
-
-      {!loading && mainTab === "deal" && (
-        <div className={styles.dealGrid}>
-          {(["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const).map((key) => {
-            const entry = currentDeal[key];
-            const titleMap: Record<string, string> = {
-              foreign_buy: "외국인 순매수",
-              foreign_sell: "외국인 순매도",
-              inst_buy: "기관 순매수",
-              inst_sell: "기관 순매도",
-            };
-            return (
-              <div key={key} className={styles.card}>
-                <div className={styles.cardHeader}>{titleMap[key]}</div>
-                {!entry ? (
-                  <p className={styles.emptySmall}>데이터가 없습니다.</p>
-                ) : entry.success && entry.data ? (
-                  <>
-                    <p className={styles.meta}>
-                      기준일: {entry.bizdate ?? "-"} / 수집: {entry.collected_time ?? "-"}
-                    </p>
-                    <Table data={entry.data} />
-                  </>
-                ) : (
-                  <p className={styles.emptySmall}>데이터가 없습니다.</p>
-                )}
-              </div>
-            );
-          })}
+        <div className={styles.marketTabs}>
+          <Tabs value={market} onValueChange={(v) => setMarket(v as Market)} variant="pill">
+            <TabsList>
+              <TabsTrigger value="kospi">코스피</TabsTrigger>
+              <TabsTrigger value="kosdaq">코스닥</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-      )}
+
+        {loading && <p className={styles.loading}>불러오는 중...</p>}
+
+        <TabsContent value="investor">
+          {!loading && currentInvestor && (
+            <>
+              <p className={styles.meta}>
+                기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
+              </p>
+              {currentInvestor.success && currentInvestor.data ? (
+                <Table data={currentInvestor.data} />
+              ) : (
+                <p className={styles.empty}>데이터가 없습니다.</p>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="deal">
+          {!loading && (
+            <div className={styles.dealGrid}>
+              {(["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const).map((key) => {
+                const entry = currentDeal[key];
+                const titleMap: Record<string, string> = {
+                  foreign_buy: "외국인 순매수",
+                  foreign_sell: "외국인 순매도",
+                  inst_buy: "기관 순매수",
+                  inst_sell: "기관 순매도",
+                };
+                return (
+                  <div key={key} className={styles.card}>
+                    <div className={styles.cardHeader}>{titleMap[key]}</div>
+                    {!entry ? (
+                      <p className={styles.emptySmall}>데이터가 없습니다.</p>
+                    ) : entry.success && entry.data ? (
+                      <>
+                        <p className={styles.meta}>
+                          기준일: {entry.bizdate ?? "-"} / 수집: {entry.collected_time ?? "-"}
+                        </p>
+                        <Table data={entry.data} />
+                      </>
+                    ) : (
+                      <p className={styles.emptySmall}>데이터가 없습니다.</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="program">
+          {!loading && currentProgram && (
+            <>
+              <p className={styles.meta}>
+                기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
+              </p>
+              {currentProgram.success && currentProgram.data ? (
+                <Table data={currentProgram.data} />
+              ) : (
+                <p className={styles.empty}>데이터가 없습니다.</p>
+              )}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
