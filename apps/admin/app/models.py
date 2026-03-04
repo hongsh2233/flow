@@ -35,6 +35,7 @@ from app.engine.models import (
     FaqCategory,
     FaqItem,
     LegalDocument,
+    MasterQuote,
 )
 
 __all__ = [
@@ -44,5 +45,5 @@ __all__ = [
     "ScheduleAlarmSubscription", "MemberFcmToken", "NaverSupplyData",
     "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
-    "FaqCategory", "FaqItem", "LegalDocument",
+    "FaqCategory", "FaqItem", "LegalDocument", "MasterQuote",
 ]
