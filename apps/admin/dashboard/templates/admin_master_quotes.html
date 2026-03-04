@@ -455,15 +455,14 @@
             <button
               type="button"
               class="btn-edit"
-              onclick="openEditModal(
-                {{ item.id }},
-                '{{ item.name | replace(\"'\", \"\\'\") }}',
-                `{{ (item.title or '') | replace('`','') }}`,
-                `{{ item.quote | replace('`','') }}`,
-                `{{ (item.image_url or '') | replace('`','') }}`,
-                {{ item.order_index }},
-                '{{ item.is_active }}'
-              )"
+              onclick="openEditModal(this)"
+              data-id="{{ item.id }}"
+              data-name="{{ item.name | e }}"
+              data-title="{{ (item.title or '') | e }}"
+              data-quote="{{ item.quote | e }}"
+              data-image-url="{{ (item.image_url or '') | e }}"
+              data-order-index="{{ item.order_index }}"
+              data-is-active="{{ item.is_active }}"
             >
               수정
             </button>
@@ -557,7 +556,15 @@
 
 {% block extra_scripts %}
 <script>
-  function openEditModal(id, name, title, quote, imageUrl, orderIndex, isActive) {
+  function openEditModal(buttonEl) {
+    var id = buttonEl.dataset.id;
+    var name = buttonEl.dataset.name || '';
+    var title = buttonEl.dataset.title || '';
+    var quote = buttonEl.dataset.quote || '';
+    var imageUrl = buttonEl.dataset.imageUrl || buttonEl.dataset.imageurl || '';
+    var orderIndex = buttonEl.dataset.orderIndex || buttonEl.dataset.orderindex || 0;
+    var isActive = buttonEl.dataset.isActive || buttonEl.dataset.isactive || 'active';
+
     const backdrop = document.getElementById('editModalBackdrop');
     const form = document.getElementById('editForm');
     if (!backdrop || !form) return;
