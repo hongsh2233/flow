@@ -69,6 +69,7 @@ __all__ = [
     "FaqCategory",
     "FaqItem",
     "LegalDocument",
+  "MasterQuote",
 ]
 
 
@@ -482,6 +483,20 @@ class StockTerm(Base):
     category = Column(String(50), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class MasterQuote(Base):
+  """대가들의 한마디 (명언 + 사진 URL)"""
+  __tablename__ = "master_quotes"
+  id = Column(Integer, primary_key=True, index=True)
+  name = Column(String(100), nullable=False)        # 대가 이름
+  title = Column(String(150), nullable=True)        # 직함/설명
+  quote = Column(Text, nullable=False)              # 명언 텍스트
+  image_url = Column(String(500), nullable=True)    # 사진 URL
+  order_index = Column(Integer, nullable=False, default=0)
+  is_active = Column(String(20), default="active")
+  created_at = Column(DateTime(timezone=True), server_default=func.now())
+  updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class FaqCategory(Base):

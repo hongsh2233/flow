@@ -40,6 +40,12 @@ except ImportError as e:
     print(f"⚠️ stock_terms 라우터 import 실패 (무시 가능): {e}")
     stock_terms = None
 
+try:
+    from app.routers import master_quotes
+except ImportError as e:
+    print(f"⚠️ master_quotes 라우터 import 실패 (무시 가능): {e}")
+    master_quotes = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -470,6 +476,8 @@ if profile:
     app.include_router(profile.router)   # 프로필 설정 관리 (캐릭터, 주식 단어)
 if stock_terms:
     app.include_router(stock_terms.router)  # 주식용어 관리
+if master_quotes:
+    app.include_router(master_quotes.router)  # 대가들의 한마디 관리
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리

@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+
+{% block title %}대가들의 한마디 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+
+  .section h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #fb923c;
+  }
+
+  .search-area {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .search-area input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .btn-search {
+    padding: 10px 25px;
+    background: #fb923c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .btn-search:hover {
+    background: #ea580c;
+  }
+
+  .btn-reset {
+    padding: 10px 20px;
+    background: #9ca3af;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-reset:hover {
+    background: #6b7280;
+  }
+
+  .add-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .add-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .add-form label {
+    font-size: 12px;
+    color: #4b5563;
+    font-weight: 600;
+  }
+
+  .add-form input[type="text"],
+  .add-form input[type="number"],
+  .add-form textarea {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .add-form .name-input {
+    min-width: 160px;
+  }
+
+  .add-form .title-input {
+    min-width: 200px;
+  }
+
+  .add-form .image-input {
+    min-width: 220px;
+  }
+
+  .add-form .order-input {
+    width: 90px;
+  }
+
+  .add-form .quote-input {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .btn-add {
+    padding: 10px 24px;
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .btn-add:hover {
+    background: #16a34a;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+  }
+
+  .table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .avatar-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 2px solid #f97316;
+  }
+
+  .name-cell {
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .title-cell {
+    color: #6b7280;
+  }
+
+  .quote-cell {
+    color: #374151;
+    line-height: 1.4;
+  }
+
+  .badge-active,
+  .badge-inactive {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-active {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .badge-inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .btn-edit,
+  .btn-del {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 4px;
+  }
+
+  .btn-edit {
+    background: #f97316;
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background: #ea580c;
+  }
+
+  .btn-del {
+    background: #ef4444;
+    color: white;
+  }
+
+  .btn-del:hover {
+    background: #dc2626;
+  }
+
+  .count-info {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 8px;
+    margin-bottom: 10px;
+  }
+
+  .pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pagination a,
+  .pagination span {
+    padding: 7px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+  }
+
+  .pagination a {
+    color: #111827;
+    background: #fff;
+  }
+
+  .pagination a:hover {
+    background: #f9fafb;
+    border-color: #fb923c;
+  }
+
+  .pagination span.current {
+    background: #fb923c;
+    color: white;
+    border-color: #fb923c;
+  }
+
+  .pagination span.disabled {
+    color: #9ca3af;
+    background: #f9fafb;
+  }
+
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 24px 20px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  }
+
+  .modal-card h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+  }
+
+  .modal-form-row {
+    margin-bottom: 10px;
+  }
+
+  .modal-form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 4px;
+  }
+
+  .modal-form-row input[type="text"],
+  .modal-form-row input[type="number"],
+  .modal-form-row textarea,
+  .modal-form-row select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+  }
+
+  .modal-actions {
+    margin-top: 14px;
+    text-align: right;
+  }
+
+  .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    margin-right: 8px;
+    background: #9ca3af;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: #6b7280;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="color:#111827;margin-top:0;">📚 대가들의 한마디 관리</h2>
+  <p style="color:#6b7280;margin-bottom:1.5rem;">
+    투자 대가의 이름, 직함, 명언, 사진 URL을 등록하면 주톡(<b>stock-chat</b>) 화면에 노출됩니다.
+  </p>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0 24px;" />
+
+  <div class="section">
+    <h3>🔍 검색</h3>
+    <form method="GET" action="/admin/master-quotes" class="search-area">
+      <input
+        type="text"
+        name="q"
+        placeholder="이름 또는 명언 내용으로 검색..."
+        value="{{ q }}"
+      />
+      <button type="submit" class="btn-search">검색</button>
+      <a href="/admin/master-quotes" class="btn-reset">초기화</a>
+    </form>
+  </div>
+
+  <div class="section">
+    <h3>➕ 새 대가 한마디 등록</h3>
+    <form method="POST" action="/admin/master-quotes/add" class="add-form">
+      <div class="form-group name-input">
+        <label>이름 (필수)</label>
+        <input type="text" name="name" placeholder="예: 워런 버핏" required maxlength="100" />
+      </div>
+      <div class="form-group title-input">
+        <label>직함/설명</label>
+        <input type="text" name="title" placeholder="예: 버크셔 해서웨이 회장" maxlength="150" />
+      </div>
+      <div class="form-group quote-input">
+        <label>명언 (필수)</label>
+        <textarea
+          name="quote"
+          rows="2"
+          placeholder="예: 가격은 당신이 지불하는 것이고, 가치는 당신이 얻는 것입니다."
+          required
+        ></textarea>
+      </div>
+      <div class="form-group image-input">
+        <label>사진 URL</label>
+        <input
+          type="text"
+          name="image_url"
+          placeholder="예: /uploads/images/warren_buffett.jpg 또는 https://..."
+        />
+      </div>
+      <div class="form-group order-input">
+        <label>정렬순서</label>
+        <input type="number" name="order_index" value="0" />
+      </div>
+      <button type="submit" class="btn-add">등록</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <h3 style="margin-bottom:0;">📋 등록된 대가 목록</h3>
+    </div>
+    <div class="count-info">
+      {% if q %}
+        검색 결과: <strong>{{ total }}건</strong> (검색어: "{{ q }}")
+      {% else %}
+        전체 등록 수: <strong>{{ total }}건</strong>
+      {% endif %}
+    </div>
+
+    {% if quotes %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:70px;">사진</th>
+          <th style="width:140px;">이름/직함</th>
+          <th>명언</th>
+          <th style="width:80px;">정렬</th>
+          <th style="width:90px;">상태</th>
+          <th style="width:150px;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in quotes %}
+        <tr>
+          <td>
+            {% if item.image_url %}
+            <img src="{{ item.image_url }}" alt="{{ item.name }}" class="avatar-thumb" />
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:999px;background:#fee2e2;display:flex;align-items:center;justify-content:center;color:#b91c1c;font-weight:700;font-size:18px;">
+              {{ item.name[:1] }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="name-cell">{{ item.name }}</div>
+            {% if item.title %}
+            <div class="title-cell">{{ item.title }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="quote-cell">{{ item.quote }}</div>
+          </td>
+          <td>{{ item.order_index }}</td>
+          <td>
+            {% if item.is_active == 'active' %}
+            <span class="badge-active">사용중</span>
+            {% else %}
+            <span class="badge-inactive">숨김</span>
+            {% endif %}
+          </td>
+          <td>
+            <button
+              type="button"
+              class="btn-edit"
+              onclick="openEditModal(
+                {{ item.id }},
+                '{{ item.name | replace(\"'\", \"\\'\") }}',
+                `{{ (item.title or '') | replace('`','') }}`,
+                `{{ item.quote | replace('`','') }}`,
+                `{{ (item.image_url or '') | replace('`','') }}`,
+                {{ item.order_index }},
+                '{{ item.is_active }}'
+              )"
+            >
+              수정
+            </button>
+            <a
+              href="/admin/master-quotes/delete/{{ item.id }}"
+              class="btn-del"
+              onclick="return confirm('정말 삭제하시겠습니까?');"
+            >
+              삭제
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="/admin/master-quotes?page={{ page - 1 }}&q={{ q }}">« 이전</a>
+      {% else %}
+      <span class="disabled">« 이전</span>
+      {% endif %}
+
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="current">{{ p }}</span>
+        {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+        <a href="/admin/master-quotes?page={{ p }}&q={{ q }}">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 3 %}
+        <span class="disabled">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if page < total_pages %}
+      <a href="/admin/master-quotes?page={{ page + 1 }}&q={{ q }}">다음 »</a>
+      {% else %}
+      <span class="disabled">다음 »</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p style="color:#9ca3af;text-align:center;padding:40px 0;">
+      등록된 데이터가 없습니다. 위 폼에서 첫 번째 대가의 한마디를 등록해보세요.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div id="editModalBackdrop" class="modal-backdrop">
+  <div class="modal-card">
+    <h3>대가 한마디 수정</h3>
+    <form method="POST" id="editForm">
+      <div class="modal-form-row">
+        <label>이름</label>
+        <input type="text" name="name" id="editName" required maxlength="100" />
+      </div>
+      <div class="modal-form-row">
+        <label>직함/설명</label>
+        <input type="text" name="title" id="editTitle" maxlength="150" />
+      </div>
+      <div class="modal-form-row">
+        <label>명언</label>
+        <textarea name="quote" id="editQuote" rows="3" required></textarea>
+      </div>
+      <div class="modal-form-row">
+        <label>사진 URL</label>
+        <input type="text" name="image_url" id="editImageUrl" />
+      </div>
+      <div class="modal-form-row">
+        <label>정렬순서</label>
+        <input type="number" name="order_index" id="editOrderIndex" />
+      </div>
+      <div class="modal-form-row">
+        <label>상태</label>
+        <select name="is_active" id="editIsActive">
+          <option value="active">사용중</option>
+          <option value="inactive">숨김</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeEditModal()">취소</button>
+        <button type="submit" class="btn-add">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openEditModal(id, name, title, quote, imageUrl, orderIndex, isActive) {
+    const backdrop = document.getElementById('editModalBackdrop');
+    const form = document.getElementById('editForm');
+    if (!backdrop || !form) return;
+
+    document.getElementById('editName').value = name || '';
+    document.getElementById('editTitle').value = title || '';
+    document.getElementById('editQuote').value = quote || '';
+    document.getElementById('editImageUrl').value = imageUrl || '';
+    document.getElementById('editOrderIndex').value = orderIndex || 0;
+    document.getElementById('editIsActive').value = isActive || 'active';
+
+    form.action = '/admin/master-quotes/update/' + id;
+    backdrop.style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    const backdrop = document.getElementById('editModalBackdrop');
+    if (backdrop) {
+      backdrop.style.display = 'none';
+    }
+  }
+
+  window.addEventListener('click', function (event) {
+    const backdrop = document.getElementById('editModalBackdrop');
+    if (event.target === backdrop) {
+      closeEditModal();
+    }
+  });
+</script>
+{% endblock %}
+
