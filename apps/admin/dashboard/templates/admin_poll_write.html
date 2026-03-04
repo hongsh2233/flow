@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}투표 수정{% else %}투표 등록{% endif %} - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50; }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px;
+    font-size: 14px; box-sizing: border-box;
+  }
+  .form-group textarea { min-height: 100px; resize: vertical; }
+  .btn-back { display: inline-block; margin-bottom: 15px; color: #3498db; text-decoration: none; }
+  .btn-back:hover { text-decoration: underline; }
+  .btn-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
+  .btn-cancel { padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn-submit { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .option-hint { font-size: 12px; color: #666; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/admin/polls" class="btn-back">← 투표 목록으로</a>
+
+<div class="form-container">
+  <h2 style="margin-top: 0">{% if is_edit %}✏️ 투표 수정{% else %}📊 새 투표 등록{% endif %}</h2>
+
+  <form action="{% if is_edit %}/admin/polls/{{ poll.id }}/edit{% else %}/admin/polls/create{% endif %}" method="post">
+    <div class="form-group">
+      <label for="title">제목 *</label>
+      <input type="text" id="title" name="title" required
+        value="{{ poll.title if poll else '' }}"
+        placeholder="예: 오늘 코스피 전망" />
+    </div>
+
+    <div class="form-group">
+      <label for="start_date">게시기간 - 시작일 *</label>
+      <input type="date" id="start_date" name="start_date" required
+        value="{{ poll.start_date.isoformat() if poll and poll.start_date else '' }}" />
+    </div>
+
+    <div class="form-group">
+      <label for="end_date">게시기간 - 종료일 *</label>
+      <input type="date" id="end_date" name="end_date" required
+        value="{{ poll.end_date.isoformat() if poll and poll.end_date else '' }}" />
+    </div>
+
+    <div class="form-group">
+      <label for="description">설명</label>
+      <textarea id="description" name="description" placeholder="투표에 대한 추가 설명 (선택)">{{ poll.description if poll and poll.description else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>항목1 *</label>
+      <input type="text" name="option_1" required
+        value="{{ (option_values or [])[0] if (option_values or [])|length > 0 else '' }}"
+        placeholder="예: 상승할 것 같아요" />
+    </div>
+
+    <div class="form-group">
+      <label>항목2 *</label>
+      <input type="text" name="option_2" required
+        value="{{ (option_values or [])[1] if (option_values or [])|length > 1 else '' }}"
+        placeholder="예: 하락할 것 같아요" />
+    </div>
+
+    <div class="form-group">
+      <label>항목3</label>
+      <input type="text" name="option_3"
+        value="{{ (option_values or [])[2] if (option_values or [])|length > 2 else '' }}"
+        placeholder="선택 (예: 보합)" />
+    </div>
+
+    <div class="form-group">
+      <label>항목4</label>
+      <input type="text" name="option_4"
+        value="{{ (option_values or [])[3] if (option_values or [])|length > 3 else '' }}" />
+    </div>
+
+    <div class="form-group">
+      <label>항목5</label>
+      <input type="text" name="option_5"
+        value="{{ (option_values or [])[4] if (option_values or [])|length > 4 else '' }}" />
+    </div>
+    <p class="option-hint">최소 2개 이상의 항목을 입력해 주세요. 항목3~5는 선택입니다.</p>
+
+    <div class="btn-group">
+      <a href="/admin/polls" class="btn-cancel">취소</a>
+      <button type="submit" class="btn-submit">저장</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

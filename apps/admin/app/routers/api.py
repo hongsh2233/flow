@@ -573,6 +573,44 @@ async def get_board_posts(
     }
 
 
+# =========================================================
+# 투표 API (별도 Poll 모듈)
+# =========================================================
+
+@router.get("/api/polls/active")
+async def get_active_poll(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    현재 진행중인 투표 1건 조회 (게시기간 내)
+    stock-chat 등 프론트엔드에서 사용
+    """
+    from app.models import Poll
+    from datetime import date
+    today = date.today()
+    poll = (
+        db.query(Poll)
+        .filter(Poll.start_date <= today, Poll.end_date >= today)
+        .order_by(Poll.start_date.desc())
+        .first()
+    )
+    if not poll:
+        return {"success": True, "data": None}
+    options = sorted(poll.options or [], key=lambda o: o.order_index)
+    return {
+        "success": True,
+        "data": {
+            "id": poll.id,
+            "title": poll.title,
+            "description": poll.description or "",
+            "start_date": serialize_date(poll.start_date),
+            "end_date": serialize_date(poll.end_date),
+            "options": [{"order_index": o.order_index, "text": o.text} for o in options],
+        },
+    }
+
+
 @router.post("/api/poll-vote")
 async def poll_vote(
     body: PollVoteRequest,
@@ -582,7 +620,7 @@ async def poll_vote(
     """
     투표 집계 API
 
-    - poll_id: 투표 게시글(Post.id)
+    - poll_id: Poll.id (별도 투표 모듈)
     - option_index: 선택지 인덱스 (0,1,2,...)
 
     요청이 들어오면 해당 (poll_id, option_index)에 대한 vote_count를 1 증가시키고,
@@ -634,12 +672,12 @@ async def poll_vote(
 
 @router.get("/api/poll-stats")
 async def poll_stats(
-    poll_id: int = Query(..., description="투표 게시글 ID (Post.id)"),
+    poll_id: int = Query(..., description="투표 ID (Poll.id)"),
     db: Session = Depends(get_db),
     authorized: str = Depends(verify_api_key),
 ):
     """
-    투표 집계 조회 API
+    투표 집계 조회 API (Poll.id 기준)
     """
     from app.models import PollVote
 

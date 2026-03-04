@@ -39,6 +39,9 @@ class NavMenuTab(Base):
 
 __all__ = [
     "Base",
+    "Poll",
+    "PollOption",
+    "PollVote",
     "ExchangeRateSnapshot",
     "CollectedData",
     "AdminUser",
@@ -179,20 +182,51 @@ class Post(Base):
     category = relationship("BoardCategory", back_populates="posts")
 
 
+class Poll(Base):
+    """
+    별도 투표 모듈 - 게시판과 분리된 투표 관리.
+    - title: 제목 (필수)
+    - description: 설명
+    - start_date, end_date: 게시 기간
+    """
+    __tablename__ = "polls"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    options = relationship("PollOption", back_populates="poll", cascade="all, delete-orphan", order_by="PollOption.order_index")
+    votes = relationship("PollVote", back_populates="poll", cascade="all, delete-orphan")
+
+
+class PollOption(Base):
+    """투표 선택지"""
+    __tablename__ = "poll_options"
+    id = Column(Integer, primary_key=True, index=True)
+    poll_id = Column(Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False, index=True)
+    text = Column(String(255), nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    poll = relationship("Poll", back_populates="options")
+
+
 class PollVote(Base):
     """
-    게시글(투표 글) 단위 투표 집계 테이블.
-    - poll_id: 투표 게시글(Post.id)
+    투표별 선택지 단위 투표 집계 테이블.
+    - poll_id: Poll.id
     - option_index: 선택지 인덱스 (0,1,2,...)
     - vote_count: 해당 선택지 총 투표 수
     """
     __tablename__ = "poll_votes"
     id = Column(Integer, primary_key=True, index=True)
-    poll_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    poll_id = Column(Integer, ForeignKey("polls.id", ondelete="CASCADE"), nullable=False, index=True)
     option_index = Column(Integer, nullable=False)
     vote_count = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    poll = relationship("Poll", back_populates="votes")
 
     __table_args__ = (
         UniqueConstraint("poll_id", "option_index", name="uq_pollvote_poll_option"),

@@ -27,7 +27,7 @@ from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_r
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, finance, fsc, api, faq, terms, popup
+from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup
 try:
     from app.routers import profile
 except ImportError as e:
@@ -386,6 +386,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 네이버 수급 동향 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_polls_tables import upgrade as add_polls_migration
+        add_polls_migration()
+    except Exception as e:
+        print(f"⚠️ 투표(polls) 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
@@ -468,6 +474,7 @@ app.include_router(dashboard.router)  # 대시보드
 app.include_router(admin.router)    # 관리자 관리
 app.include_router(members.router)   # 회원 관리
 app.include_router(board.router)     # 게시판 관리
+app.include_router(polls.router)     # 투표 관리
 app.include_router(schedule.router)  # 일정 관리
 app.include_router(finance.router)   # 한국거래소 데이터
 app.include_router(fsc.router)       # 금융위원회 데이터

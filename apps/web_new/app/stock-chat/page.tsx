@@ -18,7 +18,6 @@ import type {
 } from "./types";
 
 const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
-const STOCK_CHAT_VOTE_BOARD_ID = "B004";
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -231,21 +230,44 @@ export default function JuTalkPage() {
       }
     };
 
-    const fetchBoardsAndContent = async () => {
+    const fetchBoardsAndContent = async (): Promise<number | null> => {
+      let discoveredPollId: number | null = null;
       try {
+        // 투표: 별도 /api/polls/active 사용
+        const pollRes = await fetch("/api/polls/active", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (pollRes.ok) {
+          const pollJson = await pollRes.json();
+          const pollData = pollJson?.data;
+          if (pollData?.id && Array.isArray(pollData.options) && pollData.options.length > 0) {
+            discoveredPollId = pollData.id;
+            setPollId(pollData.id);
+            if (pollData.title) setPollTitle(pollData.title);
+            setPollQuestion(pollData.description || pollData.title || "투표해 주세요.");
+            const parsedOptions: VoteOption[] = pollData.options
+              .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
+              .map((o: { text: string }, idx: number) => ({
+                id: idx,
+                label: o.text,
+                count: 0,
+              }));
+            setVoteOptions(parsedOptions);
+            setUserVotedIndex(null);
+          }
+        }
+
         const boardsRes = await fetch("/api/boards", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
         });
-        if (!boardsRes.ok) return;
+        if (!boardsRes.ok) return discoveredPollId;
         const boardsJson = await boardsRes.json();
         const boards = (boardsJson?.data as BoardSummary[]) ?? [];
-
         const guestbookBoard = boards.find((b) => b.id === STOCK_CHAT_GUESTBOOK_BOARD_ID);
-        const voteBoard =
-          boards.find((b) => b.type === "poll") ??
-          boards.find((b) => b.id === STOCK_CHAT_VOTE_BOARD_ID);
 
         if (guestbookBoard) {
           const postsRes = await fetch(
@@ -273,52 +295,10 @@ export default function JuTalkPage() {
             setMessages(mappedMessages);
           }
         }
-
-        if (voteBoard) {
-          const votePostsRes = await fetch(
-            `/api/boards/${voteBoard.id}/posts?page=1&limit=1`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              cache: "no-store",
-            },
-          );
-          if (votePostsRes.ok) {
-            const votePostsJson = await votePostsRes.json();
-            const votePosts = (votePostsJson?.data as BoardPostFromApi[]) ?? [];
-            if (votePosts.length > 0) {
-              const latest = votePosts[0];
-              setPollId(latest.id);
-              if (latest.title) setPollTitle(latest.title);
-              const body = stripHtml(latest.content);
-              if (body) {
-                const lines = body
-                  .split(/\r?\n/)
-                  .map((line) => line.trim())
-                  .filter((line) => line.length > 0);
-
-                if (lines.length >= 2) {
-                  setPollQuestion(lines[0]);
-                  const optionLines = lines.slice(1);
-                  const parsedOptions: VoteOption[] = optionLines.map((label, idx) => ({
-                    id: idx,
-                    label,
-                    count: 0,
-                  }));
-                  if (parsedOptions.length > 0) {
-                    setVoteOptions(parsedOptions);
-                    setUserVotedIndex(null);
-                  }
-                } else {
-                  setPollQuestion(body);
-                }
-              }
-            }
-          }
-        }
       } catch {
         // ignore and keep defaults
       }
+      return discoveredPollId;
     };
 
     const fetchStatsIfNeeded = async (targetPollId: number | null) => {
@@ -345,8 +325,8 @@ export default function JuTalkPage() {
     };
 
     fetchExpertsFromWiki();
-    fetchBoardsAndContent().then(() => fetchStatsIfNeeded(pollId)).catch(() => {});
-  }, [pollId]);
+    fetchBoardsAndContent().then((id) => fetchStatsIfNeeded(id)).catch(() => {});
+  }, []);
 
   return (
     <div className={styles.page}>

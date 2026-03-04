@@ -90,17 +90,6 @@
     margin-bottom: 20px;
   }
 
-  .poll-help {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    background: #fef9e7;
-    border: 1px solid #f1c40f66;
-    font-size: 13px;
-    color: #7f8c8d;
-    line-height: 1.5;
-  }
-
   /* 파일 첨부 영역 */
   .file-upload-area {
     border: 2px dashed #ddd;
@@ -172,15 +161,6 @@
 <div class="form-container">
   <div class="board-info">
     <strong>게시판:</strong> {{ board.name }} ({{ board.id }})
-    {% if board.type == 'poll' %}
-    <div class="poll-help">
-      <strong>📊 투표 게시판 안내</strong><br>
-      - <b>제목</b>: 투표 제목을 입력합니다. (예: 오늘 코스피 전망)<br>
-      - <b>내용 첫 줄</b>: 질문 문장을 입력합니다. (예: 오늘 코스피 마감, 어떻게 예상하시나요?)<br>
-      - <b>다음 줄부터</b>: 각 줄마다 하나의 선택지를 입력합니다. (예: 상승할 것 같아요 / 하락할 것 같아요)<br>
-      - 저장 후 프론트의 주톡 투표 영역에 자동으로 반영됩니다.
-    </div>
-    {% endif %}
   </div>
 
   <h2 style="margin-top: 0">✏️ 새 게시글 작성</h2>

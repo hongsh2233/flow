@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}투표 관리 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .polls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .btn-create {
+    padding: 10px 25px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-create:hover {
+    background: #2980b9;
+  }
+  .badge-active { background: #d4edda; color: #155724; }
+  .badge-scheduled { background: #cce5ff; color: #004085; }
+  .badge-ended { background: #e2e3e5; color: #6c757d; }
+  .btn-edit, .btn-delete {
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    margin-right: 6px;
+  }
+  .btn-edit { background: #3498db; color: white; }
+  .btn-edit:hover { background: #2980b9; }
+  .btn-delete { background: #e74c3c; color: white; border: none; cursor: pointer; }
+  .btn-delete:hover { background: #c0392b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="polls-header">
+    <h2 style="margin: 0">📊 진행중인 투표</h2>
+    <a href="/admin/polls/create" class="btn-create">+ 새 투표 등록</a>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>제목</th>
+        <th>게시기간</th>
+        <th>상태</th>
+        <th>선택지</th>
+        <th>총 투표</th>
+        <th>관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in polls %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td style="font-weight: bold">{{ p.title }}</td>
+        <td>{{ p.start_date }} ~ {{ p.end_date }}</td>
+        <td>
+          <span class="badge {% if p.status == '진행중' %}badge-active{% elif p.status == '예정' %}badge-scheduled{% else %}badge-ended{% endif %}">
+            {{ p.status }}
+          </span>
+        </td>
+        <td>{{ p.option_count }}개</td>
+        <td>{{ p.total_votes }}표</td>
+        <td>
+          <a href="/admin/polls/{{ p.id }}/edit" class="btn-edit">수정</a>
+          <form action="/admin/polls/{{ p.id }}/delete" method="post" style="display:inline;" onsubmit="return confirm('이 투표를 삭제하시겠습니까?');">
+            <button type="submit" class="btn-delete">삭제</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 30px; color: #666;">
+          등록된 투표가 없습니다. <a href="/admin/polls/create">새 투표 등록</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -4,6 +4,9 @@ Re-export from engine (PostgreSQL 호환 모델).
 """
 from app.engine.models import (
     Base,
+    Poll,
+    PollOption,
+    PollVote,
     ExchangeRateSnapshot,
     CollectedData,
     AdminUser,
@@ -41,7 +44,7 @@ from app.engine.models import (
 )
 
 __all__ = [
-    "Base", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post",
+    "Base", "Poll", "PollOption", "PollVote", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "Popup", "Notification", "NotificationRead",
     "ScheduleAlarmSubscription", "MemberFcmToken", "NaverSupplyData",
