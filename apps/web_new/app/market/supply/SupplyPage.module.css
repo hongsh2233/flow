@@ -33,7 +33,7 @@
 }
 
 .table {
-  min-width: 640px;
+  /* min-width: 640px; */
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;

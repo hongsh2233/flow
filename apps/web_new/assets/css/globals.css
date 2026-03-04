@@ -521,3 +521,13 @@ input[type='number'] {
   }
 }
 
+.Tabs-module__0v0eWa__listUnderline {
+  white-space: nowrap;
+  border-bottom: 2px solid var(--app-border);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding-bottom: 1px;
+}
+

@@ -131,7 +131,7 @@ export default function SupplyPage() {
       <h1 className={styles.title}>수급 동향</h1>
 
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">
-        <TabsList>
+        <TabsList style={{ gap: "0.1rem", display: "flex", paddingBottom: "0.1rem" }}>
           <TabsTrigger value="investor">투자자별 매매동향 (일자별)</TabsTrigger>
           <TabsTrigger value="deal">수급 순위</TabsTrigger>
           <TabsTrigger value="program">프로그램 매매 (일자별)</TabsTrigger>
