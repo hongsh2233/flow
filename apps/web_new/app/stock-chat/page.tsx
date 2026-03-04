@@ -1,17 +1,10 @@
 "use client";
 
 import styles from "./JuTalkPage.module.css";
-import {
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  ThumbsUp,
-  MessageCircle,
-  Send,
-  Heart,
-} from "lucide-react";
+import { Clock, ThumbsUp, MessageCircle, Heart } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 
 type JuBTI = "Bull" | "Bear" | "Whale" | "Rabbit" | "Fox" | "Turtle";
 
@@ -44,6 +37,42 @@ interface MarketVoice {
   source: string;
 }
 
+interface StockTermItem {
+  id: number;
+  name: string;
+  title?: string | null;
+  quote: string;
+  image_url?: string | null;
+}
+
+interface BoardSummary {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface BoardPostFromApi {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  created_at: string;
+}
+
+interface VoteOption {
+  id: number;
+  label: string;
+  count: number;
+}
+
+const STOCK_CHAT_GUESTBOOK_BOARD_NAME = "주톡 방명록";
+const STOCK_CHAT_VOTE_BOARD_NAME = "주톡 투표";
+
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+}
+
 const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string }> = {
   Bull: { icon: "🐂", className: styles.jubtiBull, label: "불마켓" },
   Bear: { icon: "🐻", className: styles.jubtiBear, label: "베어마켓" },
@@ -53,7 +82,7 @@ const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string
   Turtle: { icon: "🐢", className: styles.jubtiTurtle, label: "거북이" },
 };
 
-const experts: Expert[] = [
+const FALLBACK_EXPERTS: Expert[] = [
   {
     id: 1,
     name: "워런 버핏",
@@ -116,81 +145,31 @@ const marketVoices: MarketVoice[] = [
   },
 ];
 
-const guestbookMessages: GuestbookMessage[] = [
-  {
-    id: 1,
-    user: "주식왕초보",
-    jubti: "Rabbit",
-    content: "오늘 삼성전자 매수했어요! 장기 투자 시작합니다 🚀",
-    time: "2분 전",
-    likes: 12,
-  },
-  {
-    id: 2,
-    user: "투자고수",
-    jubti: "Bull",
-    content: "2차전지 업종 지금이 기회인 것 같아요. 다들 화이팅!",
-    time: "15분 전",
-    likes: 28,
-  },
-  {
-    id: 3,
-    user: "배당주러버",
-    jubti: "Turtle",
-    content: "안정적인 배당주로 포트폴리오 구성 중입니다 ㅎㅎ",
-    time: "32분 전",
-    likes: 15,
-  },
-  {
-    id: 4,
-    user: "분석마스터",
-    jubti: "Fox",
-    content: "금리 인하 시점이 중요할 것 같습니다. 신중하게!",
-    time: "1시간 전",
-    likes: 34,
-  },
-  {
-    id: 5,
-    user: "대박예감",
-    jubti: "Whale",
-    content: "미국 빅테크 추가 매수 완료! 장투 가즈아 💪",
-    time: "2시간 전",
-    likes: 52,
-  },
-  {
-    id: 6,
-    user: "신중파",
-    jubti: "Bear",
-    content: "지금은 조금 관망하는 게 좋을 것 같아요...",
-    time: "3시간 전",
-    likes: 19,
-  },
-];
-
 export default function JuTalkPage() {
-  const [vote, setVote] = useState<{ rise: number; fall: number; userVoted: "rise" | "fall" | null }>({
-    rise: 1847,
-    fall: 1203,
-    userVoted: null,
-  });
+  const [voteOptions, setVoteOptions] = useState<VoteOption[]>([
+    { id: 0, label: "상승할 것 같아요", count: 1847 },
+    { id: 1, label: "하락할 것 같아요", count: 1203 },
+  ]);
+  const [userVotedIndex, setUserVotedIndex] = useState<number | null>(null);
 
-  const [messages, setMessages] = useState(guestbookMessages);
-  const [newMessage, setNewMessage] = useState("");
+  const [pollTitle, setPollTitle] = useState("오늘 코스피 전망");
+  const [pollQuestion, setPollQuestion] = useState("오늘 코스피 마감, 어떻게 예상하시나요?");
+
+  const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
+  const [experts, setExperts] = useState<Expert[]>(FALLBACK_EXPERTS);
 
-  const handleVote = (choice: "rise" | "fall") => {
-    if (vote.userVoted === null) {
-      setVote({
-        ...vote,
-        [choice]: vote[choice] + 1,
-        userVoted: choice,
-      });
-    }
+  const handleVote = (index: number) => {
+    if (userVotedIndex !== null) return;
+    setVoteOptions((prev) =>
+      prev.map((opt, i) => (i === index ? { ...opt, count: opt.count + 1 } : opt)),
+    );
+    setUserVotedIndex(index);
   };
 
-  const totalVotes = vote.rise + vote.fall;
-  const risePercentage = Math.round((vote.rise / totalVotes) * 100);
-  const fallPercentage = Math.round((vote.fall / totalVotes) * 100);
+  const totalVotes = voteOptions.reduce((sum, opt) => sum + opt.count, 0);
+  const getPercentage = (count: number) =>
+    totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
 
   const handleLike = (id: number) => {
     setMessages((prev) =>
@@ -209,19 +188,130 @@ export default function JuTalkPage() {
     }));
   };
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
-    const newMsg: GuestbookMessage = {
-      id: messages.length + 1,
-      user: "주린이님",
-      jubti: "Rabbit",
-      content: newMessage,
-      time: "방금",
-      likes: 0,
+  useEffect(() => {
+    const fetchExpertsFromWiki = async () => {
+      try {
+        const url = `${API_BASE_URL}/api/master-quotes`;
+        const response = await fetch(url, {
+          method: "GET",
+          headers: getAuthHeaders(),
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const items = (data?.items as StockTermItem[]) ?? [];
+        if (!items.length) return;
+
+        const mapped: Expert[] = items.map((item, index) => {
+          return {
+            id: item.id ?? index,
+            name: item.name,
+            title: item.title || "투자 대가",
+            image:
+              item.image_url ||
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
+            quote: item.quote,
+            likes: 0,
+          };
+        });
+
+        setExperts(mapped);
+      } catch {
+        // ignore and keep fallback
+      }
     };
-    setMessages((prev) => [newMsg, ...prev]);
-    setNewMessage("");
-  };
+
+    const fetchBoardsAndContent = async () => {
+      try {
+        const boardsRes = await fetch("/api/boards", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!boardsRes.ok) return;
+        const boardsJson = await boardsRes.json();
+        const boards = (boardsJson?.data as BoardSummary[]) ?? [];
+
+        const guestbookBoard = boards.find((b) => b.name === STOCK_CHAT_GUESTBOOK_BOARD_NAME);
+        const voteBoard = boards.find((b) => b.name === STOCK_CHAT_VOTE_BOARD_NAME);
+
+        if (guestbookBoard) {
+          const postsRes = await fetch(
+            `/api/boards/${guestbookBoard.id}/posts?page=1&limit=20`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              cache: "no-store",
+            },
+          );
+          if (postsRes.ok) {
+            const postsJson = await postsRes.json();
+            const posts = (postsJson?.data as BoardPostFromApi[]) ?? [];
+            const mappedMessages: GuestbookMessage[] = posts.map((post) => ({
+              id: post.id,
+              user: post.author || "운영자",
+              jubti: "Rabbit",
+              content: stripHtml(post.content),
+              time: new Date(post.created_at).toLocaleDateString("ko-KR", {
+                month: "2-digit",
+                day: "2-digit",
+              }),
+              likes: 0,
+            }));
+            setMessages(mappedMessages);
+          }
+        }
+
+        if (voteBoard) {
+          const votePostsRes = await fetch(
+            `/api/boards/${voteBoard.id}/posts?page=1&limit=1`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              cache: "no-store",
+            },
+          );
+          if (votePostsRes.ok) {
+            const votePostsJson = await votePostsRes.json();
+            const votePosts = (votePostsJson?.data as BoardPostFromApi[]) ?? [];
+            if (votePosts.length > 0) {
+              const latest = votePosts[0];
+              if (latest.title) setPollTitle(latest.title);
+              const body = stripHtml(latest.content);
+              if (body) {
+                const lines = body
+                  .split(/\r?\n/)
+                  .map((line) => line.trim())
+                  .filter((line) => line.length > 0);
+
+                if (lines.length >= 2) {
+                  setPollQuestion(lines[0]);
+                  const optionLines = lines.slice(1);
+                  const parsedOptions: VoteOption[] = optionLines.map((label, idx) => ({
+                    id: idx,
+                    label,
+                    count: 0,
+                  }));
+                  if (parsedOptions.length > 0) {
+                    setVoteOptions(parsedOptions);
+                    setUserVotedIndex(null);
+                  }
+                } else {
+                  setPollQuestion(body);
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore and keep defaults
+      }
+    };
+
+    fetchExpertsFromWiki();
+    fetchBoardsAndContent();
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -236,70 +326,56 @@ export default function JuTalkPage() {
             </div>
             <span className={styles.sectionMeta}>
               <Clock className={styles.sectionMetaIcon} aria-hidden />
-              오늘 코스피 전망
+              {pollTitle}
             </span>
           </div>
-          <p className={styles.sectionQuestion}>오늘 코스피 마감, 어떻게 예상하시나요?</p>
+          <p className={styles.sectionQuestion}>{pollQuestion}</p>
 
-          {vote.userVoted && (
+          {userVotedIndex !== null && (
             <div className={styles.voteResult}>
-              <div className={styles.voteBar}>
-                <div
-                  className={styles.voteRise}
-                  style={{ width: `${risePercentage}%` }}
-                >
-                  {risePercentage > 20 && (
-                    <span className={styles.voteLabel}>상승 {risePercentage}%</span>
-                  )}
-                </div>
-                <div
-                  className={styles.voteFall}
-                  style={{ width: `${fallPercentage}%` }}
-                >
-                  {fallPercentage > 20 && (
-                    <span className={styles.voteLabel}>하락 {fallPercentage}%</span>
-                  )}
-                </div>
-              </div>
               <div className={styles.voteMetaRow}>
-                <span>{vote.rise.toLocaleString()}명</span>
                 <span className={styles.voteTotal}>총 {totalVotes.toLocaleString()}명 참여</span>
-                <span>{vote.fall.toLocaleString()}명</span>
+              </div>
+              <div className={styles.voteOptionResultList}>
+                {voteOptions.map((opt) => {
+                  const pct = getPercentage(opt.count);
+                  return (
+                    <div key={opt.id} className={styles.voteOptionRow}>
+                      <span className={styles.voteOptionLabel}>{opt.label}</span>
+                      <div className={styles.voteOptionBarOuter}>
+                        <div
+                          className={styles.voteOptionBarInner}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className={styles.voteOptionMeta}>
+                        {opt.count.toLocaleString()}명 · {pct}%
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
           <div className={styles.voteButtons}>
-            <button
-              type="button"
-              onClick={() => handleVote("rise")}
-              disabled={vote.userVoted !== null}
-              className={`${styles.voteButton} ${
-                vote.userVoted === "rise"
-                  ? styles.voteButtonRiseActive
-                  : vote.userVoted === null
-                  ? styles.voteButtonRise
-                  : styles.voteButtonDisabled
-              }`}
-            >
-              <TrendingUp aria-hidden />
-              <span>상승할 것 같아요</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleVote("fall")}
-              disabled={vote.userVoted !== null}
-              className={`${styles.voteButton} ${
-                vote.userVoted === "fall"
-                  ? styles.voteButtonFallActive
-                  : vote.userVoted === null
-                  ? styles.voteButtonFall
-                  : styles.voteButtonDisabled
-              }`}
-            >
-              <TrendingDown aria-hidden />
-              <span>하락할 것 같아요</span>
-            </button>
+            {voteOptions.map((opt, index) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => handleVote(index)}
+                disabled={userVotedIndex !== null}
+                className={`${styles.voteButton} ${
+                  userVotedIndex === index
+                    ? styles.voteButtonRiseActive
+                    : userVotedIndex === null
+                    ? styles.voteButtonRise
+                    : styles.voteButtonDisabled
+                }`}
+              >
+                <span>{opt.label}</span>
+              </button>
+            ))}
           </div>
         </section>
 
@@ -386,24 +462,6 @@ export default function JuTalkPage() {
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>커뮤니티 방명록</h2>
             <p className={styles.sectionSubtitle}>주린이들의 오늘 한마디</p>
-          </div>
-
-          <div className={styles.writeBox}>
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="오늘의 한마디를 남겨보세요..."
-              className={styles.writeInput}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              className={styles.sendButton}
-            >
-              <Send aria-hidden />
-            </button>
           </div>
 
           <div className={styles.messageList}>

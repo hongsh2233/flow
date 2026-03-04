@@ -148,6 +148,48 @@
   color: #374151;
 }
 
+.voteOptionResultList {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.voteOptionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 3fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.voteOptionLabel {
+  color: #374151;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voteOptionBarOuter {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.voteOptionBarInner {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fb7185, #f97316);
+  transition: width 0.4s ease;
+}
+
+.voteOptionMeta {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
 .voteButtons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
