@@ -108,6 +108,7 @@
       <select name="type" required style="flex: 1">
         <option value="korean">📝 일반형 (Korean)</option>
         <option value="guestbook">💬 방명록 (Guestbook)</option>
+        <option value="poll">📊 투표 (Poll)</option>
       </select>
       <select name="auth" required style="flex: 1">
         <option value="all">누구나 (비회원 포함)</option>
@@ -161,9 +162,9 @@
         <td style="font-weight: bold">{{ b.name }}</td>
         <td>
           <span
-            class="badge {{ 'type-korean' if b.type == 'korean' else 'type-guest' }}"
+            class="badge {% if b.type == 'korean' %}type-korean{% elif b.type in ['guestbook', 'guest'] %}type-guest{% else %}type-poll{% endif %}"
           >
-            {{ '일반형' if b.type == 'korean' else '방명록' }}
+            {% if b.type == 'korean' %}일반형{% elif b.type in ['guestbook', 'guest'] %}방명록{% elif b.type == 'poll' %}투표{% else %}{{ b.type }}{% endif %}
           </span>
         </td>
         <td>
@@ -239,6 +240,7 @@
         <select name="type" id="edit_type" style="width: 100%">
           <option value="korean">일반 한국형 (목록형)</option>
           <option value="guestbook">방명록 (댓글/대댓글 중심)</option>
+          <option value="poll">투표 (Poll)</option>
         </select>
       </div>
 

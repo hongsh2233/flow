@@ -77,8 +77,8 @@ export default function JuTalkPage() {
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [userVotedIndex, setUserVotedIndex] = useState<number | null>(null);
 
-  const [pollTitle, setPollTitle] = useState("오늘 코스피 전망");
-  const [pollQuestion, setPollQuestion] = useState("오늘 코스피 마감, 어떻게 예상하시나요?");
+  const [pollTitle, setPollTitle] = useState("오늘의 투표");
+  const [pollQuestion, setPollQuestion] = useState("투표 내용을 불러오는 중입니다.");
 
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -211,7 +211,9 @@ export default function JuTalkPage() {
         const boards = (boardsJson?.data as BoardSummary[]) ?? [];
 
         const guestbookBoard = boards.find((b) => b.id === STOCK_CHAT_GUESTBOOK_BOARD_ID);
-        const voteBoard = boards.find((b) => b.id === STOCK_CHAT_VOTE_BOARD_ID);
+        const voteBoard =
+          boards.find((b) => b.type === "poll") ??
+          boards.find((b) => b.id === STOCK_CHAT_VOTE_BOARD_ID);
 
         if (guestbookBoard) {
           const postsRes = await fetch(
