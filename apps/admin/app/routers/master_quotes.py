@@ -63,6 +63,13 @@ async def admin_master_quotes_page(
     .all()
   )
 
+  people = (
+    db.query(models.MasterPerson)
+    .filter(models.MasterPerson.is_active == "active")
+    .order_by(models.MasterPerson.name)
+    .all()
+  )
+
   return templates.TemplateResponse(
     "admin_master_quotes.html",
     {
@@ -70,6 +77,7 @@ async def admin_master_quotes_page(
       "admin_email": ADMIN_EMAIL,
       "active_page": "master-quotes",
       "quotes": quotes,
+      "people": people,
       "total": total,
       "page": page,
       "total_pages": total_pages,
@@ -80,7 +88,7 @@ async def admin_master_quotes_page(
 
 @router.post("/admin/master-quotes/add")
 async def add_master_quote(
-  name: str = Form(...),
+  person_id: int = Form(...),
   title: str = Form(""),
   quote: str = Form(...),
   image_url: str = Form(""),
@@ -92,19 +100,52 @@ async def add_master_quote(
   if not user:
     return RedirectResponse(url="/", status_code=303)
 
-  name = name.strip()
-  if not name:
-    return _js_alert_back("이름은 필수입니다.")
+  person = db.query(models.MasterPerson).filter(models.MasterPerson.id == person_id).first()
+  if not person:
+    return _js_alert_back("선택한 인물을 찾을 수 없습니다.")
 
   new_item = models.MasterQuote(
-    name=name,
-    title=title.strip() or None,
+    name=person.name,
+    title=title.strip() or person.title or None,
     quote=quote.strip(),
-    image_url=image_url.strip() or None,
+    image_url=image_url.strip() or person.image_url or None,
+    person_id=person.id,
     order_index=order_index or 0,
     is_active="active",
   )
   db.add(new_item)
+  db.commit()
+
+  return RedirectResponse(url="/admin/master-quotes", status_code=303)
+
+
+@router.post("/admin/master-people/add")
+async def add_master_person(
+  name: str = Form(...),
+  title: str = Form(""),
+  image_url: str = Form(""),
+  user=Depends(get_current_user),
+  db: Session = Depends(get_db),
+):
+  """대가 인물 등록 (이름/사진)"""
+  if not user:
+    return RedirectResponse(url="/", status_code=303)
+
+  name = name.strip()
+  if not name:
+    return _js_alert_back("이름은 필수입니다.")
+
+  existing = db.query(models.MasterPerson).filter(models.MasterPerson.name == name).first()
+  if existing:
+    return _js_alert_back("이미 등록된 인물입니다.")
+
+  person = models.MasterPerson(
+    name=name,
+    title=title.strip() or None,
+    image_url=image_url.strip() or None,
+    is_active="active",
+  )
+  db.add(person)
   db.commit()
 
   return RedirectResponse(url="/admin/master-quotes", status_code=303)

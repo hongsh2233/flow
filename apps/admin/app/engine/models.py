@@ -67,8 +67,9 @@ __all__ = [
     "YahooIndexDaily",
     "StockTerm",
     "FaqCategory",
-    "FaqItem",
-    "LegalDocument",
+  "FaqItem",
+  "LegalDocument",
+  "MasterPerson",
   "MasterQuote",
 ]
 
@@ -485,6 +486,19 @@ class StockTerm(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class MasterPerson(Base):
+  """대가 인물 정보 (이름/사진/직함)"""
+  __tablename__ = "master_people"
+  id = Column(Integer, primary_key=True, index=True)
+  name = Column(String(100), nullable=False, unique=True)
+  title = Column(String(150), nullable=True)
+  image_url = Column(String(500), nullable=True)
+  is_active = Column(String(20), default="active")
+  created_at = Column(DateTime(timezone=True), server_default=func.now())
+  updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+  quotes = relationship("MasterQuote", back_populates="person")
+
+
 class MasterQuote(Base):
   """대가들의 한마디 (명언 + 사진 URL)"""
   __tablename__ = "master_quotes"
@@ -493,10 +507,12 @@ class MasterQuote(Base):
   title = Column(String(150), nullable=True)        # 직함/설명
   quote = Column(Text, nullable=False)              # 명언 텍스트
   image_url = Column(String(500), nullable=True)    # 사진 URL
+  person_id = Column(Integer, ForeignKey("master_people.id"), nullable=True, index=True)
   order_index = Column(Integer, nullable=False, default=0)
   is_active = Column(String(20), default="active")
   created_at = Column(DateTime(timezone=True), server_default=func.now())
   updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+  person = relationship("MasterPerson", back_populates="quotes")
 
 
 class FaqCategory(Base):

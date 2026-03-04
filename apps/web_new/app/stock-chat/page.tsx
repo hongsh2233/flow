@@ -65,8 +65,8 @@ interface VoteOption {
   count: number;
 }
 
-const STOCK_CHAT_GUESTBOOK_BOARD_NAME = "주톡 방명록";
-const STOCK_CHAT_VOTE_BOARD_NAME = "주톡 투표";
+const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
+const STOCK_CHAT_VOTE_BOARD_ID = "B004";
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -233,8 +233,8 @@ export default function JuTalkPage() {
         const boardsJson = await boardsRes.json();
         const boards = (boardsJson?.data as BoardSummary[]) ?? [];
 
-        const guestbookBoard = boards.find((b) => b.name === STOCK_CHAT_GUESTBOOK_BOARD_NAME);
-        const voteBoard = boards.find((b) => b.name === STOCK_CHAT_VOTE_BOARD_NAME);
+        const guestbookBoard = boards.find((b) => b.id === STOCK_CHAT_GUESTBOOK_BOARD_ID);
+        const voteBoard = boards.find((b) => b.id === STOCK_CHAT_VOTE_BOARD_ID);
 
         if (guestbookBoard) {
           const postsRes = await fetch(
