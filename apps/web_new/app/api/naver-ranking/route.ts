@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
     if (API_SECRET_KEY) {
       headers["X-API-KEY"] = API_SECRET_KEY;
     }
