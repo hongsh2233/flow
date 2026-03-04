@@ -225,13 +225,6 @@ export default function JuTalkPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerGradient} />
-        <div className={styles.headerContent}>
-          <h1 className={styles.headerTitle}>주톡</h1>
-          <p className={styles.headerSubtitle}>투자자들의 실시간 소통 공간</p>
-        </div>
-      </header>
 
       <main className={styles.main}>
         {/* 오늘의 투표 */}
