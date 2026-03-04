@@ -109,7 +109,6 @@ async def add_master_quote(
     title=title.strip() or person.title or None,
     quote=quote.strip(),
     image_url=image_url.strip() or person.image_url or None,
-    person_id=person.id,
     order_index=order_index or 0,
     is_active="active",
   )
