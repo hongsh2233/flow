@@ -23,7 +23,6 @@ from app.dependencies import (
     get_current_user_from_token_optional,
     verify_api_key,
     API_SECRET_KEY,
-    get_current_user_or_api_key,
 )
 from app.services.api_service import krx_api_service  # 시장현황 데이터 처리를 위한 서비스 임포트
 from pydantic import BaseModel
@@ -578,7 +577,7 @@ async def get_board_posts(
 async def poll_vote(
     body: PollVoteRequest,
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key),
+    authorized: str = Depends(verify_api_key),
 ):
     """
     투표 집계 API
@@ -637,7 +636,7 @@ async def poll_vote(
 async def poll_stats(
     poll_id: int = Query(..., description="투표 게시글 ID (Post.id)"),
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key),
+    authorized: str = Depends(verify_api_key),
 ):
     """
     투표 집계 조회 API
