@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
 
+const FALLBACK_API_KEY = "1978022019820308200705092018111420220303";
+
 /**
  * 네이버 증권 랭킹 - BO 백엔드 경유
  * ranking_type: volume | amount | search
@@ -15,11 +17,8 @@ export async function GET(request: NextRequest) {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "X-API-KEY": API_SECRET_KEY || FALLBACK_API_KEY,
     };
-
-    if (API_SECRET_KEY) {
-      headers["X-API-KEY"] = API_SECRET_KEY;
-    }
 
     const url = `${API_BASE_URL}/api/naver-stock-ranking?ranking_type=${rankingType}&market_type=${marketType}&limit=${limit}`;
     const response = await fetch(url, {
