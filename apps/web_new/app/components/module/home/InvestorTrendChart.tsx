@@ -21,15 +21,8 @@ const SERIES = [
 
 const W = 320;
 const H = 140;
-const PAD = { top: 12, right: 12, bottom: 28, left: 52 };
+const PAD = { top: 12, right: 12, bottom: 28, left: 8 };
 
-function fmtAmt(v: number): string {
-  const abs = Math.abs(v);
-  if (abs >= 100000) return `${(v / 100000).toFixed(1)}조`;
-  if (abs >= 10000)  return `${(v / 10000).toFixed(0)}억`;
-  if (abs >= 1000)   return `${(v / 1000).toFixed(0)}천`;
-  return String(v);
-}
 
 function fmtDate(d: string): string {
   const clean = d.replace(/[.\-\/]/g, "");
@@ -72,20 +65,14 @@ function LineChart({ data }: { data: InvestorTrendItem[] }) {
       {yTicks.map((v, i) => {
         const y = toY(v);
         return (
-          <g key={i}>
-            <line x1={PAD.left} x2={PAD.left + innerW} y1={y} y2={y}
-              stroke="var(--app-border-light)" strokeWidth="0.5" />
-            <text x={PAD.left - 4} y={y + 3.5} textAnchor="end"
-              fontSize="8.5" fill="var(--app-text-muted)">
-              {fmtAmt(Math.round(v))}
-            </text>
-          </g>
+          <line key={i} x1={PAD.left} x2={PAD.left + innerW} y1={y} y2={y}
+            stroke="var(--app-border-light)" strokeWidth="0.5" />
         );
       })}
 
       {showZero && (
         <line x1={PAD.left} x2={PAD.left + innerW} y1={zeroY} y2={zeroY}
-          stroke="var(--app-text-muted)" strokeWidth="0.8" strokeDasharray="3,3" />
+          stroke="var(--app-text-muted)" strokeWidth="1" />
       )}
 
       {data.map((d, i) => (
