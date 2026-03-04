@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
 import styles from "./SupplyPage.module.css";
 
@@ -81,55 +81,46 @@ export default function SupplyPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const fetchedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    const key = `${mainTab}-${market}`;
+    if (fetchedRef.current.has(key)) return;
+
     async function load() {
       setLoading(true);
       try {
         if (mainTab === "investor") {
-          if (!investorData[market]) {
-            const params = new URLSearchParams({
-              data_type: "investor_day",
-              market,
-            });
-            const json = await fetchTable(params);
-            setInvestorData((prev) => ({ ...prev, [market]: json }));
-          }
+          fetchedRef.current.add(key);
+          const params = new URLSearchParams({ data_type: "investor_day", market });
+          const json = await fetchTable(params);
+          setInvestorData((prev) => ({ ...prev, [market]: json }));
         } else if (mainTab === "program") {
-          if (!programData[market]) {
-            const params = new URLSearchParams({
-              data_type: "program_day",
-              market,
-            });
-            const json = await fetchTable(params);
-            setProgramData((prev) => ({ ...prev, [market]: json }));
-          }
+          fetchedRef.current.add(key);
+          const params = new URLSearchParams({ data_type: "program_day", market });
+          const json = await fetchTable(params);
+          setProgramData((prev) => ({ ...prev, [market]: json }));
         } else if (mainTab === "deal") {
-          const current = dealData[market];
-          if (!current.foreign_buy || !current.foreign_sell || !current.inst_buy || !current.inst_sell) {
-            const keys = ["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const;
-            const results: Record<string, SupplyResponse | null> = { ...current };
-            await Promise.all(
-              keys.map(async (key) => {
-                if (results[key]) return;
-                const params = new URLSearchParams({
-                  data_type: "deal_rank",
-                  market,
-                  sub_key: key,
-                });
-                const json = await fetchTable(params);
-                results[key] = json;
-              }),
-            );
-            setDealData((prev) => ({ ...prev, [market]: results }));
-          }
+          fetchedRef.current.add(key);
+          const subKeys = ["foreign_buy", "foreign_sell", "inst_buy", "inst_sell"] as const;
+          const results: Record<string, SupplyResponse | null> = {};
+          await Promise.all(
+            subKeys.map(async (subKey) => {
+              const params = new URLSearchParams({ data_type: "deal_rank", market, sub_key: subKey });
+              results[subKey] = await fetchTable(params);
+            }),
+          );
+          setDealData((prev) => ({ ...prev, [market]: results }));
         }
+      } catch (e) {
+        console.error("수급 데이터 로드 실패:", e);
+        fetchedRef.current.delete(key);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [mainTab, market, investorData, programData, dealData]);
+  }, [mainTab, market]);
 
   const currentInvestor = investorData[market];
   const currentProgram = programData[market];
@@ -158,13 +149,19 @@ export default function SupplyPage() {
         {loading && <p className={styles.loading}>불러오는 중...</p>}
 
         <TabsContent value="investor">
-          {!loading && currentInvestor && (
+          {!loading && (
             <>
-              <p className={styles.meta}>
-                기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
-              </p>
-              {currentInvestor.success && currentInvestor.data ? (
-                <Table data={currentInvestor.data} />
+              {currentInvestor ? (
+                <>
+                  <p className={styles.meta}>
+                    기준일: {currentInvestor.bizdate ?? "-"} / 수집: {currentInvestor.collected_time ?? "-"}
+                  </p>
+                  {currentInvestor.success && currentInvestor.data ? (
+                    <Table data={currentInvestor.data} />
+                  ) : (
+                    <p className={styles.empty}>데이터가 없습니다.</p>
+                  )}
+                </>
               ) : (
                 <p className={styles.empty}>데이터가 없습니다.</p>
               )}
@@ -206,13 +203,19 @@ export default function SupplyPage() {
         </TabsContent>
 
         <TabsContent value="program">
-          {!loading && currentProgram && (
+          {!loading && (
             <>
-              <p className={styles.meta}>
-                기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
-              </p>
-              {currentProgram.success && currentProgram.data ? (
-                <Table data={currentProgram.data} />
+              {currentProgram ? (
+                <>
+                  <p className={styles.meta}>
+                    기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
+                  </p>
+                  {currentProgram.success && currentProgram.data ? (
+                    <Table data={currentProgram.data} />
+                  ) : (
+                    <p className={styles.empty}>데이터가 없습니다.</p>
+                  )}
+                </>
               ) : (
                 <p className={styles.empty}>데이터가 없습니다.</p>
               )}
