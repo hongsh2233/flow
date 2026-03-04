@@ -82,36 +82,6 @@ const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string
   Turtle: { icon: "🐢", className: styles.jubtiTurtle, label: "거북이" },
 };
 
-const FALLBACK_EXPERTS: Expert[] = [
-  {
-    id: 1,
-    name: "워런 버핏",
-    title: "버크셔 해서웨이 회장",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    quote: "가격은 당신이 지불하는 것이고, 가치는 당신이 얻는 것입니다.",
-    likes: 2847,
-  },
-  {
-    id: 2,
-    name: "피터 린치",
-    title: "전 마젤란 펀드 매니저",
-    image:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-    quote: "당신이 이해하지 못하는 회사에 투자하지 마세요.",
-    likes: 1923,
-  },
-  {
-    id: 3,
-    name: "레이 달리오",
-    title: "브리지워터 창립자",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
-    quote: "다각화는 투자자가 무료로 얻을 수 있는 유일한 점심입니다.",
-    likes: 1567,
-  },
-];
-
 const marketVoices: MarketVoice[] = [
   {
     id: 1,
@@ -157,7 +127,7 @@ export default function JuTalkPage() {
 
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
-  const [experts, setExperts] = useState<Expert[]>(FALLBACK_EXPERTS);
+  const [experts, setExperts] = useState<Expert[]>([]);
 
   const handleVote = (index: number) => {
     if (userVotedIndex !== null) return;
@@ -170,6 +140,30 @@ export default function JuTalkPage() {
   const totalVotes = voteOptions.reduce((sum, opt) => sum + opt.count, 0);
   const getPercentage = (count: number) =>
     totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
+
+  const getVoteButtonClass = (index: number) => {
+    const toneIndex = index % 3; // 최대 3가지 색상 톤
+    const baseToneClass =
+      toneIndex === 0
+        ? styles.voteButtonTone0
+        : toneIndex === 1
+        ? styles.voteButtonTone1
+        : styles.voteButtonTone2;
+    const activeToneClass =
+      toneIndex === 0
+        ? styles.voteButtonTone0Active
+        : toneIndex === 1
+        ? styles.voteButtonTone1Active
+        : styles.voteButtonTone2Active;
+
+    if (userVotedIndex === index) {
+      return `${styles.voteButton} ${activeToneClass}`;
+    }
+    if (userVotedIndex === null) {
+      return `${styles.voteButton} ${baseToneClass}`;
+    }
+    return `${styles.voteButton} ${styles.voteButtonDisabled}`;
+  };
 
   const handleLike = (id: number) => {
     setMessages((prev) =>
@@ -218,7 +212,7 @@ export default function JuTalkPage() {
 
         setExperts(mapped);
       } catch {
-        // ignore and keep fallback
+        // 무시: 전문가 명언이 없으면 섹션을 비워둔다.
       }
     };
 
@@ -365,13 +359,7 @@ export default function JuTalkPage() {
                 type="button"
                 onClick={() => handleVote(index)}
                 disabled={userVotedIndex !== null}
-                className={`${styles.voteButton} ${
-                  userVotedIndex === index
-                    ? styles.voteButtonRiseActive
-                    : userVotedIndex === null
-                    ? styles.voteButtonRise
-                    : styles.voteButtonDisabled
-                }`}
+                className={getVoteButtonClass(index)}
               >
                 <span>{opt.label}</span>
               </button>
