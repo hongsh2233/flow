@@ -21,11 +21,27 @@ type Market = "kospi" | "kosdaq";
 type MainTab = "investor" | "deal" | "program";
 
 async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
-  const res = await fetch(`/api/naver-supply?${params.toString()}`, { cache: "no-store" });
-  if (!res.ok) {
-    return { success: false, data: null, bizdate: null };
+  async function request(p: URLSearchParams): Promise<SupplyResponse> {
+    const res = await fetch(`/api/naver-supply?${p.toString()}`, { cache: "no-store" });
+    if (!res.ok) {
+      return { success: false, data: null, bizdate: null };
+    }
+    return res.json();
   }
-  return res.json();
+
+  // 1차: 요청한 market (예: kospi / kosdaq)
+  const primary = await request(params);
+  const market = params.get("market");
+
+  // 데이터가 있거나, market이 all 이면 그대로 반환
+  if ((primary.success && primary.data) || !market || market === "all") {
+    return primary;
+  }
+
+  // 2차: 같은 data_type으로 market=all 로 폴백 (admin/naver-ranking JS와 동일 전략)
+  const fallbackParams = new URLSearchParams(params);
+  fallbackParams.set("market", "all");
+  return request(fallbackParams);
 }
 
 function Table({ data }: { data: TableData }) {
