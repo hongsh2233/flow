@@ -91,10 +91,12 @@ if DATA_GO_KR_API_KEY:
     print(f"DATA_GO_KR_API_KEY 로드됨 (길이: {len(DATA_GO_KR_API_KEY)}자)")
 else:
     print("경고: DATA_GO_KR_API_KEY가 설정되지 않았습니다.")
+
 if OPENDART_API_KEY:
     print(f"OPENDART API 키 로드됨 (길이: {len(OPENDART_API_KEY)}자)")
 else:
     print("경고: OPENDART(공모청약 DART) API 키가 설정되지 않았습니다.")
+
 if NAVER_CLIENT_ID:
     print(f"NAVER_CLIENT_ID 로드됨 (길이: {len(NAVER_CLIENT_ID)}자)")
 else:
