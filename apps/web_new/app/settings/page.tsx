@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -25,6 +25,7 @@ import {
   FileText,
   LogIn,
   Info,
+  Lightbulb,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -33,11 +34,19 @@ import TermsModal from "../components/ui/TermsModal";
 import type { TermsTab } from "../components/ui/TermsModal";
 import type { SettingsGroup } from "@/lib/types";
 
+const JUBTI_LABELS: Record<string, string> = {
+  A: "불나방 파이터 (공격형)",
+  D: "철벽 거북이 (방어형)",
+  N: "돋보기 탐정 (분석형)",
+  I: "촉 좋은 야생마 (직관형)",
+};
+
 const settingsGroups: SettingsGroup[] = [
   {
     title: "내 정보",
     items: [
       { icon: User, label: "프로필 관리", hasArrow: true, href: "/settings/profile" },
+      { icon: Lightbulb, label: "주BTI", hasArrow: true, href: "/" },
       { icon: UserX, label: "회원 탈퇴", hasArrow: true, action: "withdraw" },
     ],
   },
@@ -97,6 +106,19 @@ function SettingsScreen() {
   } = useNotificationSettings();
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
+  const [jubtiType, setJubtiType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/auth/member/jubti")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && data?.jubti_type) {
+          setJubtiType(data.jubti_type);
+        }
+      })
+      .catch(() => {});
+  }, [isLoggedIn]);
 
   const handleItemClick = async (href?: string, action?: string) => {
     if (href) {
@@ -133,7 +155,16 @@ function SettingsScreen() {
     }
   };
 
-  const groups = isLoggedIn ? settingsGroups : guestSettingsGroups;
+  const groups = isLoggedIn
+    ? settingsGroups.map((g) => ({
+        ...g,
+        items: g.items.map((item) =>
+          item.label === "주BTI"
+            ? { ...item, subtitle: jubtiType ? JUBTI_LABELS[jubtiType] ?? jubtiType : "테스트 후 저장하기" }
+            : item
+        ),
+      }))
+    : guestSettingsGroups;
 
   return (
     <div className={styles.screen}>
@@ -224,7 +255,12 @@ function SettingsScreen() {
                       <div className={styles.itemIconWrap}>
                         <Icon className={styles.itemIcon} />
                       </div>
-                      <span className={styles.itemLabel}>{item.label}</span>
+                      <div className={styles.itemLabelWrap}>
+                        <span className={styles.itemLabel}>{item.label}</span>
+                        {item.subtitle && (
+                          <span className={styles.itemSubtitle}>{item.subtitle}</span>
+                        )}
+                      </div>
                     </div>
                     <div className={styles.actions}>
                       {item.hasSwitch && item.action === "darkmode" && (

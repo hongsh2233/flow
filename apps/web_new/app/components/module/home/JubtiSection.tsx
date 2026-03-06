@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import styles from "./JubtiSection.module.css";
@@ -157,6 +157,19 @@ export function JubtiSection() {
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedJubtiType, setSavedJubtiType] = useState<Dimension | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.email) return;
+    fetch("/api/auth/member/jubti")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && data?.jubti_type && ["A", "D", "N", "I"].includes(data.jubti_type)) {
+          setSavedJubtiType(data.jubti_type as Dimension);
+        }
+      })
+      .catch(() => {});
+  }, [status, session?.user?.email]);
 
   const initQuestions = useCallback(() => {
     setQuestionsForRun(getRandomQuestions());
@@ -211,6 +224,7 @@ export function JubtiSection() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
+        setSavedJubtiType(mainType);
         alert("결과가 저장되었습니다!");
         setIsExpanded(false);
       } else {
@@ -224,29 +238,60 @@ export function JubtiSection() {
   };
 
   if (!isExpanded) {
+    const savedMeta = savedJubtiType ? TYPE_META[savedJubtiType] : null;
+    const content = (
+      <>
+        <button
+            type="button"
+            onClick={() => {
+              setQuestionsForRun(getRandomQuestions());
+              setIsExpanded(true);
+            }}
+            className={styles.collapsedBtn}
+          >
+            <div className={styles.collapsedInner}>
+              <div className={styles.iconBox}>
+                <LightbulbIcon />
+              </div>
+              <div className={styles.collapsedText}>
+                <h3 className={styles.collapsedTitle}>주BTI</h3>
+                <p className={styles.collapsedSubtitle}>
+                  {savedMeta
+                    ? `${savedMeta.characterName} · ${savedMeta.label}`
+                    : "재미로 하는 투자 성향 테스트"}
+                </p>
+              </div>
+            </div>
+            <span className={styles.collapsedChevron}>
+              <ChevronDownIcon />
+            </span>
+          </button>
+          {savedMeta && (
+            <div className={styles.collapsedActions}>
+              <button
+                type="button"
+                className={styles.retakeButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRestart();
+                  setQuestionsForRun(getRandomQuestions());
+                  setIsExpanded(true);
+                }}
+              >
+                <RotateIcon />
+                <span>다시 하기</span>
+              </button>
+            </div>
+          )}
+      </>
+    );
     return (
       <section className={styles.section}>
-        <button
-          type="button"
-          onClick={() => {
-            setQuestionsForRun(getRandomQuestions());
-            setIsExpanded(true);
-          }}
-          className={styles.collapsedBtn}
-        >
-          <div className={styles.collapsedInner}>
-            <div className={styles.iconBox}>
-              <LightbulbIcon />
-            </div>
-            <div className={styles.collapsedText}>
-              <h3 className={styles.collapsedTitle}>주BTI</h3>
-              <p className={styles.collapsedSubtitle}>재미로 하는 투자 성향 테스트</p>
-            </div>
-          </div>
-          <span className={styles.collapsedChevron}>
-            <ChevronDownIcon />
-          </span>
-        </button>
+        {savedMeta ? (
+          <div className={styles.collapsedCard}>{content}</div>
+        ) : (
+          content
+        )}
       </section>
     );
   }

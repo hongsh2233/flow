@@ -3,6 +3,8 @@ import type { LucideIcon } from "lucide-react";
 export interface SettingsItem {
   icon: LucideIcon;
   label: string;
+  /** 우측 또는 라벨 아래 표시할 부가 텍스트 */
+  subtitle?: string;
   hasSwitch?: boolean;
   hasArrow?: boolean;
   enabled?: boolean;

@@ -904,6 +904,23 @@ async def api_update_member_jubti(
     return {"success": True, "message": "주BTI 성향이 저장되었습니다.", "jubti_type": member.jubti_type}
 
 
+@router.get("/api/auth/member/jubti")
+async def api_get_member_jubti(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """
+    회원 주BTI(투자 성향) 조회 API
+    """
+    member = db.query(models.Member).filter(models.Member.email == email).first()
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="회원을 찾을 수 없습니다."
+        )
+    return {"success": True, "jubti_type": member.jubti_type}
+
+
 @router.get("/api/auth/member/info", response_model=SocialLoginResponse)
 async def api_get_member_info(
     email: str,

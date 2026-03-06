@@ -65,6 +65,47 @@
   align-items: center;
 }
 
+.collapsedCard {
+  border-radius: 1rem;
+  border: 2px solid var(--jubti-border, #fed7aa);
+  background: linear-gradient(to bottom right, var(--jubti-bg-start, #fff7ed), var(--jubti-bg-end, #fdf2f8));
+  overflow: hidden;
+}
+
+.collapsedCard .collapsedBtn {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.collapsedActions {
+  margin: 0 1rem 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(254, 215, 170, 0.6);
+}
+
+.retakeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.retakeButton:hover {
+  border-color: var(--jubti-border, #fed7aa);
+  background: var(--jubti-bg-start, #fff7ed);
+}
+
 /* ----- 카드 & 헤더 ----- */
 .card {
   background: var(--app-card-bg, #fff);

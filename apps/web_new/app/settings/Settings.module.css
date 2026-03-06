@@ -167,10 +167,21 @@
   color: var(--app-accent);
 }
 
+.itemLabelWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .itemLabel {
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--app-text);
+}
+
+.itemSubtitle {
+  font-size: 0.8125rem;
+  color: var(--app-text-muted);
 }
 
 .actions {
