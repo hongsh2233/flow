@@ -1040,9 +1040,9 @@ naver_ranking_scheduler = NaverRankingScheduler()
 async def collect_naver_stock_news():
     """
     네이버 뉴스 API로 주가 직접 영향 뉴스 수집
-    평일(월~금) 08:00, 12:00, 17:00에 실행
+    평일(월~금) 08:00, 12:00, 19:00에 실행
     수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자 등 키워드 기반 필터링
-    최근 7일치 뉴스만 유지
+    최근 2일치 뉴스만 유지
     """
     from app.services.naver_news_service import naver_news_service
 
@@ -1080,7 +1080,7 @@ async def collect_naver_stock_news():
 class NaverNewsScheduler:
     """
     네이버 주가 영향 뉴스 수집 스케줄러
-    평일(월~금) 08:00, 12:00, 17:00에 수집
+    평일(월~금) 08:00, 12:00, 19:00에 수집
     """
 
     def __init__(self):
@@ -1095,16 +1095,16 @@ class NaverNewsScheduler:
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
         self.scheduler.add_job(
             collect_naver_stock_news,
-            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,17", minute=0, timezone=self.kst),
+            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=0, timezone=self.kst),
             id="naver_stock_news_collection",
-            name="주가 영향 뉴스 수집 (08:00/12:00/17:00, 월~금)",
+            name="주가 영향 뉴스 수집 (08:00/12:00/19:00, 월~금)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             misfire_grace_time=300,
         )
         self.scheduler.start()
-        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:00/12:00/17:00, 월~금)")
+        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:00/12:00/19:00, 월~금)")
 
     def shutdown(self):
         if self.scheduler:

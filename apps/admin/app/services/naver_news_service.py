@@ -45,7 +45,7 @@ NAVER_NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json"
 # 카테고리당 최대 수집 건수 (네이버 API 최대 100건)
 MAX_DISPLAY_PER_KEYWORD = 20
 # 보관 일수
-KEEP_DAYS = 7
+KEEP_DAYS = 2
 
 
 def _strip_html(text: str) -> str:
