@@ -7,6 +7,7 @@ import { AllNews } from "../components/module/news/AllNews";
 import { FavoriteNews } from "../components/module/news/FavoriteNews";
 import { MarketIndicesTab } from "../components/module/briefing/MarketIndicesTab";
 import { ReportTabContent } from "../components/module/briefing/ReportTabContent";
+import { SpotlightNews } from "../components/module/briefing/SpotlightNews";
 import { StockTermBox } from "../components/module/stock-term-box";
 import styles from "./Briefing.module.css";
 
@@ -24,6 +25,9 @@ function BriefingContent() {
           </TabsTrigger>
           <TabsTrigger value="favorite" className={styles.tab}>
             관심뉴스
+          </TabsTrigger>
+          <TabsTrigger value="spotlight" className={styles.tab}>
+            주목
           </TabsTrigger>
           <TabsTrigger value="report" className={styles.tab}>
             시황/리포트
@@ -45,6 +49,10 @@ function BriefingContent() {
               </a>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="spotlight" className={styles.tabContent}>
+          <SpotlightNews />
         </TabsContent>
 
         <TabsContent value="report" className={styles.tabContent}>
