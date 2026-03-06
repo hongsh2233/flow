@@ -23,7 +23,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -64,6 +64,7 @@ async def lifespan(app: FastAPI):
     yahoo_index_scheduler.start()
     exchange_rate_scheduler.start()
     schedule_alarm_scheduler.start()
+    naver_news_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -74,6 +75,7 @@ async def lifespan(app: FastAPI):
     yahoo_index_scheduler.shutdown()
     exchange_rate_scheduler.shutdown()
     schedule_alarm_scheduler.shutdown()
+    naver_news_scheduler.shutdown()
 
 
 # FastAPI 앱 생성
@@ -391,6 +393,12 @@ def run_migrations():
         add_polls_migration()
     except Exception as e:
         print(f"⚠️ 투표(polls) 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_naver_stock_news import upgrade as add_naver_stock_news_migration
+        add_naver_stock_news_migration()
+    except Exception as e:
+        print(f"⚠️ 네이버 주가 영향 뉴스 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():
