@@ -1667,7 +1667,12 @@ async def get_foreign_indices(
             rows = db.query(models.YahooIndexSnapshot).filter(
                 models.YahooIndexSnapshot.group == "foreign",
                 models.YahooIndexSnapshot.collected_at == latest,
-            ).order_by(models.YahooIndexSnapshot.symbol).all()
+            ).all()
+            # 미국지수(나스닥/S&P500/다우존스) 우선 정렬
+            _FOREIGN_ORDER = {"^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^RUT": 3, "^VIX": 4,
+                             "^N225": 5, "^HSI": 6, "000001.SS": 7, "^STOXX50E": 8,
+                             "^FTSE": 9, "^GDAXI": 10, "^FCHI": 11}
+            rows = sorted(rows, key=lambda r: _FOREIGN_ORDER.get(r.symbol, 99))
             if rows:
                 results = []
                 for r in rows:
@@ -1702,11 +1707,11 @@ async def get_foreign_indices(
     if cached is not None:
         return cached
 
-    # 12개 주요 해외지수 심볼
+    # 12개 주요 해외지수 심볼 - 미국지수(나스닥/S&P500/다우존스) 우선
     indices = [
+        {"symbol": "^IXIC", "name": "나스닥", "market": "US"},
         {"symbol": "^GSPC", "name": "S&P 500", "market": "US"},
         {"symbol": "^DJI", "name": "다우존스", "market": "US"},
-        {"symbol": "^IXIC", "name": "나스닥", "market": "US"},
         {"symbol": "^N225", "name": "닛케이", "market": "JP"},
         {"symbol": "^HSI", "name": "항셍", "market": "HK"},
         {"symbol": "000001.SS", "name": "상하이종합", "market": "CN"},

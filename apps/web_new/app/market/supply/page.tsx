@@ -79,6 +79,61 @@ function Table({ data }: { data: TableData }) {
   );
 }
 
+function ProgramTable({ data }: { data: TableData }) {
+  if (!data.rows.length) {
+    return <p className={styles.empty}>데이터가 없습니다.</p>;
+  }
+  return (
+    <div className={styles.tableWrapper}>
+      <table className={styles.table}>
+        <thead>
+          <tr className={styles.investorHeadMain}>
+            <th rowSpan={2} className={styles.investorHeadFirst}>
+              날짜
+            </th>
+            <th colSpan={3} className={styles.investorHeadGroup}>
+              차익거래
+            </th>
+            <th colSpan={3} className={styles.investorHeadGroup}>
+              비차익거래
+            </th>
+            <th colSpan={3} className={styles.investorHeadGroup}>
+              전체
+            </th>
+          </tr>
+          <tr className={styles.investorHeadSub}>
+            <th className={styles.investorHeadSubCell}>매수</th>
+            <th className={styles.investorHeadSubCell}>매도</th>
+            <th className={styles.investorHeadSubCell}>순매수</th>
+            <th className={styles.investorHeadSubCell}>매수</th>
+            <th className={styles.investorHeadSubCell}>매도</th>
+            <th className={styles.investorHeadSubCell}>순매수</th>
+            <th className={styles.investorHeadSubCell}>매수</th>
+            <th className={styles.investorHeadSubCell}>매도</th>
+            <th className={styles.investorHeadSubCell}>순매수</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, idx) => (
+            <tr key={idx}>
+              {row.map((cell, i) => {
+                const isMinus = i > 0 && String(cell).trim().startsWith("-");
+                const isPlus = i > 0 && String(cell).trim().startsWith("+");
+                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
+                return (
+                  <td key={i} className={cls}>
+                    {cell}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function InvestorTable({ data }: { data: TableData }) {
   if (!data.rows.length) {
     return <p className={styles.empty}>데이터가 없습니다.</p>;
@@ -277,7 +332,7 @@ export default function SupplyPage() {
                     기준일: {currentProgram.bizdate ?? "-"} / 수집: {currentProgram.collected_time ?? "-"}
                   </p>
                   {currentProgram.success && currentProgram.data ? (
-                    <Table data={currentProgram.data} />
+                    <ProgramTable data={currentProgram.data} />
                   ) : (
                     <p className={styles.empty}>데이터가 없습니다.</p>
                   )}

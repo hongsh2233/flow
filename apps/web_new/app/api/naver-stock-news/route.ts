@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, data: [], total: 0, count: 0 });
       }
       return NextResponse.json(
-        { success: false, message: "주목 뉴스 조회 실패", data: [] },
+        { success: false, message: "재료 뉴스 조회 실패", data: [] },
         { status: response.status }
       );
     }
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.warn("주목 뉴스 조회 실패:", error);
+    console.warn("재료 뉴스 조회 실패:", error);
     return NextResponse.json({ success: true, data: [], total: 0, count: 0 });
   }
 }

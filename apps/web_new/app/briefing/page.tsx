@@ -27,7 +27,7 @@ function BriefingContent() {
             관심뉴스
           </TabsTrigger>
           <TabsTrigger value="spotlight" className={styles.tab}>
-            주목
+            재료
           </TabsTrigger>
           <TabsTrigger value="report" className={styles.tab}>
             시황/리포트
