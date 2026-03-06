@@ -2044,9 +2044,90 @@ async def get_naver_stock_ranking_times(
             "data": results,
             "count": len(results),
         }
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"수집 시간대 목록 조회 실패: {str(e)}"
         )
+
+
+# ----------------------------------------------------------------
+# 네이버 뉴스 주가 영향 뉴스 API
+# ----------------------------------------------------------------
+
+@router.get("/api/naver-stock-news")
+async def get_naver_stock_news(
+    category: Optional[str] = Query(None, description="카테고리 필터 (수주/실적발표/배당/연구개발/기술이전/유상증자/무상증자/자사주매입/합병인수/특허/임상/적자전환/상장/분할)"),
+    limit: int = Query(50, ge=1, le=200, description="최대 반환 건수"),
+    offset: int = Query(0, ge=0, description="페이지 오프셋"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    수집된 주가 직접 영향 뉴스 조회
+
+    - **category**: 카테고리로 필터링 (미입력 시 전체)
+    - **limit**: 최대 반환 건수 (기본 50, 최대 200)
+    - **offset**: 페이지네이션 오프셋
+
+    카테고리 목록:
+    수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자, 무상증자,
+    자사주매입, 합병인수, 특허, 임상, 적자전환, 상장, 분할
+    """
+    try:
+        from app.services.naver_news_service import naver_news_service, STOCK_IMPACT_KEYWORDS
+
+        news = naver_news_service.get_news_by_category(
+            db=db,
+            category=category,
+            limit=limit,
+            offset=offset,
+        )
+
+        total = db.query(models.NaverStockNews)
+        if category:
+            total = total.filter(models.NaverStockNews.category == category)
+        total_count = total.count()
+
+        return {
+            "success": True,
+            "category": category,
+            "categories": list(STOCK_IMPACT_KEYWORDS.keys()),
+            "data": news,
+            "count": len(news),
+            "total": total_count,
+            "offset": offset,
+            "limit": limit,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"주가 영향 뉴스 조회 실패: {str(e)}")
+
+
+@router.post("/api/naver-stock-news/collect")
+async def trigger_naver_stock_news_collect(
+    categories: Optional[list] = None,
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    주가 영향 뉴스 즉시 수집 (수동 트리거)
+
+    - **categories**: 수집할 카테고리 목록 (미입력 시 전체)
+    """
+    try:
+        from app.services.naver_news_service import naver_news_service
+
+        news_list = await naver_news_service.fetch_stock_impact_news(categories=categories)
+        saved = naver_news_service.save_news_to_db(db, news_list)
+
+        return {
+            "success": True,
+            "fetched": len(news_list),
+            "saved": saved,
+            "message": f"뉴스 수집 완료: {len(news_list)}건 조회, {saved}건 신규 저장",
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"뉴스 수집 실패: {str(e)}")

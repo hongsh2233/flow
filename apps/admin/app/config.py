@@ -77,6 +77,10 @@ DATA_GO_KR_API_KEY = os.environ.get("DATA_GO_KR_API_KEY")  # 공공데이터포�
 # Open DART(금융감독원 전자공시) API 설정
 OPENDART_API_KEY = os.environ.get("OPENDART")  # Open DART 인증키 (40자리)
 
+# 네이버 검색 API 설정 (뉴스 검색)
+NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID
+NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")  # 네이버 API 클라이언트 시크릿
+
 
 # 디버깅: API 키 로드 확인 (서버 시작 시 한 번만 출력)
 # 보안: API 키 미리보기는 콘솔에 출력하지 않음
@@ -88,4 +92,8 @@ if OPENDART_API_KEY:
     print(f"OPENDART API 키 로드됨 (길이: {len(OPENDART_API_KEY)}자)")
 else:
     print("경고: OPENDART(공모청약 DART) API 키가 설정되지 않았습니다.")
+if NAVER_CLIENT_ID:
+    print(f"NAVER_CLIENT_ID 로드됨 (길이: {len(NAVER_CLIENT_ID)}자)")
+else:
+    print("경고: NAVER_CLIENT_ID가 설정되지 않았습니다. 네이버 뉴스 검색 기능을 사용하려면 설정이 필요합니다.")
 

@@ -1031,3 +1031,86 @@ naver_supply_scheduler = NaverSupplyScheduler()
 
 # 전역 스케줄러 인스턴스
 naver_ranking_scheduler = NaverRankingScheduler()
+
+
+# =========================================================
+# 네이버 뉴스 주가 영향 뉴스 수집 스케줄러
+# =========================================================
+
+async def collect_naver_stock_news():
+    """
+    네이버 뉴스 API로 주가 직접 영향 뉴스 수집
+    평일(월~금) 08:00, 12:00, 19:00에 실행
+    수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자 등 키워드 기반 필터링
+    최근 2일치 뉴스만 유지
+    """
+    from app.services.naver_news_service import naver_news_service
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n{'='*60}")
+    print(f"네이버 주가 영향 뉴스 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}")
+
+    if should_skip_today():
+        print(f"{'='*60}\n")
+        return
+
+    db = SessionLocal()
+    try:
+        news_list = await naver_news_service.fetch_stock_impact_news()
+        if news_list:
+            saved = naver_news_service.save_news_to_db(db, news_list)
+            print(f"신규 뉴스 저장: {saved}건")
+
+        naver_news_service.cleanup_old_news(db)
+
+        print(f"{'='*60}")
+        print(f"네이버 주가 영향 뉴스 수집 완료")
+        print(f"{'='*60}\n")
+    except Exception as e:
+        import traceback
+        print(f"네이버 주가 영향 뉴스 수집 오류: {e}")
+        print(traceback.format_exc())
+        print(f"{'='*60}\n")
+    finally:
+        db.close()
+
+
+class NaverNewsScheduler:
+    """
+    네이버 주가 영향 뉴스 수집 스케줄러
+    평일(월~금) 08:00, 12:00, 19:00에 수집
+    """
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            print("네이버 뉴스 스케줄러가 이미 실행 중입니다.")
+            return
+
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_naver_stock_news,
+            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=0, timezone=self.kst),
+            id="naver_stock_news_collection",
+            name="주가 영향 뉴스 수집 (08:00/12:00/19:00, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.start()
+        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:00/12:00/19:00, 월~금)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("네이버 주가 영향 뉴스 스케줄러 종료")
+
+
+naver_news_scheduler = NaverNewsScheduler()

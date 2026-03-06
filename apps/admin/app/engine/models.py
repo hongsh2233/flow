@@ -74,6 +74,7 @@ __all__ = [
   "LegalDocument",
   "MasterPerson",
   "MasterQuote",
+  "NaverStockNews",
 ]
 
 
@@ -588,6 +589,29 @@ class FaqItem(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     category = relationship("FaqCategory", back_populates="items")
+
+
+class NaverStockNews(Base):
+    """
+    네이버 뉴스 API로 수집한 주가 직접 영향 뉴스
+    카테고리: 수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자, 무상증자,
+              자사주매입, 합병인수, 특허, 임상, 계약체결, 흑자전환, 적자전환
+    """
+    __tablename__ = "naver_stock_news"
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String(30), nullable=False, index=True)   # 뉴스 카테고리 (예: '수주', '실적발표')
+    keyword = Column(String(50), nullable=False, index=True)    # 검색에 사용된 키워드
+    title = Column(String(500), nullable=False)                 # 뉴스 제목 (HTML 태그 제거)
+    description = Column(Text, nullable=True)                   # 뉴스 요약 (HTML 태그 제거)
+    link = Column(String(1000), nullable=False)                 # 뉴스 원문 URL
+    pub_date = Column(String(100), nullable=True)               # 발행일 (원본 문자열)
+    pub_datetime = Column(DateTime(timezone=True), nullable=True, index=True)  # 발행일 파싱
+    collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('link', name='uq_naver_stock_news_link'),
+        Index('ix_naver_stock_news_category_pub', 'category', 'pub_datetime'),
+    )
 
 
 class LegalDocument(Base):
