@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}시장의 목소리 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .mv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .mv-header h2 { margin: 0; color: #2c3e50; }
+  .btn-collect { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .btn-collect:hover { background: #2980b9; }
+  .btn-collect:disabled { background: #95a5a6; cursor: not-allowed; }
+  .btn-approve { padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-approve:hover { background: #16a34a; }
+  .btn-reject { padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-reject:hover { background: #dc2626; }
+  .info-box { background: #e8f4f8; border-left: 4px solid #3498db; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #2c3e50; }
+  .ctrl-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .ctrl-row select { padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px; }
+  .badge-pending { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-approved { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
+  .data-table tbody tr:hover { background: #f8f9fa; }
+  .statement-cell { max-width: 300px; font-weight: 500; }
+  .empty-state { padding: 40px; text-align: center; color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="mv-header">
+    <h2>🎤 시장의 목소리</h2>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-collect" class="btn-collect" onclick="manualCollect()">수동 수집</button>
+      {% if pending_count > 0 %}
+      <span class="badge-pending">승인 대기 {{ pending_count }}건</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="info-box">
+    person_master 인물(구윤철, 제롬 파월 등) 이름으로 뉴스 검색 → Gemini AI 30자 이내 요약 → pending 저장.<br>
+    관리자 승인 시 앱(stock-chat)에 노출. NAVER_CLIENT_ID/SECRET, GEMINI_API_KEY 환경 변수 필요.
+  </div>
+
+  <div class="ctrl-row">
+    <label>상태:</label>
+    <select id="sel-status" onchange="loadList()">
+      <option value="" {% if not status_filter %}selected{% endif %}>전체</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>승인 대기</option>
+      <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>승인됨</option>
+    </select>
+    <button class="btn-collect" onclick="loadList()" style="background:#6c757d;">새로고침</button>
+  </div>
+
+  <div class="data-table-container" style="overflow-x:auto;border:1px solid #dee2e6;border-radius:6px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>인물</th>
+          <th>요약 (30자 이내)</th>
+          <th>출처</th>
+          <th>상태</th>
+          <th>생성일</th>
+          {% if not status_filter or status_filter == 'pending' %}
+          <th>액션</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in voices %}
+        <tr data-id="{{ v.id }}">
+          <td>{{ v.id }}</td>
+          <td>{{ v.person.name }}<br><small style="color:#6c757d;">{{ v.person.title or '-' }}</small></td>
+          <td class="statement-cell">{{ v.statement }}</td>
+          <td>
+            {% if v.source_url %}
+            <a href="{{ v.source_url }}" target="_blank" rel="noopener">{{ (v.source_title or v.source_url)[:40] }}...</a>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+          <td>
+            {% if v.status == 'pending' %}
+            <span class="badge-pending">대기</span>
+            {% else %}
+            <span class="badge-approved">승인</span>
+            {% endif %}
+          </td>
+          <td>{{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '-' }}</td>
+          {% if not status_filter or status_filter == 'pending' %}
+          <td>
+            {% if v.status == 'pending' %}
+            <button class="btn-approve" onclick="approve({{ v.id }})">승인</button>
+            <button class="btn-reject" onclick="reject({{ v.id }})">거절</button>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty-state">수집된 항목이 없습니다. 수동 수집 버튼을 눌러주세요.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function loadList() {
+    const status = document.getElementById('sel-status')?.value || '';
+    let url = '/admin/market-voices';
+    if (status) url += '?status=' + encodeURIComponent(status);
+    location.href = url;
+  }
+
+  async function manualCollect() {
+    const btn = document.getElementById('btn-collect');
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '수집 중...';
+    try {
+      const res = await fetch('/api/market-voices/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ ' + (data.message || '수집 완료'));
+        loadList();
+      } else {
+        alert('❌ ' + (data.message || '수집 실패'));
+      }
+    } catch (e) {
+      alert('❌ 오류: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  async function approve(id) {
+    if (!confirm('이 항목을 승인하시겠습니까?')) return;
+    try {
+      const res = await fetch('/api/market-voices/' + id + '/approve', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('승인되었습니다.');
+        loadList();
+      } else {
+        alert(data.message || '실패');
+      }
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  }
+
+  async function reject(id) {
+    if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+    try {
+      const res = await fetch('/api/market-voices/' + id + '/reject', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('삭제되었습니다.');
+        loadList();
+      } else {
+        alert(data.message || '실패');
+      }
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  }
+</script>
+{% endblock %}

@@ -23,7 +23,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, market_voice_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -46,6 +46,12 @@ except ImportError as e:
     print(f"⚠️ master_quotes 라우터 import 실패 (무시 가능): {e}")
     master_quotes = None
 
+try:
+    from app.routers import market_voices
+except ImportError as e:
+    print(f"⚠️ market_voices 라우터 import 실패 (무시 가능): {e}")
+    market_voices = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,6 +71,7 @@ async def lifespan(app: FastAPI):
     exchange_rate_scheduler.start()
     schedule_alarm_scheduler.start()
     naver_news_scheduler.start()
+    market_voice_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -76,6 +83,7 @@ async def lifespan(app: FastAPI):
     exchange_rate_scheduler.shutdown()
     schedule_alarm_scheduler.shutdown()
     naver_news_scheduler.shutdown()
+    market_voice_scheduler.shutdown()
 
 
 # FastAPI 앱 생성
@@ -400,6 +408,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ 네이버 주가 영향 뉴스 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_person_master_and_market_voices import upgrade as add_person_master_market_voices_migration
+        add_person_master_market_voices_migration()
+    except Exception as e:
+        print(f"⚠️ person_master/market_voices 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
@@ -493,6 +507,8 @@ if stock_terms:
     app.include_router(stock_terms.router)  # 주식용어 관리
 if master_quotes:
     app.include_router(master_quotes.router)  # 대가들의 한마디 관리
+if market_voices:
+    app.include_router(market_voices.router)  # 시장의 목소리
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리

@@ -1114,3 +1114,71 @@ class NaverNewsScheduler:
 
 
 naver_news_scheduler = NaverNewsScheduler()
+
+
+# =========================================================
+# 시장의 목소리 수집 스케줄러
+# =========================================================
+
+async def collect_market_voices():
+    """
+    person_master 인물별 뉴스 수집 → Gemini 요약 → market_voices pending 저장
+    평일(월~금) 08:30, 12:30, 19:30에 실행 (뉴스 수집 직후)
+    """
+    from app.services.market_voice_service import fetch_and_summarize_news
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n{'='*60}")
+    print(f"시장의 목소리 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}")
+
+    if should_skip_today():
+        print(f"{'='*60}\n")
+        return
+
+    db = SessionLocal()
+    try:
+        result = await fetch_and_summarize_news(db)
+        print(f"시장의 목소리 수집 완료: {result.get('saved', 0)}건 신규 저장 (pending)")
+        print(f"{'='*60}\n")
+    except Exception as e:
+        import traceback
+        print(f"시장의 목소리 수집 오류: {e}")
+        print(traceback.format_exc())
+        print(f"{'='*60}\n")
+    finally:
+        db.close()
+
+
+class MarketVoiceScheduler:
+    """시장의 목소리 수집 스케줄러 (평일 08:30, 12:30, 19:30)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_market_voices,
+            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=30, timezone=self.kst),
+            id="market_voice_collection",
+            name="시장의 목소리 수집 (08:30/12:30/19:30, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.start()
+        print("시장의 목소리 스케줄러 시작 (08:30/12:30/19:30, 월~금)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+market_voice_scheduler = MarketVoiceScheduler()

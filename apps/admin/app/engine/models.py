@@ -75,6 +75,8 @@ __all__ = [
   "MasterPerson",
   "MasterQuote",
   "NaverStockNews",
+  "PersonMaster",
+  "MarketVoice",
 ]
 
 
@@ -621,3 +623,33 @@ class LegalDocument(Base):
     doc_type = Column(String(30), nullable=False, unique=True, index=True)  # 'privacy' | 'terms'
     content = Column(Text, nullable=False, default="")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class PersonMaster(Base):
+    """시장의 목소리 - 주요 경제 인물 (이름, 직함, 검색 키워드)"""
+    __tablename__ = "person_master"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    title = Column(String(150), nullable=True)
+    search_keyword = Column(String(100), nullable=False, index=True)
+    image_url = Column(String(500), nullable=True)
+    order_index = Column(Integer, nullable=False, default=0)
+    is_active = Column(String(20), default="active")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    voices = relationship("MarketVoice", back_populates="person", cascade="all, delete-orphan")
+
+
+class MarketVoice(Base):
+    """시장의 목소리 - 뉴스 기반 AI 요약 (pending: 관리자 승인 대기, approved: 앱 노출)"""
+    __tablename__ = "market_voices"
+    id = Column(Integer, primary_key=True, index=True)
+    person_id = Column(Integer, ForeignKey("person_master.id", ondelete="CASCADE"), nullable=False, index=True)
+    statement = Column(String(100), nullable=False)  # 30자 이내 핵심 발언 요약
+    source_url = Column(String(1000), nullable=True)
+    source_title = Column(String(500), nullable=True)
+    status = Column(String(20), nullable=False, default="pending", index=True)  # pending | approved
+    news_pub_date = Column(String(100), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    person = relationship("PersonMaster", back_populates="voices")

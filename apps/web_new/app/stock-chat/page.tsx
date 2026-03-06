@@ -33,38 +33,8 @@ const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string
   Turtle: { icon: "🐢", className: styles.jubtiTurtle, label: "거북이" },
 };
 
-const marketVoices: MarketVoice[] = [
-  {
-    id: 1,
-    name: "제롬 파월",
-    title: "연준 의장",
-    image:
-      "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop",
-    statement: "인플레이션을 2% 목표로 되돌리기 위해 필요한 조치를 취할 것",
-    time: "2시간 전",
-    source: "FOMC 기자회견",
-  },
-  {
-    id: 2,
-    name: "재닛 옐런",
-    title: "미 재무장관",
-    image:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
-    statement: "미국 경제는 여전히 견고하며 연착륙 가능성이 높다",
-    time: "5시간 전",
-    source: "G7 재무장관 회의",
-  },
-  {
-    id: 3,
-    name: "크리스틴 라가르드",
-    title: "ECB 총재",
-    image:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop",
-    statement: "유로존 금리는 당분간 현 수준을 유지할 것으로 예상",
-    time: "1일 전",
-    source: "ECB 통화정책 발표",
-  },
-];
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop";
 
 export default function JuTalkPage() {
   const { data: session } = useSession();
@@ -84,6 +54,7 @@ export default function JuTalkPage() {
   const [newMessage, setNewMessage] = useState("");
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
   const [experts, setExperts] = useState<Expert[]>([]);
+  const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
 
   const handleVote = async (index: number) => {
     if (userVotedIndex !== null) return;
@@ -195,6 +166,30 @@ export default function JuTalkPage() {
     setMessages((prev) => [newItem, ...prev]);
     setNewMessage("");
   };
+
+  useEffect(() => {
+    const fetchMarketVoices = async () => {
+      try {
+        const res = await fetch("/api/market-voices?limit=20", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        const items = (json?.data as Array<{ id: number; name: string; title: string; image: string; statement: string; source_url?: string; source_title?: string; time: string }>) ?? [];
+        const mapped: MarketVoice[] = items.map((v) => ({
+          id: v.id,
+          name: v.name,
+          title: v.title || "",
+          image: v.image || DEFAULT_AVATAR,
+          statement: v.statement,
+          time: v.time || "",
+          source: v.source_title || v.source_url || "",
+        }));
+        setMarketVoices(mapped);
+      } catch {
+        // 무시: 시장의 목소리가 없으면 빈 배열
+      }
+    };
+    fetchMarketVoices();
+  }, []);
 
   useEffect(() => {
     const fetchExpertsFromWiki = async () => {
