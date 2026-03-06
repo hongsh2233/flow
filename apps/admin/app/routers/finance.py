@@ -139,6 +139,18 @@ async def naver_ranking_page(request: Request, user=Depends(get_current_user)):
     })
 
 
+@router.get("/admin/stock-news", response_class=HTMLResponse)
+async def stock_news_page(request: Request, user=Depends(get_current_user)):
+    """재료(주가 영향 뉴스) 관리 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("admin_stock_news.html", {
+        "request": request,
+        "admin_email": ADMIN_EMAIL,
+        "active_page": "stock-news"
+    })
+
+
 # =========================================================
 # Yahoo Finance 지수 (DB 저장본 조회용 - Admin UI)
 # =========================================================
@@ -548,6 +560,69 @@ async def manual_collect_naver_ranking(
         return JSONResponse({
             "success": False,
             "message": f"데이터 수집 중 오류가 발생했습니다: {str(e)}"
+        }, status_code=500)
+
+
+# =========================================================
+# 재료(주가 영향 뉴스) API
+# =========================================================
+
+@router.get("/api/stock-news-list")
+async def get_stock_news_list(
+    category: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """재료 뉴스 목록 조회 (관리자용)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    from app.models import NaverStockNews
+    q = db.query(NaverStockNews)
+    if category:
+        q = q.filter(NaverStockNews.category == category)
+    total = q.count()
+    rows = q.order_by(NaverStockNews.collected_at.desc(), NaverStockNews.id.desc()).offset(offset).limit(limit).all()
+    data = [{
+        "id": r.id,
+        "category": r.category,
+        "keyword": r.keyword,
+        "title": r.title,
+        "description": (r.description or "")[:200],
+        "link": r.link,
+        "pub_date": r.pub_date,
+        "pub_datetime": r.pub_datetime.isoformat() if r.pub_datetime else None,
+        "collected_at": r.collected_at.isoformat() if r.collected_at else None,
+    } for r in rows]
+    return JSONResponse({"success": True, "data": data, "total": total, "count": len(data)})
+
+
+@router.post("/api/stock-news-manual-collect")
+async def manual_collect_stock_news(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """재료 뉴스 수동 수집"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    try:
+        from app.services.naver_news_service import naver_news_service
+        news_list = await naver_news_service.fetch_stock_impact_news()
+        saved = naver_news_service.save_news_to_db(db, news_list)
+        naver_news_service.cleanup_old_news(db)
+        return JSONResponse({
+            "success": True,
+            "fetched": len(news_list),
+            "saved": saved,
+            "message": f"뉴스 수집 완료: {len(news_list)}건 조회, {saved}건 신규 저장",
+        })
+    except Exception as e:
+        import traceback
+        print(f"❌ 재료 뉴스 수동 수집 오류: {e}\n{traceback.format_exc()}")
+        return JSONResponse({
+            "success": False,
+            "message": f"뉴스 수집 실패: {str(e)}",
         }, status_code=500)
 
 
