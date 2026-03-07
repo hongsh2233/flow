@@ -1,5 +1,5 @@
 .screen {
-  padding: 0 0 5rem;
+  padding: 0 0 var(--content-bottom-padding);
   min-height: 100vh;
 }
 

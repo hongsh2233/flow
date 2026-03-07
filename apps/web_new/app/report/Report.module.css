@@ -1,6 +1,7 @@
 .wrap {
-  padding: 1rem 1rem 5rem;
+  padding: 1rem var(--spacing-lg) var(--content-bottom-padding);
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .pageTitle {

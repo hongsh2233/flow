@@ -1,5 +1,5 @@
 .root {
-  padding-bottom: 5rem;
+  padding-bottom: var(--content-bottom-padding);
 }
 
 /* 월 표시 + 네비게이션 */

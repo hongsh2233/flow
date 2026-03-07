@@ -1,6 +1,6 @@
 .page {
   padding: 1rem;
-  padding-bottom: 5rem;
+  padding-bottom: var(--content-bottom-padding);
 }
 
 .backLink {

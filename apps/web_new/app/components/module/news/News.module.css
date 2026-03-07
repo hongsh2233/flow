@@ -1,5 +1,5 @@
 .wrap {
-  padding-bottom: 5rem;
+  padding-bottom: var(--content-bottom-padding);
 }
 
 .tabList {

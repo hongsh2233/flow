@@ -176,6 +176,7 @@ input[type='number'] {
   --text-lg: 1.125rem;
   --text-base: 1rem;
   --spacing-lg: 1rem;
+  --content-bottom-padding: calc(100px + var(--spacing-lg));
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;

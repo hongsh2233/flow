@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
   background: var(--app-bg, #f5f5f8);
-  padding-bottom: 5rem;
+  padding-bottom: var(--content-bottom-padding);
 }
 
 .header {
@@ -37,7 +37,7 @@
 }
 
 .main {
-  padding: 0.75rem 1.25rem 5rem;
+  padding: 0.75rem 1.25rem var(--content-bottom-padding);
   /* max-width: 640px; */
   margin: 0 auto;
 }
