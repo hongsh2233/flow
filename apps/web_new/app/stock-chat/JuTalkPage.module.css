@@ -438,15 +438,16 @@
 }
 
 .writeTextarea {
-  flex: 1;
-  min-height: 72px;
   resize: none;
-  border-radius: 0.8rem;
+  color: #111827;
+  background: #f3f4f6;
   border: none;
+  border-radius: 0.8rem;
+  flex: 1;
+  min-height: 32px;
   padding: 0.55rem 0.65rem;
   font-size: 0.86rem;
-  background: #f3f4f6;
-  color: #111827;
+  height: 43px;
 }
 
 .writeTextarea::placeholder {
@@ -490,9 +491,8 @@
 }
 
 .sendButton svg {
-  width: 18px;
-  height: 18px;
-  margin-right: 0.2rem;
+  width: 24px;
+  height: 24px;
 }
 
 .messageList {

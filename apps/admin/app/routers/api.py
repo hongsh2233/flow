@@ -57,6 +57,13 @@ class PollVoteRequest(BaseModel):
     poll_id: int
     option_index: int
 
+
+class CreatePostRequest(BaseModel):
+    """게시글 작성 요청 (방명록 등)"""
+    content: str
+    title: Optional[str] = None
+    author_email: Optional[str] = None  # 회원 이메일 (Next.js 세션에서 전달)
+
 # ---------------------------------------------------------
 # API 인증 설정
 # ---------------------------------------------------------
@@ -570,6 +577,57 @@ async def get_board_posts(
             "total_count": total_count,
             "total_pages": (total_count + limit - 1) // limit if total_count > 0 else 0
         }
+    }
+
+
+@router.post("/api/boards/{board_id}/posts")
+async def create_board_post(
+    board_id: str,
+    body: CreatePostRequest,
+    db: Session = Depends(get_db),
+    auth=Depends(get_current_user_or_api_key),
+):
+    """게시글 작성 (방명록 등, API Key + author_email로 회원 작성)"""
+    board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not board:
+        raise HTTPException(status_code=404, detail="게시판을 찾을 수 없습니다.")
+
+    content = (body.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="내용을 입력해 주세요.")
+
+    # 방명록: 제목 자동 생성
+    title = body.title
+    if not title:
+        title = content[:20] + "..." if len(content) > 20 else content
+
+    # 작성자: author_email이 있으면 회원 닉네임/이름 사용, 없으면 "익명"
+    author = "익명"
+    if body.author_email:
+        member = db.query(models.Member).filter(models.Member.email == body.author_email).first()
+        if member:
+            author = member.nickname or member.name or body.author_email.split("@")[0]
+
+    new_post = models.Post(
+        board_id=board_id,
+        title=title,
+        content=content,
+        author=author,
+    )
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+    return {
+        "success": True,
+        "data": {
+            "id": new_post.id,
+            "board_id": new_post.board_id,
+            "title": new_post.title,
+            "content": new_post.content,
+            "author": new_post.author,
+            "created_at": serialize_datetime(new_post.created_at),
+        },
     }
 
 

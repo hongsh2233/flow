@@ -1,7 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { API_BASE_URL } from '@/lib/config/api'
+import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ boardId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, message: '로그인 후 이용해 주세요.' },
+        { status: 401 }
+      )
+    }
+
+    const { boardId } = await params
+    const body = await request.json()
+    const content = typeof body?.content === 'string' ? body.content.trim() : ''
+    if (!content) {
+      return NextResponse.json(
+        { success: false, message: '내용을 입력해 주세요.' },
+        { status: 400 }
+      )
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (API_SECRET_KEY) {
+      headers['X-API-KEY'] = API_SECRET_KEY
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/boards/${boardId}/posts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content,
+        title: body.title || undefined,
+        author_email: session.user.email,
+      }),
+      cache: 'no-store',
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      return NextResponse.json(
+        { success: false, message: data.detail || '게시글 작성에 실패했습니다.' },
+        { status: response.status }
+      )
+    }
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('게시글 작성 프록시 오류:', error)
+    return NextResponse.json(
+      { success: false, message: '게시글 작성에 실패했습니다.' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function GET(
   request: NextRequest,

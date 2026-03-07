@@ -52,6 +52,7 @@ export default function JuTalkPage() {
 
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
   const [experts, setExperts] = useState<Expert[]>([]);
   const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
@@ -140,31 +141,56 @@ export default function JuTalkPage() {
     );
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!isLoggedIn) {
       alert("로그인 후 이용해 주세요.");
       return;
     }
     const text = newMessage.trim();
     if (!text) return;
+    if (isSending) return;
 
-    const now = new Date();
-    const timeLabel = now.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    setIsSending(true);
+    try {
+      const res = await fetch(`/api/boards/${STOCK_CHAT_GUESTBOOK_BOARD_ID}/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      });
+      const json = await res.json();
 
-    const newItem: GuestbookMessage = {
-      id: Date.now(),
-      user: nickname,
-      jubti: "Rabbit",
-      content: text,
-      time: timeLabel,
-      likes: 0,
-    };
+      if (!res.ok) {
+        alert(json.message || "작성에 실패했습니다.");
+        return;
+      }
 
-    setMessages((prev) => [newItem, ...prev]);
-    setNewMessage("");
+      const created = json?.data;
+      const timeLabel = created?.created_at
+        ? new Date(created.created_at).toLocaleDateString("ko-KR", {
+            month: "2-digit",
+            day: "2-digit",
+          })
+        : new Date().toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+      const newItem: GuestbookMessage = {
+        id: created?.id ?? Date.now(),
+        user: created?.author ?? nickname,
+        jubti: "Rabbit",
+        content: text,
+        time: timeLabel,
+        likes: 0,
+      };
+
+      setMessages((prev) => [newItem, ...prev]);
+      setNewMessage("");
+    } catch {
+      alert("작성에 실패했습니다.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   useEffect(() => {
@@ -473,7 +499,7 @@ export default function JuTalkPage() {
             <textarea
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={isLoggedIn ? "메시지를 입력하세요" : "로그인 후 작성할 수 있습니다"}
+              placeholder="메시지를 입력하세요"
               className={styles.writeTextarea}
               rows={3}
             />
@@ -481,10 +507,9 @@ export default function JuTalkPage() {
               type="button"
               className={styles.sendButton}
               onClick={handleSendMessage}
-              disabled={!isLoggedIn}
+              disabled={!isLoggedIn || isSending}
             >
               <Send aria-hidden />
-              <span>작성</span>
             </button>
           </div>
           <div className={styles.messageList}>
