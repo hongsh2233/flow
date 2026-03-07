@@ -25,7 +25,6 @@ import {
   FileText,
   LogIn,
   Info,
-  Lightbulb,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -46,7 +45,6 @@ const settingsGroups: SettingsGroup[] = [
     title: "내 정보",
     items: [
       { icon: User, label: "프로필 관리", hasArrow: true, href: "/settings/profile" },
-      { icon: Lightbulb, label: "주BTI", hasArrow: true, href: "/" },
       { icon: UserX, label: "회원 탈퇴", hasArrow: true, action: "withdraw" },
     ],
   },
@@ -155,16 +153,7 @@ function SettingsScreen() {
     }
   };
 
-  const groups = isLoggedIn
-    ? settingsGroups.map((g) => ({
-        ...g,
-        items: g.items.map((item) =>
-          item.label === "주BTI"
-            ? { ...item, subtitle: jubtiType ? JUBTI_LABELS[jubtiType] ?? jubtiType : "테스트 후 저장하기" }
-            : item
-        ),
-      }))
-    : guestSettingsGroups;
+  const groups = isLoggedIn ? settingsGroups : guestSettingsGroups;
 
   return (
     <div className={styles.screen}>
@@ -193,7 +182,10 @@ function SettingsScreen() {
               </div>
               <div className={styles.profileText}>
                 <div className={styles.profileNameRow}>
-                  <h3 className={styles.profileName}>{session?.user?.name || "주린이"}님</h3>
+                  <h3 className={styles.profileName}>
+                  {session?.user?.name || "주린이"}
+                  {jubtiType ? `(${JUBTI_LABELS[jubtiType] ?? jubtiType})` : "(주비티야)"}
+                </h3>
                   {(session?.user as { grade?: string })?.grade === "vip" && (
                     <span className={styles.gradeBadgeVip}>V</span>
                   )}

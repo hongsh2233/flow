@@ -1,48 +1,23 @@
 "use client";
 
 import styles from "./JuTalkPage.module.css";
-import { Clock, ThumbsUp, MessageCircle, Heart, Send } from "lucide-react";
+import { Clock, MessageCircle, Heart } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import type {
-  JuBTI,
-  GuestbookMessage,
   Expert,
   MarketVoice,
   StockTermItem,
-  BoardSummary,
-  BoardPostFromApi,
   VoteOption,
 } from "./types";
-
-const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
-
-function stripHtml(html: string): string {
-  if (!html) return "";
-  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
-}
-
-const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string }> = {
-  Bull: { icon: "🐂", className: styles.jubtiBull, label: "불마켓" },
-  Bear: { icon: "🐻", className: styles.jubtiBear, label: "베어마켓" },
-  Whale: { icon: "🐋", className: styles.jubtiWhale, label: "고래" },
-  Rabbit: { icon: "🐰", className: styles.jubtiRabbit, label: "토끼" },
-  Fox: { icon: "🦊", className: styles.jubtiFox, label: "여우" },
-  Turtle: { icon: "🐢", className: styles.jubtiTurtle, label: "거북이" },
-};
 
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop";
 
 export default function JuTalkPage() {
-  const { data: session } = useSession();
-  const isLoggedIn = !!session?.user;
-  const nickname =
-    (session?.user as { nickname?: string | null; name?: string | null })?.nickname ||
-    session?.user?.name ||
-    "회원";
+  useSession();
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [userVotedIndex, setUserVotedIndex] = useState<number | null>(null);
 
@@ -50,8 +25,6 @@ export default function JuTalkPage() {
   const [pollQuestion, setPollQuestion] = useState("투표 내용을 불러오는 중입니다.");
   const [pollId, setPollId] = useState<number | null>(null);
 
-  const [messages, setMessages] = useState<GuestbookMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
   const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
   const [experts, setExperts] = useState<Expert[]>([]);
   const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
@@ -123,48 +96,11 @@ export default function JuTalkPage() {
     return `${styles.voteButton} ${styles.voteButtonDisabled}`;
   };
 
-  const handleLike = (id: number) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === id
-          ? { ...msg, likes: msg.isLiked ? msg.likes - 1 : msg.likes + 1, isLiked: !msg.isLiked }
-          : msg,
-      ),
-    );
-  };
-
   const handleExpertLike = (id: number) => {
     setExpertLikes((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
-  };
-
-  const handleSendMessage = () => {
-    if (!isLoggedIn) {
-      alert("로그인 후 이용해 주세요.");
-      return;
-    }
-    const text = newMessage.trim();
-    if (!text) return;
-
-    const now = new Date();
-    const timeLabel = now.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const newItem: GuestbookMessage = {
-      id: Date.now(),
-      user: nickname,
-      jubti: "Rabbit",
-      content: text,
-      time: timeLabel,
-      likes: 0,
-    };
-
-    setMessages((prev) => [newItem, ...prev]);
-    setNewMessage("");
   };
 
   useEffect(() => {
@@ -254,42 +190,6 @@ export default function JuTalkPage() {
           }
         }
 
-        const boardsRes = await fetch("/api/boards", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-        });
-        if (!boardsRes.ok) return discoveredPollId;
-        const boardsJson = await boardsRes.json();
-        const boards = (boardsJson?.data as BoardSummary[]) ?? [];
-        const guestbookBoard = boards.find((b) => b.id === STOCK_CHAT_GUESTBOOK_BOARD_ID);
-
-        if (guestbookBoard) {
-          const postsRes = await fetch(
-            `/api/boards/${guestbookBoard.id}/posts?page=1&limit=20`,
-            {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              cache: "no-store",
-            },
-          );
-          if (postsRes.ok) {
-            const postsJson = await postsRes.json();
-            const posts = (postsJson?.data as BoardPostFromApi[]) ?? [];
-            const mappedMessages: GuestbookMessage[] = posts.map((post) => ({
-              id: post.id,
-              user: post.author || "운영자",
-              jubti: "Rabbit",
-              content: stripHtml(post.content),
-              time: new Date(post.created_at).toLocaleDateString("ko-KR", {
-                month: "2-digit",
-                day: "2-digit",
-              }),
-              likes: 0,
-            }));
-            setMessages(mappedMessages);
-          }
-        }
       } catch {
         // ignore and keep defaults
       }
@@ -458,68 +358,6 @@ export default function JuTalkPage() {
                 </div>
               </article>
             ))}
-          </div>
-        </section>
-
-        {/* 커뮤니티 방명록 */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>커뮤니티 방명록</h2>
-            <p className={styles.sectionSubtitle}>개미들의 한마디</p>
-          </div>
-          <div className={styles.writeBox}>
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={isLoggedIn ? "메시지를 입력하세요" : "로그인 후 작성할 수 있습니다"}
-              className={styles.writeTextarea}
-              rows={3}
-            />
-            <button
-              type="button"
-              className={styles.sendButton}
-              onClick={handleSendMessage}
-              disabled={!isLoggedIn}
-            >
-              <Send className={styles.sendButtonIcon} aria-hidden />
-              <span>작성</span>
-            </button>
-          </div>
-          <div className={styles.messageList}>
-            {messages.map((message) => {
-              const jubtiInfo = jubtiIcons[message.jubti];
-              return (
-                <article key={message.id} className={styles.messageCard}>
-                  <div className={styles.messageHeader}>
-                    <span className={styles.messageUser}>{message.user}</span>
-                    <span
-                      className={`${styles.jubtiBadge} ${jubtiInfo.className}`}
-                      title={jubtiInfo.label}
-                    >
-                      <span>{jubtiInfo.icon}</span>
-                      <span>{jubtiInfo.label}</span>
-                    </span>
-                    <span className={styles.timeText}>{message.time}</span>
-                  </div>
-                  <p className={styles.messageBody}>{message.content}</p>
-                  <button
-                    type="button"
-                    onClick={() => handleLike(message.id)}
-                    className={`${styles.messageLikeButton} ${
-                      message.isLiked ? styles.messageLikeButtonActive : ""
-                    }`}
-                  >
-                    <ThumbsUp
-                      aria-hidden
-                      className={
-                        message.isLiked ? styles.messageLikeIconActive : styles.messageLikeIcon
-                      }
-                    />
-                    <span>{message.likes}</span>
-                  </button>
-                </article>
-              );
-            })}
           </div>
         </section>
 
