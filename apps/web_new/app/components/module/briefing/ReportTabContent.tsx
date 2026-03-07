@@ -12,7 +12,12 @@ export function ReportTabContent() {
   useEffect(() => {
     fetchBoards().then((res) => {
       if (res.success && res.data) {
-        const filtered = res.data.filter((b) => b.id !== "B003");
+        const filtered = res.data.filter((b) => {
+          if (b.id === "B003") return false; // 주린이 알림 제외
+          if (b.type === "guestbook" || b.type === "guest") return false; // 방명록형 제외
+          if (b.name?.includes("커뮤니티") || b.name?.includes("방명록")) return false;
+          return true;
+        });
         setBoards(filtered);
       }
     });
