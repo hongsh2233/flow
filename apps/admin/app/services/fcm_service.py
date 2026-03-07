@@ -100,7 +100,6 @@ async def send_push_to_tokens(
                     priority="high",
                     notification=messaging.AndroidNotification(
                         sound="default",
-                        click_action="FLUTTER_NOTIFICATION_CLICK",
                     ),
                 ),
             )
