@@ -43,11 +43,25 @@ DEFAULT_US_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="us", symbol="^GSPC", name="S&P 500", market="US"),
     YahooIndexDef(group="us", symbol="^DJI", name="다우존스", market="US"),
     YahooIndexDef(group="us", symbol="^IXIC", name="나스닥", market="US"),
+    YahooIndexDef(group="us", symbol="^SOX", name="필라델피아 반도체", market="US"),
 ]
 
 DEFAULT_KR_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="kr", symbol="^KS11", name="코스피", market="KR"),
     YahooIndexDef(group="kr", symbol="^KQ11", name="코스닥", market="KR"),
+    YahooIndexDef(group="kr", symbol="^KS200", name="코스피 200", market="KR"),
+]
+
+# 아침 시장 요약 (06:30 KST 수집) - 뉴욕 마감, 나스닥 선물, 코스피200, 필라델피아 반도체, 환율
+MORNING_SUMMARY_INDICES: list[YahooIndexDef] = [
+    YahooIndexDef(group="morning", symbol="^IXIC", name="나스닥", market="US"),
+    YahooIndexDef(group="morning", symbol="^GSPC", name="S&P 500", market="US"),
+    YahooIndexDef(group="morning", symbol="^DJI", name="다우존스", market="US"),
+    YahooIndexDef(group="morning", symbol="^SOX", name="필라델피아 반도체", market="US"),
+    YahooIndexDef(group="morning", symbol="NQ=F", name="나스닥 선물", market="US"),
+    YahooIndexDef(group="morning", symbol="^KS200", name="코스피 200", market="KR"),
+    YahooIndexDef(group="morning", symbol="^KS11", name="코스피", market="KR"),
+    YahooIndexDef(group="morning", symbol="^KQ11", name="코스닥", market="KR"),
 ]
 
 # 메인 페이지 해외지수 (00:00, 05:00, 06:30 KST 수집) - 미국지수(나스닥/S&P500/다우존스) 우선
@@ -55,6 +69,12 @@ DEFAULT_FOREIGN_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="foreign", symbol="^IXIC", name="나스닥", market="US"),
     YahooIndexDef(group="foreign", symbol="^GSPC", name="S&P 500", market="US"),
     YahooIndexDef(group="foreign", symbol="^DJI", name="다우존스", market="US"),
+    YahooIndexDef(group="foreign", symbol="^SOX", name="필라델피아 반도체", market="US"),
+    YahooIndexDef(group="foreign", symbol="^KS11", name="코스피", market="KR"),
+    YahooIndexDef(group="foreign", symbol="^KQ11", name="코스닥", market="KR"),
+    YahooIndexDef(group="foreign", symbol="^KS200", name="코스피 200", market="KR"),
+    YahooIndexDef(group="foreign", symbol="^MSKR", name="MSCI Korea", market="KR"),
+    YahooIndexDef(group="foreign", symbol="EWY", name="iShares MSCI Korea ETF", market="US"),
     YahooIndexDef(group="foreign", symbol="^N225", name="닛케이", market="JP"),
     YahooIndexDef(group="foreign", symbol="^HSI", name="항셍", market="HK"),
     YahooIndexDef(group="foreign", symbol="000001.SS", name="상하이종합", market="CN"),

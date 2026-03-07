@@ -28,6 +28,11 @@ from app.services.yahoo_index_service import (
     DEFAULT_US_INDICES,
     DEFAULT_KR_INDICES,
     DEFAULT_FOREIGN_INDICES,
+    MORNING_SUMMARY_INDICES,
+)
+from app.services.investing_com_service import (
+    fetch_kospi200_futures,
+    upsert_kospi200_futures_to_db,
 )
 from app.models import FscStockPrice, FscRisingStock, KrxData
 
@@ -725,6 +730,46 @@ async def collect_yahoo_foreign_indices():
         db.close()
 
 
+async def collect_market_morning_summary():
+    """
+    아침 시장 요약 수집 (06:35 KST)
+    - 뉴욕증시 마감시황 (나스닥/S&P500/다우)
+    - 나스닥 선물, 코스피 200, 코스피200 야간선물 (Investing.com)
+    - 환율은 exchange_rate_scheduler가 30분마다 수집하므로 별도 수집 없음
+    - 주말(토·일) 및 공휴일은 건너뜀
+    """
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: 아침 시장 요약 수집 건너뜀")
+        return
+
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n📊 아침 시장 요약 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        items = await fetch_indices(MORNING_SUMMARY_INDICES)
+        if items:
+            upsert_indices_to_db(db, items, collected_at=now, keep_days=7)
+            ok_count = sum(1 for i in items if i.get("ok") is True)
+            print(f"✅ 아침 시장 요약 저장 완료: {ok_count}개")
+        else:
+            print("⚠️ 아침 시장 요약 수집 결과 없음")
+
+        # 코스피200 야간선물 (Investing.com)
+        try:
+            kospi200_fut = await fetch_kospi200_futures()
+            if kospi200_fut and kospi200_fut.get("ok"):
+                upsert_kospi200_futures_to_db(db, kospi200_fut, collected_at=now)
+                print(f"✅ 코스피200 야간선물 저장 완료: {kospi200_fut.get('price')}")
+            else:
+                print(f"⚠️ 코스피200 야간선물 수집 실패: {kospi200_fut.get('error', 'unknown')}")
+        except Exception as e:
+            print(f"⚠️ 코스피200 야간선물 수집 오류: {e}")
+    except Exception as e:
+        print(f"❌ 아침 시장 요약 수집 오류: {e}")
+    finally:
+        db.close()
+
+
 async def collect_yahoo_kr_indices():
     """
     Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
@@ -799,6 +844,17 @@ class YahooIndexScheduler:
             max_instances=1,
             coalesce=True,
             misfire_grace_time=300,
+        )
+        # 아침 시장 요약 (뉴욕 마감, 나스닥 선물, 코스피200) - 06:35 KST
+        self.scheduler.add_job(
+            collect_market_morning_summary,
+            CronTrigger(hour=6, minute=35, timezone=self.kst),
+            id="market_morning_summary",
+            name="아침 시장 요약 (06:35)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
         )
 
         # US: 06:20, 00:00, 02:00, 04:00 (KST)

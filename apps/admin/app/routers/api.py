@@ -1668,10 +1668,11 @@ async def get_foreign_indices(
                 models.YahooIndexSnapshot.group == "foreign",
                 models.YahooIndexSnapshot.collected_at == latest,
             ).all()
-            # 미국지수(나스닥/S&P500/다우존스) 우선 정렬
-            _FOREIGN_ORDER = {"^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^RUT": 3, "^VIX": 4,
-                             "^N225": 5, "^HSI": 6, "000001.SS": 7, "^STOXX50E": 8,
-                             "^FTSE": 9, "^GDAXI": 10, "^FCHI": 11}
+            # 미국지수(나스닥/S&P500/다우존스) 우선 정렬, 한국지수(코스피/코스닥/코스피200/MSCI Korea) 포함
+            _FOREIGN_ORDER = {"^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^SOX": 3, "^RUT": 4, "^VIX": 5,
+                             "^KS11": 6, "^KQ11": 7, "^KS200": 8, "^MSKR": 9, "EWY": 10,
+                             "^N225": 11, "^HSI": 12, "000001.SS": 13, "^STOXX50E": 14,
+                             "^FTSE": 15, "^GDAXI": 16, "^FCHI": 17}
             rows = sorted(rows, key=lambda r: _FOREIGN_ORDER.get(r.symbol, 99))
             if rows:
                 results = []
@@ -1707,11 +1708,17 @@ async def get_foreign_indices(
     if cached is not None:
         return cached
 
-    # 12개 주요 해외지수 심볼 - 미국지수(나스닥/S&P500/다우존스) 우선
+    # 주요 해외지수 심볼 - 미국지수(나스닥/S&P500/다우존스) 우선, 한국지수 포함
     indices = [
         {"symbol": "^IXIC", "name": "나스닥", "market": "US"},
         {"symbol": "^GSPC", "name": "S&P 500", "market": "US"},
         {"symbol": "^DJI", "name": "다우존스", "market": "US"},
+        {"symbol": "^SOX", "name": "필라델피아 반도체", "market": "US"},
+        {"symbol": "^KS11", "name": "코스피", "market": "KR"},
+        {"symbol": "^KQ11", "name": "코스닥", "market": "KR"},
+        {"symbol": "^KS200", "name": "코스피 200", "market": "KR"},
+        {"symbol": "^MSKR", "name": "MSCI Korea", "market": "KR"},
+        {"symbol": "EWY", "name": "iShares MSCI Korea ETF", "market": "US"},
         {"symbol": "^N225", "name": "닛케이", "market": "JP"},
         {"symbol": "^HSI", "name": "항셍", "market": "HK"},
         {"symbol": "000001.SS", "name": "상하이종합", "market": "CN"},
@@ -1822,6 +1829,78 @@ async def get_foreign_indices(
 
 # =========================================================
 # 네이버 증권 랭킹 데이터 API
+# =========================================================
+# 아침 시장 요약 API (메인 레이어팝업용)
+# =========================================================
+
+@router.get("/api/market-morning-summary")
+async def get_market_morning_summary(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    아침 시장 요약 - 뉴욕 마감, 나스닥 선물, 코스피200, 환율
+    06:35 KST 스케줄러가 수집한 데이터 반환
+    """
+    from datetime import datetime as dt
+    import pytz
+    kst = pytz.timezone("Asia/Seoul")
+    today = dt.now(kst).date()
+
+    try:
+        # YahooIndexDaily에서 group='morning' 오늘 데이터
+        rows = db.query(models.YahooIndexDaily).filter(
+            models.YahooIndexDaily.date == today,
+            models.YahooIndexDaily.group == "morning",
+        ).all()
+        # 표시 순서: 미국지수 → 나스닥선물 → 코스피200 → 코스피200야간선물 → MSCI Korea → 한국지수
+        _MORNING_ORDER = {"^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^SOX": 3, "NQ=F": 4,
+                          "^KS200": 5, "INV:8893": 6, "^MSKR": 7, "EWY": 8, "^KS11": 9, "^KQ11": 10}
+        rows = sorted(rows, key=lambda r: _MORNING_ORDER.get(r.symbol, 99))
+
+        indices = []
+        for r in rows:
+            if r.price is not None:
+                chg = r.change or 0
+                pct = r.change_percent or 0
+                indices.append({
+                    "name": r.name,
+                    "symbol": r.symbol,
+                    "price": round(r.price, 2),
+                    "change": round(chg, 2),
+                    "changePercent": round(pct, 2),
+                    "isPositive": chg >= 0,
+                })
+
+        # 환율 (최신)
+        latest_ex = db.query(func.max(models.ExchangeRateSnapshot.collected_at)).scalar()
+        exchange_rates = []
+        if latest_ex:
+            ex_rows = db.query(models.ExchangeRateSnapshot).filter(
+                models.ExchangeRateSnapshot.collected_at == latest_ex,
+            ).all()
+            currency_names = {"USD": "USD/KRW", "JPY": "JPY/KRW (100엔)", "EUR": "EUR/KRW"}
+            for r in ex_rows:
+                exchange_rates.append({
+                    "currency": currency_names.get(r.currency, r.currency),
+                    "rate": round(r.rate, 2),
+                    "change": round(r.change_val, 2),
+                    "isPositive": r.change_val >= 0,
+                })
+
+        return {
+            "success": True,
+            "data": {
+                "indices": indices,
+                "exchangeRates": exchange_rates,
+                "collectedDate": today.isoformat(),
+            },
+        }
+    except Exception as e:
+        print(f"⚠️ market-morning-summary 조회 실패: {e}")
+        return {"success": False, "data": {"indices": [], "exchangeRates": [], "collectedDate": None}}
+
+
 # =========================================================
 
 @router.get("/api/exchange-rate")
