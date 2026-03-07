@@ -334,11 +334,11 @@ export default function JuTalkPage() {
               <MessageCircle className={styles.sectionIcon} aria-hidden />
               <h2 className={styles.sectionTitle}>오늘의 투표</h2>
             </div>
-            <span className={styles.sectionMeta}>
-              <Clock className={styles.sectionMetaIcon} aria-hidden />
-              {pollTitle}
-            </span>
           </div>
+          <span className={styles.sectionMeta}>
+            <Clock className={styles.sectionMetaIcon} aria-hidden />
+            {pollTitle}
+          </span>
           <p className={styles.sectionQuestion}>{pollQuestion}</p>
 
           {userVotedIndex !== null && (
@@ -429,7 +429,8 @@ export default function JuTalkPage() {
           </div>
         </section>
 
-        {/* 시장의 목소리 */}
+        {/* 시장의 목소리 - 주석 처리 (삭제 금지) */}
+        {/*
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시장의 목소리</h2>
@@ -460,6 +461,7 @@ export default function JuTalkPage() {
             ))}
           </div>
         </section>
+        */}
 
         {/* 시장의 목소리 방명록 (B005 게시판) */}
         <section className={styles.section}>

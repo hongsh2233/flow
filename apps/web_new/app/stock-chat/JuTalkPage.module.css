@@ -84,6 +84,7 @@
   gap: 0.25rem;
   font-size: 0.78rem;
   color: #6b7280;
+  margin-top: 0.25rem;
 }
 
 .sectionMetaIcon {
@@ -306,17 +307,16 @@
 }
 
 .expertQuoteBox {
+  /* background: linear-gradient(135deg, #fffbeb, #fef3c7); */
   padding: 1rem;
-  background: linear-gradient(135deg, #fffbeb, #fef3c7);
 }
 
 .expertQuote {
+  /* text-align: center; */
+  color: #374151;
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.5;
-  text-align: center;
-  color: #374151;
-  font-weight: 500;
 }
 
 .expertFooter {
