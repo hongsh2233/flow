@@ -367,6 +367,12 @@ def run_migrations():
         print(f"⚠️ 일정 end_date 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_schedule_show_main_popup import migrate as add_schedule_show_main_popup_migration
+        add_schedule_show_main_popup_migration()
+    except Exception as e:
+        print(f"⚠️ 일정 show_main_popup 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.add_member_grade_columns import upgrade as add_member_grade_migration
         add_member_grade_migration()
     except Exception as e:
