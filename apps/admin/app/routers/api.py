@@ -1104,12 +1104,48 @@ async def get_schedules(
                 "content": schedule.content or "",
                 "detail": getattr(schedule, "detail", None) or "",
                 "type": schedule.type,
+                "show_main_popup": getattr(schedule, "show_main_popup", False) or False,
                 "created_at": serialize_datetime(schedule.created_at),
                 "updated_at": serialize_datetime(schedule.updated_at)
             }
             for schedule in schedules
         ],
         "count": len(schedules)
+    }
+
+
+@router.get("/api/schedules/today-popup")
+async def get_today_popup_schedules(
+    db: Session = Depends(get_db),
+    auth=Depends(get_current_user_or_api_key)
+):
+    """당일 메인 팝업 표시 대상 일정 조회 (show_main_popup=true, 오늘 날짜 포함)"""
+    today = date.today()
+    schedules = db.query(models.Schedule).filter(
+        models.Schedule.show_main_popup == True,
+        models.Schedule.date <= today,
+        or_(
+            and_(models.Schedule.end_date == None, models.Schedule.date == today),
+            and_(models.Schedule.end_date != None, models.Schedule.end_date >= today),
+        ),
+    ).order_by(models.Schedule.date).all()
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": s.id,
+                "date": serialize_date(s.date),
+                "end_date": serialize_date(s.end_date) if getattr(s, "end_date", None) else None,
+                "scheduled_time": getattr(s, "scheduled_time", None) or "",
+                "subject": s.subject,
+                "content": s.content or "",
+                "detail": getattr(s, "detail", None) or "",
+                "type": s.type,
+                "link_url": getattr(s, "link_url", None) or "",
+            }
+            for s in schedules
+        ],
+        "count": len(schedules),
     }
 
 

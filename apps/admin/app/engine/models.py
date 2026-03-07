@@ -1,7 +1,7 @@
 """
 데이터베이스 모델 정의 (PostgreSQL 호환)
 """
-from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float, Index
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float, Index, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.engine.database import Base
@@ -139,6 +139,7 @@ class Schedule(Base):
     type = Column(String(20), default="manual")
     link_url = Column(String(500), nullable=True)   # DART/증권사 등 링크 (새 창)
     underwriter = Column(String(200), nullable=True)  # 주관 증권사 (공모청약 등)
+    show_main_popup = Column(Boolean, nullable=False, default=False)  # 당일 메인 페이지 레이어팝업 표시
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

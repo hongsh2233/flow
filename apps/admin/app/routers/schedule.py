@@ -61,6 +61,7 @@ async def schedule_page(
             "type": s.type,
             "link_url": getattr(s, "link_url", None) or "",
             "underwriter": getattr(s, "underwriter", None) or "",
+            "show_main_popup": getattr(s, "show_main_popup", False) or False,
         }
         for s in schedules
     ]
@@ -85,6 +86,7 @@ async def add_schedule(
     content: str = Form(None),
     detail: str = Form(None),
     schedule_type_param: str = Form("etc"),
+    show_main_popup: str = Form("false"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -115,6 +117,7 @@ async def add_schedule(
             type=schedule_type,
             link_url=None,
             underwriter=None,
+            show_main_popup=show_main_popup.lower() in ("true", "1", "on", "yes"),
         )
         
         db.add(new_schedule)
@@ -199,6 +202,7 @@ async def update_schedule(
     content: str = Form(None),
     detail: str = Form(None),
     schedule_type_param: str = Form("etc"),
+    show_main_popup: str = Form("false"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -231,7 +235,8 @@ async def update_schedule(
         schedule.content = content or ""
         schedule.detail = detail or None
         schedule.type = schedule_type
-        
+        schedule.show_main_popup = show_main_popup.lower() in ("true", "1", "on", "yes")
+
         db.commit()
         db.refresh(schedule)
         

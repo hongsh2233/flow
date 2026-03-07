@@ -237,6 +237,9 @@
         <option value="etc">기타</option>
         <option value="api">공휴일</option>
       </select>
+      <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; white-space: nowrap;" title="체크 시 당일 메인 페이지에 레이어팝업으로 표시">
+        <input type="checkbox" name="show_main_popup" value="true" style="width: auto; margin: 0;" /> 메인 팝업
+      </label>
       <input
         type="text"
         name="subject"
@@ -272,6 +275,7 @@
         <th>일정 제목</th>
         <th>요약 내용</th>
         <th>상세 내용</th>
+        <th>팝업</th>
         <th>관리</th>
       </tr>
     </thead>
@@ -305,6 +309,7 @@
         </td>
         <td>{{ s.content or '-' }}</td>
         <td class="detail-preview">{{ ((s.detail or '-')|striptags|replace('\n',' '))[:50] }}{{ '...' if s.detail and (s.detail|length) > 50 else '' }}</td>
+        <td>{% if s.show_main_popup %}<span style="color:#3498db;" title="당일 메인 팝업 표시">✓</span>{% else %}-{% endif %}</td>
         <td>
           <template class="schedule-detail-data" data-id="{{ s.id }}">{{ (s.detail or '')|replace('</', '<\\/')|safe }}</template>
           <button
@@ -316,6 +321,7 @@
             data-type="{{ s.type or 'etc' }}"
             data-subject="{{ (s.subject or '')|e }}"
             data-content="{{ (s.content or '')|e }}"
+            data-show-main-popup="{{ 'true' if s.show_main_popup else 'false' }}"
             style="
               color: #3498db;
               background: none;
@@ -363,6 +369,11 @@
         <option value="etc">기타</option>
         <option value="api">공휴일</option>
       </select>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 10px 0;">
+        <input type="hidden" name="show_main_popup" value="false" />
+        <input type="checkbox" name="show_main_popup" id="edit_show_main_popup" value="true" style="width: auto; margin: 0;" />
+        <span>당일 메인 페이지 레이어팝업 표시</span>
+      </label>
       <label>제목</label>
       <input type="text" name="subject" id="edit_subject" required />
       <label>요약 내용</label>
@@ -541,7 +552,8 @@
           btn.getAttribute('data-type') || 'etc',
           btn.getAttribute('data-subject') || '',
           btn.getAttribute('data-content') || '',
-          detail
+          detail,
+          btn.getAttribute('data-show-main-popup') === 'true'
         );
       });
     });
@@ -557,7 +569,7 @@
     });
   });
 
-  function openEditModal(id, date, endDate, scheduledTime, type, subject, content, detail) {
+  function openEditModal(id, date, endDate, scheduledTime, type, subject, content, detail, showMainPopup) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_date").value = date;
     var editPeriodCheck = document.getElementById("edit_period_check");
@@ -578,6 +590,8 @@
     document.getElementById("edit_content").value = content;
     quillEdit.root.innerHTML = detail || '';
     document.getElementById("edit_detail").value = detail || '';
+    var popupCheck = document.getElementById("edit_show_main_popup");
+    if (popupCheck) popupCheck.checked = !!showMainPopup;
     document.getElementById("editModal").style.display = "flex";
   }
 
