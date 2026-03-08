@@ -9,6 +9,7 @@ import type { ScheduleItem, NotifyTiming } from "@/lib/types";
 import { useAlarmStore } from "@/lib/stores/useAlarmStore";
 import { BottomSheet } from "@/app/components/ui/BottomSheet/BottomSheet";
 import { API_BASE_URL } from "@/lib/config/api";
+import { sanitizeHtml } from "@/lib/utils/sanitize";
 import styles from "./ScheduleCard.module.css";
 
 const NOTIFY_OPTIONS: { value: NotifyTiming; label: string }[] = [
@@ -255,7 +256,7 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
             <div
               className={styles.detailContent}
               dangerouslySetInnerHTML={{
-                __html: rewriteDetailUrls(rawDetail),
+                __html: sanitizeHtml(rewriteDetailUrls(rawDetail)),
               }}
             />
           ) : (

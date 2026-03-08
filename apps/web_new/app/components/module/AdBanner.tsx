@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import type { AdBannerItem } from "@/lib/types";
+import { sanitizeHtml } from "@/lib/utils/sanitize";
 import styles from "./AdBanner.module.css";
 
 const gradientMap: Record<string, string> = {
@@ -65,7 +66,7 @@ export function AdBanner({ items, autoSlide = true, interval = 4000 }: AdBannerP
         {item.htmlContent ? (
           <div
             className={styles.htmlContent}
-            dangerouslySetInnerHTML={{ __html: item.htmlContent }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.htmlContent) }}
           />
         ) : item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title || "배너"} />
