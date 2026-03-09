@@ -41,8 +41,7 @@ if ENV_FILE.exists():
     load_dotenv(dotenv_path=ENV_FILE)
     print(f".env 로드 완료 (admin): {ENV_FILE}")
 if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
-    load_dotenv()
-    print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
+    load_dotenv()  # Railway 등 환경변수를 직접 주입하는 환경에서는 정상
 
 # 관리자 계정 설정
 # 필수: 환경 변수 ADMIN_EMAIL, ADMIN_PW 반드시 설정 필요
