@@ -1,0 +1,57 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--app-card-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoArea {
+  margin-bottom: 1rem;
+}
+
+.logoBox {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: var(--app-accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* 잠금 메시지 */
+.lockMessage {
+  text-align: center;
+  padding: 2rem;
+}
+
+.lockTitle {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--app-text);
+  margin-bottom: 0.5rem;
+}
+
+.lockDesc {
+  font-size: 0.875rem;
+  color: var(--app-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.lockTimer {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--app-up);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.5rem;
+}
+
+.lockHint {
+  font-size: 0.875rem;
+  color: var(--app-text-placeholder);
+}

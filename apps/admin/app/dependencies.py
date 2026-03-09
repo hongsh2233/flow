@@ -32,11 +32,12 @@ else:
     load_dotenv()
 
 # --- API 시크릿 키 (프론트엔드 NEXT_PUBLIC_X_API_KEY와 동일 값, 루트 .env.local에서 공유) ---
-# Railway 배포 시: Railway Variables에서 NEXT_PUBLIC_X_API_KEY를 반드시 설정해야 함
-API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY")
+# Railway 배포 시: Railway Variables에서 NEXT_PUBLIC_X_API_KEY를 설정해야 함
+API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY", "1978022019820308200705092018111420220303")
 
-if not API_SECRET_KEY:
-    print("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 설정되지 않았습니다. API 키 인증이 비활성화됩니다.")
+# Railway 배포 환경에서 API_SECRET_KEY가 기본값인지 확인 (경고 출력)
+if API_SECRET_KEY == "1978022019820308200705092018111420220303" and os.environ.get("RAILWAY_ENVIRONMENT"):
+    print("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 기본값입니다. Railway Variables에서 설정하세요.")
     print("💡 Railway → Admin 서비스 → Variables → NEXT_PUBLIC_X_API_KEY 설정 필요")
 
 # 기존 설정들...
@@ -52,16 +53,12 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KE
     """
     HTTP 헤더의 X-API-KEY를 확인하여 데이터를 반환합니다.
     """
-    if not API_SECRET_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="API key not configured on server"
-        )
     if x_api_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated"
         )
+    
     # 공백 제거 후 비교
     x_api_key = x_api_key.strip()
     if x_api_key != API_SECRET_KEY:
@@ -105,7 +102,7 @@ async def get_current_user_or_api_key_for_fsc(
     쿠키(관리자) 또는 X-API-KEY(프론트엔드)로 인증.
     /api/right-schedule 등 FE에서 호출하는 FSC API용.
     """
-    if API_SECRET_KEY and x_api_key and x_api_key.strip() == API_SECRET_KEY:
+    if x_api_key and x_api_key.strip() == API_SECRET_KEY:
         return True
     session_id = request.cookies.get(AUTH_COOKIE_NAME)
     if session_id and session_id == SECRET_TOKEN:
