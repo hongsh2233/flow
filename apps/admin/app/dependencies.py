@@ -44,8 +44,7 @@ AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")
 MEMBER_COOKIE_NAME = "member_session"
 security = HTTPBearer()
 
-# SECRET_TOKEN은 config에서 가져오기 (기본값 생성 로직 포함)
-from app.config import SECRET_TOKEN
+import app.config as _cfg
 
 # --- 신규: 시크릿 키 검증 함수 (프론트엔드 API용) ---
 async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KEY")):
@@ -83,12 +82,12 @@ async def get_current_user(request: Request):
     Returns:
         str: 세션 ID (인증 성공 시), None (인증 실패 시)
     """
-    # SECRET_TOKEN이 없으면 인증 실패
-    if not SECRET_TOKEN:
+    # _cfg.SECRET_TOKEN이 없으면 인증 실패
+    if not _cfg.SECRET_TOKEN:
         return None
     
     session_id = request.cookies.get(AUTH_COOKIE_NAME)
-    if not session_id or session_id != SECRET_TOKEN:
+    if not session_id or session_id != _cfg.SECRET_TOKEN:
         return None
     return session_id
 
@@ -104,7 +103,7 @@ async def get_current_user_or_api_key_for_fsc(
     if x_api_key and x_api_key.strip() == API_SECRET_KEY:
         return True
     session_id = request.cookies.get(AUTH_COOKIE_NAME)
-    if session_id and session_id == SECRET_TOKEN:
+    if session_id and session_id == _cfg.SECRET_TOKEN:
         return session_id
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다.")
 

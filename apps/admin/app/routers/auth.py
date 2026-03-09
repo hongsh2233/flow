@@ -14,7 +14,8 @@ import secrets
 from app import models, utils
 from app.database import get_db
 from app.dependencies import get_current_user, AUTH_COOKIE_NAME
-from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
+from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS
+import app.config as _cfg
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
@@ -171,7 +172,7 @@ async def read_root(user=Depends(get_current_user)):
 async def login_page(request: Request):
     """로그인 화면"""
     # SECRET_TOKEN이 없으면 로그인 불가
-    if not SECRET_TOKEN:
+    if not _cfg.SECRET_TOKEN:
         return HTMLResponse("""
         <!DOCTYPE html>
         <html lang="ko">
@@ -207,7 +208,7 @@ async def login_page(request: Request):
         """, status_code=500)
     
     # 이미 로그인된 경우 대시보드로 리다이렉트
-    if request.cookies.get(AUTH_COOKIE_NAME) == SECRET_TOKEN:
+    if request.cookies.get(AUTH_COOKIE_NAME) == _cfg.SECRET_TOKEN:
         return RedirectResponse(url="/admin/dashboard")
     return """
     <!DOCTYPE html>
@@ -509,7 +510,7 @@ async def do_login(
     response = RedirectResponse(url="/admin/dashboard", status_code=303)
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
-        value=SECRET_TOKEN,
+        value=_cfg.SECRET_TOKEN,
         httponly=True,
         max_age=30 * 60,  # 30분
         samesite="lax"
@@ -544,7 +545,7 @@ async def extend_login(request: Request):
     - 쿠키 만료 시간을 다시 30분으로 연장
     """
     current_session = request.cookies.get(AUTH_COOKIE_NAME)
-    if not current_session or current_session != SECRET_TOKEN:
+    if not current_session or current_session != _cfg.SECRET_TOKEN:
         return JSONResponse(
             {"success": False, "message": "세션이 이미 만료되었습니다."},
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -558,7 +559,7 @@ async def extend_login(request: Request):
     })
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
-        value=SECRET_TOKEN,
+        value=_cfg.SECRET_TOKEN,
         httponly=True,
         max_age=30 * 60,  # 30분 재설정
         samesite="lax",
