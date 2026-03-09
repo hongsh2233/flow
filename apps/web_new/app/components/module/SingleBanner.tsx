@@ -1,7 +1,6 @@
 "use client";
 
 import type { ManagedBannerItem } from "@/lib/types";
-import { sanitizeHtml } from "@/lib/utils/sanitize";
 import styles from "./SingleBanner.module.css";
 
 export interface SingleBannerProps {
@@ -26,7 +25,7 @@ export function SingleBanner({ item }: SingleBannerProps) {
     item.content_type === "html" && item.html_content ? (
       <div
         className={styles.htmlContent}
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.html_content) }}
+        dangerouslySetInnerHTML={{ __html: item.html_content }}
       />
     ) : item.image_url ? (
       <img src={item.image_url} alt={item.alt_text || "배너"} />

@@ -6,7 +6,6 @@ import Group from "@mui/icons-material/Group";
 // import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
 import type { BoardDetailProps } from "@/lib/types";
 import { getImageUrl } from "@/lib/config/api";
-import { sanitizeHtml } from "@/lib/utils/sanitize";
 import styles from "./BoardDetail.module.css";
 
 export function BoardDetail({
@@ -49,7 +48,7 @@ export function BoardDetail({
         {hasHtml ? (
           <div
             className={styles.bodyContent}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+            dangerouslySetInnerHTML={{ __html: post.content }}
           />
         ) : (
           <div className={styles.bodyContent}>{post.content}</div>
