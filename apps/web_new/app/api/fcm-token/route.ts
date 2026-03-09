@@ -10,14 +10,11 @@ function makeHeaders() {
   return headers
 }
 
-/** FCM 토큰 등록 */
+/** FCM 토큰 등록 (로그인 여부 무관, 디바이스 단위 등록) */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    const email = session?.user?.email || ''
-    if (!email) {
-      return NextResponse.json({ success: false, message: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const email = session?.user?.email || undefined  // 비로그인 시 undefined
 
     const { token } = await request.json()
     if (!token) {
@@ -28,7 +25,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(url, {
       method: 'POST',
       headers: makeHeaders(),
-      body: JSON.stringify({ email, token }),
+      body: JSON.stringify({ token, ...(email ? { email } : {}) }),
     })
     const data = await response.json()
     return NextResponse.json(data)
