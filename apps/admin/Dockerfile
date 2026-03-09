@@ -5,9 +5,9 @@ FROM python:3.12-slim
 WORKDIR /workspace
 
 # 3. 환경 변수 설정 (Python의 로그 출력을 즉시 확인하기 위함)
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH /workspace
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/workspace
 
 
 # 4. 종속성 설치를 위해 필요한 라이브러리들을 설치합니다 (PostgreSQL 연결 등)
