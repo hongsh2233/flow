@@ -272,12 +272,8 @@ function SettingsScreen() {
                       )}
                       {item.hasSwitch && item.action === "push" && (
                         <Switch
-                          checked={isLoggedIn ? pushEnabled : false}
+                          checked={pushEnabled}
                           onChange={async (checked) => {
-                            if (!isLoggedIn) {
-                              alert("로그인 이후 이용할 수 있습니다.");
-                              return;
-                            }
                             if (checked && isJurinAppWebView()) {
                               // JurinApp 네이티브 환경: Android 알림 권한 먼저 요청
                               const granted = await requestAndroidNotificationPermission();
