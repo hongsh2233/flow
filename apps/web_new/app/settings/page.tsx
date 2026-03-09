@@ -15,6 +15,7 @@ import {
   Bell,
   BellRing,
   Moon,
+  CalendarCheck,
   // KeyRound,
   MessageCircleQuestion,
   ChevronRight,
@@ -51,6 +52,7 @@ const settingsGroups: SettingsGroup[] = [
     title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: true },
+      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
       // { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
     ],
@@ -67,12 +69,13 @@ const settingsGroups: SettingsGroup[] = [
   },
 ];
 
-// 비로그인 시 보여줄 그룹 (내 정보 숨김)
+// 비로그인 시 보여줄 그룹 (내 정보 숨김, 알림은 표시하되 로그인 후 이용)
 const guestSettingsGroups: SettingsGroup[] = [
   {
     title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: false },
+      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
     ],
   },
@@ -94,21 +97,11 @@ function SettingsScreen() {
   const isLoggedIn = status === "authenticated";
   const { isDark, toggle } = useThemeContext();
   const {
+    scheduleAlarmEnabled,
     pushEnabled,
+    setScheduleAlarmEnabled,
     setPushEnabled,
   } = useNotificationSettings();
-
-  // JurinApp: 설정 화면 진입 시 Android 실제 알림 권한 상태와 동기화
-  useEffect(() => {
-    if (!isJurinAppWebView()) return;
-    const bridge = (window as unknown as { JurinApp?: { isNotificationPermissionGranted: () => boolean } }).JurinApp;
-    if (!bridge) return;
-    const granted = bridge.isNotificationPermissionGranted();
-    // 디바이스 권한이 꺼져 있으면 앱 설정도 OFF로 동기화
-    if (!granted && pushEnabled) {
-      setPushEnabled(false);
-    }
-  }, []);
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
   const [jubtiType, setJubtiType] = useState<string | null>(null);
@@ -265,10 +258,26 @@ function SettingsScreen() {
                       {item.hasSwitch && item.action === "darkmode" && (
                         <Switch checked={isDark} onChange={toggle} />
                       )}
+                      {item.hasSwitch && item.action === "scheduleAlarm" && (
+                        <Switch
+                          checked={isLoggedIn ? scheduleAlarmEnabled : false}
+                          onChange={(checked) => {
+                            if (!isLoggedIn) {
+                              alert("로그인 이후 이용할 수 있습니다.");
+                              return;
+                            }
+                            setScheduleAlarmEnabled(checked);
+                          }}
+                        />
+                      )}
                       {item.hasSwitch && item.action === "push" && (
                         <Switch
-                          checked={pushEnabled}
+                          checked={isLoggedIn ? pushEnabled : false}
                           onChange={async (checked) => {
+                            if (!isLoggedIn) {
+                              alert("로그인 이후 이용할 수 있습니다.");
+                              return;
+                            }
                             if (checked && isJurinAppWebView()) {
                               // JurinApp 네이티브 환경: Android 알림 권한 먼저 요청
                               const granted = await requestAndroidNotificationPermission();

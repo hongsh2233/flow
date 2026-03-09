@@ -22,7 +22,7 @@ import {
  */
 export function CapacitorProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
-  const { pushEnabled, setPushEnabled } = useNotificationSettings();
+  const { pushEnabled } = useNotificationSettings();
   const initialized = useRef(false);
 
   // 최신 상태를 ref로 유지 (콜백 클로저에서 stale closure 방지)
@@ -46,25 +46,17 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
 
     const w = window as unknown as {
       __onFcmToken?: (token: string) => void;
-      __onNotificationPermission?: (granted: boolean) => void;
     };
 
-    // FCM 토큰 갱신 콜백: pushEnabled와 무관하게 항상 저장 (로그인 불필요)
     w.__onFcmToken = (token: string) => {
-      if (pushEnabledRef.current) {
+      if (
+        pushEnabledRef.current &&
+        statusRef.current === "authenticated" &&
+        sessionRef.current?.user?.email
+      ) {
         saveFcmToken(token);
       }
     };
-
-    // 최초 실행 시 Android 알림 권한 허용 → pushEnabled 자동 활성화
-    // (기존에 콜백이 없으면 Android에서 호출해도 무시되던 문제 수정)
-    if (!w.__onNotificationPermission) {
-      w.__onNotificationPermission = (granted: boolean) => {
-        if (granted && !pushEnabledRef.current) {
-          setPushEnabled(true);
-        }
-      };
-    }
 
     return () => {
       w.__onFcmToken = undefined;
