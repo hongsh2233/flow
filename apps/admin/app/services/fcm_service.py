@@ -18,13 +18,16 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 _firebase_app = None
+_firebase_init_failed = False  # 초기화 실패 시 무한 재시도 방지
 
 
 def _get_firebase_app():
     """Firebase Admin App 초기화 (1회만)"""
-    global _firebase_app
+    global _firebase_app, _firebase_init_failed
     if _firebase_app is not None:
         return _firebase_app
+    if _firebase_init_failed:
+        return None
 
     try:
         import firebase_admin
@@ -81,9 +84,11 @@ def _get_firebase_app():
 
     except ImportError:
         logger.warning("[FCM] firebase-admin 패키지가 설치되지 않았습니다. (pip install firebase-admin)")
+        _firebase_init_failed = True
         return None
     except Exception as e:
-        logger.error(f"[FCM] Firebase 초기화 실패: {e}")
+        logger.error(f"[FCM] Firebase 초기화 실패: {e}", exc_info=True)
+        _firebase_init_failed = True
         return None
 
 
@@ -173,4 +178,8 @@ async def send_push_to_all(
     from app.engine.models import MemberFcmToken
     tokens_rows = db.query(MemberFcmToken.token).all()
     tokens = [r[0] for r in tokens_rows]
+    if not tokens:
+        logger.warning("[FCM] 등록된 FCM 토큰이 없습니다. (member_fcm_tokens 테이블 비어있음)")
+        return 0
+    logger.info(f"[FCM] 전체 알림 전송 시작: {len(tokens)}개 토큰")
     return await send_push_to_tokens(tokens, title, body, data)

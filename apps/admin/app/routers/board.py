@@ -525,16 +525,20 @@ async def admin_create_post(
         if is_secret != "true":
             try:
                 from app.services.fcm_service import send_push_to_all
+                import logging as _logging
+                _fcm_logger = _logging.getLogger(__name__)
                 board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
                 board_name = board_obj.name if board_obj else board_id
-                await send_push_to_all(
+                sent = await send_push_to_all(
                     db,
                     title=f"[{board_name}] 새 글이 등록됐습니다",
                     body=title.strip(),
                     data={"link_url": f"/board/{new_post.id}?from={board_id}", "type": "new_post"},
                 )
+                _fcm_logger.info(f"[FCM] 새 게시글 알림 전송 완료: {sent}건 (post_id={new_post.id})")
             except Exception as fcm_err:
-                print(f"[DEBUG] FCM 전송 생략: {fcm_err}")
+                import logging as _logging
+                _logging.getLogger(__name__).error(f"[FCM] 새 게시글 알림 전송 실패: {fcm_err}", exc_info=True)
 
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
