@@ -103,13 +103,18 @@ Disallow: /
 """
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
-# 프로덕션 환경에서는 allow_origins를 특정 도메인으로 제한해야 합니다.
+# 환경 변수 CORS_ALLOWED_ORIGINS에 쉼표로 구분된 도메인 목록을 설정하세요.
+# 예: CORS_ALLOWED_ORIGINS=https://example.com,https://www.example.com
+_cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+_allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else []
+if not _allowed_origins:
+    print("⚠️ 경고: CORS_ALLOWED_ORIGINS가 설정되지 않았습니다. CORS 요청이 차단됩니다.")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 모든 도메인 허용 (개발용)
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
-    allow_headers=["*"],  # 모든 헤더 허용
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
 )
 
 # 정적 파일 서빙 설정 (UPLOADS_DIR 사용 → 빌드/실행 경로와 무관하게 이미지 정상 노출)
@@ -439,19 +444,17 @@ def init_admin_user():
     print("관리자 계정 초기화 시작")
     print("=" * 60)
     
-    # 환경 변수 확인 (없으면 기본 관리자 계정 사용)
-    DEFAULT_ADMIN_EMAIL = "hongsh220303@gmail.com"
-    DEFAULT_ADMIN_PW = "0000"
-
-    admin_email = ADMIN_EMAIL or DEFAULT_ADMIN_EMAIL
-    admin_pw = ADMIN_PW or DEFAULT_ADMIN_PW
-
+    # 환경 변수 확인 (필수: ADMIN_EMAIL, ADMIN_PW 반드시 설정 필요)
     if not ADMIN_EMAIL or not ADMIN_PW:
         print("⚠️ ADMIN_EMAIL 또는 ADMIN_PW 환경 변수가 설정되지 않았습니다.")
-        print(f"   기본 관리자 계정을 사용합니다: {DEFAULT_ADMIN_EMAIL}")
-    else:
-        print(f"ADMIN_EMAIL: ✅ 설정됨")
-        print(f"ADMIN_PW: ✅ 설정됨")
+        print("   관리자 계정 초기화를 건너뜁니다.")
+        return
+
+    admin_email = ADMIN_EMAIL
+    admin_pw = ADMIN_PW
+
+    print(f"ADMIN_EMAIL: ✅ 설정됨")
+    print(f"ADMIN_PW: ✅ 설정됨")
     
     try:
         db = next(get_db())

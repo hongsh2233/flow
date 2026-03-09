@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { sanitizeHtml } from "@/lib/utils/sanitize";
 import styles from "./About.module.css";
 
 const FALLBACK_HTML = `<p>주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.</p>`;
@@ -62,7 +63,7 @@ export default function AboutPage() {
               {isHtmlContent ? (
                 <div
                   className={styles.htmlContent}
-                  dangerouslySetInnerHTML={{ __html: html }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
                 />
               ) : (
                 <pre className={styles.contentText}>{html}</pre>
