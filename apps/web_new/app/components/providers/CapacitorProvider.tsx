@@ -63,9 +63,9 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
     };
   }, []); // 빈 deps: 콜백은 한 번만 등록, 내부에서 ref로 최신 상태 참조
 
-  // pushEnabled 변경 시 FCM 토큰 등록/해제
+  // pushEnabled 변경 시 FCM 토큰 등록/해제 (로그인 여부 무관)
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.email) return;
+    if (status === "loading") return;  // 세션 로딩 중엔 대기
 
     if (pushEnabled && !initialized.current) {
       initialized.current = true;
@@ -82,7 +82,18 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
         unregisterPushNotifications();
       }
     }
-  }, [pushEnabled, status, session]);
+  }, [pushEnabled, status]);
+
+  // 로그인 완료 시 email을 기존 토큰에 연동 (재등록으로 email 갱신)
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.email && pushEnabled && initialized.current) {
+      if (isJurinAppWebView()) {
+        registerJurinAppPushNotifications();
+      } else {
+        registerPushNotifications();
+      }
+    }
+  }, [status, session?.user?.email]);
 
   return <>{children}</>;
 }

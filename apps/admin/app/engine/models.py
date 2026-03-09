@@ -396,14 +396,14 @@ class ScheduleAlarmSubscription(Base):
 
 
 class MemberFcmToken(Base):
-    """회원 FCM 푸시 토큰 (Capacitor APK용)"""
+    """디바이스 FCM 푸시 토큰 (로그인 여부와 무관하게 등록)"""
     __tablename__ = "member_fcm_tokens"
     id = Column(Integer, primary_key=True, index=True)
-    member_email = Column(String(100), nullable=False, index=True)
-    token = Column(String(500), nullable=False)
+    member_email = Column(String(100), nullable=True, index=True)  # 비로그인 시 NULL 허용
+    token = Column(String(500), nullable=False, unique=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    __table_args__ = (UniqueConstraint('member_email', 'token', name='uq_member_fcm_token'),)
+    __table_args__ = (UniqueConstraint('token', name='uq_fcm_token'),)
 
 
 class Popup(Base):
