@@ -32,11 +32,12 @@ else:
     load_dotenv()
 
 # --- API 시크릿 키 (프론트엔드 NEXT_PUBLIC_X_API_KEY와 동일 값, 루트 .env.local에서 공유) ---
-# Railway 배포 시: Railway Variables에서 NEXT_PUBLIC_X_API_KEY를 반드시 설정해야 함
-API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY")
+# Railway 배포 시: Railway Variables에서 NEXT_PUBLIC_X_API_KEY를 설정해야 함
+API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY", "1978022019820308200705092018111420220303")
 
-if not API_SECRET_KEY:
-    print("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 설정되지 않았습니다. API 인증이 비활성화됩니다.")
+# Railway 배포 환경에서 API_SECRET_KEY가 기본값인지 확인 (경고 출력)
+if API_SECRET_KEY == "1978022019820308200705092018111420220303" and os.environ.get("RAILWAY_ENVIRONMENT"):
+    print("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 기본값입니다. Railway Variables에서 설정하세요.")
     print("💡 Railway → Admin 서비스 → Variables → NEXT_PUBLIC_X_API_KEY 설정 필요")
 
 # 기존 설정들...

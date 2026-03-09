@@ -439,14 +439,16 @@ def init_admin_user():
     print("관리자 계정 초기화 시작")
     print("=" * 60)
     
-    # 환경 변수 확인 (필수값 - 없으면 초기화 건너뜀)
-    admin_email = ADMIN_EMAIL
-    admin_pw = ADMIN_PW
+    # 환경 변수 확인 (없으면 기본 관리자 계정 사용)
+    DEFAULT_ADMIN_EMAIL = "hongsh220303@gmail.com"
+    DEFAULT_ADMIN_PW = "0000"
 
-    if not admin_email or not admin_pw:
+    admin_email = ADMIN_EMAIL or DEFAULT_ADMIN_EMAIL
+    admin_pw = ADMIN_PW or DEFAULT_ADMIN_PW
+
+    if not ADMIN_EMAIL or not ADMIN_PW:
         print("⚠️ ADMIN_EMAIL 또는 ADMIN_PW 환경 변수가 설정되지 않았습니다.")
-        print("   관리자 계정을 자동 생성하지 않습니다. Railway Variables에서 설정하세요.")
-        return
+        print(f"   기본 관리자 계정을 사용합니다: {DEFAULT_ADMIN_EMAIL}")
     else:
         print(f"ADMIN_EMAIL: ✅ 설정됨")
         print(f"ADMIN_PW: ✅ 설정됨")
