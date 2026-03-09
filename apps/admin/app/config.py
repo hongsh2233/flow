@@ -46,27 +46,22 @@ if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
 
 # 관리자 계정 설정
 # 기본값: 환경 변수가 없으면 init_admin_user()와 동일한 기본 이메일 사용
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "hongsh220303@gmail.com")  # 초기 관리자 이메일
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")  # 초기 관리자 이메일
 ADMIN_PW = os.environ.get("ADMIN_PW")  # 초기 관리자 비밀번호
 
 # 인증 설정
 AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")  # 인증 쿠키 이름
 SECRET_TOKEN = os.environ.get("SECRET_TOKEN")  # 세션 인증 토큰
 
-# SECRET_TOKEN이 없으면 경고 출력 및 고정 기본값 설정 (개발 환경용)
-# 주의: 프로덕션에서는 반드시 .env.local에 SECRET_TOKEN을 설정하세요!
+# SECRET_TOKEN이 없으면 경고 출력
+# 주의: 프로덕션에서는 반드시 Railway Variables에 SECRET_TOKEN을 설정하세요!
 if not SECRET_TOKEN:
-    # 개발 환경용 고정 토큰 (서버 재시작 시에도 동일하게 유지)
-    SECRET_TOKEN = "dev-secret-token-change-in-production-12345"
-    print("⚠️ 경고: SECRET_TOKEN이 설정되지 않았습니다. 개발용 기본 토큰을 사용합니다.")
-    print("💡 프로덕션 환경에서는 반드시 .env.local에 SECRET_TOKEN을 설정하세요.")
+    print("⚠️ 경고: SECRET_TOKEN이 설정되지 않았습니다. 관리자 인증이 비활성화됩니다.")
+    print("💡 Railway Variables 또는 .env.local에 SECRET_TOKEN을 설정하세요.")
     print(f"   예: SECRET_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')")
 
 # JWT 설정 (REST API 인증용)
-JWT_SECRET_KEY = os.environ.get(
-    "JWT_SECRET_KEY",
-    SECRET_TOKEN or "your-secret-key-change-in-production"
-)  # JWT 토큰 암호화 키
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or SECRET_TOKEN  # JWT 토큰 암호화 키
 JWT_ALGORITHM = "HS256"  # JWT 알고리즘
 JWT_ACCESS_TOKEN_EXPIRE_HOURS = 1  # Access Token 만료 시간 (1시간) - 짧게 설정하여 보안 강화
 JWT_REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh Token 만료 시간 (30일) - 긴 기간으로 설정
