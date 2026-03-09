@@ -243,7 +243,18 @@ function removePath(p) {
 function renderPaths() {
   const list = document.getElementById('pathList');
   const hidden = document.getElementById('pagePaths');
-  list.innerHTML = paths.map(p => `<span class="path-chip">${p} <button type="button" onclick="removePath('${p.replace(/'/g, "\\'")}')">&times;</button></span>`).join('');
+  list.innerHTML = '';
+  paths.forEach(function(p) {
+    const span = document.createElement('span');
+    span.className = 'path-chip';
+    span.textContent = p + ' ';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '\u00d7';
+    btn.addEventListener('click', function() { removePath(p); });
+    span.appendChild(btn);
+    list.appendChild(span);
+  });
   hidden.value = JSON.stringify(paths);
 }
 
