@@ -44,6 +44,23 @@ async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
   return request(fallbackParams);
 }
 
+function parseSupplyNum(val: string): number | null {
+  const s = String(val).replace(/,/g, "").replace(/\+/g, "").trim();
+  if (!s || s === "-") return null;
+  const n = parseInt(s, 10);
+  return isNaN(n) ? null : n;
+}
+
+function getSupplyCellClass(cell: string, colIndex: number): string | undefined {
+  if (colIndex === 0) return undefined;
+  const trimmed = String(cell).trim();
+  if (trimmed.startsWith("-")) return styles.down;
+  if (trimmed.startsWith("+")) return styles.up;
+  const num = parseSupplyNum(cell);
+  if (num !== null) return num > 0 ? styles.up : num < 0 ? styles.down : undefined;
+  return undefined;
+}
+
 function Table({ data }: { data: TableData }) {
   if (!data.rows.length) {
     return <p className={styles.empty}>데이터가 없습니다.</p>;
@@ -62,9 +79,7 @@ function Table({ data }: { data: TableData }) {
           {data.rows.map((row, idx) => (
             <tr key={idx}>
               {row.map((cell, i) => {
-                const isMinus = i > 0 && String(cell).trim().startsWith("-");
-                const isPlus = i > 0 && String(cell).trim().startsWith("+");
-                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
+                const cls = getSupplyCellClass(cell, i);
                 return (
                   <td key={i} className={cls}>
                     {cell}
@@ -117,9 +132,7 @@ function ProgramTable({ data }: { data: TableData }) {
           {data.rows.map((row, idx) => (
             <tr key={idx}>
               {row.map((cell, i) => {
-                const isMinus = i > 0 && String(cell).trim().startsWith("-");
-                const isPlus = i > 0 && String(cell).trim().startsWith("+");
-                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
+                const cls = getSupplyCellClass(cell, i);
                 return (
                   <td key={i} className={cls}>
                     {cell}
@@ -167,9 +180,7 @@ function InvestorTable({ data }: { data: TableData }) {
           {data.rows.map((row, idx) => (
             <tr key={idx}>
               {row.map((cell, i) => {
-                const isMinus = i > 0 && String(cell).trim().startsWith("-");
-                const isPlus = i > 0 && String(cell).trim().startsWith("+");
-                const cls = isMinus ? styles.down : isPlus ? styles.up : undefined;
+                const cls = getSupplyCellClass(cell, i);
                 return (
                   <td key={i} className={cls}>
                     {cell}

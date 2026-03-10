@@ -53,7 +53,18 @@ export default function JuTalkPage() {
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [expertLikes, setExpertLikes] = useState<Record<number, boolean>>({});
+  const [latestPosts, setLatestPosts] = useState<BoardPostFromApi[]>([]);
+  const [studyNoteBoardId, setStudyNoteBoardId] = useState<string | null>(null);
+
+  const getGuestId = (): string => {
+    if (typeof window === "undefined") return "";
+    let g = localStorage.getItem("ju_guest_id");
+    if (!g) {
+      g = "g_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("ju_guest_id", g);
+    }
+    return g;
+  };
   const [experts, setExperts] = useState<Expert[]>([]);
   const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
 
@@ -124,11 +135,31 @@ export default function JuTalkPage() {
     return `${styles.voteButton} ${styles.voteButtonDisabled}`;
   };
 
-  const handleExpertLike = (id: number) => {
-    setExpertLikes((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  const handleExpertLike = async (expert: Expert) => {
+    const email = (session?.user as { email?: string })?.email;
+    const guestId = !email ? getGuestId() : undefined;
+    if (!email && !guestId) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/master-quotes/${expert.id}/like`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ email: email || undefined, guest_id: guestId }),
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success) {
+        setExperts((prev) =>
+          prev.map((e) =>
+            e.id === expert.id
+              ? { ...e, likes: json.like_count ?? e.likes, is_liked: json.liked }
+              : e,
+          ),
+        );
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const handleLike = (id: number) => {
@@ -220,7 +251,13 @@ export default function JuTalkPage() {
   useEffect(() => {
     const fetchExpertsFromWiki = async () => {
       try {
-        const url = `${API_BASE_URL}/api/master-quotes`;
+        const email = (session?.user as { email?: string })?.email;
+        const guestId = !email ? getGuestId() : undefined;
+        const params = new URLSearchParams();
+        if (email) params.set("email", email);
+        else if (guestId) params.set("guest_id", guestId);
+        const qs = params.toString();
+        const url = `${API_BASE_URL}/api/master-quotes${qs ? `?${qs}` : ""}`;
         const response = await fetch(url, {
           method: "GET",
           headers: getAuthHeaders(),
@@ -229,21 +266,20 @@ export default function JuTalkPage() {
         if (!response.ok) return;
 
         const data = await response.json();
-        const items = (data?.items as StockTermItem[]) ?? [];
+        const items = (data?.items as Array<StockTermItem & { likes?: number; is_liked?: boolean }>) ?? [];
         if (!items.length) return;
 
-        const mapped: Expert[] = items.map((item, index) => {
-          return {
-            id: item.id ?? index,
-            name: item.name,
-            title: item.title || "투자 대가",
-            image:
-              item.image_url ||
-              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
-            quote: item.quote,
-            likes: 0,
-          };
-        });
+        const mapped: Expert[] = items.map((item, index) => ({
+          id: item.id ?? index,
+          name: item.name,
+          title: item.title || "투자 대가",
+          image:
+            item.image_url ||
+            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
+          quote: item.quote,
+          likes: item.likes ?? 0,
+          is_liked: item.is_liked ?? false,
+        }));
 
         setExperts(mapped);
       } catch {
@@ -288,7 +324,23 @@ export default function JuTalkPage() {
         if (!boardsRes.ok) return discoveredPollId;
         const boardsJson = await boardsRes.json();
         const boards = (boardsJson?.data as BoardSummary[]) ?? [];
+        const studyNoteBoard = boards.find((b) => b.name?.includes("공부노트"));
         const guestbookBoard = boards.find((b) => b.id === STOCK_CHAT_GUESTBOOK_BOARD_ID);
+
+        if (studyNoteBoard) {
+          setStudyNoteBoardId(studyNoteBoard.id);
+          const latestRes = await fetch(
+            `/api/boards/${studyNoteBoard.id}/posts?page=1&limit=3`,
+            { method: "GET", headers: { "Content-Type": "application/json" }, cache: "no-store" },
+          );
+          if (latestRes.ok) {
+            const latestJson = await latestRes.json();
+            setLatestPosts((latestJson?.data as BoardPostFromApi[]) ?? []);
+          }
+        } else {
+          setStudyNoteBoardId(null);
+          setLatestPosts([]);
+        }
 
         if (guestbookBoard) {
           const postsRes = await fetch(
@@ -347,7 +399,7 @@ export default function JuTalkPage() {
 
     fetchExpertsFromWiki();
     fetchBoardsAndContent().then((id) => fetchStatsIfNeeded(id)).catch(() => {});
-  }, []);
+  }, [session?.user]);
 
   return (
     <div className={styles.page}>
@@ -409,6 +461,34 @@ export default function JuTalkPage() {
           </div>
         </section>
 
+        {/* 공부노트 최신글 3개 */}
+        {latestPosts.length > 0 && (
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>공부노트</h2>
+            </div>
+            <ul className={styles.latestPostList}>
+              {latestPosts.map((post) => (
+                <li key={post.id} className={styles.latestPostItem}>
+                  <a href={`/board/${post.id}${studyNoteBoardId ? `?from=${studyNoteBoardId}` : ""}`} className={styles.latestPostLink}>
+                    <span className={styles.latestPostContent}>{stripHtml(post.title || post.content || "")}</span>
+                    <span className={styles.latestPostTime}>
+                      {post.created_at
+                        ? new Date(post.created_at).toLocaleDateString("ko-KR", {
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* 대가들의 한마디 */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
@@ -417,8 +497,7 @@ export default function JuTalkPage() {
           </div>
           <div className={styles.expertList}>
             {experts.map((expert) => {
-              const liked = !!expertLikes[expert.id];
-              const likeCount = expert.likes + (liked ? 1 : 0);
+              const liked = !!expert.is_liked;
               return (
                 <article key={expert.id} className={styles.expertCard}>
                   <div className={styles.expertHeader}>
@@ -438,14 +517,14 @@ export default function JuTalkPage() {
                   <div className={styles.expertFooter}>
                     <button
                       type="button"
-                      onClick={() => handleExpertLike(expert.id)}
+                      onClick={() => handleExpertLike(expert)}
                       className={`${styles.likeButton} ${liked ? styles.likeButtonActive : ""}`}
                     >
                       <Heart
                         aria-hidden
                         className={liked ? styles.likeIconActive : styles.likeIcon}
                       />
-                      <span>{likeCount.toLocaleString()}</span>
+                      <span>{expert.likes.toLocaleString()}</span>
                     </button>
                     <span className={styles.timeText}>2시간 전</span>
                   </div>

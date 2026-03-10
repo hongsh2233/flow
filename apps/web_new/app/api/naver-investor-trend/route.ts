@@ -113,6 +113,7 @@ function normalizeFromObjects(arr: unknown[]): InvestorTrendItem[] {
 
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get("market") || "kospi";
+  const dataType = request.nextUrl.searchParams.get("data_type") || "investor_time";
 
   const reqHeaders: Record<string, string> = {
     "Content-Type": "application/json",
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
     timestamp: string | null;
     rawDataShape: string;
   }> {
-    const url = `${API_BASE_URL}/api/naver-supply-data?data_type=investor_day&market=${targetMarket}`;
+    const url = `${API_BASE_URL}/api/naver-supply-data?data_type=${dataType}&market=${targetMarket}`;
     const res = await fetch(url, { method: "GET", headers: reqHeaders, cache: "no-store" });
 
     if (!res.ok) {

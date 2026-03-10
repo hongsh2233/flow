@@ -259,6 +259,46 @@
   cursor: default;
 }
 
+/* 최신글 3개 */
+.latestPostList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.latestPostItem {
+  background: var(--app-card-bg, #ffffff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  overflow: hidden;
+}
+
+.latestPostLink {
+  display: block;
+  padding: 0.6rem 0.9rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.latestPostContent {
+  display: block;
+  font-size: 0.88rem;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latestPostTime {
+  display: block;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 0.2rem;
+}
+
 .expertList {
   display: flex;
   flex-direction: column;

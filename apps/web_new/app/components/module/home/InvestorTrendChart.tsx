@@ -109,7 +109,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/naver-investor-trend?market=${m}`);
+      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=investor_time`);
       const json = await res.json();
       const items = json.success && Array.isArray(json.data) && json.data.length > 0
         ? json.data

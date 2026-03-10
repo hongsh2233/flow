@@ -17,6 +17,7 @@ export interface Expert {
   image: string;
   quote: string;
   likes: number;
+  is_liked?: boolean;
 }
 
 export interface MarketVoice {

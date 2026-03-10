@@ -15,6 +15,7 @@ export function ReportTabContent() {
         const filtered = res.data.filter((b) => {
           if (b.id === "B003") return false; // 주린이 알림 제외
           if (b.name?.includes("커뮤니티")) return false; // briefing 시황/리포트에서만 커뮤니티 탭 제외 (시장의 목소리 방명록 등은 유지)
+          if (b.name?.includes("공부노트")) return false; // 공부노트 제외
           return true;
         });
         setBoards(filtered);

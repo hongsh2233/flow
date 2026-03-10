@@ -40,6 +40,7 @@ from app.engine.models import (
     LegalDocument,
     MasterPerson,
     MasterQuote,
+    MasterQuoteLike,
     PollVote,
     NaverStockNews,
     PersonMaster,
@@ -53,6 +54,6 @@ __all__ = [
     "ScheduleAlarmSubscription", "MemberFcmToken", "NaverSupplyData",
     "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
-    "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote",
+    "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote", "MasterQuoteLike",
     "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice",
 ]

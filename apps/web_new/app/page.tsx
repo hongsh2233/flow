@@ -9,6 +9,7 @@ import type { StockDetail, AdBannerItem, ManagedBannerItem } from "@/lib/types";
 import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
+import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { ForeignIndices } from "./components/module/home/ForeignIndices";
 import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
@@ -74,6 +75,7 @@ export default function Home() {
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />
+      <InvestorTrendChart defaultMarket="kospi" />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>

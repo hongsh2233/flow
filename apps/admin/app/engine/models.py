@@ -74,6 +74,7 @@ __all__ = [
   "LegalDocument",
   "MasterPerson",
   "MasterQuote",
+  "MasterQuoteLike",
   "NaverStockNews",
   "PersonMaster",
   "MarketVoice",
@@ -569,6 +570,16 @@ class MasterQuote(Base):
   is_active = Column(String(20), default="active")
   created_at = Column(DateTime(timezone=True), server_default=func.now())
   updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class MasterQuoteLike(Base):
+  """대가들의 명언 좋아요 (회원 또는 비회원)"""
+  __tablename__ = "master_quote_likes"
+  id = Column(Integer, primary_key=True, index=True)
+  master_quote_id = Column(Integer, ForeignKey("master_quotes.id", ondelete="CASCADE"), nullable=False, index=True)
+  member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=True, index=True)
+  guest_id = Column(String(64), nullable=True, index=True)
+  created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class FaqCategory(Base):

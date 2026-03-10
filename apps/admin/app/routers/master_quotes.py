@@ -5,7 +5,8 @@
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Form, Query, Request, HTTPException
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -200,12 +201,15 @@ async def delete_master_quote(
 
 @router.get("/api/master-quotes")
 async def api_master_quotes(
+  email: Optional[str] = Query(None, description="회원 이메일 (좋아요 여부 확인용)"),
+  guest_id: Optional[str] = Query(None, description="비회원 식별자 (좋아요 여부 확인용)"),
   _=Depends(verify_api_key),
   db: Session = Depends(get_db),
 ):
   """
   프론트엔드용 대가들의 한마디 조회 API
   - stock-chat 페이지에서 사용
+  - email 또는 guest_id가 있으면 각 항목의 is_liked, like_count 포함
   """
   items = (
     db.query(models.MasterQuote)
@@ -213,6 +217,39 @@ async def api_master_quotes(
     .order_by(models.MasterQuote.order_index, models.MasterQuote.id)
     .all()
   )
+
+  member_id = None
+  if email and email.strip():
+    member = db.query(models.Member).filter(models.Member.email == email.strip()).first()
+    if member:
+      member_id = member.id
+
+  quote_ids = [item.id for item in items]
+  like_counts = {}
+  liked_ids = set()
+
+  if quote_ids:
+    from sqlalchemy import func
+    count_rows = (
+      db.query(models.MasterQuoteLike.master_quote_id, func.count(models.MasterQuoteLike.id).label("cnt"))
+      .filter(models.MasterQuoteLike.master_quote_id.in_(quote_ids))
+      .group_by(models.MasterQuoteLike.master_quote_id)
+      .all()
+    )
+    like_counts = {r.master_quote_id: r.cnt for r in count_rows}
+
+    if member_id:
+      liked = db.query(models.MasterQuoteLike.master_quote_id).filter(
+        models.MasterQuoteLike.master_quote_id.in_(quote_ids),
+        models.MasterQuoteLike.member_id == member_id,
+      ).all()
+      liked_ids = {r.master_quote_id for r in liked}
+    elif guest_id and guest_id.strip():
+      liked = db.query(models.MasterQuoteLike.master_quote_id).filter(
+        models.MasterQuoteLike.master_quote_id.in_(quote_ids),
+        models.MasterQuoteLike.guest_id == guest_id.strip(),
+      ).all()
+      liked_ids = {r.master_quote_id for r in liked}
 
   return JSONResponse(
     {
@@ -223,9 +260,76 @@ async def api_master_quotes(
           "title": item.title,
           "quote": item.quote,
           "image_url": item.image_url,
+          "likes": like_counts.get(item.id, 0),
+          "is_liked": item.id in liked_ids,
         }
         for item in items
       ]
     }
   )
+
+
+class MasterQuoteLikeRequest(BaseModel):
+  email: Optional[str] = None
+  guest_id: Optional[str] = None
+
+
+@router.post("/api/master-quotes/{quote_id}/like")
+async def api_master_quote_like(
+  quote_id: int,
+  body: MasterQuoteLikeRequest,
+  _=Depends(verify_api_key),
+  db: Session = Depends(get_db),
+):
+  """
+  대가 명언 좋아요 토글 (추가/취소)
+  - email: 로그인 회원 이메일
+  - guest_id: 비회원 식별자 (localStorage 등에서 생성해 전달)
+  """
+  quote = db.query(models.MasterQuote).filter(
+    models.MasterQuote.id == quote_id,
+    models.MasterQuote.is_active == "active",
+  ).first()
+  if not quote:
+    raise HTTPException(status_code=404, detail="명언을 찾을 수 없습니다.")
+
+  member_id = None
+  guest_id = (body.guest_id or "").strip() or None
+
+  if (body.email or "").strip():
+    member = db.query(models.Member).filter(models.Member.email == body.email.strip()).first()
+    if member:
+      member_id = member.id
+
+  if not member_id and not guest_id:
+    raise HTTPException(status_code=400, detail="email 또는 guest_id 중 하나는 필요합니다.")
+
+  existing = db.query(models.MasterQuoteLike).filter(
+    models.MasterQuoteLike.master_quote_id == quote_id,
+  )
+  if member_id:
+    existing = existing.filter(models.MasterQuoteLike.member_id == member_id)
+  else:
+    existing = existing.filter(models.MasterQuoteLike.guest_id == guest_id)
+  existing = existing.first()
+
+  if existing:
+    db.delete(existing)
+    db.commit()
+    liked = False
+  else:
+    new_like = models.MasterQuoteLike(
+      master_quote_id=quote_id,
+      member_id=member_id,
+      guest_id=guest_id,
+    )
+    db.add(new_like)
+    db.commit()
+    liked = True
+
+  like_count = db.query(models.MasterQuoteLike).filter(
+    models.MasterQuoteLike.master_quote_id == quote_id,
+  ).count()
+
+  return {"success": True, "liked": liked, "like_count": like_count}
 

@@ -432,6 +432,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ admin_users is_super_admin 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_master_quote_likes import upgrade as add_master_quote_likes_migration
+        add_master_quote_likes_migration()
+    except Exception as e:
+        print(f"⚠️ master_quote_likes 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
