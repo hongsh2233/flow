@@ -24,7 +24,11 @@ const H = 140;
 const PAD = { top: 12, right: 12, bottom: 28, left: 8 };
 
 
-function fmtDate(d: string): string {
+function fmtDate(d: string, index: number, total: number): string {
+  // 1시간 단위 최대 4개: "1시간", "2시간", "3시간", "4시간"
+  if (total <= 4) {
+    return `${index + 1}시간`;
+  }
   const clean = d.replace(/[.\-\/]/g, "");
   if (clean.length === 8) return `${clean.slice(4, 6)}/${clean.slice(6, 8)}`;
   return d.replace(/\./g, "/").slice(-5);
@@ -69,7 +73,7 @@ function LineChart({ data }: { data: InvestorTrendItem[] }) {
       {data.map((d, i) => (
         <text key={i} x={toX(i)} y={PAD.top + innerH + 14}
           textAnchor="middle" fontSize="8.5" fill="var(--app-text-muted)">
-          {fmtDate(d.date)}
+          {fmtDate(d.date, i, data.length)}
         </text>
       ))}
 

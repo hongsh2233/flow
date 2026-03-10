@@ -58,8 +58,9 @@ function normalizeFromTable(tableData: { headers?: string[]; rows?: string[][] }
     otherCorpIdx = sampleLen >= 11 ? 10 : Math.max(0, sampleLen - 2);
   }
 
+  const maxItems = 20;
   return rows
-    .slice(0, 20)
+    .slice(0, maxItems)
     .map((row) => ({
       date:        row[dateIdx]        ?? "",
       individual:  parseNum(row[individualIdx]),
@@ -71,8 +72,8 @@ function normalizeFromTable(tableData: { headers?: string[]; rows?: string[][] }
       const d = item.date.trim();
       return d && d !== "-" && d !== "날짜" && d !== "일자";
     })
-    .slice(0, 5)
-    .reverse(); // 오래된 날짜가 왼쪽에 오도록
+    .slice(-5)
+    .reverse(); // 오래된 날짜가 왼쪽에 오도록 (일자별 5개)
 }
 
 function normalizeFromObjects(arr: unknown[]): InvestorTrendItem[] {
@@ -145,6 +146,11 @@ export async function GET(request: NextRequest) {
       items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] });
     }
 
+    // investor_time: 1시간 단위 4개만 사용 (x축 1시간~4시간)
+    if (dataType === "investor_time" && items.length > 4) {
+      items = items.slice(-4);
+    }
+
     // 2) 배열 형태: [{ 날짜, 개인, 외국인, 기관/기관계, 기타법인 }, ...]
     let arr: unknown[] | null = null;
     if (Array.isArray(data)) {
@@ -156,6 +162,10 @@ export async function GET(request: NextRequest) {
     }
     if ((!items || items.length === 0) && arr) {
       items = normalizeFromObjects(arr);
+    }
+
+    if (dataType === "investor_time" && items.length > 4) {
+      items = items.slice(-4);
     }
 
     const rawDataShape = Array.isArray(data) ? "array" : String(typeof data);
