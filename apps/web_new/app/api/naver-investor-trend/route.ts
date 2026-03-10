@@ -37,7 +37,9 @@ function fmtTimestamp(bizdate: string | null, collectedTime: string | null): str
 
 function normalizeFromTable(
   tableData: { headers?: string[]; rows?: string[][] } | null | undefined,
-  takeLast: number
+  takeLast: number,
+  /** 일자별: 최신일이 첫 행 → first 5. 시간별: 09:00~순 → last 15 */
+  takeFirst = false
 ): InvestorTrendItem[] {
   if (!tableData?.rows?.length) return [];
 
@@ -59,7 +61,7 @@ function normalizeFromTable(
     otherCorpIdx = sampleLen >= 11 ? 10 : Math.max(0, sampleLen - 2);
   }
 
-  return rows
+  const filtered = rows
     .slice(0, 30)
     .map((row) => ({
       date:        row[dateIdx]        ?? "",
@@ -71,12 +73,13 @@ function normalizeFromTable(
     .filter((item) => {
       const d = item.date.trim();
       return d && d !== "-" && d !== "날짜" && d !== "일자";
-    })
-    .slice(-takeLast)
-    .reverse();
+    });
+
+  const taken = takeFirst ? filtered.slice(0, takeLast) : filtered.slice(-takeLast);
+  return taken.reverse(); // 차트: 왼쪽=과거, 오른쪽=최근
 }
 
-function normalizeFromObjects(arr: unknown[], takeLast: number): InvestorTrendItem[] {
+function normalizeFromObjects(arr: unknown[], takeLast: number, takeFirst = false): InvestorTrendItem[] {
   if (!Array.isArray(arr) || arr.length === 0) return [];
 
   const items: InvestorTrendItem[] = [];
@@ -108,7 +111,8 @@ function normalizeFromObjects(arr: unknown[], takeLast: number): InvestorTrendIt
     items.push({ date, individual, foreign, institution, other });
   }
 
-  return items.slice(-takeLast);
+  const taken = takeFirst ? items.slice(0, takeLast) : items.slice(-takeLast);
+  return taken.reverse();
 }
 
 export async function GET(request: NextRequest) {
@@ -143,9 +147,10 @@ export async function GET(request: NextRequest) {
 
     let items: InvestorTrendItem[] = [];
     const data = json.data;
+    const takeFirst = dataType === "investor_day";
 
     if (data && typeof data === "object" && !Array.isArray(data) && "rows" in data) {
-      items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] }, takeLast);
+      items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] }, takeLast, takeFirst);
     }
 
     let arr: unknown[] | null = null;
@@ -157,7 +162,7 @@ export async function GET(request: NextRequest) {
       else if (Array.isArray(anyData.list)) arr = anyData.list as unknown[];
     }
     if ((!items || items.length === 0) && arr) {
-      items = normalizeFromObjects(arr, takeLast);
+      items = normalizeFromObjects(arr, takeLast, takeFirst);
     }
 
     const rawDataShape = Array.isArray(data) ? "array" : String(typeof data);
