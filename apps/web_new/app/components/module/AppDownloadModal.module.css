@@ -33,21 +33,6 @@
   gap: 0;
 }
 
-.iconWrap {
-  width: 72px;
-  height: 72px;
-  border-radius: 1rem;
-  overflow: hidden;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.appIcon {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .title {
   font-size: 1.25rem;
   font-weight: 700;
@@ -67,7 +52,7 @@
 .downloadBtn {
   width: 100%;
   padding: 0.875rem;
-  background: #2563eb;
+  background: #1a1a1a;
   color: #fff;
   border: none;
   border-radius: 0.875rem;
@@ -79,7 +64,7 @@
 }
 
 .downloadBtn:hover {
-  background: #1d4ed8;
+  background: #333;
 }
 
 .continueBtn {

@@ -54,9 +54,6 @@ export function AppDownloadModal() {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <div className={styles.iconWrap}>
-          <img src="/images/icon-192.png" alt="주리니 앱 아이콘" className={styles.appIcon} />
-        </div>
         <h2 className={styles.title}>주리니 앱으로{"\n"}더 편리하게!</h2>
         <p className={styles.desc}>
           앱에서 더 빠르고 편리하게<br />주리니를 이용해보세요.
