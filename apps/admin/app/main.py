@@ -468,7 +468,7 @@ def init_admin_user():
             hashed_pw = utils.get_password_hash(ADMIN_PW)
             new_admin = models.AdminUser(
                 email=ADMIN_EMAIL,
-                name="관리자",
+                name="",
                 hashed_password=hashed_pw,
                 is_super_admin=True,
             )
@@ -476,7 +476,7 @@ def init_admin_user():
             db.commit()
             print("✅ 초기 관리자 생성 완료!")
             print(f"   이메일: {ADMIN_EMAIL}")
-            print(f"   이름: 관리자")
+            print(f"   이름: (미설정 - 로그인 후 수정 가능)")
             print(f"   최고 관리자: True")
 
         except Exception as e:
