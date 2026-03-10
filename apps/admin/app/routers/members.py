@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 
 from app.dependencies import get_current_user
 from app.database import get_db
-from app.config import ADMIN_EMAIL
 from app import models
 
 router = APIRouter()
@@ -59,7 +58,7 @@ async def admin_members_page(request: Request, user=Depends(get_current_user), d
         
         return templates.TemplateResponse("members.html", {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "members": members,
             "active_page": "members"
         })
@@ -73,7 +72,7 @@ async def admin_members_page(request: Request, user=Depends(get_current_user), d
         # 에러 페이지 반환 또는 빈 목록 반환
         return templates.TemplateResponse("members.html", {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "members": [],
             "active_page": "members",
             "error": f"데이터베이스 오류가 발생했습니다: {str(e)}"

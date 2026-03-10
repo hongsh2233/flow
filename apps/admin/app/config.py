@@ -44,10 +44,12 @@ if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
     load_dotenv()
     print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
 
-# 관리자 계정 설정
-# 기본값: 환경 변수가 없으면 init_admin_user()와 동일한 기본 이메일 사용
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "hongsh220303@gmail.com")  # 초기 관리자 이메일
-ADMIN_PW = os.environ.get("ADMIN_PW")  # 초기 관리자 비밀번호
+# 관리자 계정 초기화 전용 환경 변수
+# ⚠️ 이 값은 서버 최초 실행 시 DB에 관리자 계정을 생성하는 용도로만 사용됩니다.
+# 실행 이후 로그인 인증은 DB(admin_users 테이블) 기반으로만 동작합니다.
+# 반드시 .env 또는 배포 환경의 Secrets/Variables에 설정하세요.
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")  # 초기 최고 관리자 이메일 (초기화 전용)
+ADMIN_PW = os.environ.get("ADMIN_PW")  # 초기 최고 관리자 비밀번호 (초기화 전용)
 
 # 인증 설정
 AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")  # 인증 쿠키 이름

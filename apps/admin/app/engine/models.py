@@ -95,6 +95,7 @@ class AdminUser(Base):
     email = Column(String(100), unique=True, index=True)
     name = Column(String(50))
     hashed_password = Column(String(255))
+    is_super_admin = Column(Boolean, default=False, nullable=False, server_default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

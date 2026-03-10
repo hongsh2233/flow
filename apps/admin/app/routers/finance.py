@@ -19,7 +19,6 @@ from sqlalchemy import func, distinct
 
 from app.dependencies import get_current_user
 from app.database import get_db
-from app.config import ADMIN_EMAIL
 from typing import Optional
 from app.services.api_service import krx_api_service
 from app.models import KrxData
@@ -110,7 +109,7 @@ async def finance_data_page(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
     return templates.TemplateResponse("finance_data.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "finance-data"
     })
 
@@ -122,7 +121,7 @@ async def yahoo_index_page(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
     return templates.TemplateResponse("yahoo_index.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "yahoo-index"
     })
 
@@ -134,7 +133,7 @@ async def naver_ranking_page(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
     return templates.TemplateResponse("naver_ranking.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "naver-ranking"
     })
 
@@ -146,7 +145,7 @@ async def stock_news_page(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
     return templates.TemplateResponse("admin_stock_news.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "stock-news"
     })
 

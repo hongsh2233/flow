@@ -14,7 +14,7 @@ import secrets
 from app import models, utils
 from app.database import get_db
 from app.dependencies import get_current_user, AUTH_COOKIE_NAME
-from app.config import ADMIN_EMAIL, JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
+from app.config import JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()

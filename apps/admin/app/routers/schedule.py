@@ -9,7 +9,6 @@ from datetime import date as date_type
 from typing import List, Dict, Any
 
 from app.dependencies import get_current_user
-from app.config import ADMIN_EMAIL
 from app.database import get_db
 from app import models
 from app.services.schedule_api_service import schedule_api_service
@@ -68,7 +67,7 @@ async def schedule_page(
     
     return templates.TemplateResponse("schedule.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "schedules": schedule_list,
         "active_page": "schedule"
     })

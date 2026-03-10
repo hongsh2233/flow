@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user, verify_api_key
-from app.config import ADMIN_EMAIL
 from app import models
 
 router = APIRouter()
@@ -46,7 +45,7 @@ async def admin_market_voices_page(
         "admin_market_voices.html",
         {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "active_page": "market-voices",
             "voices": voices,
             "persons": persons,

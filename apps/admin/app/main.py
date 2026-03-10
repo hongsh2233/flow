@@ -426,61 +426,59 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ person_master/market_voices 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_admin_super_flag import upgrade as add_admin_super_flag_migration
+        add_admin_super_flag_migration()
+    except Exception as e:
+        print(f"⚠️ admin_users is_super_admin 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
     초기 관리자 계정 자동 생성
-    
-    환경 변수에 관리자 이메일과 비밀번호가 설정되어 있고,
-    해당 이메일의 관리자가 없을 경우 자동으로 생성합니다.
+
+    DB에 관리자 계정이 한 명도 없을 때만 ADMIN_EMAIL / ADMIN_PW 환경 변수로 생성합니다.
+    이미 관리자 계정이 있으면 아무것도 하지 않습니다 (환경 변수 불필요).
+    실행 이후 관리자 인증은 DB 기반으로만 동작합니다.
     DB 연결 실패 시에도 앱은 시작되도록 예외 처리합니다.
     """
     print("\n" + "=" * 60)
     print("관리자 계정 초기화 시작")
     print("=" * 60)
-    
-    # 환경 변수 확인 (없으면 기본 관리자 계정 사용)
-    DEFAULT_ADMIN_EMAIL = "hongsh220303@gmail.com"
-    DEFAULT_ADMIN_PW = "0000"
 
-    admin_email = ADMIN_EMAIL or DEFAULT_ADMIN_EMAIL
-    admin_pw = ADMIN_PW or DEFAULT_ADMIN_PW
-
-    if not ADMIN_EMAIL or not ADMIN_PW:
-        print("⚠️ ADMIN_EMAIL 또는 ADMIN_PW 환경 변수가 설정되지 않았습니다.")
-        print(f"   기본 관리자 계정을 사용합니다: {DEFAULT_ADMIN_EMAIL}")
-    else:
-        print(f"ADMIN_EMAIL: ✅ 설정됨")
-        print(f"ADMIN_PW: ✅ 설정됨")
-    
     try:
         db = next(get_db())
         try:
-            # 기존 관리자 확인
-            existing_user = db.query(models.AdminUser).filter(
-                models.AdminUser.email == admin_email
-            ).first()
-
-            if existing_user:
-                print(f"ℹ️  관리자 계정이 이미 존재합니다: {admin_email}")
-                print("   (새로 생성하지 않습니다)")
+            # DB에 관리자가 이미 있으면 초기화 불필요
+            any_admin = db.query(models.AdminUser).first()
+            if any_admin:
+                print(f"ℹ️  관리자 계정이 이미 존재합니다. 초기화를 건너뜁니다.")
                 return
 
-            # 새 관리자 생성
+            # 관리자가 없는 경우 → ADMIN_EMAIL / ADMIN_PW 필요
+            if not ADMIN_EMAIL or not ADMIN_PW:
+                print("❌ DB에 관리자 계정이 없고 ADMIN_EMAIL / ADMIN_PW도 설정되지 않았습니다.")
+                print("   .env 또는 Railway Variables에 ADMIN_EMAIL과 ADMIN_PW를 설정하세요.")
+                print("=" * 60 + "\n")
+                return
+
+            # 새 관리자 생성 (is_super_admin=True 로 최고 관리자 지정)
             print(f"⚠️ 초기 관리자 계정 생성 중...")
-            print(f"   이메일: {admin_email}")
-            hashed_pw = utils.get_password_hash(admin_pw)
+            print(f"   이메일: {ADMIN_EMAIL}")
+            hashed_pw = utils.get_password_hash(ADMIN_PW)
             new_admin = models.AdminUser(
-                email=admin_email,
-                name="관리자",
-                hashed_password=hashed_pw
+                email=ADMIN_EMAIL,
+                name="",
+                hashed_password=hashed_pw,
+                is_super_admin=True,
             )
             db.add(new_admin)
             db.commit()
             print("✅ 초기 관리자 생성 완료!")
-            print(f"   이메일: {admin_email}")
-            print(f"   이름: 관리자")
-            
+            print(f"   이메일: {ADMIN_EMAIL}")
+            print(f"   이름: (미설정 - 로그인 후 수정 가능)")
+            print(f"   최고 관리자: True")
+
         except Exception as e:
             print(f"❌ 초기 관리자 생성 실패: {e}")
             import traceback
@@ -493,7 +491,7 @@ def init_admin_user():
         print("💡 Railway Variables에서 DATABASE_URL을 확인하세요.")
         import traceback
         traceback.print_exc()
-    
+
     print("=" * 60 + "\n")
 
 

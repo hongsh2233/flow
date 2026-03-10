@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app import models
 from app.database import get_db
 from app.dependencies import get_current_user, verify_api_key
-from app.config import ADMIN_EMAIL
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -61,7 +60,7 @@ async def admin_terms_privacy_page(
         "admin_terms_edit.html",
         {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "active_page": "terms-privacy",
             "doc": doc,
             "title": "개인정보처리방침",
@@ -94,7 +93,7 @@ async def admin_terms_service_page(
         "admin_terms_edit.html",
         {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "active_page": "terms-service",
             "doc": doc,
             "title": "이용약관",
@@ -131,7 +130,7 @@ async def admin_terms_about_page(
         "admin_terms_html_edit.html",
         {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "active_page": "terms-about",
             "doc": doc,
             "title": "주린이 앱",

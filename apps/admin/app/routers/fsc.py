@@ -20,7 +20,6 @@ from sqlalchemy import distinct, func
 
 from app.dependencies import get_current_user, get_current_user_or_api_key_for_fsc
 from app.database import get_db, SessionLocal
-from app.config import ADMIN_EMAIL
 from app.services.api_service import fsc_api_service
 from app.services.scheduler_service import collect_fsc_data
 from app.models import FscStockPrice, FscRisingStock
@@ -36,7 +35,7 @@ async def finance_data2_page(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
     return templates.TemplateResponse("finance_data2.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "finance-data2"
     })
 
