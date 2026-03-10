@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 from app.dependencies import get_current_user
 from app.database import get_db
-from app.config import ADMIN_EMAIL
 from app import models
 
 router = APIRouter()
@@ -86,7 +85,7 @@ async def admin_dashboard(request: Request, user=Depends(get_current_user), db: 
     
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "dashboard",
         "stats": stats,
         "post_stats": post_stats,

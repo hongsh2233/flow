@@ -14,7 +14,6 @@ from datetime import datetime
 from app import models, utils
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.config import ADMIN_EMAIL
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -34,7 +33,7 @@ async def admin_users_page(
     
     return templates.TemplateResponse("admin_users.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "users": db_users,
         "active_page": "users"
     })
@@ -75,10 +74,9 @@ async def delete_admin(
     """관리자 삭제"""
     if not user:
         return RedirectResponse(url="/", status_code=303)
-    if email == ADMIN_EMAIL:
-        return HTMLResponse("<script>alert('최고 관리자 계정은 삭제할 수 없습니다.'); location.href='/admin/users';</script>")
-    
     target_user = db.query(models.AdminUser).filter(models.AdminUser.email == email).first()
+    if target_user and target_user.is_super_admin:
+        return HTMLResponse("<script>alert('최고 관리자 계정은 삭제할 수 없습니다.'); location.href='/admin/users';</script>")
     if target_user:
         db.delete(target_user)
         db.commit()
@@ -110,7 +108,7 @@ async def admin_banners_page(
     
     return templates.TemplateResponse("admin_banners.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "banners": banners,
         "banner_type": banner_type,
         "banner_name": banner_name,
@@ -343,7 +341,7 @@ async def admin_banner_manage_page(
     base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_manage.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "banners": banners,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",
@@ -429,7 +427,7 @@ async def edit_managed_banner_page(
     base_url = str(request.base_url).rstrip("/") if request else ""
     return templates.TemplateResponse("admin_banner_edit.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "banner": banner,
         "slide_groups": sorted(slide_groups),
         "active_page": "banner-manage",

@@ -13,37 +13,40 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from app.dependencies import get_current_user, get_current_member, verify_api_key
-from app.config import ADMIN_EMAIL
 from app.database import get_db
 from app import models
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
 
-def format_author_name(author: str, admin_email: str = None) -> str:
+
+def format_author_name(author: str, db: Session = None) -> str:
     """
     작성자 이름을 포맷팅합니다.
-    관리자 이메일인 경우 이름으로 변환합니다.
-    
+    DB에서 관리자 여부를 확인하여 이름을 반환합니다.
+
     Args:
         author: 작성자 (이메일 또는 이름)
-        admin_email: 관리자 이메일 (선택)
-    
+        db: DB 세션 (관리자 여부 확인용, 없으면 이메일 앞부분 사용)
+
     Returns:
         포맷팅된 작성자 이름
     """
     if not author:
         return '익명'
-    
-    # 관리자 이메일인 경우 이름으로 변환
-    if admin_email and author == admin_email:
-        # 이메일의 @ 앞부분을 이름으로 사용
-        return author.split('@')[0] if '@' in author else '관리자'
-    
+
+    # DB에서 관리자 계정인지 확인
+    if db and '@' in author:
+        admin_user = db.query(models.AdminUser).filter(
+            models.AdminUser.email == author
+        ).first()
+        if admin_user:
+            return author.split('@')[0]
+
     # 이메일 형식인 경우 @ 앞부분만 표시
     if '@' in author:
         return author.split('@')[0]
-    
+
     return author
 
 # [프론트엔드 전용 API] 게시판 목록 조회
@@ -181,7 +184,7 @@ async def admin_board_page(request: Request, user=Depends(get_current_user), db:
     if not user: return RedirectResponse(url="/")
     boards = db.query(models.Board).order_by(models.Board.created_at).all()
     return templates.TemplateResponse("board_admin.html", {
-        "request": request, "admin_email": ADMIN_EMAIL, "boards": boards, "active_page": "board"
+        "request": request, "admin_email": user.email, "boards": boards, "active_page": "board"
     })
 
 @router.post("/admin/board/create")
@@ -243,7 +246,7 @@ async def admin_board_categories_page(
         models.BoardCategory.board_id == board_id
     ).order_by(models.BoardCategory.order_index, models.BoardCategory.id).all()
     return templates.TemplateResponse("board_categories.html", {
-        "request": request, "board": board, "categories": categories, "admin_email": ADMIN_EMAIL, "active_page": "board"
+        "request": request, "board": board, "categories": categories, "admin_email": user.email, "active_page": "board"
     })
 
 @router.post("/admin/board/{board_id}/categories/create")
@@ -350,7 +353,7 @@ async def admin_board_posts_page(
 
     return templates.TemplateResponse("admin_board_posts.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "board": board,
         "posts": posts,
         "new_post_ids": new_post_ids,
@@ -372,7 +375,7 @@ async def admin_write_post_page(board_id: str, request: Request, user=Depends(ge
         "request": request, 
         "board": board, 
         "categories": categories,
-        "admin_email": ADMIN_EMAIL, 
+        "admin_email": user.email,
         "active_page": "board"
     })
 
@@ -492,7 +495,7 @@ async def admin_create_post(
             board_id=board_id,
             title=title.strip(),
             content=final_content,  # 파일 정보가 포함된 content 사용
-            author=ADMIN_EMAIL,
+            author=user.email,
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
             is_member_only=is_member_only if is_member_only in ["true", "false"] else "false",
             category_id=category_id if category_id else None,
@@ -553,9 +556,7 @@ async def admin_post_view(board_id: str, post_id: int, request: Request, user=De
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     
-    # 비밀글 체크: 작성자나 관리자만 조회 가능
-    if post.is_secret == "true" and post.author != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="비밀글은 작성자만 조회할 수 있습니다.")
+    # 비밀글 체크: 관리자는 모든 비밀글 조회 가능 (이 엔드포인트는 관리자 전용)
     
     # 첨부파일 정보 파싱 및 content 정리
     original_content = post.content or ""
@@ -569,14 +570,14 @@ async def admin_post_view(board_id: str, post_id: int, request: Request, user=De
     if all_attachments:
         print(f"[DEBUG] all_attachments: {all_attachments}")
     
-    formatted_author = format_author_name(post.author or "", ADMIN_EMAIL)
+    formatted_author = format_author_name(post.author or "", db)
     return templates.TemplateResponse("admin_post_view.html", {
         "request": request, 
         "board": {"id": board_id}, 
         "post": post,
         # 모든 첨부파일 전달 (이미지는 본문에도 들어갈 수 있지만, 다운로드 가능하도록 유지)
         "attachments": all_attachments,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "formatted_author": formatted_author,
         "active_page": "board"
     })
@@ -617,7 +618,7 @@ async def admin_post_edit_page(
         "board": board,
         "post": post,
         "categories": categories,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "board"
     })
 
@@ -818,18 +819,12 @@ async def board_detail_page(
 
     all_posts = query.order_by(models.Post.created_at.desc()).all()
     
-    # 비밀글 필터링: 작성자나 관리자만 볼 수 있음
+    # 비밀글 필터링: 관리자는 모든 비밀글 조회 가능, 비로그인은 비밀글 제외
     posts = []
     for p in all_posts:
         if p.is_secret == "true":
-            # 관리자는 모든 비밀글 볼 수 있음
-            if user:
+            if user:  # 관리자(로그인된 사용자)는 모든 비밀글 볼 수 있음
                 posts.append(p)
-            # 작성자만 볼 수 있음 (일반 사용자는 제외)
-            elif p.author == ADMIN_EMAIL:
-                # 관리자 전용이므로 관리자만 볼 수 있음
-                if user:
-                    posts.append(p)
         else:
             # 일반 글은 모두 볼 수 있음
             posts.append(p)
@@ -852,7 +847,7 @@ async def board_detail_page(
         attachments = parse_attached_files(post.content or "")
         cleaned_content = clean_content(post.content or "")
         # 작성자 이름 포맷팅
-        formatted_author = format_author_name(post.author or "", ADMIN_EMAIL)
+        formatted_author = format_author_name(post.author or "", db)
         posts_with_attachments.append({
             "post": post,
             "attachments": attachments,
@@ -867,7 +862,7 @@ async def board_detail_page(
         "posts_with_attachments": posts_with_attachments,
         "new_post_ids": new_post_ids,
         "is_admin": user is not None,
-        "admin_email": ADMIN_EMAIL if user else None,
+        "admin_email": user.email if user else None,
         "search_query": q,
     })
 
@@ -899,12 +894,12 @@ async def public_create_post(
         else:
             final_title = "무제"
 
-    # DB 저장 (관리자 이메일을 author로 사용)
+    # DB 저장 (로그인한 관리자 이메일을 author로 사용)
     new_post = models.Post(
         board_id=board_id,
         title=final_title,
         content=content,
-        author=ADMIN_EMAIL,
+        author=user.email,
         created_at=datetime.now()
     )
     
@@ -942,14 +937,9 @@ async def public_post_view_page(
     if not post: 
         raise HTTPException(status_code=404, detail="게시글 없음")
     
-    # 3. 비밀글 체크: 작성자나 관리자만 조회 가능
-    if post.is_secret == "true":
-        # 관리자는 항상 조회 가능
-        if not user:
-            raise HTTPException(status_code=403, detail="비밀글은 작성자만 조회할 수 있습니다.")
-        # 작성자 체크 (관리자 이메일과 비교)
-        if post.author != ADMIN_EMAIL:
-            raise HTTPException(status_code=403, detail="비밀글은 작성자만 조회할 수 있습니다.")
+    # 3. 비밀글 체크: 관리자(로그인 상태)만 조회 가능
+    if post.is_secret == "true" and not user:
+        raise HTTPException(status_code=403, detail="비밀글은 작성자만 조회할 수 있습니다.")
     
     # 3. 조회수 증가
     post.views = (post.views or 0) + 1
@@ -963,7 +953,7 @@ async def public_post_view_page(
     post.content = cleaned_content
     
     # 5. 템플릿에 board와 post 모두 전달
-    formatted_author = format_author_name(post.author or "", ADMIN_EMAIL)
+    formatted_author = format_author_name(post.author or "", db)
     return templates.TemplateResponse("post_view.html", {
         "request": request, 
         "board": board, 
@@ -1001,7 +991,7 @@ async def public_post_edit_page(
         "board": board,
         "post": post,
         "cleaned_content": cleaned_content,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email if user else None,
     })
 
 

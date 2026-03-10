@@ -14,7 +14,6 @@ from typing import Optional
 from app import models
 from app.database import get_db
 from app.dependencies import get_current_user, verify_api_key
-from app.config import ADMIN_EMAIL
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -92,7 +91,7 @@ async def admin_stock_terms_page(
         "admin_stock_terms.html",
         {
             "request": request,
-            "admin_email": ADMIN_EMAIL,
+            "admin_email": user.email,
             "active_page": "stock-terms",
             "terms": terms,
             "total": total,

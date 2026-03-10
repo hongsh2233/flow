@@ -9,7 +9,6 @@ from datetime import date as date_type
 from typing import List, Optional
 
 from app.dependencies import get_current_user
-from app.config import ADMIN_EMAIL
 from app.database import get_db
 from app import models
 
@@ -54,7 +53,7 @@ async def polls_list_page(
 
     return templates.TemplateResponse("admin_polls.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "polls": poll_list,
         "active_page": "polls",
     })
@@ -70,7 +69,7 @@ async def poll_create_page(
         return RedirectResponse(url="/")
     return templates.TemplateResponse("admin_poll_write.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "polls",
         "poll": None,
     })
@@ -156,7 +155,7 @@ async def poll_edit_page(
 
     return templates.TemplateResponse("admin_poll_write.html", {
         "request": request,
-        "admin_email": ADMIN_EMAIL,
+        "admin_email": user.email,
         "active_page": "polls",
         "poll": poll,
         "option_values": option_values,
