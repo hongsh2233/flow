@@ -24,17 +24,29 @@ const H = 140;
 const PAD = { top: 12, right: 12, bottom: 28, left: 8 };
 
 
-function fmtDate(d: string, index: number, total: number): string {
-  // 1시간 단위 최대 4개: "1시간", "2시간", "3시간", "4시간"
-  if (total <= 4) {
-    return `${index + 1}시간`;
+function fmtDate(d: string, intervalHours = 1): string {
+  const s = String(d).trim();
+  let timeStr = "";
+  if (/^\d{1,2}:\d{2}$/.test(s)) {
+    timeStr = s;
+  } else {
+    const parts = s.split(/\s+/);
+    const last = parts[parts.length - 1];
+    if (last && /^\d{1,2}:\d{2}$/.test(last)) timeStr = last;
   }
-  const clean = d.replace(/[.\-\/]/g, "");
+  if (timeStr && intervalHours > 1) {
+    const [h, m] = timeStr.split(":").map(Number);
+    const endH = h + intervalHours;
+    const endStr = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    return `${timeStr}~${endStr}`;
+  }
+  if (timeStr) return timeStr;
+  const clean = s.replace(/[.\-\/]/g, "");
   if (clean.length === 8) return `${clean.slice(4, 6)}/${clean.slice(6, 8)}`;
-  return d.replace(/\./g, "/").slice(-5);
+  return s.replace(/\./g, "/").slice(-5);
 }
 
-function LineChart({ data }: { data: InvestorTrendItem[] }) {
+function LineChart({ data, intervalHours = 1 }: { data: InvestorTrendItem[]; intervalHours?: number }) {
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
@@ -73,7 +85,7 @@ function LineChart({ data }: { data: InvestorTrendItem[] }) {
       {data.map((d, i) => (
         <text key={i} x={toX(i)} y={PAD.top + innerH + 14}
           textAnchor="middle" fontSize="8.5" fill="var(--app-text-muted)">
-          {fmtDate(d.date, i, data.length)}
+          {fmtDate(d.date, intervalHours)}
         </text>
       ))}
 
@@ -96,9 +108,10 @@ function LineChart({ data }: { data: InvestorTrendItem[] }) {
 
 interface Props {
   defaultMarket?: "kospi" | "kosdaq";
+  intervalHours?: number;  // 2시간 단위 집계 시 2
 }
 
-export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
+export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 }: Props) {
   const router = useRouter();
   const [market, setMarket] = useState<"kospi" | "kosdaq">(defaultMarket);
   const [data, setData] = useState<InvestorTrendItem[]>([]);
@@ -113,7 +126,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=investor_time`);
+      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=investor_time&interval_hours=${intervalHours}`);
       const json = await res.json();
       const items = json.success && Array.isArray(json.data) && json.data.length > 0
         ? json.data
@@ -137,7 +150,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [intervalHours]);
 
   useEffect(() => { fetchData(market); }, [market, fetchData]);
 
@@ -212,7 +225,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi" }: Props) {
             </button>
           </div>
         ) : (
-          <LineChart data={filteredData} />
+          <LineChart data={filteredData} intervalHours={intervalHours} />
         )}
       </div>
 

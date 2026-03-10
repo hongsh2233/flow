@@ -35,14 +35,16 @@ function fmtTimestamp(bizdate: string | null, collectedTime: string | null): str
   return collectedTime ? `${date} ${collectedTime}` : date;
 }
 
-function normalizeFromTable(tableData: { headers?: string[]; rows?: string[][] } | null | undefined): InvestorTrendItem[] {
+function normalizeFromTable(
+  tableData: { headers?: string[]; rows?: string[][] } | null | undefined,
+  takeLast = 5
+): InvestorTrendItem[] {
   if (!tableData?.rows?.length) return [];
 
   const hdrs: string[] = tableData.headers ?? [];
   const rows: string[][] = tableData.rows;
 
   // 헤더 기반 탐색 → 실패 시 Naver 투자자별 매매동향 고정 인덱스 fallback
-  // 고정 인덱스: 날짜(0), 개인(1), 외국인(2), 기관계(3), 금융투자(4)~연기금등(9), 기타법인(10)
   let dateIdx        = findColIdx(hdrs, ["날짜", "일자"]);
   let individualIdx  = findColIdx(hdrs, ["개인"], ["기타"]);
   let foreignIdx     = findColIdx(hdrs, ["외국인계", "외국인"], ["기타외국인"]);
@@ -72,11 +74,34 @@ function normalizeFromTable(tableData: { headers?: string[]; rows?: string[][] }
       const d = item.date.trim();
       return d && d !== "-" && d !== "날짜" && d !== "일자";
     })
-    .slice(-5)
-    .reverse(); // 오래된 날짜가 왼쪽에 오도록 (일자별 5개)
+    .slice(-takeLast)
+    .reverse(); // 오래된 날짜가 왼쪽에 오도록
 }
 
-function normalizeFromObjects(arr: unknown[]): InvestorTrendItem[] {
+/** 시간별 데이터를 N시간 단위로 그룹핑·합산 (예: 2시간 → 09:00+10:00, 11:00+12:00 ...) */
+function aggregateByHourInterval(
+  items: InvestorTrendItem[],
+  intervalHours: number
+): InvestorTrendItem[] {
+  if (intervalHours <= 1 || items.length === 0) return items;
+
+  const result: InvestorTrendItem[] = [];
+  for (let i = 0; i < items.length; i += intervalHours) {
+    const chunk = items.slice(i, i + intervalHours);
+    if (chunk.length === 0) continue;
+    const first = chunk[0];
+    result.push({
+      date: first.date,
+      individual:  chunk.reduce((s, x) => s + x.individual, 0),
+      foreign:     chunk.reduce((s, x) => s + x.foreign, 0),
+      institution: chunk.reduce((s, x) => s + x.institution, 0),
+      other:       chunk.reduce((s, x) => s + x.other, 0),
+    });
+  }
+  return result;
+}
+
+function normalizeFromObjects(arr: unknown[], takeLast = 5): InvestorTrendItem[] {
   if (!Array.isArray(arr) || arr.length === 0) return [];
 
   const items: InvestorTrendItem[] = [];
@@ -109,12 +134,13 @@ function normalizeFromObjects(arr: unknown[]): InvestorTrendItem[] {
     items.push({ date, individual, foreign, institution, other });
   }
 
-  return items.slice(-5); // 최근 5개만 사용
+  return items.slice(-takeLast);
 }
 
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get("market") || "kospi";
   const dataType = request.nextUrl.searchParams.get("data_type") || "investor_time";
+  const intervalHours = Math.max(1, Math.min(4, parseInt(request.nextUrl.searchParams.get("interval_hours") || "2", 10) || 2));
 
   const reqHeaders: Record<string, string> = {
     "Content-Type": "application/json",
@@ -143,11 +169,14 @@ export async function GET(request: NextRequest) {
 
     // 1) 테이블 형태: { headers, rows }
     if (data && typeof data === "object" && !Array.isArray(data) && "rows" in data) {
-      items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] });
+      const takeLast = dataType === "investor_time" ? 8 : 5;
+      items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] }, takeLast);
     }
 
-    // investor_time: 1시간 단위 4개만 사용 (x축 1시간~4시간)
-    if (dataType === "investor_time" && items.length > 4) {
+    // investor_time: N시간 단위로 그룹핑·합산 (기본 2시간: 09:00+10:00, 11:00+12:00 ...)
+    if (dataType === "investor_time" && items.length > 0 && intervalHours > 1) {
+      items = aggregateByHourInterval(items, intervalHours);
+    } else if (dataType === "investor_time" && items.length > 4) {
       items = items.slice(-4);
     }
 
@@ -161,10 +190,13 @@ export async function GET(request: NextRequest) {
       else if (Array.isArray(anyData.list)) arr = anyData.list as unknown[];
     }
     if ((!items || items.length === 0) && arr) {
-      items = normalizeFromObjects(arr);
+      const takeLast = dataType === "investor_time" ? 8 : 5;
+      items = normalizeFromObjects(arr, takeLast);
     }
 
-    if (dataType === "investor_time" && items.length > 4) {
+    if (dataType === "investor_time" && items.length > 0 && intervalHours > 1) {
+      items = aggregateByHourInterval(items, intervalHours);
+    } else if (dataType === "investor_time" && items.length > 4) {
       items = items.slice(-4);
     }
 
