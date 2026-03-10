@@ -297,7 +297,7 @@ export default function StocksPage() {
       </div>
 
       {/* 투자자별 매매동향 차트 */}
-      <InvestorTrendChart />
+      <InvestorTrendChart variant="stocks" />
 
       {/* 탭 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">

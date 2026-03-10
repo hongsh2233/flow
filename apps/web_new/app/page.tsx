@@ -75,7 +75,7 @@ export default function Home() {
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />
-      <InvestorTrendChart defaultMarket="kospi" />
+      <InvestorTrendChart defaultMarket="kospi" variant="main" />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>

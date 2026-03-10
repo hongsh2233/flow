@@ -23,30 +23,20 @@ const W = 320;
 const H = 140;
 const PAD = { top: 12, right: 12, bottom: 28, left: 8 };
 
-
-function fmtDate(d: string, intervalHours = 1): string {
+function fmtDate(d: string, isTimeMode: boolean): string {
   const s = String(d).trim();
-  let timeStr = "";
-  if (/^\d{1,2}:\d{2}$/.test(s)) {
-    timeStr = s;
-  } else {
+  if (isTimeMode) {
+    if (/^\d{1,2}:\d{2}$/.test(s)) return s;
     const parts = s.split(/\s+/);
     const last = parts[parts.length - 1];
-    if (last && /^\d{1,2}:\d{2}$/.test(last)) timeStr = last;
+    if (last && /^\d{1,2}:\d{2}$/.test(last)) return last;
   }
-  if (timeStr && intervalHours > 1) {
-    const [h, m] = timeStr.split(":").map(Number);
-    const endH = h + intervalHours;
-    const endStr = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    return `${timeStr}~${endStr}`;
-  }
-  if (timeStr) return timeStr;
   const clean = s.replace(/[.\-\/]/g, "");
   if (clean.length === 8) return `${clean.slice(4, 6)}/${clean.slice(6, 8)}`;
   return s.replace(/\./g, "/").slice(-5);
 }
 
-function LineChart({ data, intervalHours = 1 }: { data: InvestorTrendItem[]; intervalHours?: number }) {
+function LineChart({ data, isTimeMode }: { data: InvestorTrendItem[]; isTimeMode: boolean }) {
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
@@ -85,7 +75,7 @@ function LineChart({ data, intervalHours = 1 }: { data: InvestorTrendItem[]; int
       {data.map((d, i) => (
         <text key={i} x={toX(i)} y={PAD.top + innerH + 14}
           textAnchor="middle" fontSize="8.5" fill="var(--app-text-muted)">
-          {fmtDate(d.date, intervalHours)}
+          {fmtDate(d.date, isTimeMode)}
         </text>
       ))}
 
@@ -108,10 +98,11 @@ function LineChart({ data, intervalHours = 1 }: { data: InvestorTrendItem[]; int
 
 interface Props {
   defaultMarket?: "kospi" | "kosdaq";
-  intervalHours?: number;  // 2시간 단위 집계 시 2
+  /** main: 시간별 15개 | stocks: 일자별 5일 */
+  variant?: "main" | "stocks";
 }
 
-export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 }: Props) {
+export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main" }: Props) {
   const router = useRouter();
   const [market, setMarket] = useState<"kospi" | "kosdaq">(defaultMarket);
   const [data, setData] = useState<InvestorTrendItem[]>([]);
@@ -122,11 +113,15 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
     new Set(SERIES.map((s) => s.key))
   );
 
+  const isTimeMode = variant === "main";
+  const dataType = isTimeMode ? "investor_time" : "investor_day";
+  const limit = isTimeMode ? 15 : 5;
+
   const fetchData = useCallback(async (m: "kospi" | "kosdaq") => {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=investor_time&interval_hours=${intervalHours}`);
+      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=${dataType}&limit=${limit}`);
       const json = await res.json();
       const items = json.success && Array.isArray(json.data) && json.data.length > 0
         ? json.data
@@ -134,11 +129,9 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
       setData(items);
       setTimestamp(json.timestamp ?? null);
       if (items.length === 0) {
-        // 디버깅: 브라우저 콘솔에서 확인 가능
         console.debug("[InvestorTrend] 데이터 없음", {
           success: json.success,
           dataLen: json.data?.length,
-          headers: json.debug_headers,
           timestamp: json.timestamp,
         });
       }
@@ -150,7 +143,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
     } finally {
       setLoading(false);
     }
-  }, [intervalHours]);
+  }, [dataType, limit]);
 
   useEffect(() => { fetchData(market); }, [market, fetchData]);
 
@@ -174,7 +167,6 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
 
   return (
     <div className={styles.wrapper}>
-      {/* 헤더: 제목 + 기준시각 + 마켓 토글 */}
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <span className={styles.title}>투자자별 매매동향</span>
@@ -194,7 +186,6 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
         </div>
       </div>
 
-      {/* 범례 */}
       <div className={styles.legend}>
         {SERIES.map((s) => (
           <button
@@ -209,7 +200,6 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
         ))}
       </div>
 
-      {/* 차트 */}
       <div className={styles.chartArea}>
         {loading ? (
           <div className={styles.loading}>불러오는 중...</div>
@@ -225,11 +215,10 @@ export function InvestorTrendChart({ defaultMarket = "kospi", intervalHours = 2 
             </button>
           </div>
         ) : (
-          <LineChart data={filteredData} intervalHours={intervalHours} />
+          <LineChart data={filteredData} isTimeMode={isTimeMode} />
         )}
       </div>
 
-      {/* 하단: 단위 + 수급동향 더보기 */}
       <div className={styles.footer}>
         <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>
         <button

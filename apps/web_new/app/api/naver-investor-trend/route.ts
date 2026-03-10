@@ -37,14 +37,13 @@ function fmtTimestamp(bizdate: string | null, collectedTime: string | null): str
 
 function normalizeFromTable(
   tableData: { headers?: string[]; rows?: string[][] } | null | undefined,
-  takeLast = 5
+  takeLast: number
 ): InvestorTrendItem[] {
   if (!tableData?.rows?.length) return [];
 
   const hdrs: string[] = tableData.headers ?? [];
   const rows: string[][] = tableData.rows;
 
-  // 헤더 기반 탐색 → 실패 시 Naver 투자자별 매매동향 고정 인덱스 fallback
   let dateIdx        = findColIdx(hdrs, ["날짜", "일자"]);
   let individualIdx  = findColIdx(hdrs, ["개인"], ["기타"]);
   let foreignIdx     = findColIdx(hdrs, ["외국인계", "외국인"], ["기타외국인"]);
@@ -60,9 +59,8 @@ function normalizeFromTable(
     otherCorpIdx = sampleLen >= 11 ? 10 : Math.max(0, sampleLen - 2);
   }
 
-  const maxItems = 20;
   return rows
-    .slice(0, maxItems)
+    .slice(0, 30)
     .map((row) => ({
       date:        row[dateIdx]        ?? "",
       individual:  parseNum(row[individualIdx]),
@@ -75,33 +73,10 @@ function normalizeFromTable(
       return d && d !== "-" && d !== "날짜" && d !== "일자";
     })
     .slice(-takeLast)
-    .reverse(); // 오래된 날짜가 왼쪽에 오도록
+    .reverse();
 }
 
-/** 시간별 데이터를 N시간 단위로 그룹핑·합산 (예: 2시간 → 09:00+10:00, 11:00+12:00 ...) */
-function aggregateByHourInterval(
-  items: InvestorTrendItem[],
-  intervalHours: number
-): InvestorTrendItem[] {
-  if (intervalHours <= 1 || items.length === 0) return items;
-
-  const result: InvestorTrendItem[] = [];
-  for (let i = 0; i < items.length; i += intervalHours) {
-    const chunk = items.slice(i, i + intervalHours);
-    if (chunk.length === 0) continue;
-    const first = chunk[0];
-    result.push({
-      date: first.date,
-      individual:  chunk.reduce((s, x) => s + x.individual, 0),
-      foreign:     chunk.reduce((s, x) => s + x.foreign, 0),
-      institution: chunk.reduce((s, x) => s + x.institution, 0),
-      other:       chunk.reduce((s, x) => s + x.other, 0),
-    });
-  }
-  return result;
-}
-
-function normalizeFromObjects(arr: unknown[], takeLast = 5): InvestorTrendItem[] {
+function normalizeFromObjects(arr: unknown[], takeLast: number): InvestorTrendItem[] {
   if (!Array.isArray(arr) || arr.length === 0) return [];
 
   const items: InvestorTrendItem[] = [];
@@ -109,7 +84,6 @@ function normalizeFromObjects(arr: unknown[], takeLast = 5): InvestorTrendItem[]
   for (const raw of arr) {
     const r = raw as Record<string, unknown>;
 
-    // 날짜 키 후보
     const date =
       (r.date as string | undefined) ??
       (r["날짜"] as string | undefined) ??
@@ -140,7 +114,8 @@ function normalizeFromObjects(arr: unknown[], takeLast = 5): InvestorTrendItem[]
 export async function GET(request: NextRequest) {
   const market = request.nextUrl.searchParams.get("market") || "kospi";
   const dataType = request.nextUrl.searchParams.get("data_type") || "investor_time";
-  const intervalHours = Math.max(1, Math.min(4, parseInt(request.nextUrl.searchParams.get("interval_hours") || "2", 10) || 2));
+  const limitParam = request.nextUrl.searchParams.get("limit");
+  const limit = limitParam ? Math.max(1, Math.min(20, parseInt(limitParam, 10) || 5)) : null;
 
   const reqHeaders: Record<string, string> = {
     "Content-Type": "application/json",
@@ -148,6 +123,8 @@ export async function GET(request: NextRequest) {
   if (API_SECRET_KEY) {
     reqHeaders["X-API-KEY"] = API_SECRET_KEY;
   }
+
+  const takeLast = limit ?? (dataType === "investor_time" ? 15 : 5);
 
   async function fetchAndNormalize(targetMarket: string): Promise<{
     items: InvestorTrendItem[];
@@ -167,20 +144,10 @@ export async function GET(request: NextRequest) {
     let items: InvestorTrendItem[] = [];
     const data = json.data;
 
-    // 1) 테이블 형태: { headers, rows }
     if (data && typeof data === "object" && !Array.isArray(data) && "rows" in data) {
-      const takeLast = dataType === "investor_time" ? 8 : 5;
       items = normalizeFromTable(data as { headers?: string[]; rows?: string[][] }, takeLast);
     }
 
-    // investor_time: N시간 단위로 그룹핑·합산 (기본 2시간: 09:00+10:00, 11:00+12:00 ...)
-    if (dataType === "investor_time" && items.length > 0 && intervalHours > 1) {
-      items = aggregateByHourInterval(items, intervalHours);
-    } else if (dataType === "investor_time" && items.length > 4) {
-      items = items.slice(-4);
-    }
-
-    // 2) 배열 형태: [{ 날짜, 개인, 외국인, 기관/기관계, 기타법인 }, ...]
     let arr: unknown[] | null = null;
     if (Array.isArray(data)) {
       arr = data;
@@ -190,14 +157,7 @@ export async function GET(request: NextRequest) {
       else if (Array.isArray(anyData.list)) arr = anyData.list as unknown[];
     }
     if ((!items || items.length === 0) && arr) {
-      const takeLast = dataType === "investor_time" ? 8 : 5;
       items = normalizeFromObjects(arr, takeLast);
-    }
-
-    if (dataType === "investor_time" && items.length > 0 && intervalHours > 1) {
-      items = aggregateByHourInterval(items, intervalHours);
-    } else if (dataType === "investor_time" && items.length > 4) {
-      items = items.slice(-4);
     }
 
     const rawDataShape = Array.isArray(data) ? "array" : String(typeof data);
@@ -205,10 +165,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1차: 지정된 market (예: kospi/kosdaq)
     const first = await fetchAndNormalize(market);
 
-    // 데이터가 없고, 시장이 all 이 아니면 → all 로 한 번 더 시도 (admin 페이지 동작과 유사한 폴백)
     if (first.items.length === 0 && market !== "all") {
       const fallback = await fetchAndNormalize("all");
       if (fallback.items.length > 0) {
