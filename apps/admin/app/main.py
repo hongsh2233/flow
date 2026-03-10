@@ -437,8 +437,8 @@ def init_admin_user():
     """
     초기 관리자 계정 자동 생성
 
-    서버 최초 실행 시 DB에 관리자 계정이 없는 경우에만 생성합니다.
-    ADMIN_EMAIL / ADMIN_PW 환경 변수는 이 초기화 목적으로만 사용됩니다.
+    DB에 관리자 계정이 한 명도 없을 때만 ADMIN_EMAIL / ADMIN_PW 환경 변수로 생성합니다.
+    이미 관리자 계정이 있으면 아무것도 하지 않습니다 (환경 변수 불필요).
     실행 이후 관리자 인증은 DB 기반으로만 동작합니다.
     DB 연결 실패 시에도 앱은 시작되도록 예외 처리합니다.
     """
@@ -446,32 +446,20 @@ def init_admin_user():
     print("관리자 계정 초기화 시작")
     print("=" * 60)
 
-    # ADMIN_EMAIL / ADMIN_PW 는 초기화 전용 환경 변수입니다.
-    # 반드시 .env 또는 Railway Variables에 설정해야 합니다.
-    if not ADMIN_EMAIL or not ADMIN_PW:
-        print("❌ ADMIN_EMAIL 또는 ADMIN_PW 환경 변수가 설정되지 않았습니다.")
-        print("   .env 또는 Railway Variables에 ADMIN_EMAIL과 ADMIN_PW를 설정하세요.")
-        print("=" * 60 + "\n")
-        return
-
-    print(f"ADMIN_EMAIL: ✅ 설정됨")
-    print(f"ADMIN_PW: ✅ 설정됨")
-
     try:
         db = next(get_db())
         try:
-            # 기존 관리자 확인
-            existing_user = db.query(models.AdminUser).filter(
-                models.AdminUser.email == ADMIN_EMAIL
-            ).first()
+            # DB에 관리자가 이미 있으면 초기화 불필요
+            any_admin = db.query(models.AdminUser).first()
+            if any_admin:
+                print(f"ℹ️  관리자 계정이 이미 존재합니다. 초기화를 건너뜁니다.")
+                return
 
-            if existing_user:
-                print(f"ℹ️  관리자 계정이 이미 존재합니다: {ADMIN_EMAIL}")
-                # is_super_admin 이 False인 경우 마이그레이션이 실패한 경우이므로 재설정
-                if not existing_user.is_super_admin:
-                    existing_user.is_super_admin = True
-                    db.commit()
-                    print(f"✅ 최고 관리자 권한 복구 완료: {ADMIN_EMAIL}")
+            # 관리자가 없는 경우 → ADMIN_EMAIL / ADMIN_PW 필요
+            if not ADMIN_EMAIL or not ADMIN_PW:
+                print("❌ DB에 관리자 계정이 없고 ADMIN_EMAIL / ADMIN_PW도 설정되지 않았습니다.")
+                print("   .env 또는 Railway Variables에 ADMIN_EMAIL과 ADMIN_PW를 설정하세요.")
+                print("=" * 60 + "\n")
                 return
 
             # 새 관리자 생성 (is_super_admin=True 로 최고 관리자 지정)
