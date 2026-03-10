@@ -72,26 +72,34 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-KE
 security = HTTPBearer()
 
 
-async def get_current_user(request: Request):
+async def get_current_user(request: Request, db: Session = Depends(get_db)):
     """
     인증 확인 함수 (쿠키 기반 - 웹 페이지용)
-    
+
     관리자 인증 쿠키를 확인하여 로그인 상태를 검증합니다.
-    
+
     Args:
         request: FastAPI Request 객체
-    
+        db: 데이터베이스 세션
+
     Returns:
-        str: 세션 ID (인증 성공 시), None (인증 실패 시)
+        AdminUser: 관리자 사용자 객체 (인증 성공 시), None (인증 실패 시)
     """
     # SECRET_TOKEN이 없으면 인증 실패
     if not SECRET_TOKEN:
         return None
-    
+
     session_id = request.cookies.get(AUTH_COOKIE_NAME)
     if not session_id or session_id != SECRET_TOKEN:
         return None
-    return session_id
+
+    # 환경변수에서 관리자 이메일 가져오기
+    admin_email = os.environ.get("ADMIN_EMAIL", "")
+    if not admin_email:
+        return None
+
+    user = db.query(models.AdminUser).filter(models.AdminUser.email == admin_email).first()
+    return user
 
 
 async def get_current_user_or_api_key_for_fsc(
