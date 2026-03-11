@@ -117,8 +117,8 @@ def _get_deal_rank(db: Session, bizdate: str) -> Dict[str, List[str]]:
         try:
             data = json.loads(row.data_json)
             rows = data.get("rows", [])
-            # 첫 번째 컬럼이 종목명
-            names = [r[0] for r in rows[:5] if r]
+            # col[0]=순위, col[1]=종목명
+            names = [r[1] for r in rows[:5] if len(r) > 1]
             result[key] = names
         except Exception:
             result[key] = []
