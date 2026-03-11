@@ -313,6 +313,21 @@
   overflow: hidden;
 }
 
+.expertCardNew {
+  animation: expertSlideIn 0.4s ease-out;
+}
+
+@keyframes expertSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .expertHeader {
   display: flex;
   align-items: center;

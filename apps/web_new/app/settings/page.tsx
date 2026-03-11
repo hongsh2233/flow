@@ -15,7 +15,7 @@ import {
   Bell,
   BellRing,
   Moon,
-  CalendarCheck,
+  // CalendarCheck, // 일정 알림 (주석 처리)
   // KeyRound,
   MessageCircleQuestion,
   ChevronRight,
@@ -52,7 +52,7 @@ const settingsGroups: SettingsGroup[] = [
     title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: true },
-      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
+      // { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
       // { icon: KeyRound, label: "간편 비밀번호 설정", hasArrow: true, href: "/settings/pin" },
     ],
@@ -75,7 +75,7 @@ const guestSettingsGroups: SettingsGroup[] = [
     title: "알림 / 앱 설정",
     items: [
       { icon: Bell, label: "푸시 알림", hasSwitch: true, action: "push", enabled: false },
-      { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
+      // { icon: CalendarCheck, label: "일정 알림", hasSwitch: true, action: "scheduleAlarm", enabled: false },
       { icon: Moon, label: "다크 모드", hasSwitch: true, action: "darkmode" },
     ],
   },

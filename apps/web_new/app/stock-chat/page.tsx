@@ -66,6 +66,7 @@ export default function JuTalkPage() {
     return g;
   };
   const [experts, setExperts] = useState<Expert[]>([]);
+  const [displayedExperts, setDisplayedExperts] = useState<Expert[]>([]);
   const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
 
   const handleVote = async (index: number) => {
@@ -283,6 +284,9 @@ export default function JuTalkPage() {
         }));
 
         setExperts(mapped);
+        // 초기 3개 랜덤 선택
+        const shuffled = [...mapped].sort(() => Math.random() - 0.5);
+        setDisplayedExperts(shuffled.slice(0, Math.min(3, shuffled.length)));
       } catch {
         // 무시: 전문가 명언이 없으면 섹션을 비워둔다.
       }
@@ -402,6 +406,22 @@ export default function JuTalkPage() {
     fetchBoardsAndContent().then((id) => fetchStatsIfNeeded(id)).catch(() => {});
   }, [session?.user]);
 
+  /* 대가들의 한마디: 10초마다 새 1개 추가 (SNS 스타일) */
+  useEffect(() => {
+    if (experts.length < 2) return;
+    const interval = setInterval(() => {
+      setDisplayedExperts((prev) => {
+        const pool = experts.filter((e) => !prev.some((p) => p.id === e.id));
+        const next =
+          pool.length > 0
+            ? pool[Math.floor(Math.random() * pool.length)]
+            : prev[2] ?? prev[0]; // 모두 표시됐으면 맨 뒤 것을 맨 앞으로
+        return [next, ...prev].slice(0, 3);
+      });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [experts]);
+
   return (
     <div className={styles.page}>
 
@@ -490,51 +510,6 @@ export default function JuTalkPage() {
           </section>
         )}
 
-        {/* 대가들의 한마디 */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>대가들의 한마디</h2>
-            <p className={styles.sectionSubtitle}>투자 대가들의 명언을 만나보세요</p>
-          </div>
-          <div className={styles.expertList}>
-            {experts.map((expert) => {
-              const liked = !!expert.is_liked;
-              return (
-                <article key={expert.id} className={styles.expertCard}>
-                  <div className={styles.expertHeader}>
-                    <img
-                      src={expert.image}
-                      alt={expert.name}
-                      className={styles.expertAvatar}
-                    />
-                    <div className={styles.expertInfo}>
-                      <h3 className={styles.expertName}>{expert.name}</h3>
-                      <p className={styles.expertTitle}>{expert.title}</p>
-                    </div>
-                  </div>
-                  <div className={styles.expertQuoteBox}>
-                    <p className={styles.expertQuote}>&quot;{expert.quote}&quot;</p>
-                  </div>
-                  <div className={styles.expertFooter}>
-                    <button
-                      type="button"
-                      onClick={() => handleExpertLike(expert)}
-                      className={`${styles.likeButton} ${liked ? styles.likeButtonActive : ""}`}
-                    >
-                      <Heart
-                        aria-hidden
-                        className={liked ? styles.likeIconActive : styles.likeIcon}
-                      />
-                      <span>{expert.likes.toLocaleString()}</span>
-                    </button>
-                    <span className={styles.timeText}>2시간 전</span>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
         {/* 시장의 목소리 */}
         {marketVoices.length > 0 && (
         <section className={styles.section}>
@@ -581,6 +556,54 @@ export default function JuTalkPage() {
           </div>
         </section>
         )}
+
+        {/* 대가들의 한마디 */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>대가들의 한마디</h2>
+            <p className={styles.sectionSubtitle}>투자 대가들의 명언을 만나보세요</p>
+          </div>
+          <div className={styles.expertList}>
+            {displayedExperts.map((expert, idx) => {
+              const liked = !!expert.is_liked;
+              return (
+                <article
+                  key={expert.id}
+                  className={`${styles.expertCard} ${idx === 0 ? styles.expertCardNew : ""}`}
+                >
+                  <div className={styles.expertHeader}>
+                    <img
+                      src={expert.image}
+                      alt={expert.name}
+                      className={styles.expertAvatar}
+                    />
+                    <div className={styles.expertInfo}>
+                      <h3 className={styles.expertName}>{expert.name}</h3>
+                      <p className={styles.expertTitle}>{expert.title}</p>
+                    </div>
+                  </div>
+                  <div className={styles.expertQuoteBox}>
+                    <p className={styles.expertQuote}>&quot;{expert.quote}&quot;</p>
+                  </div>
+                  <div className={styles.expertFooter}>
+                    <button
+                      type="button"
+                      onClick={() => handleExpertLike(expert)}
+                      className={`${styles.likeButton} ${liked ? styles.likeButtonActive : ""}`}
+                    >
+                      <Heart
+                        aria-hidden
+                        className={liked ? styles.likeIconActive : styles.likeIcon}
+                      />
+                      <span>{expert.likes.toLocaleString()}</span>
+                    </button>
+                    <span className={styles.timeText}>2시간 전</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
         {/* 시장의 목소리 방명록 (B005 게시판) */}
         <section className={styles.section}>
