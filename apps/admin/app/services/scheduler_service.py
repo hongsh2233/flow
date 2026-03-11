@@ -1272,10 +1272,25 @@ naver_news_scheduler = NaverNewsScheduler()
 # 시장의 목소리 수집 스케줄러
 # =========================================================
 
+def cleanup_old_market_voices(db: Session, keep_days: int = 2):
+    """2일 이상 지난 market_voices 레코드 삭제 (pending/approved 모두)"""
+    try:
+        from app.models import MarketVoice
+        cutoff = datetime.utcnow() - timedelta(days=keep_days)
+        deleted = db.query(MarketVoice).filter(MarketVoice.created_at < cutoff).delete()
+        db.commit()
+        if deleted:
+            print(f"🗑️ 시장의 목소리 오래된 항목 삭제: {deleted}건 (2일 초과)")
+    except Exception as e:
+        db.rollback()
+        print(f"❌ 시장의 목소리 정리 오류: {e}")
+
+
 async def collect_market_voices():
     """
     person_master 인물별 뉴스 수집 → Gemini 요약 → market_voices pending 저장
     평일(월~금) 08:30, 12:30, 19:30에 실행 (뉴스 수집 직후)
+    수집 전에 2일 초과 항목 자동 정리
     """
     from app.services.market_voice_service import fetch_and_summarize_news
 
@@ -1291,6 +1306,9 @@ async def collect_market_voices():
 
     db = SessionLocal()
     try:
+        # 2일 초과 항목 정리
+        cleanup_old_market_voices(db, keep_days=2)
+
         result = await fetch_and_summarize_news(db)
         print(f"시장의 목소리 수집 완료: {result.get('saved', 0)}건 신규 저장 (pending)")
         print(f"{'='*60}\n")
