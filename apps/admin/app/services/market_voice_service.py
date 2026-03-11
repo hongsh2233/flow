@@ -83,6 +83,35 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
             return []
 
 
+def _extract_text_from_gemini_response(response) -> str:
+    """
+    Gemini 응답에서 텍스트 추출.
+    response.text는 복합 응답(멀티파트 등)에서 ValueError를 발생시킬 수 있으므로,
+    모든 parts를 순회하며 text를 수집한다.
+    """
+    text = ""
+    try:
+        if hasattr(response, "text"):
+            text = (response.text or "").strip()
+    except (ValueError, AttributeError):
+        # response.text가 non-simple 응답에서 ValueError 발생 가능
+        pass
+    if not text:
+        candidates = getattr(response, "candidates", []) or []
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            parts = getattr(content, "parts", []) or []
+            for part in parts:
+                part_text = getattr(part, "text", None) or ""
+                if part_text:
+                    text += part_text
+            if text:
+                break
+    return (text or "").strip()
+
+
 def _summarize_with_gemini(person_name: str, title: str, description: str) -> Optional[str]:
     """Gemini API로 '누가 어떤 핵심 발언을 했는지' 50자 이내 요약"""
     if not GEMINI_API_KEY:
@@ -102,14 +131,7 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
             model="gemini-1.5-flash",
             contents=prompt,
         )
-        text = response.text if hasattr(response, "text") else ""
-        if not text:
-            candidates = getattr(response, "candidates", []) or []
-            if candidates:
-                parts = getattr(candidates[0], "content", None) and getattr(candidates[0].content, "parts", []) or []
-                if parts:
-                    text = getattr(parts[0], "text", "") or ""
-        text = (text or "").strip()
+        text = _extract_text_from_gemini_response(response)
         if len(text) > STATEMENT_MAX_LEN:
             text = text[:STATEMENT_MAX_LEN - 1] + "…"
         return text if text else None
