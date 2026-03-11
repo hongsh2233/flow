@@ -826,6 +826,34 @@ async def collect_market_morning_summary():
         db.close()
 
 
+async def collect_market_closing_summary():
+    """
+    장마감 시황 생성 및 board/B001 게시 (15:40 KST)
+    - 15:30 수집된 KR지수·수급동향·뉴스 데이터를 Gemini로 요약
+    - 주말/공휴일은 건너뜀
+    """
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: 장마감 시황 생성 건너뜀")
+        return
+
+    now = datetime.now(pytz.timezone("Asia/Seoul"))
+    print(f"\n📰 장마감 시황 생성 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        from app.services.market_closing_gemini_service import generate_and_post_closing_summary
+        ok = generate_and_post_closing_summary(db, now.date())
+        if ok:
+            print("✅ 장마감 시황 게시 완료")
+        else:
+            print("⚠️ 장마감 시황 생성 실패 (데이터 부족 또는 Gemini 오류)")
+    except Exception as e:
+        import traceback
+        print(f"❌ 장마감 시황 생성 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+
+
 async def collect_yahoo_kr_indices():
     """
     Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
@@ -996,12 +1024,24 @@ class YahooIndexScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
+        # 장마감 시황 생성: 15:40 (15:30 KR지수 수집 완료 후)
+        self.scheduler.add_job(
+            collect_market_closing_summary,
+            CronTrigger(hour=15, minute=40, timezone=self.kst),
+            id="market_closing_summary",
+            name="장마감 시황 생성 (15:40)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
 
         self.scheduler.start()
         print("✅ Yahoo 지수 수집 스케줄러 시작")
         print("   - 해외(메인): 00:00 / 05:00 / 06:30 (KST)")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
         print("   - KR: 09:20 / 11:30 / 14:00 / 15:30 (KST)")
+        print("   - 장마감 시황: 15:40 (KST, 주말/공휴일 제외)")
         print("   - 최근 7일치만 유지\n")
 
     def shutdown(self):
