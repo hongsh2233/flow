@@ -1988,17 +1988,31 @@ async def get_market_morning_summary(
                     "isPositive": r.change_val >= 0,
                 })
 
+        # Gemini AI 요약
+        ai_summary = None
+        ai_row = db.query(models.MarketMorningAiSummary).filter(
+            models.MarketMorningAiSummary.date == today,
+        ).first()
+        if ai_row:
+            ai_summary = {
+                "usMarket":     ai_row.us_market or "",
+                "krIndices":    ai_row.kr_indices or "",
+                "exchangeRate": ai_row.exchange_rate or "",
+                "krFocus":      ai_row.kr_focus or "",
+            }
+
         return {
             "success": True,
             "data": {
                 "indices": indices,
                 "exchangeRates": exchange_rates,
                 "collectedDate": today.isoformat(),
+                "aiSummary": ai_summary,
             },
         }
     except Exception as e:
         print(f"⚠️ market-morning-summary 조회 실패: {e}")
-        return {"success": False, "data": {"indices": [], "exchangeRates": [], "collectedDate": None}}
+        return {"success": False, "data": {"indices": [], "exchangeRates": [], "collectedDate": None, "aiSummary": None}}
 
 
 # =========================================================

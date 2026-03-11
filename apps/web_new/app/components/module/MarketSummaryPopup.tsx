@@ -21,10 +21,18 @@ interface ExchangeRateItem {
   isPositive: boolean;
 }
 
+interface AiSummary {
+  usMarket: string;
+  krIndices: string;
+  exchangeRate: string;
+  krFocus: string;
+}
+
 interface SummaryData {
   indices: IndexItem[];
   exchangeRates: ExchangeRateItem[];
   collectedDate: string | null;
+  aiSummary: AiSummary | null;
 }
 
 function getHiddenToday(): boolean {
@@ -122,6 +130,35 @@ export function MarketSummaryPopup() {
         </div>
 
         <div className={styles.body}>
+          {data.aiSummary && (
+            <section className={styles.aiSection}>
+              {data.aiSummary.usMarket && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>뉴욕증시</span>
+                  <p className={styles.aiText}>{data.aiSummary.usMarket}</p>
+                </div>
+              )}
+              {data.aiSummary.krIndices && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>한국 관련 지수</span>
+                  <p className={styles.aiText}>{data.aiSummary.krIndices}</p>
+                </div>
+              )}
+              {data.aiSummary.exchangeRate && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>환율</span>
+                  <p className={styles.aiText}>{data.aiSummary.exchangeRate}</p>
+                </div>
+              )}
+              {data.aiSummary.krFocus && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>주목할점</span>
+                  <p className={styles.aiText}>{data.aiSummary.krFocus}</p>
+                </div>
+              )}
+            </section>
+          )}
+
           {data.indices && data.indices.length > 0 && (
             <section className={styles.section}>
               <h4 className={styles.sectionTitle}>뉴욕증시 마감 · 선물</h4>

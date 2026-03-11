@@ -736,6 +736,7 @@ async def collect_market_morning_summary():
     - 뉴욕증시 마감시황 (나스닥/S&P500/다우)
     - 나스닥 선물, 코스피 200, 코스피200 야간선물 (Investing.com)
     - 환율은 exchange_rate_scheduler가 30분마다 수집하므로 별도 수집 없음
+    - 수집 완료 후 Gemini AI 요약 생성·저장
     - 주말(토·일) 및 공휴일은 건너뜀
     """
     if should_skip_today():
@@ -764,6 +765,61 @@ async def collect_market_morning_summary():
                 print(f"⚠️ 코스피200 야간선물 수집 실패: {kospi200_fut.get('error', 'unknown')}")
         except Exception as e:
             print(f"⚠️ 코스피200 야간선물 수집 오류: {e}")
+
+        # Gemini AI 요약 생성
+        try:
+            from app.engine import models as _models
+            from app.services.market_morning_gemini_service import generate_and_save_ai_summary
+
+            today = now.date()
+            _MORNING_ORDER = {
+                "^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^SOX": 3, "NQ=F": 4,
+                "^KS200": 5, "INV:8893": 6, "^MSKR": 7, "EWY": 8, "^KS11": 9, "^KQ11": 10,
+            }
+            rows = db.query(_models.YahooIndexDaily).filter(
+                _models.YahooIndexDaily.date == today,
+                _models.YahooIndexDaily.group == "morning",
+            ).all()
+            rows = sorted(rows, key=lambda r: _MORNING_ORDER.get(r.symbol, 99))
+            indices_for_gemini = [
+                {
+                    "name": r.name,
+                    "symbol": r.symbol,
+                    "price": round(r.price or 0, 2),
+                    "change": round(r.change or 0, 2),
+                    "changePercent": round(r.change_percent or 0, 2),
+                }
+                for r in rows if r.price is not None
+            ]
+
+            latest_ex = db.query(func.max(_models.ExchangeRateSnapshot.collected_at)).scalar()
+            exchange_rates_for_gemini = []
+            if latest_ex:
+                currency_names = {"USD": "USD/KRW", "JPY": "JPY/KRW (100엔)", "EUR": "EUR/KRW"}
+                ex_rows = db.query(_models.ExchangeRateSnapshot).filter(
+                    _models.ExchangeRateSnapshot.collected_at == latest_ex,
+                ).all()
+                exchange_rates_for_gemini = [
+                    {
+                        "currency": currency_names.get(r.currency, r.currency),
+                        "rate": round(r.rate, 2),
+                        "change": round(r.change_val, 2),
+                    }
+                    for r in ex_rows
+                ]
+
+            if indices_for_gemini:
+                generate_and_save_ai_summary(
+                    db=db,
+                    indices=indices_for_gemini,
+                    exchange_rates=exchange_rates_for_gemini,
+                    target_date=today,
+                )
+            else:
+                print("[morning-gemini] 지수 데이터 없어 AI 요약 건너뜀")
+        except Exception as e:
+            print(f"⚠️ Gemini AI 요약 오류: {e}")
+
     except Exception as e:
         print(f"❌ 아침 시장 요약 수집 오류: {e}")
     finally:
