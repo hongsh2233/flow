@@ -465,6 +465,11 @@
   background: #eff6ff;
   color: #2563eb;
   font-weight: 500;
+  text-decoration: none;
+}
+
+.voiceSource:hover {
+  background: #dbeafe;
 }
 
 .writeBox {

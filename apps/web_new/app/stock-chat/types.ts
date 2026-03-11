@@ -28,6 +28,7 @@ export interface MarketVoice {
   statement: string;
   time: string;
   source: string;
+  sourceUrl: string;
 }
 
 export interface StockTermItem {

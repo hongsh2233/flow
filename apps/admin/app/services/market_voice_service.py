@@ -1,5 +1,5 @@
 """
-시장의 목소리: person_master 인물 이름으로 뉴스 수집 → Gemini AI 30자 이내 요약 → market_voices pending 저장
+시장의 목소리: person_master 인물 이름으로 뉴스 수집 → Gemini AI 50자 이내 요약 → market_voices pending 저장
 
 - NAVER_CLIENT_ID, NAVER_CLIENT_SECRET: 뉴스 검색
 - GEMINI_API_KEY: AI 요약
@@ -17,7 +17,7 @@ from app.engine.models import PersonMaster, MarketVoice
 
 NAVER_NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json"
 MAX_NEWS_PER_PERSON = 5
-STATEMENT_MAX_LEN = 30
+STATEMENT_MAX_LEN = 50
 
 
 def _strip_html(text: str) -> str:
@@ -69,20 +69,20 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
 
 
 def _summarize_with_gemini(person_name: str, title: str, description: str) -> Optional[str]:
-    """Gemini API로 '누가 어떤 핵심 발언을 했는지' 30자 이내 요약"""
+    """Gemini API로 '누가 어떤 핵심 발언을 했는지' 50자 이내 요약"""
     if not GEMINI_API_KEY:
         return None
     try:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = f"""다음 뉴스에서 "{person_name}"의 핵심 발언을 30자 이내로 요약해주세요. 
-반드시 "~했다", "~했다고 밝혔다" 등 한 문장으로 끝내주세요. 
-30자를 초과하면 안 됩니다.
+        prompt = f"""다음 뉴스에서 "{person_name}"의 핵심 발언을 50자 이내로 요약해주세요.
+반드시 "~했다", "~했다고 밝혔다" 등 한 문장으로 끝내주세요.
+50자를 초과하면 안 됩니다.
 
 뉴스 제목: {title}
 뉴스 요약: {description}
 
-요약 (30자 이내):"""
+요약 (50자 이내):"""
         response = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=prompt,
