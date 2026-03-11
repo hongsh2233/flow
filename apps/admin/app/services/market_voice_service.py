@@ -17,7 +17,7 @@ from app.engine.models import PersonMaster, MarketVoice
 
 NAVER_NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json"
 MAX_NEWS_PER_PERSON = 5
-STATEMENT_MAX_LEN = 30
+STATEMENT_MAX_LEN = 50
 
 
 def _strip_html(text: str) -> str:
@@ -75,9 +75,9 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
     try:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = f"""다음 뉴스에서 "{person_name}"의 핵심 발언을 30자 이내로 요약해주세요. 
-반드시 "~했다", "~했다고 밝혔다" 등 한 문장으로 끝내주세요. 
-30자를 초과하면 안 됩니다.
+        prompt = f"""다음 뉴스에서 "{person_name}"의 핵심 발언을 50자 이내로 요약해주세요.
+반드시 "~했다", "~했다고 밝혔다" 등 한 문장으로 끝내주세요.
+50자를 초과하면 안 됩니다.
 
 뉴스 제목: {title}
 뉴스 요약: {description}

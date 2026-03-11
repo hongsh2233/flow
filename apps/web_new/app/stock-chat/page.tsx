@@ -239,6 +239,7 @@ export default function JuTalkPage() {
           statement: v.statement,
           time: v.time || "",
           source: v.source_title || v.source_url || "",
+          sourceUrl: v.source_url || "",
         }));
         setMarketVoices(mapped);
       } catch {
@@ -534,8 +535,8 @@ export default function JuTalkPage() {
           </div>
         </section>
 
-        {/* 시장의 목소리 - 주석 처리 (삭제 금지) */}
-        {/*
+        {/* 시장의 목소리 */}
+        {marketVoices.length > 0 && (
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시장의 목소리</h2>
@@ -559,14 +560,27 @@ export default function JuTalkPage() {
                       <span className={styles.timeText}>{voice.time}</span>
                     </div>
                     <p className={styles.voiceStatement}>&quot;{voice.statement}&quot;</p>
-                    <span className={styles.voiceSource}>{voice.source}</span>
+                    {voice.source && (
+                      voice.sourceUrl ? (
+                        <a
+                          href={voice.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.voiceSource}
+                        >
+                          {voice.source}
+                        </a>
+                      ) : (
+                        <span className={styles.voiceSource}>{voice.source}</span>
+                      )
+                    )}
                   </div>
                 </div>
               </article>
             ))}
           </div>
         </section>
-        */}
+        )}
 
         {/* 시장의 목소리 방명록 (B005 게시판) */}
         <section className={styles.section}>

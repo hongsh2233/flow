@@ -5,7 +5,7 @@
 """
 from typing import Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -13,6 +13,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user, verify_api_key
 from app import models
+
+
+def _js_alert_back(message: str) -> HTMLResponse:
+    return HTMLResponse(f"<script>alert({message!r}); history.back();</script>")
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -37,7 +41,7 @@ async def admin_market_voices_page(
     if status_filter in ("pending", "approved"):
         q = q.filter(models.MarketVoice.status == status_filter)
     voices = q.order_by(models.MarketVoice.created_at.desc()).limit(200).all()
-    persons = db.query(models.PersonMaster).filter(models.PersonMaster.is_active == "active").all()
+    persons = db.query(models.PersonMaster).order_by(models.PersonMaster.order_index, models.PersonMaster.id).all()
 
     pending_count = db.query(models.MarketVoice).filter(models.MarketVoice.status == "pending").count()
 
@@ -53,6 +57,95 @@ async def admin_market_voices_page(
             "status_filter": status_filter or "",
         },
     )
+
+
+# =========================================================
+# PersonMaster CRUD
+# =========================================================
+
+@router.post("/admin/market-voices/persons/add")
+async def add_market_voice_person(
+    name: str = Form(...),
+    title: str = Form(""),
+    search_keyword: str = Form(...),
+    image_url: str = Form(""),
+    order_index: int = Form(0),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """시장의 목소리 인물 등록"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    name = name.strip()
+    search_keyword = search_keyword.strip()
+    if not name or not search_keyword:
+        return _js_alert_back("이름과 검색키워드는 필수입니다.")
+
+    existing = db.query(models.PersonMaster).filter(models.PersonMaster.name == name).first()
+    if existing:
+        return _js_alert_back("이미 등록된 인물입니다.")
+
+    person = models.PersonMaster(
+        name=name,
+        title=title.strip() or None,
+        search_keyword=search_keyword,
+        image_url=image_url.strip() or None,
+        order_index=order_index,
+        is_active="active",
+    )
+    db.add(person)
+    db.commit()
+    return RedirectResponse(url="/admin/market-voices", status_code=303)
+
+
+@router.post("/admin/market-voices/persons/{person_id}/update")
+async def update_market_voice_person(
+    person_id: int,
+    name: str = Form(...),
+    title: str = Form(""),
+    search_keyword: str = Form(...),
+    image_url: str = Form(""),
+    order_index: int = Form(0),
+    is_active: str = Form("active"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """시장의 목소리 인물 수정"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    person = db.query(models.PersonMaster).filter(models.PersonMaster.id == person_id).first()
+    if not person:
+        return JSONResponse({"success": False, "message": "인물을 찾을 수 없습니다."}, status_code=404)
+
+    person.name = name.strip() or person.name
+    person.title = title.strip() or None
+    person.search_keyword = search_keyword.strip() or person.search_keyword
+    person.image_url = image_url.strip() or None
+    person.order_index = order_index
+    person.is_active = is_active if is_active in ("active", "inactive") else "active"
+    db.commit()
+    return JSONResponse({"success": True, "message": "수정되었습니다."})
+
+
+@router.post("/admin/market-voices/persons/{person_id}/delete")
+async def delete_market_voice_person(
+    person_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """시장의 목소리 인물 삭제 (cascade로 발언도 삭제)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    person = db.query(models.PersonMaster).filter(models.PersonMaster.id == person_id).first()
+    if not person:
+        return JSONResponse({"success": False, "message": "인물을 찾을 수 없습니다."}, status_code=404)
+
+    db.delete(person)
+    db.commit()
+    return JSONResponse({"success": True, "message": "삭제되었습니다."})
 
 
 @router.post("/api/market-voices/{voice_id}/approve")

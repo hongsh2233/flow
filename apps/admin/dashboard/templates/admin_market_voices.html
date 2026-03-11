@@ -13,17 +13,43 @@
   .btn-approve:hover { background: #16a34a; }
   .btn-reject { padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
   .btn-reject:hover { background: #dc2626; }
+  .btn-edit { padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-edit:hover { background: #495057; }
+  .btn-delete { padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-delete:hover { background: #dc2626; }
   .info-box { background: #e8f4f8; border-left: 4px solid #3498db; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #2c3e50; }
   .ctrl-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
   .ctrl-row select { padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px; }
   .badge-pending { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
   .badge-approved { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-inactive { background: #f1f3f5; color: #868e96; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .data-table th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; }
   .data-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
   .data-table tbody tr:hover { background: #f8f9fa; }
   .statement-cell { max-width: 300px; font-weight: 500; }
   .empty-state { padding: 40px; text-align: center; color: #6c757d; }
+  .person-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #dee2e6; }
+  .person-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: #dee2e6; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
+  .add-form { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .add-form .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .add-form .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .add-form label { font-size: 12px; font-weight: 600; color: #495057; }
+  .add-form input { padding: 7px 10px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px; }
+  .add-form input:focus { outline: none; border-color: #3498db; }
+  .section-divider { border: none; border-top: 2px solid #dee2e6; margin: 28px 0 20px; }
+  .section-title { font-size: 15px; font-weight: 700; color: #2c3e50; margin: 0 0 14px; }
+  /* 수정 모달 */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: #fff; border-radius: 10px; padding: 28px; width: 480px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .modal-box h3 { margin: 0 0 18px; font-size: 16px; color: #2c3e50; }
+  .modal-box .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .modal-box label { font-size: 12px; font-weight: 600; color: #495057; }
+  .modal-box input, .modal-box select { padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .btn-save { padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
+  .btn-cancel { padding: 8px 16px; background: #f1f3f5; color: #495057; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
 </style>
 {% endblock %}
 
@@ -40,9 +66,98 @@
   </div>
 
   <div class="info-box">
-    person_master 인물(구윤철, 제롬 파월 등) 이름으로 뉴스 검색 → Gemini AI 30자 이내 요약 → pending 저장.<br>
-    관리자 승인 시 앱(stock-chat)에 노출. NAVER_CLIENT_ID/SECRET, GEMINI_API_KEY 환경 변수 필요.
+    등록된 인물의 검색키워드로 네이버 뉴스 검색 → Gemini AI 50자 이내 요약 → pending 저장.<br>
+    관리자 승인 시 앱(stock-chat)에 노출됩니다. 스케줄러: 평일 08:30 / 12:30 / 19:30 자동 수집.
   </div>
+
+  <!-- ===== 인물 관리 섹션 ===== -->
+  <p class="section-title">👤 인물 관리</p>
+
+  <!-- 인물 추가 폼 -->
+  <div class="add-form">
+    <form method="post" action="/admin/market-voices/persons/add">
+      <div class="form-row">
+        <div class="form-group">
+          <label>이름 *</label>
+          <input type="text" name="name" placeholder="예: 도널드 트럼프" required style="width:140px;">
+        </div>
+        <div class="form-group">
+          <label>직함</label>
+          <input type="text" name="title" placeholder="예: 미국 대통령" style="width:150px;">
+        </div>
+        <div class="form-group">
+          <label>검색키워드 * (네이버 뉴스)</label>
+          <input type="text" name="search_keyword" placeholder="예: 트럼프" required style="width:130px;">
+        </div>
+        <div class="form-group">
+          <label>사진 URL</label>
+          <input type="url" name="image_url" placeholder="https://..." style="width:200px;">
+        </div>
+        <div class="form-group">
+          <label>순서</label>
+          <input type="number" name="order_index" value="0" style="width:60px;">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button type="submit" class="btn-collect" style="padding:7px 18px;">등록</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- 등록된 인물 목록 -->
+  <div style="overflow-x:auto;border:1px solid #dee2e6;border-radius:6px;margin-bottom:8px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>사진</th>
+          <th>이름</th>
+          <th>직함</th>
+          <th>검색키워드</th>
+          <th>순서</th>
+          <th>상태</th>
+          <th>액션</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in persons %}
+        <tr>
+          <td>
+            {% if p.image_url %}
+            <img src="{{ p.image_url }}" alt="{{ p.name }}" class="person-avatar">
+            {% else %}
+            <span class="person-avatar-placeholder">👤</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ p.name }}</strong></td>
+          <td>{{ p.title or '-' }}</td>
+          <td><code style="background:#f1f3f5;padding:2px 6px;border-radius:3px;font-size:12px;">{{ p.search_keyword }}</code></td>
+          <td>{{ p.order_index }}</td>
+          <td>
+            {% if p.is_active == 'active' %}
+            <span class="badge-approved">활성</span>
+            {% else %}
+            <span class="badge-inactive">비활성</span>
+            {% endif %}
+          </td>
+          <td style="display:flex;gap:6px;flex-wrap:nowrap;">
+            <button class="btn-edit" onclick="openEditModal({{ p.id }}, {{ p.name|tojson }}, {{ (p.title or '')|tojson }}, {{ p.search_keyword|tojson }}, {{ (p.image_url or '')|tojson }}, {{ p.order_index }}, {{ p.is_active|tojson }})">수정</button>
+            <button class="btn-delete" onclick="deletePerson({{ p.id }}, {{ p.name|tojson }})">삭제</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="empty-state">등록된 인물이 없습니다. 위 폼에서 추가해주세요.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ===== 발언 목록 섹션 ===== -->
+  <p class="section-title">📋 수집된 발언 목록</p>
 
   <div class="ctrl-row">
     <label>상태:</label>
@@ -60,13 +175,11 @@
         <tr>
           <th>ID</th>
           <th>인물</th>
-          <th>요약 (30자 이내)</th>
+          <th>요약 (50자 이내)</th>
           <th>출처</th>
           <th>상태</th>
           <th>생성일</th>
-          {% if not status_filter or status_filter == 'pending' %}
           <th>액션</th>
-          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -90,24 +203,61 @@
             {% endif %}
           </td>
           <td>{{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '-' }}</td>
-          {% if not status_filter or status_filter == 'pending' %}
           <td>
             {% if v.status == 'pending' %}
             <button class="btn-approve" onclick="approve({{ v.id }})">승인</button>
             <button class="btn-reject" onclick="reject({{ v.id }})">거절</button>
             {% else %}
-            -
+            <button class="btn-reject" onclick="reject({{ v.id }})">삭제</button>
             {% endif %}
           </td>
-          {% endif %}
         </tr>
         {% else %}
         <tr>
-          <td colspan="8" class="empty-state">수집된 항목이 없습니다. 수동 수집 버튼을 눌러주세요.</td>
+          <td colspan="7" class="empty-state">수집된 항목이 없습니다. 수동 수집 버튼을 눌러주세요.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- 인물 수정 모달 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ 인물 수정</h3>
+    <input type="hidden" id="edit-person-id">
+    <div class="form-group">
+      <label>이름 *</label>
+      <input type="text" id="edit-name">
+    </div>
+    <div class="form-group">
+      <label>직함</label>
+      <input type="text" id="edit-title">
+    </div>
+    <div class="form-group">
+      <label>검색키워드 * (네이버 뉴스)</label>
+      <input type="text" id="edit-keyword">
+    </div>
+    <div class="form-group">
+      <label>사진 URL</label>
+      <input type="url" id="edit-image">
+    </div>
+    <div class="form-group">
+      <label>순서</label>
+      <input type="number" id="edit-order">
+    </div>
+    <div class="form-group">
+      <label>상태</label>
+      <select id="edit-active">
+        <option value="active">활성</option>
+        <option value="inactive">비활성</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditModal()">취소</button>
+      <button class="btn-save" onclick="savePerson()">저장</button>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -175,5 +325,64 @@
       alert('오류: ' + e.message);
     }
   }
+
+  function openEditModal(id, name, title, keyword, image, order, isActive) {
+    document.getElementById('edit-person-id').value = id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-title').value = title;
+    document.getElementById('edit-keyword').value = keyword;
+    document.getElementById('edit-image').value = image;
+    document.getElementById('edit-order').value = order;
+    document.getElementById('edit-active').value = isActive;
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  async function savePerson() {
+    const id = document.getElementById('edit-person-id').value;
+    const body = new FormData();
+    body.append('name', document.getElementById('edit-name').value);
+    body.append('title', document.getElementById('edit-title').value);
+    body.append('search_keyword', document.getElementById('edit-keyword').value);
+    body.append('image_url', document.getElementById('edit-image').value);
+    body.append('order_index', document.getElementById('edit-order').value);
+    body.append('is_active', document.getElementById('edit-active').value);
+    try {
+      const res = await fetch('/admin/market-voices/persons/' + id + '/update', { method: 'POST', body });
+      const data = await res.json();
+      if (data.success) {
+        closeEditModal();
+        location.reload();
+      } else {
+        alert(data.message || '수정 실패');
+      }
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  }
+
+  async function deletePerson(id, name) {
+    if (!confirm(name + ' 인물을 삭제하시겠습니까?\n해당 인물의 발언도 모두 삭제됩니다.')) return;
+    try {
+      const res = await fetch('/admin/market-voices/persons/' + id + '/delete', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('삭제되었습니다.');
+        location.reload();
+      } else {
+        alert(data.message || '삭제 실패');
+      }
+    } catch (e) {
+      alert('오류: ' + e.message);
+    }
+  }
+
+  // 모달 외부 클릭 시 닫기
+  document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
 </script>
 {% endblock %}
