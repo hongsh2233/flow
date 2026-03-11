@@ -76,6 +76,38 @@
   padding: 1rem 1.25rem;
 }
 
+.aiSection {
+  background: var(--app-bg-secondary, #f8f9fb);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.aiItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.aiLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--app-text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.aiText {
+  font-size: 0.8125rem;
+  color: var(--app-text-secondary, #333);
+  line-height: 1.5;
+  margin: 0;
+  word-break: keep-all;
+}
+
 .section {
   margin-bottom: 1rem;
 }

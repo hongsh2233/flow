@@ -438,6 +438,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ master_quote_likes 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_market_morning_ai_summary import upgrade as add_morning_ai_summary_migration
+        add_morning_ai_summary_migration()
+    except Exception as e:
+        print(f"⚠️ market_morning_ai_summaries 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

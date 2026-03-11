@@ -78,6 +78,7 @@ __all__ = [
   "NaverStockNews",
   "PersonMaster",
   "MarketVoice",
+  "MarketMorningAiSummary",
 ]
 
 
@@ -666,3 +667,15 @@ class MarketVoice(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     approved_at = Column(DateTime(timezone=True), nullable=True)
     person = relationship("PersonMaster", back_populates="voices")
+
+
+class MarketMorningAiSummary(Base):
+    """아침 시장 Gemini AI 요약 (날짜별 1건)"""
+    __tablename__ = "market_morning_ai_summaries"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, nullable=False, unique=True, index=True)
+    us_market = Column(Text, nullable=True)    # 전일 뉴욕증시 코멘트
+    kr_indices = Column(Text, nullable=True)   # 한국 관련 지수 코멘트
+    exchange_rate = Column(Text, nullable=True) # 환율 코멘트
+    kr_focus = Column(Text, nullable=True)      # 한국증시 주목할점
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
