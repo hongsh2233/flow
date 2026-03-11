@@ -142,7 +142,7 @@
           </td>
           <td style="display:flex;gap:6px;flex-wrap:nowrap;">
             <button class="btn-edit" onclick='openEditModal({{ p.id }}, {{ p.name|tojson }}, {{ (p.title or "")|tojson }}, {{ p.search_keyword|tojson }}, {{ (p.image_url or "")|tojson }}, {{ p.order_index }}, {{ p.is_active|tojson }})'>수정</button>
-            <button class="btn-delete" onclick="deletePerson({{ p.id }}, {{ p.name|tojson }})">삭제</button>
+            <button class="btn-delete" onclick='deletePerson({{ p.id }}, {{ p.name|tojson }})'>삭제</button>
           </td>
         </tr>
         {% else %}
