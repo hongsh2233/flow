@@ -297,7 +297,12 @@
   async function approve(id) {
     if (!confirm('이 항목을 승인하시겠습니까?')) return;
     try {
-      const res = await fetch('/api/market-voices/' + id + '/approve', { method: 'POST' });
+      const res = await fetch('/api/market-voices/' + id + '/approve', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
       const data = await res.json();
       if (data.success) {
         alert('승인되었습니다.');
@@ -313,13 +318,23 @@
   async function reject(id) {
     if (!confirm('이 항목을 삭제하시겠습니까?')) return;
     try {
-      const res = await fetch('/api/market-voices/' + id + '/reject', { method: 'POST' });
-      const data = await res.json();
+      const res = await fetch('/api/market-voices/' + id + '/reject', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      let data;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = { success: false, message: '응답 파싱 실패 (status: ' + res.status + ')' };
+      }
       if (data.success) {
         alert('삭제되었습니다.');
         loadList();
       } else {
-        alert(data.message || '실패');
+        alert(data.message || data.error || '실패 (status: ' + res.status + ')');
       }
     } catch (e) {
       alert('오류: ' + e.message);
@@ -367,7 +382,12 @@
   async function deletePerson(id, name) {
     if (!confirm(name + ' 인물을 삭제하시겠습니까?\n해당 인물의 발언도 모두 삭제됩니다.')) return;
     try {
-      const res = await fetch('/admin/market-voices/persons/' + id + '/delete', { method: 'POST' });
+      const res = await fetch('/admin/market-voices/persons/' + id + '/delete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
       const data = await res.json();
       if (data.success) {
         alert('삭제되었습니다.');
