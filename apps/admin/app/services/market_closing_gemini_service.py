@@ -362,6 +362,8 @@ def _build_post_content(
 
 <h3>⑦ 내일 주목할 점</h3>
 <p>{ai.get("tomorrow_focus", "")}</p>
+
+<p style="margin-top:24px;font-size:12px;color:#999;">※ 본 시황은 AI가 자동 생성한 콘텐츠로, 데이터 수집 시점의 차이로 인해 실제 수치와 약간의 오차가 있을 수 있습니다. 투자 판단의 참고 자료로만 활용하시기 바랍니다.</p>
 </div>"""
     return content
 
