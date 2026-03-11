@@ -258,6 +258,35 @@ def _build_prompt(
 # Gemini 호출
 # ──────────────────────────────────────────────
 
+def _extract_text_from_gemini_response(response) -> str:
+    """Gemini 응답에서 텍스트 추출. response.parts → response.text → candidates 순으로 시도."""
+    text = ""
+    parts = getattr(response, "parts", None)
+    if parts:
+        for part in parts:
+            pt = getattr(part, "text", None)
+            if pt:
+                text += str(pt)
+    if not text:
+        try:
+            if hasattr(response, "text"):
+                text = (response.text or "").strip()
+        except (ValueError, AttributeError):
+            pass
+    if not text:
+        for candidate in getattr(response, "candidates", []) or []:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            for part in getattr(content, "parts", []) or []:
+                pt = getattr(part, "text", None)
+                if pt:
+                    text += str(pt)
+            if text:
+                break
+    return (text or "").strip()
+
+
 def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
     if not GEMINI_API_KEY:
         print("[closing-gemini] GEMINI_API_KEY 없음, 건너뜀")
@@ -266,19 +295,10 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
         )
-        text = (response.text or "").strip() if hasattr(response, "text") else ""
-        if not text:
-            candidates = getattr(response, "candidates", []) or []
-            if candidates:
-                parts = (
-                    getattr(candidates[0], "content", None)
-                    and getattr(candidates[0].content, "parts", [])
-                ) or []
-                if parts:
-                    text = (getattr(parts[0], "text", "") or "").strip()
+        text = _extract_text_from_gemini_response(response)
 
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)

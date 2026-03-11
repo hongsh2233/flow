@@ -40,15 +40,14 @@ def _parse_pub_date(pub_date_str: str) -> Optional[str]:
 
 
 def _is_within_24h(pub_date_str: str) -> bool:
-    """뉴스 발행일이 현재 기준 24시간 이내인지 확인"""
+    """뉴스 발행일이 현재 기준 72시간 이내인지 확인 (24h→72h 완화로 수집 확대)"""
     if not pub_date_str:
         return False
     try:
         dt = parsedate_to_datetime(pub_date_str)
-        # timezone-aware로 통일
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
         return dt >= cutoff
     except Exception:
         return False
@@ -83,32 +82,52 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
             return []
 
 
-def _extract_text_from_gemini_response(response) -> str:
+def _extract_text_from_gemini_response(response, debug_on_empty: bool = False) -> str:
     """
     Gemini 응답에서 텍스트 추출.
-    response.text는 복합 응답(멀티파트 등)에서 ValueError를 발생시킬 수 있으므로,
-    모든 parts를 순회하며 text를 수집한다.
+    SDK별로 response.text, response.parts, response.candidates 경로가 다를 수 있으므로
+    여러 경로를 시도한다.
     """
     text = ""
-    try:
-        if hasattr(response, "text"):
-            text = (response.text or "").strip()
-    except (ValueError, AttributeError):
-        # response.text가 non-simple 응답에서 ValueError 발생 가능
-        pass
+
+    # 1) response.parts (SDK 권장 경로 - GenerateContentResponse.parts)
+    parts = getattr(response, "parts", None)
+    if parts:
+        for part in parts:
+            pt = getattr(part, "text", None)
+            if pt:
+                text += str(pt)
+
+    # 2) response.text
+    if not text:
+        try:
+            if hasattr(response, "text"):
+                text = (response.text or "").strip()
+        except (ValueError, AttributeError) as e:
+            if debug_on_empty:
+                print(f"[시장의 목소리] response.text 접근 실패: {e}")
+
+    # 3) response.candidates[].content.parts[]
     if not text:
         candidates = getattr(response, "candidates", []) or []
         for candidate in candidates:
             content = getattr(candidate, "content", None)
             if not content:
                 continue
-            parts = getattr(content, "parts", []) or []
-            for part in parts:
-                part_text = getattr(part, "text", None) or ""
-                if part_text:
-                    text += part_text
+            c_parts = getattr(content, "parts", []) or []
+            for part in c_parts:
+                pt = getattr(part, "text", None)
+                if pt:
+                    text += str(pt)
             if text:
                 break
+
+    if debug_on_empty and not text:
+        pf = getattr(response, "prompt_feedback", None)
+        block_reason = getattr(pf, "block_reason", None) if pf else None
+        print(f"[시장의 목소리] Gemini 빈 응답 - candidates={len(getattr(response, 'candidates', []) or [])}, "
+              f"parts={len(parts) if parts else 0}, block_reason={block_reason}")
+
     return (text or "").strip()
 
 
@@ -128,10 +147,10 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
 
 요약 (50자 이내):"""
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
         )
-        text = _extract_text_from_gemini_response(response)
+        text = _extract_text_from_gemini_response(response, debug_on_empty=True)
         if len(text) > STATEMENT_MAX_LEN:
             text = text[:STATEMENT_MAX_LEN - 1] + "…"
         return text if text else None
@@ -167,6 +186,12 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
     total_fetched = 0
     total_saved = 0
     seen_urls = set()
+    # 디버깅: 각 단계별 스킵 건수
+    skip_link = 0
+    skip_24h = 0
+    skip_empty_content = 0
+    skip_gemini_empty = 0
+    skip_existing = 0
 
     for person in persons:
         news_list = await _search_news_by_keyword(person.search_keyword, display=MAX_NEWS_PER_PERSON)
@@ -175,10 +200,12 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
         for item in news_list:
             link = (item.get("link") or "").strip()
             if not link or link in seen_urls:
+                skip_link += 1
                 continue
 
             # 24시간 이내 발행된 뉴스만 수집
             if not _is_within_24h(item.get("pub_date", "")):
+                skip_24h += 1
                 continue
 
             seen_urls.add(link)
@@ -186,10 +213,12 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
             title = item.get("title") or ""
             description = item.get("description") or ""
             if not title and not description:
+                skip_empty_content += 1
                 continue
 
             statement = _summarize_with_gemini(person.name, title, description)
             if not statement:
+                skip_gemini_empty += 1
                 continue
 
             existing = db.query(MarketVoice).filter(
@@ -197,6 +226,7 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
                 MarketVoice.source_url == link,
             ).first()
             if existing:
+                skip_existing += 1
                 continue
 
             voice = MarketVoice(
@@ -218,4 +248,14 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
         raise
 
     print(f"[시장의 목소리] 수집 완료: 조회 {total_fetched}건, 신규 저장 {total_saved}건 (pending)")
-    return {"fetched": total_fetched, "saved": total_saved}
+    if total_saved == 0 and total_fetched > 0:
+        skip_detail = (f"스킵: 24h초과={skip_24h}, Gemini빈응답={skip_gemini_empty}, "
+                       f"기존존재={skip_existing}, 링크중복={skip_link}, 내용없음={skip_empty_content}")
+        print(f"[시장의 목소리] {skip_detail}")
+    return {
+        "fetched": total_fetched,
+        "saved": total_saved,
+        "skip_24h": skip_24h,
+        "skip_gemini_empty": skip_gemini_empty,
+        "skip_existing": skip_existing,
+    }

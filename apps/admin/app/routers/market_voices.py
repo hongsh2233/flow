@@ -194,11 +194,14 @@ async def manual_collect_market_voices(
     try:
         from app.services.market_voice_service import fetch_and_summarize_news
         result = await fetch_and_summarize_news(db)
+        msg = f"수집 완료: {result.get('fetched', 0)}건 조회, {result.get('saved', 0)}건 신규 저장 (pending)"
+        if result.get("saved", 0) == 0 and result.get("fetched", 0) > 0:
+            msg += f"\n스킵: 24h초과={result.get('skip_24h',0)}, Gemini빈응답={result.get('skip_gemini_empty',0)}, 기존존재={result.get('skip_existing',0)}"
         return JSONResponse({
             "success": True,
             "fetched": result.get("fetched", 0),
             "saved": result.get("saved", 0),
-            "message": f"수집 완료: {result.get('fetched', 0)}건 조회, {result.get('saved', 0)}건 신규 저장 (pending)",
+            "message": msg,
         })
     except Exception as e:
         import traceback
