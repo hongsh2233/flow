@@ -63,7 +63,7 @@ function isSundayKST(): boolean {
   return kr.getDay() === 0; // 0 = Sunday
 }
 
-/** 06:00 ~ 10:00 KST 사이에만 팝업 노출 (06:35 수집 데이터), 일요일 제외 */
+/** 06:00 ~ 08:50 KST 사이에만 팝업 노출 (06:35 수집 데이터), 일요일 제외 */
 function isInDisplayWindow(): boolean {
   if (isSundayKST()) return false;
   const now = new Date();
@@ -71,8 +71,8 @@ function isInDisplayWindow(): boolean {
   const hour = kr.getHours();
   const min = kr.getMinutes();
   const totalMin = hour * 60 + min;
-  const start = 6 * 60; // 06:00
-  const end = 10 * 60; // 10:00
+  const start = 6 * 60;      // 06:00
+  const end = 8 * 60 + 50;   // 08:50
   return totalMin >= start && totalMin <= end;
 }
 
