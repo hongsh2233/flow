@@ -1,5 +1,5 @@
 """
-시장의 목소리: person_master 인물 이름으로 뉴스 수집 → Gemini AI 30자 이내 요약 → market_voices pending 저장
+시장의 목소리: person_master 인물 이름으로 뉴스 수집 → Gemini AI 50자 이내 요약 → market_voices pending 저장
 
 - NAVER_CLIENT_ID, NAVER_CLIENT_SECRET: 뉴스 검색
 - GEMINI_API_KEY: AI 요약
@@ -69,7 +69,7 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
 
 
 def _summarize_with_gemini(person_name: str, title: str, description: str) -> Optional[str]:
-    """Gemini API로 '누가 어떤 핵심 발언을 했는지' 30자 이내 요약"""
+    """Gemini API로 '누가 어떤 핵심 발언을 했는지' 50자 이내 요약"""
     if not GEMINI_API_KEY:
         return None
     try:
@@ -82,7 +82,7 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
 뉴스 제목: {title}
 뉴스 요약: {description}
 
-요약 (30자 이내):"""
+요약 (50자 이내):"""
         response = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=prompt,
