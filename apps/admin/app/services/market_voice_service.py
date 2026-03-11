@@ -7,7 +7,7 @@
 import re
 import httpx
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from sqlalchemy.orm import Session
 import pytz
@@ -37,6 +37,21 @@ def _parse_pub_date(pub_date_str: str) -> Optional[str]:
         return pub_date_str
     except Exception:
         return pub_date_str
+
+
+def _is_within_24h(pub_date_str: str) -> bool:
+    """뉴스 발행일이 현재 기준 24시간 이내인지 확인"""
+    if not pub_date_str:
+        return False
+    try:
+        dt = parsedate_to_datetime(pub_date_str)
+        # timezone-aware로 통일
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        return dt >= cutoff
+    except Exception:
+        return False
 
 
 async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERSON) -> List[Dict]:
@@ -139,6 +154,11 @@ async def fetch_and_summarize_news(db: Session) -> Dict[str, int]:
             link = (item.get("link") or "").strip()
             if not link or link in seen_urls:
                 continue
+
+            # 24시간 이내 발행된 뉴스만 수집
+            if not _is_within_24h(item.get("pub_date", "")):
+                continue
+
             seen_urls.add(link)
 
             title = item.get("title") or ""
