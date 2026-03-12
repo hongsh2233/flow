@@ -809,12 +809,24 @@ async def collect_market_morning_summary():
                 ]
 
             if indices_for_gemini:
-                generate_and_save_ai_summary(
+                ok = generate_and_save_ai_summary(
                     db=db,
                     indices=indices_for_gemini,
                     exchange_rates=exchange_rates_for_gemini,
                     target_date=today,
                 )
+                if ok:
+                    try:
+                        from app.services.fcm_service import send_push_to_all
+                        await send_push_to_all(
+                            db,
+                            title="📊 오늘 아침 시황이 도착했습니다",
+                            body="뉴욕 마감·한국 증시 주목 포인트를 확인하세요",
+                            data={"link_url": "/", "type": "morning_summary"},
+                        )
+                        print("[morning-gemini] FCM 모닝 알림 발송 완료")
+                    except Exception as fcm_err:
+                        print(f"[morning-gemini] FCM 발송 오류: {fcm_err}")
             else:
                 print("[morning-gemini] 지수 데이터 없어 AI 요약 건너뜀")
         except Exception as e:
