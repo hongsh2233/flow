@@ -259,11 +259,14 @@ def _build_prompt(
 # ──────────────────────────────────────────────
 
 def _extract_text_from_gemini_response(response) -> str:
-    """Gemini 응답에서 텍스트 추출. response.parts → response.text → candidates 순으로 시도."""
+    """Gemini 응답에서 텍스트 추출. response.parts → response.text → candidates 순으로 시도.
+    gemini-2.5-flash thinking 파트(thought=True)는 제외한다."""
     text = ""
     parts = getattr(response, "parts", None)
     if parts:
         for part in parts:
+            if getattr(part, "thought", False):  # thinking 추론 파트 skip
+                continue
             pt = getattr(part, "text", None)
             if pt:
                 text += str(pt)
@@ -279,6 +282,8 @@ def _extract_text_from_gemini_response(response) -> str:
             if not content:
                 continue
             for part in getattr(content, "parts", []) or []:
+                if getattr(part, "thought", False):  # thinking 추론 파트 skip
+                    continue
                 pt = getattr(part, "text", None)
                 if pt:
                     text += str(pt)
@@ -291,6 +296,7 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
     if not GEMINI_API_KEY:
         print("[closing-gemini] GEMINI_API_KEY 없음, 건너뜀")
         return None
+    text = ""
     try:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
@@ -300,8 +306,13 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         )
         text = _extract_text_from_gemini_response(response)
 
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
+        # 코드블록 제거 (위치 무관 - thinking 잔류 텍스트 뒤에 올 수 있으므로 앵커 없이)
+        text = re.sub(r"```(?:json)?\s*", "", text)
+        text = re.sub(r"```", "", text)
+        # JSON 객체만 추출 (앞뒤 불필요한 텍스트 제거)
+        m = re.search(r"\{.*\}", text, re.DOTALL)
+        if m:
+            text = m.group(0)
         data = json.loads(text)
         return {
             "summary":          str(data.get("summary", "") or "").strip(),
@@ -312,6 +323,7 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         }
     except Exception as e:
         print(f"[closing-gemini] Gemini 호출 오류: {e}")
+        print(f"[closing-gemini] 응답 텍스트(첫 300자): {text[:300]!r}")
         return None
 
 
