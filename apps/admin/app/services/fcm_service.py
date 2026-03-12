@@ -132,6 +132,13 @@ async def send_push_to_tokens(
                         sound="default",
                     ),
                 ),
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            sound="default",
+                        )
+                    )
+                ),
             )
             messages.append(msg)
 
