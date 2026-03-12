@@ -856,6 +856,17 @@ async def collect_market_closing_summary():
         ok = generate_and_post_closing_summary(db, now.date())
         if ok:
             print("✅ 장마감 시황 게시 완료")
+            try:
+                from app.services.fcm_service import send_push_to_all
+                await send_push_to_all(
+                    db,
+                    title="📊 오늘 장마감 시황이 도착했습니다",
+                    body="오늘 코스피·코스닥 시황과 내일 주목할 포인트를 확인하세요",
+                    data={"link_url": "/board/B001", "type": "closing_summary"},
+                )
+                print("[closing-gemini] FCM 마감시황 알림 발송 완료")
+            except Exception as fcm_err:
+                print(f"[closing-gemini] FCM 발송 오류: {fcm_err}")
         else:
             print("⚠️ 장마감 시황 생성 실패 (데이터 부족 또는 Gemini 오류)")
     except Exception as e:
