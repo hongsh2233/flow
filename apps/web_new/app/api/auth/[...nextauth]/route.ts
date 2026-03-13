@@ -6,7 +6,7 @@ import GoogleProvider from 'next-auth/providers/google'
 
 export const dynamic = 'force-dynamic'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || ''
 const API_SECRET_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
 // 개발 환경에서 NEXTAUTH_SECRET 미설정 시 기본값 사용 (배포 시 반드시 .env에 설정)

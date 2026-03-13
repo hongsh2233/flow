@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE_URL =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8080";
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 const API_KEY = process.env.NEXT_PUBLIC_X_API_KEY || "";
 
