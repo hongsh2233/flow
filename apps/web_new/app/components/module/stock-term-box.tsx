@@ -2,7 +2,6 @@
 
 import { BookOpen, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import styles from "./stock-term-box.module.css";
 
 type StockTerm = {
@@ -89,10 +88,9 @@ export function StockTermBox({ wrapperClassName, wrapperStyle }: StockTermBoxPro
     const fetchTerms = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/stock-terms?per_page=100`,
+          `/api/stock-terms?per_page=100`,
           {
             method: "GET",
-            headers: getAuthHeaders(),
             cache: "no-store",
           }
         );
