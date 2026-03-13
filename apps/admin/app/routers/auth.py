@@ -1545,14 +1545,10 @@ async def api_request_password_reset(
     global _password_reset_codes
     _password_reset_codes[request.email] = (code, expires_at)
 
-    # 보안: 프로덕션에서는 응답에 인증코드 포함하지 않음 (이메일로만 전달)
-    res = {
+    return {
         "success": True,
         "message": "인증코드가 이메일로 발송되었습니다.",
     }
-    if os.environ.get("PASSWORD_RESET_DEBUG") == "1":
-        res["code"] = code
-    return res
 
 
 @router.post("/api/auth/member/reset-password")
