@@ -18,12 +18,36 @@ import httpx
 from app.database import get_db
 from app import models
 from app.routers.board import parse_attached_files, clean_content
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.dependencies import (
     get_current_user_from_token,
     get_current_user_from_token_optional,
     verify_api_key,
     API_SECRET_KEY,
 )
+from app.utils import verify_token
+
+_security_optional = HTTPBearer(auto_error=False)
+
+
+async def _get_notification_email(
+    email: Optional[str] = Query(None),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_security_optional),
+    x_api_key: Optional[str] = Header(None, alias="X-API-KEY"),
+) -> Optional[str]:
+    """알림 엔드포인트용 이메일 결정.
+    Bearer 멤버 JWT가 있으면 토큰에서 이메일 추출(쿼리 파라미터 무시).
+    API Key 인증이면 쿼리 파라미터 email 사용.
+    """
+    if credentials:
+        payload = verify_token(credentials.credentials)
+        if payload and payload.get("type") == "member":
+            return payload.get("sub")
+
+    if x_api_key and x_api_key.strip() == API_SECRET_KEY:
+        return email
+
+    raise HTTPException(status_code=401, detail="Not authenticated")
 from app.services.api_service import krx_api_service  # 시장현황 데이터 처리를 위한 서비스 임포트
 from pydantic import BaseModel
 
@@ -825,10 +849,9 @@ class MarkReadRequest(BaseModel):
 
 @router.get("/api/notifications")
 async def get_notifications(
-    email: Optional[str] = Query(None, description="회원 이메일 (읽음 확인용)"),
     limit: int = Query(30, ge=1, le=100),
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key),
+    email: Optional[str] = Depends(_get_notification_email),
 ):
     """최근 알림 목록 조회 (최대 30일 이내, 개인 알림은 본인만)"""
     from datetime import timedelta
@@ -874,9 +897,8 @@ async def get_notifications(
 @router.post("/api/notifications/read")
 async def mark_notifications_read(
     body: MarkReadRequest,
-    email: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key),
+    email: Optional[str] = Depends(_get_notification_email),
 ):
     """알림 읽음 처리"""
     if not email:
@@ -896,9 +918,8 @@ async def mark_notifications_read(
 
 @router.post("/api/notifications/read-all")
 async def mark_all_notifications_read(
-    email: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key),
+    email: Optional[str] = Depends(_get_notification_email),
 ):
     """모든 알림 읽음 처리"""
     if not email:

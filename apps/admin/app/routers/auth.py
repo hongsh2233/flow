@@ -98,6 +98,7 @@ class MemberLoginResponse(BaseModel):
     nickname: str = None
     profile_image: str = None
     grade: str = "regular"
+    access_token: str = None
 
 
 class TokenResponse(BaseModel):
@@ -1462,6 +1463,7 @@ async def api_member_login(
             detail="이메일 또는 비밀번호가 잘못되었습니다."
         )
 
+    access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
     return MemberLoginResponse(
         success=True,
         message="로그인 성공",
@@ -1469,7 +1471,8 @@ async def api_member_login(
         email=member.email,
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        access_token=access_token,
     )
 
 
