@@ -7,7 +7,7 @@ REST API 라우터 - 프론트엔드용
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_
+from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_, text
 from typing import Optional
 from datetime import datetime, date
 import json
@@ -58,6 +58,7 @@ class MainPageConfigResponse(BaseModel):
 class PollVoteRequest(BaseModel):
     poll_id: int
     option_index: int
+    voter_key: Optional[str] = None  # guest_id 또는 "member:{id}" - 1인 1표용
 
 
 class CreatePostRequest(BaseModel):
@@ -678,18 +679,37 @@ async def poll_vote(
     authorized: str = Depends(verify_api_key),
 ):
     """
-    투표 집계 API
+    투표 집계 API (1인 1표)
 
     - poll_id: Poll.id (별도 투표 모듈)
     - option_index: 선택지 인덱스 (0,1,2,...)
-
-    요청이 들어오면 해당 (poll_id, option_index)에 대한 vote_count를 1 증가시키고,
-    전체 옵션별 집계 결과를 반환합니다.
+    - voter_key: 투표자 식별 (guest_id 또는 "member:{id}") - 없으면 중복 투표 허용(레거시)
     """
     from app.models import PollVote
 
     if body.option_index < 0:
         raise HTTPException(status_code=400, detail="option_index는 0 이상의 정수여야 합니다.")
+
+    voter_key = (body.voter_key or "").strip()
+    if voter_key:
+        # 1인 1표: 이미 투표했으면 현재 집계만 반환
+        r = db.execute(text("""
+            SELECT option_index FROM poll_vote_records
+            WHERE poll_id = :poll_id AND voter_key = :voter_key
+        """), {"poll_id": body.poll_id, "voter_key": voter_key})
+        prev_rec = r.fetchone()
+        if prev_rec:
+            rows = db.query(PollVote).filter(PollVote.poll_id == body.poll_id).all()
+            options = [{"option_index": r.option_index, "vote_count": r.vote_count} for r in rows]
+            total = sum(r["vote_count"] for r in options)
+            return {
+                "success": True,
+                "already_voted": True,
+                "poll_id": body.poll_id,
+                "total_votes": total,
+                "options": options,
+                "user_voted_option_index": prev_rec[0],
+            }
 
     try:
         row = (
@@ -710,6 +730,12 @@ async def poll_vote(
                 vote_count=1,
             )
             db.add(row)
+        if voter_key:
+            db.execute(text("""
+                INSERT INTO poll_vote_records (poll_id, voter_key, option_index)
+                VALUES (:poll_id, :voter_key, :option_index)
+                ON CONFLICT (poll_id, voter_key) DO NOTHING
+            """), {"poll_id": body.poll_id, "voter_key": voter_key, "option_index": body.option_index})
         db.commit()
     except Exception as e:
         db.rollback()
@@ -733,11 +759,13 @@ async def poll_vote(
 @router.get("/api/poll-stats")
 async def poll_stats(
     poll_id: int = Query(..., description="투표 ID (Poll.id)"),
+    voter_key: Optional[str] = Query(None, description="투표자 식별 (이미 투표 여부 확인용)"),
     db: Session = Depends(get_db),
     authorized: str = Depends(verify_api_key),
 ):
     """
     투표 집계 조회 API (Poll.id 기준)
+    voter_key가 있으면 해당 투표자의 투표 여부(user_voted_option_index) 포함
     """
     from app.models import PollVote
 
@@ -747,12 +775,22 @@ async def poll_stats(
         for r in rows
     ]
     total = sum(r["vote_count"] for r in options)
-    return {
+
+    result = {
         "success": True,
         "poll_id": poll_id,
         "total_votes": total,
         "options": options,
     }
+    if voter_key and voter_key.strip():
+        r = db.execute(text("""
+            SELECT option_index FROM poll_vote_records
+            WHERE poll_id = :poll_id AND voter_key = :voter_key
+        """), {"poll_id": poll_id, "voter_key": voter_key.strip()})
+        row = r.fetchone()
+        if row:
+            result["user_voted_option_index"] = row[0]
+    return result
 
 
 @router.get("/api/posts/{post_id}")

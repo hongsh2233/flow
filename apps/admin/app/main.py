@@ -441,6 +441,12 @@ def run_migrations():
         print(f"⚠️ 투표(polls) 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_poll_vote_records import upgrade as add_poll_vote_records_migration
+        add_poll_vote_records_migration()
+    except Exception as e:
+        print(f"⚠️ poll_vote_records 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.add_naver_stock_news import upgrade as add_naver_stock_news_migration
         add_naver_stock_news_migration()
     except Exception as e:

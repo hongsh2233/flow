@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import styles from "./MarketSummaryPopup.module.css";
 
 const STORAGE_KEY = "market_summary_hidden_today";
@@ -77,11 +78,16 @@ function isInDisplayWindow(): boolean {
 }
 
 export function MarketSummaryPopup() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<SummaryData | null>(null);
   const [visible, setVisible] = useState(false);
 
+  /** FCM 알림 클릭 시 ?show_morning=1 로 진입 → 시간 무관하게 팝업 노출 */
+  const forceShowFromFcm = searchParams.get("show_morning") === "1";
+
   useEffect(() => {
-    if (getHiddenToday() || !isInDisplayWindow()) return;
+    if (getHiddenToday() && !forceShowFromFcm) return;
+    if (!isInDisplayWindow() && !forceShowFromFcm) return;
 
     fetch("/api/market-morning-summary")
       .then((res) => res.json())
@@ -95,7 +101,7 @@ export function MarketSummaryPopup() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [forceShowFromFcm]);
 
   const handleClose = useCallback((todayHide: boolean) => {
     if (todayHide) hideToday();

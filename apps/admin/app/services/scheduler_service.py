@@ -822,7 +822,7 @@ async def collect_market_morning_summary():
                             db,
                             title="📊 오늘 아침 시황이 도착했습니다",
                             body="뉴욕 마감·한국 증시 주목 포인트를 확인하세요",
-                            data={"link_url": "/", "type": "morning_summary"},
+                            data={"link_url": "/?show_morning=1", "type": "morning_summary"},
                         )
                         print("[morning-gemini] FCM 모닝 알림 발송 완료")
                     except Exception as fcm_err:
@@ -862,7 +862,7 @@ async def collect_market_closing_summary():
                     db,
                     title="📊 오늘 장마감 시황이 도착했습니다",
                     body="오늘 코스피·코스닥 시황과 내일 주목할 포인트를 확인하세요",
-                    data={"link_url": "/board/B001", "type": "closing_summary"},
+                    data={"link_url": "/board?board=B001", "type": "closing_summary"},
                 )
                 print("[closing-gemini] FCM 마감시황 알림 발송 완료")
             except Exception as fcm_err:

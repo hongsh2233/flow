@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { StockTermBox } from "./components/module/stock-term-box";
@@ -108,7 +108,9 @@ export default function Home() {
 
       {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
       <LazyPopupModal />
-      <LazyMarketSummaryPopup />
+      <Suspense fallback={null}>
+        <LazyMarketSummaryPopup />
+      </Suspense>
       <LazySchedulePopup />
     </div>
   );

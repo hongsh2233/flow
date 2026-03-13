@@ -82,10 +82,11 @@ export default function JuTalkPage() {
     }
 
     try {
+      const voterKey = getGuestId(); // 1인 1표: guest_id로 중복 방지
       const res = await fetch("/api/poll-vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ poll_id: pollId, option_index: index }),
+        body: JSON.stringify({ poll_id: pollId, option_index: index, voter_key: voterKey }),
       });
       if (!res.ok) {
         throw new Error("투표 요청 실패");
@@ -98,7 +99,9 @@ export default function JuTalkPage() {
           return found ? { ...opt, count: found.vote_count } : opt;
         }),
       );
-      setUserVotedIndex(index);
+      // already_voted면 기존 투표 옵션 표시, 아니면 방금 선택한 index
+      const votedIdx = json?.already_voted ? json?.user_voted_option_index : index;
+      setUserVotedIndex(typeof votedIdx === "number" ? votedIdx : index);
     } catch {
       // 실패 시에도 최소한 로컬에서는 반영
       setVoteOptions((prev) =>
@@ -382,7 +385,8 @@ export default function JuTalkPage() {
     const fetchStatsIfNeeded = async (targetPollId: number | null) => {
       if (!targetPollId) return;
       try {
-        const res = await fetch(`/api/poll-stats?poll_id=${targetPollId}`, {
+        const voterKey = getGuestId();
+        const res = await fetch(`/api/poll-stats?poll_id=${targetPollId}&voter_key=${encodeURIComponent(voterKey)}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
@@ -397,6 +401,8 @@ export default function JuTalkPage() {
             return found ? { ...opt, count: found.vote_count } : opt;
           }),
         );
+        const votedIdx = json?.user_voted_option_index as number | undefined;
+        if (typeof votedIdx === "number" && votedIdx >= 0) setUserVotedIndex(votedIdx);
       } catch {
         // ignore
       }
