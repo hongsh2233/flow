@@ -17,6 +17,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 
 from app import models
@@ -86,6 +89,9 @@ async def lifespan(app: FastAPI):
     market_voice_scheduler.shutdown()
 
 
+# Rate Limiter (IP 기반)
+limiter = Limiter(key_func=get_remote_address)
+
 # FastAPI 앱 생성
 app = FastAPI(
     title="Stock BO API",
@@ -93,6 +99,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # robots.txt: BO(관리자) 영역 검색엔진 색인 차단
 @app.get("/robots.txt", response_class=PlainTextResponse)
