@@ -103,13 +103,15 @@ Disallow: /
 """
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
-# 프로덕션 환경에서는 allow_origins를 특정 도메인으로 제한해야 합니다.
+# Railway 배포 시: ALLOWED_ORIGINS=https://jurin-i.com,https://admin.jurin-i.com 설정
+_raw_origins = os.environ.get("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 모든 도메인 허용 (개발용)
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드 허용
-    allow_headers=["*"],  # 모든 헤더 허용
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-API-KEY"],
 )
 
 # 정적 파일 서빙 설정 (UPLOADS_DIR 사용 → 빌드/실행 경로와 무관하게 이미지 정상 노출)
