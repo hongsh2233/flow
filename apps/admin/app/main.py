@@ -122,14 +122,19 @@ async def add_security_headers(request: Request, call_next):
 
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
-# Railway 배포 시: ALLOWED_ORIGINS=https://jurin-i.com,https://admin.jurin-i.com 설정
+# Railway 배포 시: ALLOWED_ORIGINS=https://jurin-i-web.up.railway.app,https://jurin-i.com,... 설정
+# 주의: Railway Variables에 따옴표 없이 값만 입력 (따옴표 포함 시 파싱 오류로 CORS 실패)
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "")
-ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+ALLOWED_ORIGINS = [
+    o.strip().strip('"\'')  # 따옴표 제거 (Railway 등에서 "..." 형태로 저장된 경우 대비)
+    for o in _raw_origins.split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-API-KEY"],
 )
 

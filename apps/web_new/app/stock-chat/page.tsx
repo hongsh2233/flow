@@ -5,7 +5,7 @@ import { Clock, MessageCircle, Heart, Send, ThumbsUp } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
+import { getAuthHeaders } from "@/lib/config/api";
 import type {
   JuBTI,
   GuestbookMessage,
@@ -142,7 +142,7 @@ export default function JuTalkPage() {
     if (!email && !guestId) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/master-quotes/${expert.id}/like`, {
+      const res = await fetch(`/api/master-quotes/${expert.id}/like`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ email: email || undefined, guest_id: guestId }),
@@ -259,7 +259,7 @@ export default function JuTalkPage() {
         if (email) params.set("email", email);
         else if (guestId) params.set("guest_id", guestId);
         const qs = params.toString();
-        const url = `${API_BASE_URL}/api/master-quotes${qs ? `?${qs}` : ""}`;
+        const url = `/api/master-quotes${qs ? `?${qs}` : ""}`;
         const response = await fetch(url, {
           method: "GET",
           headers: getAuthHeaders(),

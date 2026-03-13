@@ -17,6 +17,7 @@
     "@capacitor/push-notifications": "^7.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/pretendard": "^5.2.5",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.5",
     "dotenv": "^16.6.1",
