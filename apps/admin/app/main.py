@@ -123,8 +123,13 @@ async def add_security_headers(request: Request, call_next):
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
 # Railway 배포 시: ALLOWED_ORIGINS=https://jurin-i.com,https://admin.jurin-i.com 설정
+_DEFAULT_ORIGINS = [
+    "https://jurin-i-web.up.railway.app",
+    "http://localhost:3000",
+]
 _raw_origins = os.environ.get("ALLOWED_ORIGINS", "")
-ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+_env_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+ALLOWED_ORIGINS = list(dict.fromkeys(_DEFAULT_ORIGINS + _env_origins))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
