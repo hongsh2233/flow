@@ -6,10 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * - NEXT_PUBLIC_API_BASE_URL: 클라이언트/서버 공용
  */
 function getApiBaseUrl(): string {
-  const base =
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    'http://localhost:8080'
+  const base = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || ''
   return base.replace(/\/+$/, '')
 }
 
