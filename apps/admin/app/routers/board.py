@@ -123,9 +123,8 @@ def format_file_size(bytes: int) -> str:
 def parse_attached_files(content: str) -> List[dict]:
     """content에서 첨부파일 정보를 파싱하여 반환"""
     if not content:
-        print("[DEBUG] parse_attached_files: content가 비어있음")
         return []
-    
+
     files = []
     # HTML 주석에서 첨부 파일 정보 추출
     # 여러 패턴 시도: 공백이 있는 경우와 없는 경우
@@ -133,35 +132,25 @@ def parse_attached_files(content: str) -> List[dict]:
         r'<!--\s*ATTACHED_FILES:\s*(\[[\s\S]*?\])\s*-->',  # 공백 포함
         r'<!--ATTACHED_FILES:(\[[\s\S]*?\])-->',  # 공백 없음
     ]
-    
+
     match = None
-    matched_pattern = None
     for pattern in patterns:
         match = re.search(pattern, content)
         if match:
-            matched_pattern = pattern
-            print(f"[DEBUG] parse_attached_files: 패턴 매칭 성공")
             break
-    
+
     if match:
         try:
             json_str = match.group(1)
-            print(f"[DEBUG] parse_attached_files: JSON 문자열 길이 = {len(json_str)}")
             files = json.loads(json_str)
-            print(f"[DEBUG] parse_attached_files: 파싱 성공, 파일 개수 = {len(files) if isinstance(files, list) else 0}")
-            
+
             # 파일 크기 포맷팅 추가
             for file in files:
                 if 'size' in file and file['size']:
                     file['formatted_size'] = format_file_size(file['size'])
-                print(f"[DEBUG] 파일 정보: filename={file.get('filename')}, path={file.get('path')}, type={file.get('type')}")
         except (json.JSONDecodeError, Exception) as e:
             print(f"[ERROR] 첨부파일 파싱 오류: {e}")
-            print(f"[ERROR] JSON 문자열 (처음 500자): {json_str[:500] if 'json_str' in locals() else 'N/A'}")
             return []
-    else:
-        print(f"[DEBUG] parse_attached_files: 주석 패턴을 찾을 수 없음")
-        print(f"[DEBUG] content 샘플 (마지막 500자): {content[-500:]}")
     
     return files if isinstance(files, list) else []
 
@@ -476,19 +465,16 @@ async def admin_create_post(
                             "type": file.content_type or "application/octet-stream"
                         }
                         uploaded_files.append(file_info)
-                        print(f"[DEBUG] 파일 저장 성공: {file.filename} -> {file_path}")
                     except Exception as e:
                         print(f"[ERROR] 파일 저장 실패: {file.filename}, 오류: {e}")
                         continue
-            
+
             # 첨부 파일 정보를 content에 HTML 주석으로 추가
             if uploaded_files:
                 import json
                 files_json = json.dumps(uploaded_files, ensure_ascii=False)
                 files_html = f'<!-- ATTACHED_FILES:{files_json} -->'
                 final_content = content + files_html
-                print(f"[DEBUG] 첨부파일 정보 추가: {len(uploaded_files)}개 파일")
-                print(f"[DEBUG] 첨부파일 JSON: {files_json[:200]}...")  # 처음 200자만 출력
         
         # 게시글 저장 (파일 정보가 포함된 content로 저장)
         new_post = models.Post(
@@ -505,7 +491,6 @@ async def admin_create_post(
         db.flush()  # post.id를 얻기 위해 flush
 
         db.commit()
-        print(f"[DEBUG] 게시글 저장 완료: post_id={new_post.id}, 첨부파일={len(uploaded_files)}개")
 
         # 앱 내 알림 생성 (비밀글 제외)
         try:
@@ -522,7 +507,7 @@ async def admin_create_post(
                 db.add(noti)
                 db.commit()
         except Exception as noti_err:
-            print(f"[DEBUG] 앱 알림 생성 생략: {noti_err}")
+            pass
 
         # FCM 전체 푸시 (비밀글 제외)
         if is_secret != "true":
@@ -563,12 +548,6 @@ async def admin_post_view(board_id: str, post_id: int, request: Request, user=De
     all_attachments = parse_attached_files(original_content)
     cleaned_content = clean_content(original_content)
     post.content = cleaned_content
-    
-    # 디버깅용 로그
-    print(f"[DEBUG] admin_post_view - post_id: {post_id}")
-    print(f"[DEBUG] all_attachments count: {len(all_attachments) if all_attachments else 0}")
-    if all_attachments:
-        print(f"[DEBUG] all_attachments: {all_attachments}")
     
     formatted_author = format_author_name(post.author or "", db)
     return templates.TemplateResponse("admin_post_view.html", {
@@ -675,22 +654,20 @@ async def admin_post_edit(
                             "type": file.content_type or "application/octet-stream"
                         }
                         uploaded_files.append(file_info)
-                        print(f"[DEBUG] 새 파일 저장 성공: {file.filename}")
                     except Exception as e:
                         print(f"[ERROR] 파일 저장 실패: {file.filename}, 오류: {e}")
                         continue
-        
+
         # 기존 첨부파일과 새 첨부파일 합치기
         all_attachments = existing_attachments + uploaded_files
-        
+
         # 첨부파일 정보를 content에 추가
         if all_attachments:
             import json
             files_json = json.dumps(all_attachments, ensure_ascii=False)
             files_html = f'<!-- ATTACHED_FILES:{files_json} -->'
             final_content = content + files_html
-            print(f"[DEBUG] 수정된 첨부파일 정보 추가: {len(all_attachments)}개 파일")
-        
+
         # 게시글 업데이트
         post.title = title.strip()
         post.content = final_content
@@ -698,9 +675,8 @@ async def admin_post_edit(
         post.is_member_only = is_member_only if is_member_only in ["true", "false"] else "false"
         post.category_id = category_id if category_id else None
         post.updated_at = datetime.now()
-        
+
         db.commit()
-        print(f"[DEBUG] 게시글 수정 완료: post_id={post_id}")
         return RedirectResponse(url=f"/admin/board/{board_id}/post/{post_id}", status_code=303)
     except Exception as e:
         db.rollback()
@@ -729,7 +705,6 @@ async def admin_post_delete(
         
         db.delete(post)
         db.commit()
-        print(f"[DEBUG] 게시글 삭제 완료: post_id={post_id}")
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
         db.rollback()
@@ -763,7 +738,6 @@ async def admin_posts_bulk_delete(
             db.delete(post)
 
         db.commit()
-        print(f"[DEBUG] 게시글 선택 삭제 완료: board_id={board_id}, requested={len(post_ids)}, deleted={len(targets)}")
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
         db.rollback()

@@ -18,6 +18,7 @@ import httpx
 from app.database import get_db
 from app import models
 from app.routers.board import parse_attached_files, clean_content
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.dependencies import (
     get_current_user_from_token,
     get_current_user_from_token_optional,

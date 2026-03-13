@@ -12,11 +12,14 @@ FastAPI 애플리케이션 메인 파일
     7. FSC 데이터 수집 스케줄러 시작
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 
 from app import models
@@ -86,6 +89,9 @@ async def lifespan(app: FastAPI):
     market_voice_scheduler.shutdown()
 
 
+# Rate Limiter (IP 기반)
+limiter = Limiter(key_func=get_remote_address)
+
 # FastAPI 앱 생성
 app = FastAPI(
     title="Stock BO API",
@@ -93,6 +99,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # robots.txt: BO(관리자) 영역 검색엔진 색인 차단
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -101,6 +109,17 @@ async def robots_txt():
     return """User-agent: *
 Disallow: /
 """
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 # CORS 설정 (프론트엔드에서 API 호출 허용)
 # 프로덕션 환경에서는 allow_origins를 특정 도메인으로 제한해야 합니다.

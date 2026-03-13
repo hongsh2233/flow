@@ -5,6 +5,8 @@ import os
 import re
 import time
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, field_validator
@@ -18,6 +20,7 @@ from app.config import JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_D
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # 비밀번호 재설정 인증코드 저장 (이메일 -> (code, expires_at))
 _password_reset_codes: dict[str, tuple[str, datetime]] = {}
@@ -1333,7 +1336,8 @@ async def api_generate_nickname(db: Session = Depends(get_db)):
 
 
 @router.get("/api/auth/check-email")
-async def api_check_email(email: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def api_check_email(request: Request, email: str, db: Session = Depends(get_db)):
     """
     이메일 중복 확인 API 엔드포인트
 
@@ -1363,7 +1367,9 @@ async def api_check_email(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/api/auth/member/signup", response_model=MemberLoginResponse)
+@limiter.limit("10/minute")
 async def api_member_signup(
+    request: Request,
     signup_request: MemberSignupRequest,
     db: Session = Depends(get_db)
 ):
@@ -1428,7 +1434,9 @@ async def api_member_signup(
 
 
 @router.post("/api/auth/member/login", response_model=MemberLoginResponse)
+@limiter.limit("10/minute")
 async def api_member_login(
+    request: Request,
     login_request: MemberLoginRequest,
     db: Session = Depends(get_db)
 ):
@@ -1516,7 +1524,9 @@ async def api_find_email(
 
 
 @router.post("/api/auth/member/request-password-reset")
+@limiter.limit("5/minute")
 async def api_request_password_reset(
+    http_request: Request,
     request: RequestPasswordResetRequest,
     db: Session = Depends(get_db)
 ):
@@ -1538,14 +1548,10 @@ async def api_request_password_reset(
     global _password_reset_codes
     _password_reset_codes[request.email] = (code, expires_at)
 
-    # 보안: 프로덕션에서는 응답에 인증코드 포함하지 않음 (이메일로만 전달)
-    res = {
+    return {
         "success": True,
         "message": "인증코드가 이메일로 발송되었습니다.",
     }
-    if os.environ.get("PASSWORD_RESET_DEBUG") == "1":
-        res["code"] = code
-    return res
 
 
 @router.post("/api/auth/member/reset-password")
