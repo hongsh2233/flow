@@ -30,5 +30,6 @@ RUN mkdir -p uploads/banners uploads/images uploads/files && \
 # 8. Cloud Run 권장 사항에 따라 8080 포트를 개방합니다.
 EXPOSE 8080
 
-# 8. 서버를 실행합니다. uvicorn을 사용하여 app.main의 FastAPI 객체를 실행합니다.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# 9. 배포 시 무제.md → 대가들의 한마디 일괄 등록 후 서버 실행
+# (import 실패 시에도 서버는 정상 기동)
+CMD ["sh", "-c", "python scripts/import_mujeo_bulk.py 2>/dev/null || true; exec uvicorn app.main:app --host 0.0.0.0 --port 8080"]

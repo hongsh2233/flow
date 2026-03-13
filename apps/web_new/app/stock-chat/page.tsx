@@ -68,6 +68,7 @@ export default function JuTalkPage() {
   const [experts, setExperts] = useState<Expert[]>([]);
   const [displayedExperts, setDisplayedExperts] = useState<Expert[]>([]);
   const [marketVoices, setMarketVoices] = useState<MarketVoice[]>([]);
+  const [displayedVoices, setDisplayedVoices] = useState<MarketVoice[]>([]);
 
   const handleVote = async (index: number) => {
     if (userVotedIndex !== null) return;
@@ -231,7 +232,7 @@ export default function JuTalkPage() {
   useEffect(() => {
     const fetchMarketVoices = async () => {
       try {
-        const res = await fetch("/api/market-voices?limit=20", { cache: "no-store" });
+        const res = await fetch("/api/market-voices?limit=30", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
         const items = (json?.data as Array<{ id: number; name: string; title: string; image: string; statement: string; source_url?: string; source_title?: string; time: string }>) ?? [];
@@ -246,11 +247,16 @@ export default function JuTalkPage() {
           sourceUrl: v.source_url || "",
         }));
         setMarketVoices(mapped);
+        // 초기 6개 랜덤 선택
+        const shuffled = [...mapped].sort(() => Math.random() - 0.5);
+        setDisplayedVoices(shuffled.slice(0, Math.min(6, shuffled.length)));
       } catch {
         // 무시: 시장의 목소리가 없으면 빈 배열
       }
     };
     fetchMarketVoices();
+    const interval = setInterval(fetchMarketVoices, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -428,6 +434,22 @@ export default function JuTalkPage() {
     return () => clearInterval(interval);
   }, [experts]);
 
+  /* 시장의 목소리: 10초마다 새 1개 추가 (SNS 실시간 스타일, 최대 6개) */
+  useEffect(() => {
+    if (marketVoices.length < 2) return;
+    const interval = setInterval(() => {
+      setDisplayedVoices((prev) => {
+        const pool = marketVoices.filter((v) => !prev.some((p) => p.id === v.id));
+        const next =
+          pool.length > 0
+            ? pool[Math.floor(Math.random() * pool.length)]
+            : prev[5] ?? prev[0]; // 모두 표시됐으면 맨 뒤 것을 맨 앞으로
+        return [next, ...prev].slice(0, 6);
+      });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [marketVoices]);
+
   return (
     <div className={styles.page}>
 
@@ -516,16 +538,16 @@ export default function JuTalkPage() {
           </section>
         )}
 
-        {/* 시장의 목소리 */}
-        {marketVoices.length > 0 && (
+        {/* 시장의 목소리 - 최대 6개 랜덤, SNS 실시간 스타일 */}
+        {displayedVoices.length > 0 && (
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시장의 목소리</h2>
             <p className={styles.sectionSubtitle}>주요 인사들의 최신 발언</p>
           </div>
           <div className={styles.voiceList}>
-            {marketVoices.map((voice) => (
-              <article key={voice.id} className={styles.voiceCard}>
+            {displayedVoices.map((voice, idx) => (
+              <article key={voice.id} className={`${styles.voiceCard} ${idx === 0 ? styles.voiceCardNew : ""}`}>
                 <div className={styles.voiceMain}>
                   <img
                     src={voice.image}

@@ -817,7 +817,18 @@ async def collect_market_morning_summary():
                 )
                 if ok:
                     try:
+                        from app.engine import models as _models
                         from app.services.fcm_service import send_push_to_all
+                        # 앱 내 알림(벨)에도 표시되도록 Notification 생성
+                        noti = _models.Notification(
+                            type="morning_summary",
+                            title="📊 오늘 아침 시황이 도착했습니다",
+                            message="뉴욕 마감·한국 증시 주목 포인트를 확인하세요",
+                            link_url="/?show_morning=1",
+                            is_global="true",
+                        )
+                        db.add(noti)
+                        db.commit()
                         await send_push_to_all(
                             db,
                             title="📊 오늘 아침 시황이 도착했습니다",
@@ -857,7 +868,18 @@ async def collect_market_closing_summary():
         if ok:
             print("✅ 장마감 시황 게시 완료")
             try:
+                from app.engine import models as _models
                 from app.services.fcm_service import send_push_to_all
+                # 앱 내 알림(벨)에도 표시되도록 Notification 생성
+                noti = _models.Notification(
+                    type="closing_summary",
+                    title="📊 오늘 장마감 시황이 도착했습니다",
+                    message="오늘 코스피·코스닥 시황과 내일 주목할 포인트를 확인하세요",
+                    link_url="/board?board=B001",
+                    is_global="true",
+                )
+                db.add(noti)
+                db.commit()
                 await send_push_to_all(
                     db,
                     title="📊 오늘 장마감 시황이 도착했습니다",
