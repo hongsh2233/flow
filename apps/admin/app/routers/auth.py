@@ -5,6 +5,8 @@ import os
 import re
 import time
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, field_validator
@@ -18,6 +20,7 @@ from app.config import JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_D
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # 비밀번호 재설정 인증코드 저장 (이메일 -> (code, expires_at))
 _password_reset_codes: dict[str, tuple[str, datetime]] = {}
@@ -95,6 +98,7 @@ class MemberLoginResponse(BaseModel):
     nickname: str = None
     profile_image: str = None
     grade: str = "regular"
+    access_token: str = None
 
 
 class TokenResponse(BaseModel):
@@ -1329,7 +1333,8 @@ async def api_generate_nickname(db: Session = Depends(get_db)):
 
 
 @router.get("/api/auth/check-email")
-async def api_check_email(email: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def api_check_email(request: Request, email: str, db: Session = Depends(get_db)):
     """
     이메일 중복 확인 API 엔드포인트
 
@@ -1359,7 +1364,9 @@ async def api_check_email(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/api/auth/member/signup", response_model=MemberLoginResponse)
+@limiter.limit("10/minute")
 async def api_member_signup(
+    request: Request,
     signup_request: MemberSignupRequest,
     db: Session = Depends(get_db)
 ):
@@ -1424,7 +1431,9 @@ async def api_member_signup(
 
 
 @router.post("/api/auth/member/login", response_model=MemberLoginResponse)
+@limiter.limit("10/minute")
 async def api_member_login(
+    request: Request,
     login_request: MemberLoginRequest,
     db: Session = Depends(get_db)
 ):
@@ -1454,6 +1463,7 @@ async def api_member_login(
             detail="이메일 또는 비밀번호가 잘못되었습니다."
         )
 
+    access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
     return MemberLoginResponse(
         success=True,
         message="로그인 성공",
@@ -1461,7 +1471,8 @@ async def api_member_login(
         email=member.email,
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        access_token=access_token,
     )
 
 
@@ -1510,7 +1521,9 @@ async def api_find_email(
 
 
 @router.post("/api/auth/member/request-password-reset")
+@limiter.limit("5/minute")
 async def api_request_password_reset(
+    http_request: Request,
     request: RequestPasswordResetRequest,
     db: Session = Depends(get_db)
 ):
