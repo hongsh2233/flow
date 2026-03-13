@@ -363,7 +363,7 @@
   </div>
 
   <div class="section">
-    <h3>👤 인물 등록</h3>
+    <h3>👤 인물 등록 및 관리</h3>
     <form method="POST" action="/admin/master-people/add" class="add-form" style="margin-bottom:1.5rem;">
       <div class="form-group name-input">
         <label>이름 (필수)</label>
@@ -386,7 +386,37 @@
 
     {% if people %}
     <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">
-      등록된 인물: <strong>{{ people|length }}명</strong>
+      등록된 인물: <strong>{{ people|length }}명</strong> — 수정 시 직함·사진을 동일 인물의 모든 명언에 일괄 적용할 수 있습니다.
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+      {% for person in people %}
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
+        {% if person.image_url %}
+        <img src="{{ person.image_url }}" alt="{{ person.name }}" style="width:36px;height:36px;border-radius:999px;object-fit:cover;" />
+        {% else %}
+        <div style="width:36px;height:36px;border-radius:999px;background:#fee2e2;display:flex;align-items:center;justify-content:center;color:#b91c1c;font-weight:700;font-size:14px;">
+          {{ person.name[:1] }}
+        </div>
+        {% endif %}
+        <div>
+          <span style="font-weight:600;color:#111827;">{{ person.name }}</span>
+          {% if person.title %}
+          <span style="font-size:12px;color:#6b7280;margin-left:4px;">{{ person.title }}</span>
+          {% endif %}
+        </div>
+        <button
+          type="button"
+          class="btn-edit"
+          onclick="openPersonEditModal(this)"
+          data-id="{{ person.id }}"
+          data-name="{{ person.name | e }}"
+          data-title="{{ (person.title or '') | e }}"
+          data-image-url="{{ (person.image_url or '') | e }}"
+        >
+          수정
+        </button>
+      </div>
+      {% endfor %}
     </div>
     {% endif %}
   </div>
@@ -547,6 +577,36 @@
   </div>
 </div>
 
+<!-- 인물 수정 모달 -->
+<div id="personEditModalBackdrop" class="modal-backdrop">
+  <div class="modal-card">
+    <h3>인물 정보 수정</h3>
+    <p style="font-size:13px;color:#6b7280;margin:0 0 14px;">직함·사진을 수정하고, 동일 인물의 모든 명언에 일괄 적용할 수 있습니다.</p>
+    <form method="POST" id="personEditForm">
+      <div class="modal-form-row">
+        <label>이름</label>
+        <input type="text" id="personEditName" readonly style="background:#f3f4f6;color:#6b7280;" />
+      </div>
+      <div class="modal-form-row">
+        <label>직함/설명</label>
+        <input type="text" name="title" id="personEditTitle" placeholder="예: 버크셔 해서웨이 회장" maxlength="150" />
+      </div>
+      <div class="modal-form-row">
+        <label>사진 URL</label>
+        <input type="text" name="image_url" id="personEditImageUrl" placeholder="예: /uploads/images/warren_buffett.jpg" />
+      </div>
+      <div class="modal-form-row" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="apply_to_all_quotes" id="personEditApplyToAll" value="on" checked />
+        <label for="personEditApplyToAll" style="margin:0;font-weight:500;">동일 인물의 모든 명언에 적용</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closePersonEditModal()">취소</button>
+        <button type="submit" class="btn-add">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- 수정 모달 -->
 <div id="editModalBackdrop" class="modal-backdrop">
   <div class="modal-card">
@@ -590,6 +650,35 @@
 
 {% block extra_scripts %}
 <script>
+  function openPersonEditModal(buttonEl) {
+    var id = buttonEl.dataset.id;
+    var name = buttonEl.dataset.name || '';
+    var title = buttonEl.dataset.title || '';
+    var imageUrl = buttonEl.dataset.imageUrl || buttonEl.dataset.imageurl || '';
+
+    const backdrop = document.getElementById('personEditModalBackdrop');
+    const form = document.getElementById('personEditForm');
+    if (!backdrop || !form) return;
+
+    document.getElementById('personEditName').value = name || '';
+    document.getElementById('personEditTitle').value = title || '';
+    document.getElementById('personEditImageUrl').value = imageUrl || '';
+    document.getElementById('personEditApplyToAll').checked = true;
+
+    form.action = '/admin/master-people/update/' + id;
+    backdrop.style.display = 'flex';
+  }
+
+  function closePersonEditModal() {
+    const backdrop = document.getElementById('personEditModalBackdrop');
+    if (backdrop) backdrop.style.display = 'none';
+  }
+
+  window.addEventListener('click', function (event) {
+    if (event.target.id === 'personEditModalBackdrop') closePersonEditModal();
+    if (event.target.id === 'editModalBackdrop') closeEditModal();
+  });
+
   function openEditModal(buttonEl) {
     var id = buttonEl.dataset.id;
     var name = buttonEl.dataset.name || '';
@@ -621,12 +710,6 @@
     }
   }
 
-  window.addEventListener('click', function (event) {
-    const backdrop = document.getElementById('editModalBackdrop');
-    if (event.target === backdrop) {
-      closeEditModal();
-    }
-  });
 </script>
 {% endblock %}
 

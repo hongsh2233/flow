@@ -150,6 +150,48 @@ async def add_master_person(
   return RedirectResponse(url="/admin/master-quotes", status_code=303)
 
 
+@router.post("/admin/master-people/update/{person_id}")
+async def update_master_person(
+  person_id: int,
+  title: str = Form(""),
+  image_url: str = Form(""),
+  apply_to_all_quotes: str = Form(""),  # "on" when checkbox checked
+  user=Depends(get_current_user),
+  db: Session = Depends(get_db),
+):
+  """대가 인물 수정 (직함/사진). 동일 인물의 모든 명언에 일괄 적용 가능"""
+  if not user:
+    return RedirectResponse(url="/", status_code=303)
+
+  person = db.query(models.MasterPerson).filter(models.MasterPerson.id == person_id).first()
+  if not person:
+    return _js_alert_back("인물을 찾을 수 없습니다.")
+
+  new_title = title.strip() or None
+  new_image_url = image_url.strip() or None
+
+  person.title = new_title
+  person.image_url = new_image_url
+  db.commit()
+
+  if apply_to_all_quotes == "on":
+    updated = (
+      db.query(models.MasterQuote)
+      .filter(models.MasterQuote.name == person.name)
+      .update(
+        {
+          models.MasterQuote.title: new_title,
+          models.MasterQuote.image_url: new_image_url,
+        },
+        synchronize_session=False,
+      )
+    )
+    db.commit()
+    return _js_alert_redirect(f"인물 정보가 수정되었습니다. 동일 인물의 명언 {updated}건에 적용되었습니다.")
+
+  return _js_alert_redirect("인물 정보가 수정되었습니다.")
+
+
 @router.post("/admin/master-quotes/update/{item_id}")
 async def update_master_quote(
   item_id: int,
