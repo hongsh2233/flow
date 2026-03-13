@@ -14,8 +14,12 @@ export default function ReportPage() {
   useEffect(() => {
     fetchBoards().then((res) => {
       if (res.success && res.data) {
-        // 시황 탭에서는 주린이 알림(B003) 게시판 제외
-        const filtered = res.data.filter((b) => b.id !== "B003");
+        const filtered = res.data.filter((b) => {
+          if (b.id === "B003") return false; // 주린이 알림 제외
+          if (b.name?.includes("공부노트")) return false;
+          if (b.name?.includes("방명록")) return false;
+          return true;
+        });
         setBoards(filtered);
       }
     });
