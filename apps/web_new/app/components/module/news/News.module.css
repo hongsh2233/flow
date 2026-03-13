@@ -35,6 +35,31 @@
   margin-top: 0;
 }
 
+/* 금일 이슈 요약 (briefing 이슈 탭 상단) */
+.issueSummaryCard {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, var(--app-accent-bg, rgba(249, 115, 22, 0.08)) 0%, var(--app-card-bg) 100%);
+  border-radius: 1rem;
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--app-card-shadow);
+}
+
+.issueSummaryTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--app-accent);
+  margin: 0 0 0.75rem;
+}
+
+.issueSummaryBody {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--app-text);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .categoryTabs {
   display: flex;
   gap: 0.5rem;

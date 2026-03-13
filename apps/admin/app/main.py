@@ -26,7 +26,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, market_voice_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, market_voice_scheduler, daily_issue_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -75,6 +75,7 @@ async def lifespan(app: FastAPI):
     schedule_alarm_scheduler.start()
     naver_news_scheduler.start()
     market_voice_scheduler.start()
+    daily_issue_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -87,6 +88,7 @@ async def lifespan(app: FastAPI):
     schedule_alarm_scheduler.shutdown()
     naver_news_scheduler.shutdown()
     market_voice_scheduler.shutdown()
+    daily_issue_scheduler.shutdown()
 
 
 # Rate Limiter (IP 기반)
@@ -475,6 +477,12 @@ def run_migrations():
         add_morning_ai_summary_migration()
     except Exception as e:
         print(f"⚠️ market_morning_ai_summaries 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_daily_issue_summary import upgrade as add_daily_issue_summary_migration
+        add_daily_issue_summary_migration()
+    except Exception as e:
+        print(f"⚠️ daily_issue_summaries 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():

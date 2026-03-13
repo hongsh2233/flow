@@ -2317,6 +2317,27 @@ async def get_naver_stock_ranking_times(
 # 네이버 뉴스 주가 영향 뉴스 API
 # ----------------------------------------------------------------
 
+@router.get("/api/daily-issue-summary")
+async def get_daily_issue_summary(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    금일 이슈 Gemini 요약 조회 (briefing 이슈 탭 상단용)
+    20:00 스케줄러가 naver_stock_news 기반으로 생성
+    """
+    from datetime import date as dt_date
+    try:
+        today = dt_date.today()
+        row = db.execute(text("""
+            SELECT summary FROM daily_issue_summaries WHERE date = :d
+        """), {"d": today}).fetchone()
+        summary = row[0] if row else None
+        return {"success": True, "summary": summary, "date": today.isoformat()}
+    except Exception as e:
+        return {"success": False, "summary": None, "error": str(e)}
+
+
 @router.get("/api/naver-stock-news")
 async def get_naver_stock_news(
     category: Optional[str] = Query(None, description="카테고리 필터 (수주/실적발표/배당/연구개발/기술이전/유상증자/무상증자/자사주매입/합병인수/특허/임상/적자전환/상장/분할)"),

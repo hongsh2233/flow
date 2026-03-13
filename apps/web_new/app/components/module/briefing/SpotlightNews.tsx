@@ -30,22 +30,32 @@ function toNewsItem(item: StockNewsItem): NewsItem & { stockName?: string } {
 
 export function SpotlightNews() {
   const [news, setNews] = useState<(NewsItem & { stockName?: string })[]>([]);
+  const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchNews() {
+    async function fetchData() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch("/api/naver-stock-news?limit=50");
-        const data = await res.json();
+        const [newsRes, summaryRes] = await Promise.all([
+          fetch("/api/naver-stock-news?limit=50"),
+          fetch("/api/daily-issue-summary"),
+        ]);
         if (cancelled) return;
-        if (data.success && data.data) {
-          setNews((data.data as StockNewsItem[]).map(toNewsItem));
+
+        const newsData = await newsRes.json();
+        if (newsData.success && newsData.data) {
+          setNews((newsData.data as StockNewsItem[]).map(toNewsItem));
         } else {
-          setError(data.message || "뉴스를 가져오는데 실패했습니다.");
+          setError(newsData.message || "뉴스를 가져오는데 실패했습니다.");
+        }
+
+        const summaryData = await summaryRes.json();
+        if (summaryData.success && summaryData.summary) {
+          setSummary(summaryData.summary);
         }
       } catch {
         if (!cancelled) setError("뉴스를 가져오는 중 오류가 발생했습니다.");
@@ -53,7 +63,7 @@ export function SpotlightNews() {
         if (!cancelled) setLoading(false);
       }
     }
-    fetchNews();
+    fetchData();
     return () => {
       cancelled = true;
     };
@@ -63,8 +73,14 @@ export function SpotlightNews() {
     <div className={styles.allNews}>
       {loading && <div className={styles.loading}>뉴스를 불러오는 중...</div>}
       {error && <div className={styles.error}>{error}</div>}
+      {!loading && summary && (
+        <section className={styles.issueSummaryCard}>
+          <h3 className={styles.issueSummaryTitle}>📌 금일 이슈</h3>
+          <p className={styles.issueSummaryBody}>{summary}</p>
+        </section>
+      )}
       {!loading && !error && news.length === 0 && (
-        <div className={styles.empty}>재료 뉴스가 없습니다.</div>
+        <div className={styles.empty}>이슈 뉴스가 없습니다.</div>
       )}
       {!loading && !error && news.length > 0 && <NewsList items={news} />}
     </div>

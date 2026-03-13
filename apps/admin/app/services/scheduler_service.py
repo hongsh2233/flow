@@ -1270,16 +1270,16 @@ class NaverNewsScheduler:
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
         self.scheduler.add_job(
             collect_naver_stock_news,
-            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=0, timezone=self.kst),
+            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=30, timezone=self.kst),
             id="naver_stock_news_collection",
-            name="주가 영향 뉴스 수집 (08:00/12:00/19:00, 월~금)",
+            name="주가 영향 뉴스 수집 (08:30/12:30/19:30, 월~금)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             misfire_grace_time=300,
         )
         self.scheduler.start()
-        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:00/12:00/19:00, 월~금)")
+        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:30/12:30/19:30, 월~금)")
 
     def shutdown(self):
         if self.scheduler:
@@ -1289,6 +1289,68 @@ class NaverNewsScheduler:
 
 
 naver_news_scheduler = NaverNewsScheduler()
+
+
+# =========================================================
+# 금일 이슈 Gemini 요약 스케줄러 (20:00, 뉴스 수집 후)
+# =========================================================
+
+async def collect_daily_issue_summary():
+    """
+    오늘 수집된 naver_stock_news를 Gemini로 요약해 daily_issue_summaries에 저장
+    평일 20:00 KST 실행 (19:00 뉴스 수집 이후)
+    """
+    if should_skip_today():
+        return
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n[금일 이슈] Gemini 요약 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    db = SessionLocal()
+    try:
+        from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
+        ok = generate_and_save_daily_issue_summary(db, now.date())
+        if ok:
+            print("[금일 이슈] Gemini 요약 저장 완료")
+        else:
+            print("[금일 이슈] 뉴스 없음 또는 Gemini 오류로 건너뜀")
+    except Exception as e:
+        import traceback
+        print(f"[금일 이슈] 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+
+
+class DailyIssueScheduler:
+    """금일 이슈 Gemini 요약 스케줄러 (평일 20:00)"""
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_daily_issue_summary,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=20, minute=0, timezone=self.kst),
+            id="daily_issue_summary",
+            name="금일 이슈 Gemini 요약 (20:00, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 금일 이슈 스케줄러 시작 (20:00, 월~금)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+daily_issue_scheduler = DailyIssueScheduler()
 
 
 # =========================================================
