@@ -95,6 +95,7 @@ class MemberLoginResponse(BaseModel):
     nickname: str = None
     profile_image: str = None
     grade: str = "regular"
+    access_token: str = None
 
 
 class TokenResponse(BaseModel):
@@ -113,6 +114,7 @@ class SocialLoginResponse(BaseModel):
     nickname: str = None  # 닉네임
     profile_image: str = None  # 프로필 이미지
     grade: str = "regular"  # 'regular' | 'vip' | 'family'
+    access_token: str = None
 
 
 # 회원 정보 업데이트 요청 모델
@@ -797,7 +799,8 @@ async def api_social_login(
             has_nickname=bool(existing_member.nickname),
             nickname=existing_member.nickname,
             profile_image=existing_member.profile_image,
-            grade=get_effective_grade(existing_member)
+            grade=get_effective_grade(existing_member),
+            access_token=utils.create_access_token(data={"sub": existing_member.email, "type": "member"}),
         )
     else:
         # 신규 회원: 자동 프로필 생성 (데이터베이스 기반)
@@ -822,7 +825,8 @@ async def api_social_login(
             has_nickname=bool(new_member.nickname),
             nickname=new_member.nickname,
             profile_image=new_member.profile_image,
-            grade=get_effective_grade(new_member)
+            grade=get_effective_grade(new_member),
+            access_token=utils.create_access_token(data={"sub": new_member.email, "type": "member"}),
         )
 
 
@@ -1454,6 +1458,7 @@ async def api_member_login(
             detail="이메일 또는 비밀번호가 잘못되었습니다."
         )
 
+    access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
     return MemberLoginResponse(
         success=True,
         message="로그인 성공",
@@ -1461,7 +1466,8 @@ async def api_member_login(
         email=member.email,
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        access_token=access_token,
     )
 
 

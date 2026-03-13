@@ -6,17 +6,19 @@ import { API_BASE_URL } from '@/lib/config/api'
 export async function POST() {
   try {
     const session = await getServerSession(authOptions)
-    const email = session?.user?.email || ''
-    if (!email) {
+    const backendAccessToken = (session as { backendAccessToken?: string | null })?.backendAccessToken
+
+    if (!backendAccessToken) {
       return NextResponse.json({ success: false, message: '로그인이 필요합니다.' }, { status: 401 })
     }
 
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiSecretKey) headers['X-API-KEY'] = apiSecretKey
-
-    const url = `${API_BASE_URL}/api/notifications/read-all?email=${encodeURIComponent(email)}`
-    const response = await fetch(url, { method: 'POST', headers })
+    const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${backendAccessToken}`,
+      },
+    })
 
     const data = await response.json()
     return NextResponse.json(data)
