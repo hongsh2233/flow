@@ -74,7 +74,7 @@ export default function LoginPage() {
               <BarChart3 aria-hidden />
             </div>
           </div>
-          <h1 className={styles.headerTitle}>주리니</h1>
+          <h1 className={styles.headerTitle}>플로우</h1>
           <p className={styles.headerSub}>초보 투자자를 위한 친절한 주식 앱</p>
         </div>
 

@@ -13,7 +13,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: '주리니',
+  title: '플로우',
   description: '',
   icons: {
     icon: [

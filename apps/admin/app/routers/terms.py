@@ -1,5 +1,5 @@
 """
-콘텐츠 관리 라우터 - 개인정보처리방침, 이용약관, 주린이 앱 소개
+콘텐츠 관리 라우터 - 개인정보처리방침, 이용약관, 플로우 앱 소개
 """
 from fastapi import APIRouter, Form, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="dashboard/templates")
 DOC_TYPES = {
     "privacy": ("개인정보처리방침", "privacy"),
     "terms": ("이용약관", "terms"),
-    "about": ("주린이 앱", "about"),
+    "about": ("플로우 앱", "about"),
 }
 
 
@@ -41,7 +41,7 @@ async def admin_terms_privacy_page(
         return RedirectResponse(url="/")
     doc = get_or_create_document(db, "privacy")
     if not doc.content:
-        doc.content = """주리니 개인정보 보호정책
+        doc.content = """플로우 개인정보 보호정책
 
 1. 수집하는 개인정보 항목
 회사는 서비스 제공을 위해 다음과 같은 개인정보를 수집합니다.
@@ -80,10 +80,10 @@ async def admin_terms_service_page(
         return RedirectResponse(url="/")
     doc = get_or_create_document(db, "terms")
     if not doc.content:
-        doc.content = """주리니 이용약관
+        doc.content = """플로우 이용약관
 
 제1조 (목적)
-이 약관은 주리니(이하 "회사")가 제공하는 주식 정보 서비스(이하 "서비스")의 이용에 관한 조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
+이 약관은 플로우(이하 "회사")가 제공하는 주식 정보 서비스(이하 "서비스")의 이용에 관한 조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.
 
 제2조 (정의)
 1. "서비스"란 회사가 제공하는 주식 정보 조회, 포트폴리오 관리, 투자 리포트 등의 서비스를 의미합니다.
@@ -108,20 +108,20 @@ async def admin_terms_about_page(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """주린이 앱 소개 편집 페이지"""
+    """플로우 앱 소개 편집 페이지"""
     if not user:
         return RedirectResponse(url="/")
     doc = get_or_create_document(db, "about")
     if not doc.content:
-        doc.content = """주린이 - 주식 초보를 위한 길잡이
+        doc.content = """플로우 - 투자자를 위한 주식 정보 앱
 
-주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.
+플로우는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.
 
 주요 기능
 - 오늘의 시장: 실시간 국내/해외 지수, 환율 정보를 한눈에 확인
 - 일정 캘린더: 실적 발표, 공모 청약, 배당일 등 주요 일정 알림
 - 주식 용어 사전: 어려운 주식 용어를 쉽게 풀어서 설명
-- 커뮤니티: 주린이들끼리 정보 공유 및 질문
+- 커뮤니티: 플로우 사용자끼리 정보 공유 및 질문
 
 문의
 - 이메일: support@jurini.co.kr"""
@@ -133,7 +133,7 @@ async def admin_terms_about_page(
             "admin_email": user.email,
             "active_page": "terms-about",
             "doc": doc,
-            "title": "주린이 앱",
+            "title": "플로우 앱",
             "doc_type": "about",
         },
     )

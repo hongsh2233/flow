@@ -61,10 +61,10 @@ const settingsGroups: SettingsGroup[] = [
     title: "지원",
     items: [
       { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
-      { icon: BellRing, label: "주린이 알림", hasArrow: true, href: "/board?board=B003" },
+      { icon: BellRing, label: "플로우 알림", hasArrow: true, href: "/board?board=B003" },
       { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
       { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
-      { icon: Info, label: "주린이 앱 소개", hasArrow: true, href: "/about" },
+      { icon: Info, label: "플로우 앱 소개", hasArrow: true, href: "/about" },
     ],
   },
 ];
@@ -83,10 +83,10 @@ const guestSettingsGroups: SettingsGroup[] = [
     title: "지원",
     items: [
       { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
-      { icon: BellRing, label: "주린이 알림", hasArrow: true, href: "/board?board=B003" },
+      { icon: BellRing, label: "플로우 알림", hasArrow: true, href: "/board?board=B003" },
       { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
       { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
-      { icon: Info, label: "주린이 앱 소개", hasArrow: true, href: "/about" },
+      { icon: Info, label: "플로우 앱 소개", hasArrow: true, href: "/about" },
     ],
   },
 ];
@@ -183,7 +183,7 @@ function SettingsScreen() {
               <div className={styles.profileText}>
                 <div className={styles.profileNameRow}>
                   <h3 className={styles.profileName}>
-                  {session?.user?.name || "주린이"}
+                  {session?.user?.name || "플로우"}
                   {jubtiType ? `(${JUBTI_LABELS[jubtiType] ?? jubtiType})` : "(주비티야)"}
                 </h3>
                   {(session?.user as { grade?: string })?.grade === "vip" && (
@@ -284,7 +284,7 @@ function SettingsScreen() {
                               if (!granted) {
                                 alert(
                                   "알림 권한이 없어 푸시 알림을 켤 수 없습니다.\n" +
-                                  "기기 설정 > 앱 > 주린이 > 알림에서 허용해 주세요."
+                                  "기기 설정 > 앱 > 플로우 > 알림에서 허용해 주세요."
                                 );
                                 return;
                               }
@@ -307,7 +307,7 @@ function SettingsScreen() {
 
       {/* 버전 정보 */}
       <div className={styles.versionSection}>
-        <p className={styles.versionText}>주린이 주식 v1.0.0</p>
+        <p className={styles.versionText}>플로우 주식 v1.0.0</p>
         <p className={styles.versionSubText}>
           © 2026 Jurini Stock. All rights reserved.
         </p>

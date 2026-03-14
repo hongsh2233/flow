@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import styles from "./About.module.css";
 
-const FALLBACK_HTML = `<p>주린이는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.</p>`;
+const FALLBACK_HTML = `<p>플로우는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.</p>`;
 
 function rewriteUploadUrls(html: string, apiBaseUrl: string): string {
   if (!html || !apiBaseUrl) return html;
@@ -49,7 +49,7 @@ export default function AboutPage() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h2 className={styles.topBarTitle}>주린이 앱 소개</h2>
+          <h2 className={styles.topBarTitle}>플로우 앱 소개</h2>
           <div className={styles.topBarSpacer} />
         </div>
 

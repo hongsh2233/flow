@@ -75,7 +75,7 @@ export default function ProfileEditPage() {
         headers: getAuthHeaders(),
         body: JSON.stringify({
           email: session.user.email,
-          nickname: session.user?.name || "주린이",
+          nickname: session.user?.name || "투자자",
           profile_image: image,
         }),
       });
@@ -170,7 +170,7 @@ export default function ProfileEditPage() {
                 )}
               </div>
               <div className={styles.avatarInfo}>
-                <p className={styles.avatarName}>{session?.user?.name || "주린이"}님</p>
+                <p className={styles.avatarName}>{session?.user?.name || "플로우"}님</p>
               </div>
             </div>
             <div className={styles.avatarActions}>

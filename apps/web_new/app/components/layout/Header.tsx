@@ -47,7 +47,7 @@ export default function Header() {
         defaultItem;
 
     const isHome = pathname === "/" || pathname === "";
-    const nickname = session?.user?.name || "주린이";
+    const nickname = session?.user?.name || "플로우";
     const grade = (session?.user as { grade?: string } | undefined)?.grade;
     const greetingTitle = isHome
         ? status === "loading"

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.jurini.app",
-  appName: "주린이",
+  appName: "플로우",
   // 정적 빌드 경로 (npx next export 결과물)
   webDir: "out",
   // 배포 서버 URL 모드: Railway 배포 주소를 아래에 설정

@@ -1,7 +1,7 @@
 {
-  "name": "주린이 주식",
-  "short_name": "주린이",
-  "description": "초보 투자자를 위한 친절한 주식 앱",
+  "name": "플로우 주식 정보 앱",
+  "short_name": "플로우",
+  "description": "투자자를 위한 친절한 주식 정보 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

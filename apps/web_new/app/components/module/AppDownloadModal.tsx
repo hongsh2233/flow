@@ -54,9 +54,9 @@ export function AppDownloadModal() {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h2 className={styles.title}>주리니 앱으로{"\n"}더 편리하게!</h2>
+        <h2 className={styles.title}>플로우 앱으로{"\n"}더 편리하게!</h2>
         <p className={styles.desc}>
-          앱에서 더 빠르고 편리하게<br />주리니를 이용해보세요.
+          앱에서 더 빠르고 편리하게<br />플로우를 이용해보세요.
         </p>
         <button className={styles.downloadBtn} onClick={handleDownload}>
           앱 다운로드 받으러 가기
