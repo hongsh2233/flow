@@ -5,7 +5,7 @@ import { isJurinAppWebView } from "@/lib/hooks/useNotificationSettings";
 import styles from "./AppDownloadModal.module.css";
 
 const STORAGE_KEY = "app_download_modal_dismissed";
-const APP_STORE_URL = "https://drive.google.com/file/d/1OPpLClDGnbXoAGGOWVn4alZXbLAr8JUB/view?usp=drivesdk";
+const APP_STORE_URL = "https://drive.google.com/file/d/1lbQ3K1VPbE4OV0dbunQcC6679wJW8vy8/view?usp=drive_link";
 
 function isMobileBrowser(): boolean {
   if (typeof window === "undefined") return false;
