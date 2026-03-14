@@ -81,6 +81,8 @@
 
     <input type="hidden" name="content" id="content" />
 
+    <script type="application/json" id="initialContentData">{{ (doc.content or '')|tojson }}</script>
+
     <button type="submit" class="btn btn-primary">저장</button>
     <a href="/admin/dashboard" class="btn btn-secondary">취소</a>
   </form>
@@ -136,11 +138,14 @@
   });
   quill.getModule('toolbar').addHandler('image', createImageHandler(quill));
 
-  var initialContent = {{ (doc.content or '')|tojson }};
+  var initialContent = '';
+  try {
+    var dataEl = document.getElementById('initialContentData');
+    initialContent = dataEl && dataEl.textContent ? JSON.parse(dataEl.textContent) : '';
+  } catch (e) { console.warn('Initial content parse error:', e); }
   if (initialContent) {
     quill.root.innerHTML = initialContent;
   }
-  // HTML 모드에서 편집 시 원본을 유지 (Quill이 정제한 결과로 덮어쓰지 않음)
   document.getElementById('htmlSource').value = initialContent || '';
 
   function switchMode(mode) {
