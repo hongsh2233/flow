@@ -426,6 +426,7 @@ async def admin_create_post(
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
+    show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -484,6 +485,7 @@ async def admin_create_post(
             author=user.email,
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
             is_member_only=is_member_only if is_member_only in ["true", "false"] else "false",
+            show_on_main=show_on_main == "true",
             category_id=category_id if category_id else None,
             created_at=datetime.now()
         )
@@ -592,11 +594,13 @@ async def admin_post_edit_page(
         categories = db.query(models.BoardCategory).filter(
             models.BoardCategory.board_id == board_id
         ).order_by(models.BoardCategory.order_index, models.BoardCategory.id).all()
+    show_on_main = getattr(post, "show_on_main", False)
     return templates.TemplateResponse("admin_post_edit.html", {
         "request": request,
         "board": board,
         "post": post,
         "categories": categories,
+        "show_on_main": show_on_main,
         "admin_email": user.email,
         "active_page": "board"
     })
@@ -610,6 +614,7 @@ async def admin_post_edit(
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
+    show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -673,6 +678,7 @@ async def admin_post_edit(
         post.content = final_content
         post.is_secret = is_secret if is_secret in ["true", "false"] else "false"
         post.is_member_only = is_member_only if is_member_only in ["true", "false"] else "false"
+        post.show_on_main = show_on_main == "true"
         post.category_id = category_id if category_id else None
         post.updated_at = datetime.now()
 

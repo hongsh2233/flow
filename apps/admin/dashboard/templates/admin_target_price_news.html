@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}목표가 상향 뉴스 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .tpn-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .tpn-header h2 { margin: 0; color: #2c3e50; }
+  .btn-collect { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .btn-collect:hover { background: #2980b9; }
+  .btn-collect:disabled { background: #95a5a6; cursor: not-allowed; }
+  .btn-link { padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block; }
+  .btn-link:hover { background: #4b5563; color: white; }
+  .info-box { background: #e8f4f8; border-left: 4px solid #3498db; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #2c3e50; }
+  .result-box { margin-top: 16px; padding: 12px; background: #f0fdf4; border-radius: 6px; font-size: 14px; display: none; }
+  .result-box.error { background: #fef2f2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="tpn-header">
+    <h2>📈 목표가 상향 뉴스</h2>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-collect" class="btn-collect" onclick="manualCollect()">수동 수집·등록</button>
+      <a href="/admin/board/B002/posts" class="btn-link">B002 게시판으로 이동</a>
+    </div>
+  </div>
+
+  <div class="info-box">
+    네이버 뉴스에서 "목표가 상향", "리포트 브리핑 목표가", "증권사 목표가 조정" 등을 검색해 수집합니다 (48시간 이내).<br>
+    Gemini AI로 종목명·증권사·목표가·상향/하향을 추출한 <strong>가공 결과만</strong> B002 시황자료 게시판의 '목표가 조정' 카테고리에 등록합니다.<br>
+    매일 08:30, 19:00 KST 자동 수집.
+  </div>
+
+  <div id="result-box" class="result-box"></div>
+</div>
+
+<script>
+  async function manualCollect() {
+    const btn = document.getElementById('btn-collect');
+    const resultBox = document.getElementById('result-box');
+    btn.disabled = true;
+    resultBox.style.display = 'none';
+    try {
+      const res = await fetch('/api/target-price-news/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      resultBox.style.display = 'block';
+      resultBox.classList.remove('error');
+      if (data.success) {
+        resultBox.textContent = `수집 완료: 검색 ${data.fetched}건 → 등록 ${data.posted}건`;
+      } else {
+        resultBox.textContent = data.message || '오류 발생';
+        resultBox.classList.add('error');
+      }
+    } catch (e) {
+      resultBox.style.display = 'block';
+      resultBox.classList.add('error');
+      resultBox.textContent = '요청 실패: ' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+{% endblock %}

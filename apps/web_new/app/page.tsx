@@ -10,6 +10,7 @@ import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
+import { MainCardNews } from "./components/module/home/MainCardNews";
 import { ForeignIndices } from "./components/module/home/ForeignIndices";
 import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
@@ -72,6 +73,7 @@ export default function Home() {
   return (
     <div className="content__wrap">
       <StockTermBox wrapperClassName="home-term-wrap" />
+      <MainCardNews />
       <ForeignIndices />
       <ExchangeRatesSection />
       <MarketIndexSection />

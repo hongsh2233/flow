@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}투자은행 뉴스 (GS/MS/JPM) - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .ibn-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .ibn-header h2 { margin: 0; color: #2c3e50; }
+  .btn-collect { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .btn-collect:hover { background: #2980b9; }
+  .btn-collect:disabled { background: #95a5a6; cursor: not-allowed; }
+  .btn-approve { padding: 6px 12px; background: #22c55e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-approve:hover { background: #16a34a; }
+  .btn-reject { padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-reject:hover { background: #dc2626; }
+  .info-box { background: #e8f4f8; border-left: 4px solid #3498db; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; color: #2c3e50; }
+  .ctrl-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .ctrl-row select { padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 13px; }
+  .badge-pending { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-approved { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-gs { background: #dbeafe; color: #1e40af; }
+  .badge-ms { background: #fce7f3; color: #9d174d; }
+  .badge-jpm { background: #d1fae5; color: #065f46; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
+  .data-table tbody tr:hover { background: #f8f9fa; }
+  .title-cell { font-weight: 500; max-width: 400px; }
+  .empty-state { padding: 40px; text-align: center; color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="ibn-header">
+    <h2>🏦 투자은행 뉴스 (GS / MS / JPM)</h2>
+    <div style="display:flex;gap:8px;">
+      <button id="btn-collect" class="btn-collect" onclick="manualCollect()">수동 수집</button>
+      {% if pending_count > 0 %}
+      <span class="badge-pending">승인 대기 {{ pending_count }}건</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="info-box">
+    Yahoo Finance에서 GS(골드만삭스), MS(모건스탠리), JPM(JP모건) 한국증시 관련 뉴스를 검색해 수집합니다.<br>
+    매일 12:00 KST 자동 수집. 관리자 승인 시 앱에 노출됩니다.
+  </div>
+
+  <div class="ctrl-row">
+    <label>상태 필터:</label>
+    <select onchange="location.href='/admin/investment-bank-news?status='+this.value">
+      <option value="">전체</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>승인대기</option>
+      <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>승인됨</option>
+    </select>
+  </div>
+
+  <div style="overflow-x:auto;border:1px solid #dee2e6;border-radius:6px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>출처</th>
+          <th>제목</th>
+          <th>요약</th>
+          <th>날짜</th>
+          <th>상태</th>
+          <th>액션</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <span class="badge-pending {% if item.source == 'GS' %}badge-gs{% elif item.source == 'MS' %}badge-ms{% else %}badge-jpm{% endif %}" style="padding:2px 8px;border-radius:4px;font-size:11px;">{{ item.source }}</span>
+          </td>
+          <td class="title-cell">
+            {% if item.source_url %}
+            <a href="{{ item.source_url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+            {% else %}
+            {{ item.title }}
+            {% endif %}
+          </td>
+          <td style="max-width:280px;font-size:12px;color:#6b7280;">{{ (item.summary or '')[:120] }}{% if item.summary and item.summary|length > 120 %}...{% endif %}</td>
+          <td style="font-size:12px;">{{ item.news_pub_date or (item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else '-') }}</td>
+          <td>
+            {% if item.status == 'pending' %}
+            <span class="badge-pending">대기</span>
+            {% else %}
+            <span class="badge-approved">승인</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.status == 'pending' %}
+            <button class="btn-approve" onclick="approve({{ item.id }})">승인</button>
+            <button class="btn-reject" onclick="reject({{ item.id }})">거절</button>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-state">수집된 뉴스가 없습니다. 수동 수집 버튼을 눌러보세요.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let url = '/admin/investment-bank-news';
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('status')) url += '?status=' + params.get('status');
+
+  async function manualCollect() {
+    const btn = document.getElementById('btn-collect');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/investment-bank-news/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      if (data.success) {
+        alert('수집 완료: ' + data.saved + '건 저장 (조회 ' + data.fetched + '건)');
+        location.reload();
+      } else {
+        alert('수집 실패');
+      }
+    } catch (e) {
+      alert('수집 오류: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function approve(id) {
+    const res = await fetch('/api/investment-bank-news/' + id + '/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    if (res.ok && (await res.json()).success) location.reload();
+  }
+
+  async function reject(id) {
+    if (!confirm('이 뉴스를 거절(삭제)하시겠습니까?')) return;
+    const res = await fetch('/api/investment-bank-news/' + id + '/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    if (res.ok && (await res.json()).success) location.reload();
+  }
+</script>
+{% endblock %}

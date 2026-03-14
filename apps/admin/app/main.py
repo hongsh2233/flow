@@ -26,7 +26,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, market_voice_scheduler, daily_issue_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, market_voice_scheduler, daily_issue_scheduler, investment_bank_news_scheduler, target_price_news_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -55,6 +55,18 @@ except ImportError as e:
     print(f"⚠️ market_voices 라우터 import 실패 (무시 가능): {e}")
     market_voices = None
 
+try:
+    from app.routers import investment_bank_news
+except ImportError as e:
+    print(f"⚠️ investment_bank_news 라우터 import 실패 (무시 가능): {e}")
+    investment_bank_news = None
+
+try:
+    from app.routers import target_price_news
+except ImportError as e:
+    print(f"⚠️ target_price_news 라우터 import 실패 (무시 가능): {e}")
+    target_price_news = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,6 +88,8 @@ async def lifespan(app: FastAPI):
     naver_news_scheduler.start()
     market_voice_scheduler.start()
     daily_issue_scheduler.start()
+    investment_bank_news_scheduler.start()
+    target_price_news_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -89,6 +103,8 @@ async def lifespan(app: FastAPI):
     naver_news_scheduler.shutdown()
     market_voice_scheduler.shutdown()
     daily_issue_scheduler.shutdown()
+    investment_bank_news_scheduler.shutdown()
+    target_price_news_scheduler.shutdown()
 
 
 # Rate Limiter (IP 기반)
@@ -484,6 +500,24 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ daily_issue_summaries 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_investment_bank_news import upgrade as add_investment_bank_news_migration
+        add_investment_bank_news_migration()
+    except Exception as e:
+        print(f"⚠️ investment_bank_news 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_post_show_on_main import upgrade as add_post_show_on_main_migration
+        add_post_show_on_main_migration()
+    except Exception as e:
+        print(f"⚠️ posts show_on_main 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_b002_target_price_board import upgrade as add_b002_target_price_migration
+        add_b002_target_price_migration()
+    except Exception as e:
+        print(f"⚠️ B002 목표가 조정 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
@@ -571,6 +605,10 @@ if master_quotes:
     app.include_router(master_quotes.router)  # 대가들의 한마디 관리
 if market_voices:
     app.include_router(market_voices.router)  # 시장의 목소리
+if investment_bank_news:
+    app.include_router(investment_bank_news.router)  # 투자은행 뉴스 (GS/MS/JPM)
+if target_price_news:
+    app.include_router(target_price_news.router)  # 증권사 목표가 상향 뉴스
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리

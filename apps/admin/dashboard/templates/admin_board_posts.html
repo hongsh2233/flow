@@ -336,6 +336,9 @@
               {% if (post.is_member_only|default('false')) == "true" %}
               <span class="badge type-guest" style="margin-left: 6px;">👤 회원전용</span>
               {% endif %}
+              {% if post.show_on_main %}
+              <span class="badge" style="margin-left: 6px; background: #fef3c7; color: #92400e;">🏠 메인노출</span>
+              {% endif %}
               {% if new_post_ids and (post.id in new_post_ids) %}
               <span class="new-badge">NEW</span>
               {% endif %}

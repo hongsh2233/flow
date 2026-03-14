@@ -1459,3 +1459,127 @@ class MarketVoiceScheduler:
 
 
 market_voice_scheduler = MarketVoiceScheduler()
+
+
+# =========================================================
+# 투자은행 뉴스 (GS, MS, JPM) - 매일 12:00
+# =========================================================
+
+async def collect_investment_bank_news():
+    """Yahoo Finance에서 GS/MS/JPM 한국증시 관련 뉴스 수집"""
+    from app.services.investment_bank_news_service import fetch_and_save_investment_bank_news
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n[투자은행 뉴스] 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    db = SessionLocal()
+    try:
+        result = await fetch_and_save_investment_bank_news(db)
+        print(f"[투자은행 뉴스] 완료: {result.get('saved', 0)}건 저장")
+    except Exception as e:
+        import traceback
+        print(f"[투자은행 뉴스] 오류: {e}")
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class InvestmentBankNewsScheduler:
+    """투자은행 뉴스 수집 스케줄러 (매일 12:00 KST)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_investment_bank_news,
+            trigger=CronTrigger(hour=12, minute=0, timezone=self.kst),
+            id="investment_bank_news_collection",
+            name="투자은행 뉴스 수집 (12:00, 매일)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("투자은행 뉴스 스케줄러 시작 (12:00, 매일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+investment_bank_news_scheduler = InvestmentBankNewsScheduler()
+
+
+# =========================================================
+# 증권사 목표가 상향 뉴스 - 매일 12:30 KST
+# =========================================================
+
+async def collect_target_price_news():
+    """네이버 뉴스 검색(48h 이내) → Gemini 가공 결과만 → B002 '목표가 조정' 카테고리에 등록"""
+    from app.services.target_price_news_service import fetch_and_post_target_price_news
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n[목표가 뉴스] 수집·등록 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    db = SessionLocal()
+    try:
+        result = await fetch_and_post_target_price_news(db)
+        print(f"[목표가 뉴스] 완료: fetched={result['fetched']}, posted={result['posted']}")
+    except Exception as e:
+        import traceback
+        print(f"[목표가 뉴스] 오류: {e}")
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class TargetPriceNewsScheduler:
+    """증권사 목표가 상향 뉴스 수집 스케줄러 (매일 08:30, 19:00 KST)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_target_price_news,
+            trigger=CronTrigger(hour=8, minute=30, timezone=self.kst),
+            id="target_price_news_morning",
+            name="목표가 상향 뉴스 수집·등록 (08:30, 매일)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.add_job(
+            collect_target_price_news,
+            trigger=CronTrigger(hour=19, minute=0, timezone=self.kst),
+            id="target_price_news_evening",
+            name="목표가 상향 뉴스 수집·등록 (19:00, 매일)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("목표가 상향 뉴스 스케줄러 시작 (08:30, 19:00, 매일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+target_price_news_scheduler = TargetPriceNewsScheduler()

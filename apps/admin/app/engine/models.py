@@ -78,6 +78,7 @@ __all__ = [
   "NaverStockNews",
   "PersonMaster",
   "MarketVoice",
+  "InvestmentBankNews",
   "MarketMorningAiSummary",
 ]
 
@@ -183,6 +184,7 @@ class Post(Base):
     views = Column(Integer, default=0)
     is_secret = Column(String(20), default="false")
     is_member_only = Column(String(20), default="false")
+    show_on_main = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     board = relationship("Board", back_populates="posts")
@@ -667,6 +669,20 @@ class MarketVoice(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     approved_at = Column(DateTime(timezone=True), nullable=True)
     person = relationship("PersonMaster", back_populates="voices")
+
+
+class InvestmentBankNews(Base):
+    """투자은행 뉴스 (GS, MS, JPM) - Yahoo 뉴스 수집, pending/approved"""
+    __tablename__ = "investment_bank_news"
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(20), nullable=False, index=True)  # GS | MS | JPM
+    title = Column(String(500), nullable=False)
+    summary = Column(Text, nullable=True)
+    source_url = Column(String(1000), nullable=True)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    news_pub_date = Column(String(100), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class MarketMorningAiSummary(Base):

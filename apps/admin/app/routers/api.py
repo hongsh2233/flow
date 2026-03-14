@@ -472,6 +472,38 @@ async def get_current_user_or_api_key(
     # 둘 다 없으면 에러
     raise HTTPException(status_code=401, detail="Not authenticated")
 
+@router.get("/api/main-posts")
+async def get_main_posts(
+    limit: int = Query(10, ge=1, le=20),
+    db: Session = Depends(get_db),
+    auth = Depends(get_current_user_or_api_key)
+):
+    """메인 노출 게시글 (show_on_main=true) - 해외지수 위 카드뉴스용"""
+    posts = (
+        db.query(models.Post)
+        .filter(models.Post.show_on_main == True)
+        .order_by(models.Post.updated_at.desc(), models.Post.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    result = []
+    for post in posts:
+        attachments = parse_attached_files(post.content or "")
+        cleaned = clean_content(post.content or "")
+        result.append({
+            "id": post.id,
+            "board_id": post.board_id,
+            "title": post.title,
+            "content": cleaned[:200] + ("..." if len(cleaned) > 200 else ""),
+            "author": post.author,
+            "views": post.views or 0,
+            "created_at": serialize_datetime(post.created_at),
+            "updated_at": serialize_datetime(post.updated_at),
+            "attachments": attachments,
+        })
+    return {"success": True, "data": result}
+
+
 @router.get("/api/boards")
 async def get_boards(
     db: Session = Depends(get_db),

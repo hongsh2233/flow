@@ -45,6 +45,7 @@ from app.engine.models import (
     NaverStockNews,
     PersonMaster,
     MarketVoice,
+    InvestmentBankNews,
 )
 
 __all__ = [
@@ -55,5 +56,5 @@ __all__ = [
     "NavMenuItem", "NavMenuTab", "NaverStockRanking",
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
     "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote", "MasterQuoteLike",
-    "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice",
+    "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice", "InvestmentBankNews",
 ]
