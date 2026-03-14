@@ -14,7 +14,14 @@ interface ForeignIndexItem {
 
 function formatBaseTimestamp(ts: string | null | undefined): string {
   if (!ts) return "";
-  return `${ts}분 기준 데이터`;
+  try {
+    const [datePart] = ts.split(" ");
+    const [y, m, d] = datePart.split("-").map(Number);
+    if (m && d) return `${m}월 ${d}일 장 마감 기준`;
+  } catch {
+    return `수집일자: ${ts}`;
+  }
+  return `수집일자: ${ts}`;
 }
 
 /**
@@ -85,14 +92,19 @@ export function ForeignIndices() {
           해외 지수
         </h3>
         {baseTimestamp && (
-          <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
+          <span className={styles.baseTimestamp}>
+            {formatBaseTimestamp(baseTimestamp)}
+          </span>
         )}
       </div>
       <div className={styles.grid}>
         {indices.map((item, idx) => {
           const isUp = item.change.startsWith("+") || parseFloat(item.change) >= 0;
           return (
-            <div key={`${item.symbol}-${idx}`} className={styles.card}>
+            <div
+              key={`${item.symbol}-${idx}`}
+              className={`${styles.card} ${isUp ? styles.cardUp : styles.cardDown}`}
+            >
               <p className={styles.label}>{item.name}</p>
               <p className={styles.value}>{item.value}</p>
               <div className={styles.changeRow}>

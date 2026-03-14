@@ -16,6 +16,7 @@ interface DomesticIndexItem {
  */
 export function MarketIndexSection() {
   const [indices, setIndices] = useState<MarketIndexItem[]>([]);
+  const [collectedDate, setCollectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,12 +34,15 @@ export function MarketIndexSection() {
             isPositive: item.change.startsWith("+") || parseFloat(item.change) >= 0,
           }));
           setIndices(mapped);
+          setCollectedDate(result.timestamp ?? null);
         } else {
           setIndices([]);
+          setCollectedDate(null);
         }
       } catch (err) {
         console.error("국내 지수 로딩 실패:", err);
         setIndices([]);
+        setCollectedDate(null);
       } finally {
         setLoading(false);
       }
@@ -57,5 +61,5 @@ export function MarketIndexSection() {
     );
   }
 
-  return <MarketIndex indices={indices} />;
+  return <MarketIndex indices={indices} collectedDate={collectedDate} />;
 }

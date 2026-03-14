@@ -1,35 +1,135 @@
 .header__wrap {
-    background: var(--app-header-gradient);
-    padding: 1.5rem;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
-    border-bottom-left-radius: 1.5rem;
-    border-bottom-right-radius: 1.5rem;
-    color: white;
+    background: var(--app-card-bg, #fff);
+    padding: 1rem 1.5rem;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+    border-bottom: 1px solid var(--app-border-light, #e5e7eb);
+    color: var(--app-text, #111827);
     margin-bottom: 1rem;
 }
 
 .topRow {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
 }
 
-.titleRow {
+/* ── 서브 페이지 헤더 (뒤로가기 + 중앙 타이틀 + 알림) ── */
+
+.subTopRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.subTopRow .bellWrap {
+    margin-left: auto;
+}
+
+.backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--app-text-muted, #374151);
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.backBtn:hover {
+    background: var(--app-bg-secondary, #f3f4f6);
+}
+
+.backIcon {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.centerTitle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.centerTitleIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0.375rem;
+    background: var(--app-primary, #f97316);
+    border-radius: 0.5rem;
+}
+
+.centerTitleIconSvg {
+    width: 1rem;
+    height: 1rem;
+    color: #fff;
+}
+
+.centerTitleText {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--app-text, #111827);
+}
+
+.logoRow {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     flex: 1;
+}
+
+.logoIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    background: var(--app-primary, #f97316);
+    border-radius: 0.75rem;
+}
+
+.logoIconSvg {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #fff;
+}
+
+.logoText {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--app-text, #111827);
+}
+
+.titleRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.15rem;
+    /* flex: 1; */
     min-width: 0;
+    flex-direction: column;
 }
 
 .title {
-    font-size: 1.5rem;
-    font-weight: bold;
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 1rem;
+    font-weight: bold;
+    overflow: hidden;
 }
 
 .gradeBadgeVip {
@@ -62,7 +162,8 @@
 }
 
 .subtitle {
-    color: #fff7ed;
+    color: var(--app-text-muted, #6b7280);
+    font-size: 0.875rem;
 }
 
 /* ── Bell icon ── */
@@ -79,17 +180,23 @@
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
+    padding: 0.5rem;
     border-radius: 50%;
     border: none;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: transparent;
+    color: var(--app-text-muted, #374151);
     cursor: pointer;
     transition: background 0.15s;
     overflow: visible;
 }
 
 .bellBtn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--app-bg-secondary, #f3f4f6);
+}
+
+.bellIcon {
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 .bellBtnDisabled {
@@ -103,8 +210,8 @@
 
 .badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: 0.375rem;
+    right: 0.375rem;
     min-width: 1.125rem;
     height: 1.125rem;
     padding: 0 0.3rem;
@@ -113,9 +220,9 @@
     line-height: 1.125rem;
     text-align: center;
     color: #fff;
-    background: #ef4444;
+    background: var(--app-error, #ef4444);
     border-radius: 9999px;
-    border: 2px solid var(--app-header-gradient-start, #f97316);
+    border: 2px solid var(--app-card-bg);
     pointer-events: none;
     z-index: 10;
 }
@@ -153,7 +260,7 @@
 .panelTitle {
     font-size: 0.9375rem;
     font-weight: 700;
-    color: var(--app-text, #1a1a1a);
+    color: var(--app-text);
 }
 
 .readAllBtn {
@@ -211,7 +318,7 @@
 }
 
 .notiUnread:hover {
-    background: #fff1e0;
+    background: var(--app-bg-secondary);
 }
 
 .notiDot {
@@ -239,7 +346,7 @@
 .notiTitle {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--app-text, #1a1a1a);
+    color: var(--app-text);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;

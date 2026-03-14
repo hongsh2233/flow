@@ -3,12 +3,13 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-gray-50);
 }
 
 .content__wrap {
   width: 100%;
   padding: 1rem var(--spacing-lg) var(--content-bottom-padding);
-  box-sizing: border-box;
+  box-sizing: border-box;  
 }
 
 .home-term-wrap {

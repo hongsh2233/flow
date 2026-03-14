@@ -71,48 +71,102 @@ def _is_finance_related(title: str, summary: str) -> bool:
     return any(kw.lower() in combined for kw in FINANCE_KEYWORDS)
 
 
+def _extract_gemini_text(response) -> str:
+    """Gemini 응답에서 텍스트 추출 (다양한 응답 구조 대응)"""
+    text = ""
+    parts = getattr(response, "parts", None)
+    if parts:
+        for part in parts:
+            pt = getattr(part, "text", None)
+            if pt:
+                text += str(pt)
+    if not text and hasattr(response, "text"):
+        try:
+            text = (response.text or "").strip()
+        except Exception:
+            pass
+    if not text:
+        for c in getattr(response, "candidates", []) or []:
+            content = getattr(c, "content", None)
+            if not content:
+                continue
+            for p in getattr(content, "parts", []) or []:
+                pt = getattr(p, "text", None)
+                if pt:
+                    text += str(pt)
+                    break
+            if text:
+                break
+    return (text or "").strip()
+
+
+def _parse_translation_json(text: str) -> Optional[Tuple[str, str]]:
+    """번역 JSON 파싱 (마크다운/추가 텍스트 포함 응답 대응)"""
+    if not text or not text.strip():
+        return None
+    text = text.strip()
+    # ```json ... ``` 또는 ``` ... ``` 제거
+    if "```" in text:
+        m = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+        if m:
+            text = m.group(1).strip()
+        else:
+            text = re.sub(r"^```\w*\n?", "", text).strip()
+            text = re.sub(r"\n?```\s*$", "", text).strip()
+    # {...} 블록 추출 (앞뒤 설명문 제거)
+    brace = text.find("{")
+    if brace >= 0:
+        depth = 0
+        end = -1
+        for i, c in enumerate(text[brace:], brace):
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end >= 0:
+            text = text[brace : end + 1]
+    import json
+    try:
+        data = json.loads(text)
+        if isinstance(data, dict) and data.get("title"):
+            return (str(data.get("title", "")).strip(), str(data.get("summary", "")).strip())
+    except json.JSONDecodeError:
+        pass
+    return None
+
+
 def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]]:
     """영어 뉴스 제목·요약을 Gemini로 한글로 번역. Returns (translated_title, translated_summary) or None"""
     if not GEMINI_API_KEY:
         return None
-    try:
-        from google import genai
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = f"""다음 영어 뉴스의 제목과 요약을 자연스러운 한국어로 번역해주세요.
-JSON 형식으로만 응답하세요. 다른 설명 없이.
+    prompt = f"""다음 영어 뉴스의 제목과 요약을 자연스러운 한국어로 번역해주세요.
+반드시 아래 JSON 형식만 출력하세요. 다른 설명, 마크다운, 코드블록 없이 순수 JSON만.
 
 영어 제목: {title}
 영어 요약: {summary}
 
-응답 형식:
+응답 (JSON만):
 {{"title": "한글 제목", "summary": "한글 요약"}}"""
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
-        text = ""
-        parts = getattr(response, "parts", None)
-        if parts:
-            for part in parts:
-                pt = getattr(part, "text", None)
-                if pt:
-                    text += str(pt)
-        if not text and hasattr(response, "text"):
-            text = (response.text or "").strip()
-        if not text:
-            return None
-        text = text.strip()
-        if text.startswith("```"):
-            text = re.sub(r"^```\w*\n?", "", text).strip()
-            text = re.sub(r"\n?```\s*$", "", text).strip()
-        import json
-        data = json.loads(text)
-        if isinstance(data, dict) and data.get("title"):
-            return (data.get("title", title), data.get("summary", summary))
-        return None
-    except Exception as e:
-        print(f"[투자은행 뉴스] Gemini 번역 오류: {e}")
-        return None
+    for attempt in range(2):
+        try:
+            from google import genai
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            text = _extract_gemini_text(response)
+            if not text:
+                continue
+            result = _parse_translation_json(text)
+            if result:
+                return result
+        except Exception as e:
+            print(f"[투자은행 뉴스] Gemini 번역 오류 (attempt {attempt + 1}): {e}")
+    return None
 
 
 async def _fetch_yahoo_search_news(query: str, news_count: int = 10) -> List[Dict]:

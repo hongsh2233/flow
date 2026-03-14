@@ -60,43 +60,4 @@
 .stockCode {
   font-size: 0.75rem;
   color: var(--app-text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.stockPrice {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-}
-
-.changeRow {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.changeIcon {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-
-.changeIconUp {
-  color: var(--app-up);
-}
-
-.changeIconDown {
-  color: var(--app-down);
-}
-
-.changeText {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.changeUp {
-  color: var(--app-up);
-}
-
-.changeDown {
-  color: var(--app-down);
 }

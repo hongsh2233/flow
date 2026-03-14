@@ -292,12 +292,13 @@
 }
 
 .latestPostContent {
-  display: block;
-  font-size: 0.88rem;
   color: #374151;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 15px;
+  display: block;
+  overflow: hidden;
+  font-weight: 700;
 }
 
 .latestPostTime {

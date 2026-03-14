@@ -454,7 +454,8 @@ export default function JuTalkPage() {
     <div className={styles.page}>
 
       <main className={styles.main}>
-        {/* 오늘의 투표 */}
+        {/* 오늘의 투표 - 등록된 투표가 있을 때만 노출 */}
+        {voteOptions.length > 0 && (
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitleRow}>
@@ -509,6 +510,7 @@ export default function JuTalkPage() {
             ))}
           </div>
         </section>
+        )}
 
         {/* 공부노트 최신글 3개 */}
         {latestPosts.length > 0 && (

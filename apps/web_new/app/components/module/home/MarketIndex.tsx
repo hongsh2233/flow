@@ -3,51 +3,61 @@ import { Activity, TrendingUp, TrendingDown } from "lucide-react";
 import type { MarketIndexProps } from "@/lib/types";
 import styles from "./MarketIndex.module.css";
 
-export const MarketIndex = memo(function MarketIndex({ indices }: MarketIndexProps) {
+function formatMarketCloseDate(ts: string | null | undefined): string {
+  if (!ts) return "";
+  try {
+    const [datePart] = ts.split(" ");
+    const [y, m, d] = datePart.split("-").map(Number);
+    if (m && d) return `${m}월 ${d}일 장 마감 기준`;
+  } catch {
+    return `수집일자: ${ts}`;
+  }
+  return `수집일자: ${ts}`;
+}
+
+export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }: MarketIndexProps) {
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <Activity className={styles.headingIcon} />
-        주요 지수
-      </h3>
+      <div className={styles.headingRow}>
+        <h3 className={styles.heading}>
+          <Activity className={styles.headingIcon} />
+          주요 지수
+        </h3>
+        {collectedDate && (
+          <span className={styles.collectedDate}>
+            {formatMarketCloseDate(collectedDate)}
+          </span>
+        )}
+      </div>
 
       <div className={styles.grid}>
-        {indices.map((item, idx) => {
-          const isKospi = idx === 0;
-          return (
-            <div
-              key={item.name}
-              className={isKospi ? styles.cardKospi : styles.cardKosdaq}
-            >
+        {indices.map((item) => (
+          <div
+            key={item.name}
+            className={`${styles.card} ${item.isPositive ? styles.cardUp : styles.cardDown}`}
+          >
+            <p className={styles.cardLabel}>{item.name}</p>
+            <p className={styles.cardValue}>{item.value}</p>
+            <div className={styles.changeRow}>
+              {item.isPositive ? (
+                <TrendingUp
+                  className={`${styles.changeIcon} ${styles.changeIconUp}`}
+                />
+              ) : (
+                <TrendingDown
+                  className={`${styles.changeIcon} ${styles.changeIconDown}`}
+                />
+              )}
               <p
-                className={`${styles.cardLabel} ${
-                  isKospi ? styles.labelKospi : styles.labelKosdaq
+                className={`${styles.changeText} ${
+                  item.isPositive ? styles.changeUp : styles.changeDown
                 }`}
               >
-                {item.name}
+                {item.change}
               </p>
-              <p className={styles.cardValue}>{item.value}</p>
-              <div className={styles.changeRow}>
-                {item.isPositive ? (
-                  <TrendingUp
-                    className={`${styles.changeIcon} ${styles.changeIconUp}`}
-                  />
-                ) : (
-                  <TrendingDown
-                    className={`${styles.changeIcon} ${styles.changeIconDown}`}
-                  />
-                )}
-                <p
-                  className={`${styles.changeText} ${
-                    item.isPositive ? styles.changeUp : styles.changeDown
-                  }`}
-                >
-                  {item.change}
-                </p>
-              </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -59,11 +59,19 @@
 .card {
   flex-shrink: 0;
   min-width: 130px;
-  background: var(--app-card-bg);
+  background: var(--app-index-card-bg, #fff);
   border-radius: 0.75rem;
   padding: 0.75rem;
   box-shadow: var(--app-card-shadow);
-  border: 1px solid var(--app-border-light);
+  border: 2px solid var(--app-border-light);
+}
+
+.cardUp {
+  border-color: var(--app-up);
+}
+
+.cardDown {
+  border-color: var(--app-down);
 }
 
 .label {

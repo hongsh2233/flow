@@ -1,7 +1,7 @@
 """
 증권사 목표가 상향 뉴스 수집 → Gemini 가공 결과만 DB 저장
 
-- 네이버 뉴스 검색 (48시간 이내)
+- 네이버 뉴스 검색 (24시간 이내)
 - Gemini로 종목명·증권사·목표가·상향/하향 추출
 - 추출 성공한 결과만 B002 '목표가 조정' 카테고리에 Post로 등록 (원문 미저장)
 """
@@ -37,14 +37,14 @@ def _strip_html(text: str) -> str:
     return text.strip()
 
 
-def _is_within_48h(pub_date_str: str) -> bool:
+def _is_within_24h(pub_date_str: str) -> bool:
     if not pub_date_str:
         return False
     try:
         dt = parsedate_to_datetime(pub_date_str)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
         return dt >= cutoff
     except Exception:
         return False
@@ -253,7 +253,7 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
             link = (item.get("link") or "").strip()
             if not link or link in seen_urls:
                 continue
-            if not _is_within_48h(item.get("pub_date", "")):
+            if not _is_within_24h(item.get("pub_date", "")):
                 continue
 
             title = (item.get("title") or "").strip()

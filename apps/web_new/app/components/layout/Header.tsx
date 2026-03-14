@@ -1,5 +1,6 @@
 "use client";
 
+import { BarChart3, Bell, ArrowLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -53,8 +54,8 @@ export default function Header() {
         ? status === "loading"
             ? "안녕하세요."
             : session
-                ? `안녕하세요, ${nickname}님!`
-                : "안녕하세요."
+                ? `${nickname}님!`
+                : "투자자님!"
         : currentItem.headerTitle;
 
     const fetchNotifications = useCallback(async () => {
@@ -127,9 +128,94 @@ export default function Header() {
         } catch { /* ignore */ }
     };
 
+    const handleBackClick = () => router.back();
+
+    /* 서브 페이지: 뒤로가기 + 중앙 타이틀 + 알림 */
+    if (!isHome) {
+        return (
+            <div className={styles.header__wrap}>
+                <div className={styles.subTopRow}>
+                    <button
+                        className={styles.backBtn}
+                        onClick={handleBackClick}
+                        aria-label="뒤로가기"
+                    >
+                        <ArrowLeft className={styles.backIcon} aria-hidden />
+                    </button>
+
+                    <div className={styles.centerTitle}>
+                        <div className={styles.centerTitleIcon}>
+                            <BarChart3 className={styles.centerTitleIconSvg} aria-hidden />
+                        </div>
+                        <span className={styles.centerTitleText}>{currentItem.headerTitle}</span>
+                    </div>
+
+                    <div className={styles.bellWrap} ref={panelRef}>
+                        <button
+                            className={styles.bellBtn}
+                            onClick={handleBellClick}
+                            aria-label="알림"
+                        >
+                            <Bell className={styles.bellIcon} aria-hidden />
+                            {unreadCount > 0 && (
+                                <span className={styles.badge}>
+                                    {unreadCount > 99 ? "99+" : unreadCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {panelOpen && (
+                            <div className={styles.panel}>
+                                <div className={styles.panelHeader}>
+                                    <span className={styles.panelTitle}>알림</span>
+                                    {unreadCount > 0 && (
+                                        <button className={styles.readAllBtn} onClick={handleReadAll}>
+                                            모두 읽음
+                                        </button>
+                                    )}
+                                </div>
+                                <div className={styles.panelBody}>
+                                    {notifications.length === 0 ? (
+                                        <div className={styles.emptyNoti}>알림이 없습니다.</div>
+                                    ) : (
+                                        notifications.map((noti) => (
+                                            <button
+                                                key={noti.id}
+                                                className={`${styles.notiItem} ${!noti.is_read ? styles.notiUnread : ""}`}
+                                                onClick={() => handleNotificationClick(noti)}
+                                            >
+                                                <div className={styles.notiDot}>
+                                                    {!noti.is_read && <span className={styles.dot} />}
+                                                </div>
+                                                <div className={styles.notiContent}>
+                                                    <span className={styles.notiTitle}>{noti.title}</span>
+                                                    <span className={styles.notiTime}>{timeAgo(noti.created_at)}</span>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    /* 메인(홈) 페이지 */
     return (
         <div className={styles.header__wrap}>
             <div className={styles.topRow}>
+                {/* 로고 */}
+                <div className={styles.logoRow}>
+                    <div className={styles.logoIcon}>
+                        <BarChart3 className={styles.logoIconSvg} aria-hidden />
+                    </div>
+                    <span className={styles.logoText}>FLOW</span>
+                </div>
+
+                {/* 제목 + 등급 배지 + 부제목 (알림벨 앞) */}
                 <div className={styles.titleRow}>
                     <h2 className={styles.title}>{greetingTitle}</h2>
                     {isHome && session && grade === "vip" && (
@@ -140,16 +226,14 @@ export default function Header() {
                     )}
                 </div>
 
+                {/* 알림 아이콘 */}
                 <div className={styles.bellWrap} ref={panelRef}>
                     <button
                         className={styles.bellBtn}
                         onClick={handleBellClick}
                         aria-label="알림"
                     >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
+                        <Bell className={styles.bellIcon} aria-hidden />
                         {unreadCount > 0 && (
                             <span className={styles.badge}>
                                 {unreadCount > 99 ? "99+" : unreadCount}
@@ -192,7 +276,6 @@ export default function Header() {
                     )}
                 </div>
             </div>
-            <p className={styles.subtitle}>{currentItem.headerSubtitle}</p>
         </div>
     );
 }

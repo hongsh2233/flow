@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import { Heart } from "lucide-react";
-import { PriceChange } from "@/app/components/ui/PriceChange";
 import type { FavoriteStocksProps } from "@/lib/types";
 import styles from "./FavoriteStocks.module.css";
 
@@ -34,18 +33,6 @@ export const FavoriteStocks = memo(function FavoriteStocks({ stocks, onSelect }:
           >
             <h4 className={styles.stockName}>{stock.name}</h4>
             <p className={styles.stockCode}>{stock.code}</p>
-            <p className={styles.stockPrice}>
-              {stock.price.toLocaleString()}
-            </p>
-            <div className={styles.changeRow}>
-              <PriceChange
-                change={stock.change}
-                iconClassName={styles.changeIcon}
-                upClassName={styles.changeIconUp}
-                downClassName={styles.changeIconDown}
-                textClassName={styles.changeText}
-              />
-            </div>
           </button>
         ))}
       </div>

@@ -691,7 +691,12 @@ async def collect_yahoo_us_indices():
     Yahoo Finance 미국증시 지수 수집/저장
     - 06:20 / 00:00 / 02:00 / 04:00 (KST)
     - 수집 시점의 값으로 일별 최종값 upsert + 7일 유지
+    - 주말(토·일) 및 공휴일은 건너뜀
     """
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: Yahoo(US) 지수 수집 건너뜀")
+        return
+
     now = datetime.now(pytz.timezone("Asia/Seoul"))
     print(f"\n🌐 Yahoo(US) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
     db = SessionLocal()
@@ -713,9 +718,19 @@ async def collect_yahoo_foreign_indices():
     Yahoo Finance 해외지수 수집/저장 (메인 페이지용)
     - 00:00, 05:00, 06:30 (KST)
     - YahooIndexSnapshot에 group='foreign'으로 저장
+    - 토요일 오전까지 수집 (미국장 금요일 마감 반영)
+    - 일요일/공휴일은 건너뜀
     """
-    now = datetime.now(pytz.timezone("Asia/Seoul"))
-    print(f"\n🌐 Yahoo(해외) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    if now.weekday() == 6:  # 일요일
+        print("ℹ️ 일요일: Yahoo(해외) 지수 수집 건너뜀")
+        return
+    if is_korean_holiday(now):
+        print("ℹ️ 공휴일: Yahoo(해외) 지수 수집 건너뜀")
+        return
+
+    print(f"\n🌐 Yahoo(해외) 지수 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')} (KST)")
     db = SessionLocal()
     try:
         items = await fetch_indices(DEFAULT_FOREIGN_INDICES)
@@ -1519,7 +1534,7 @@ investment_bank_news_scheduler = InvestmentBankNewsScheduler()
 
 
 # =========================================================
-# 증권사 목표가 상향 뉴스 - 매일 12:30 KST
+# 증권사 목표가 상향 뉴스 - 매일 1회 (08:30 KST)
 # =========================================================
 
 async def collect_target_price_news():
@@ -1543,7 +1558,7 @@ async def collect_target_price_news():
 
 
 class TargetPriceNewsScheduler:
-    """증권사 목표가 상향 뉴스 수집 스케줄러 (매일 08:30, 19:00 KST)"""
+    """증권사 목표가 상향 뉴스 수집 스케줄러 (매일 1회 08:30 KST)"""
 
     def __init__(self):
         self.scheduler = None
@@ -1556,25 +1571,15 @@ class TargetPriceNewsScheduler:
         self.scheduler.add_job(
             collect_target_price_news,
             trigger=CronTrigger(hour=8, minute=30, timezone=self.kst),
-            id="target_price_news_morning",
-            name="목표가 상향 뉴스 수집·등록 (08:30, 매일)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=600,
-        )
-        self.scheduler.add_job(
-            collect_target_price_news,
-            trigger=CronTrigger(hour=19, minute=0, timezone=self.kst),
-            id="target_price_news_evening",
-            name="목표가 상향 뉴스 수집·등록 (19:00, 매일)",
+            id="target_price_news_daily",
+            name="목표가 상향 뉴스 수집·등록 (08:30, 매일 1회)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             misfire_grace_time=600,
         )
         self.scheduler.start()
-        print("목표가 상향 뉴스 스케줄러 시작 (08:30, 19:00, 매일)")
+        print("목표가 상향 뉴스 스케줄러 시작 (08:30, 매일 1회)")
 
     def shutdown(self):
         if self.scheduler:

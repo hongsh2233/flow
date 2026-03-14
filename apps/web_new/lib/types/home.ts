@@ -78,4 +78,6 @@ export interface ExchangeRatesProps {
 
 export interface MarketIndexProps {
   indices: MarketIndexItem[];
+  /** 최종 수집일자 (예: "2025-03-13 15:30") */
+  collectedDate?: string | null;
 }
