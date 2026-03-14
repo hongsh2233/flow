@@ -1,5 +1,5 @@
 """
-투자은행 뉴스 (GS, MS, JPM) - Yahoo Finance 검색 API로 한국증시 관련 뉴스 수집
+투자은행 뉴스 (GS, MS, JPM, Citi, BofA, Barclays, UBS, Jefferies, BlackRock, Vanguard, Fidelity) - Yahoo Finance 검색 API로 금융·주식·코인 뉴스 수집
 매일 12:00 KST 실행
 Yahoo 뉴스(영어) → Gemini 한글 번역 후 DB 저장
 """
@@ -18,7 +18,7 @@ _YAHOO_HEADERS = {
     "Accept": "application/json",
 }
 
-# GS, MS, JPM 각각 한국증시 관련 검색어
+# GS, MS, JPM, Citi, BofA, Barclays, UBS, Jefferies, BlackRock, Vanguard, Fidelity 검색어
 SEARCH_QUERIES = [
     ("GS", "Goldman Sachs Korea stock"),
     ("GS", "Goldman Sachs 한국"),
@@ -26,12 +26,33 @@ SEARCH_QUERIES = [
     ("MS", "Morgan Stanley 한국"),
     ("JPM", "JP Morgan Korea stock"),
     ("JPM", "JP Morgan 한국"),
+    ("Citi", "Citibank Korea stock"),
+    ("Citi", "Citibank 한국"),
+    ("BofA", "Bank of America Korea stock"),
+    ("BofA", "Bank of America 한국"),
+    ("Barclays", "Barclays Korea stock"),
+    ("Barclays", "Barclays 한국"),
+    ("UBS", "UBS Korea stock"),
+    ("UBS", "UBS 한국"),
+    ("Jefferies", "Jefferies Korea stock"),
+    ("Jefferies", "Jefferies 한국"),
+    ("BlackRock", "BlackRock Korea stock"),
+    ("BlackRock", "BlackRock 한국"),
+    ("Vanguard", "Vanguard Korea stock"),
+    ("Vanguard", "Vanguard 한국"),
+    ("Fidelity", "Fidelity Korea stock"),
+    ("Fidelity", "Fidelity 한국"),
 ]
 
-# 한국 관련 키워드 (제목/요약에 있으면 수집)
-KR_KEYWORDS = [
-    "korea", "한국", "kospi", "코스피", "kosdaq", "코스닥", "seoul", "서울",
-    "samsung", "삼성", "hyundai", "현대", "sk", "lg", "korean", "한국증시",
+# 금융·주식·코인 관련 키워드 (제목/요약에 있으면 수집, 없으면 제외)
+FINANCE_KEYWORDS = [
+    # 영어
+    "finance", "stock", "stocks", "crypto", "cryptocurrency", "bitcoin", "ethereum",
+    "market", "investment", "banking", "economy", "trading", "forex", "bonds",
+    "ipo", "m&a", "asset", "portfolio", "equity", "derivative", "fed", "rate",
+    # 한글
+    "금융", "주식", "코인", "비트코인", "암호화폐", "시장", "투자", "은행", "경제",
+    "거래", "채권", "증시", "코스피", "코스닥", "환율", "이자", "리포트",
 ]
 
 
@@ -44,9 +65,10 @@ def _strip_html(text: str) -> str:
     return text.strip()
 
 
-def _is_korea_related(title: str, summary: str) -> bool:
+def _is_finance_related(title: str, summary: str) -> bool:
+    """금융·주식·코인 관련 뉴스만 수집"""
     combined = f"{title} {summary}".lower()
-    return any(kw.lower() in combined for kw in KR_KEYWORDS)
+    return any(kw.lower() in combined for kw in FINANCE_KEYWORDS)
 
 
 def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]]:
@@ -120,7 +142,7 @@ async def _fetch_yahoo_search_news(query: str, news_count: int = 10) -> List[Dic
 
 async def fetch_and_save_investment_bank_news(db: Session) -> Dict[str, int]:
     """
-    GS, MS, JPM Yahoo 뉴스 수집 → 한국 관련만 DB 저장 (pending)
+    GS, MS, JPM, Citi, BofA, Barclays, UBS, Jefferies, BlackRock, Vanguard, Fidelity Yahoo 뉴스 수집 → 금융·주식·코인 관련만 DB 저장 (pending)
     Returns: {"fetched": N, "saved": M}
     """
     total_fetched = 0
@@ -141,7 +163,7 @@ async def fetch_and_save_investment_bank_news(db: Session) -> Dict[str, int]:
             if not title:
                 continue
 
-            if not _is_korea_related(title, summary):
+            if not _is_finance_related(title, summary):
                 continue
 
             seen_urls.add(url)

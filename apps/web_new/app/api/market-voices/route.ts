@@ -17,6 +17,14 @@ const SOURCE_NAMES: Record<string, string> = {
   GS: "골드만삭스",
   MS: "모건스탠리",
   JPM: "JP모건",
+  Citi: "시티은행",
+  BofA: "뱅크오브아메리카",
+  Barclays: "바클레이스",
+  UBS: "UBS",
+  Jefferies: "제퍼리스",
+  BlackRock: "블랙록",
+  Vanguard: "뱅가드",
+  Fidelity: "피델리티",
 };
 
 const DEFAULT_AVATAR =

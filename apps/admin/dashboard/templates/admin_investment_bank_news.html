@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}투자은행 뉴스 (GS/MS/JPM) - Jurin-i BO{% endblock %}
+{% block title %}투자은행 뉴스 (GS/MS/JPM/Citi/BofA/Barclays/UBS/Jefferies/BlackRock/Vanguard/Fidelity) - Jurin-i BO{% endblock %}
 
 {% block extra_styles %}
 <style>
@@ -21,6 +21,14 @@
   .badge-gs { background: #dbeafe; color: #1e40af; }
   .badge-ms { background: #fce7f3; color: #9d174d; }
   .badge-jpm { background: #d1fae5; color: #065f46; }
+  .badge-citi { background: #fef3c7; color: #b45309; }
+  .badge-bofa { background: #e0e7ff; color: #3730a3; }
+  .badge-barclays { background: #d1fae5; color: #047857; }
+  .badge-ubs { background: #fce7f3; color: #9d174d; }
+  .badge-jefferies { background: #fef3c7; color: #92400e; }
+  .badge-blackrock { background: #1e293b; color: #f8fafc; }
+  .badge-vanguard { background: #0f766e; color: #f0fdfa; }
+  .badge-fidelity { background: #1e3a8a; color: #dbeafe; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .data-table th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; }
   .data-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; }
@@ -33,7 +41,7 @@
 {% block content %}
 <div class="card">
   <div class="ibn-header">
-    <h2>🏦 투자은행 뉴스 (GS / MS / JPM)</h2>
+    <h2>🏦 투자은행 뉴스 (GS / MS / JPM / Citi / BofA / Barclays / UBS / Jefferies / BlackRock / Vanguard / Fidelity)</h2>
     <div style="display:flex;gap:8px;">
       <button id="btn-collect" class="btn-collect" onclick="manualCollect()">수동 수집</button>
       {% if pending_count > 0 %}
@@ -43,8 +51,8 @@
   </div>
 
   <div class="info-box">
-    Yahoo Finance에서 GS(골드만삭스), MS(모건스탠리), JPM(JP모건) 한국증시 관련 뉴스를 검색해 수집합니다.<br>
-    매일 12:00 KST 자동 수집. 관리자 승인 시 앱에 노출됩니다.
+    Yahoo Finance에서 GS, MS, JPM, Citi, BofA, Barclays, UBS, Jefferies, BlackRock(블랙록), Vanguard(뱅가드), Fidelity(피델리티) 뉴스를 검색해 수집합니다.<br>
+    <strong>금융·주식·코인</strong> 관련 뉴스만 수집합니다. 매일 12:00 KST 자동 수집. 관리자 승인 시 앱에 노출됩니다.
   </div>
 
   <div class="ctrl-row">
@@ -72,7 +80,7 @@
         {% for item in items %}
         <tr>
           <td>
-            <span class="badge-pending {% if item.source == 'GS' %}badge-gs{% elif item.source == 'MS' %}badge-ms{% else %}badge-jpm{% endif %}" style="padding:2px 8px;border-radius:4px;font-size:11px;">{{ item.source }}</span>
+            <span class="badge-pending {% if item.source == 'GS' %}badge-gs{% elif item.source == 'MS' %}badge-ms{% elif item.source == 'JPM' %}badge-jpm{% elif item.source == 'Citi' %}badge-citi{% elif item.source == 'BofA' %}badge-bofa{% elif item.source == 'Barclays' %}badge-barclays{% elif item.source == 'UBS' %}badge-ubs{% elif item.source == 'Jefferies' %}badge-jefferies{% elif item.source == 'BlackRock' %}badge-blackrock{% elif item.source == 'Vanguard' %}badge-vanguard{% elif item.source == 'Fidelity' %}badge-fidelity{% endif %}" style="padding:2px 8px;border-radius:4px;font-size:11px;">{{ item.source }}</span>
           </td>
           <td class="title-cell">
             {% if item.source_url %}
