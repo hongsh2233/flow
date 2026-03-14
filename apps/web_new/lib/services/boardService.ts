@@ -102,6 +102,8 @@ export function postToDetail(post: PostFromApi): BoardPost {
     boardName: post.board?.name,
     attachments: post.attachments,
     is_member_only: post.is_member_only === 'true',
+    _partial: post._partial,
+    _block_reason: post._block_reason,
   }
 }
 

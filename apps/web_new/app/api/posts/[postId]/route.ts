@@ -36,10 +36,41 @@ export async function GET(
 
     const data = await response.json()
 
-    if (data.data?.is_member_only === 'true' && !session) {
+    const isMemberOnly = data.data?.is_member_only === 'true'
+    const memberOnlyGrade = data.data?.member_only_grade || 'all'
+    const userGrade = (session?.user as { grade?: string })?.grade
+
+    const canAccessByGrade = (required: string) => {
+      if (required === 'all') return true
+      const hierarchy = ['regular', 'vip', 'family']
+      const userLevel = hierarchy.indexOf(userGrade || 'regular')
+      const requiredLevel = hierarchy.indexOf(required)
+      return userLevel >= requiredLevel && userLevel >= 0
+    }
+
+    if (isMemberOnly && !session) {
       data.data.content = ''
       data.data._blocked = true
       data.data._block_reason = 'member_only'
+    } else if (isMemberOnly && session && !canAccessByGrade(memberOnlyGrade)) {
+      data.data.content = ''
+      data.data._blocked = true
+      data.data._block_reason = 'grade_required'
+    }
+
+    // 전체공개 + 일부노출 + 비로그인: 100자 미리보기 + 회원가입 유도
+    const publicVisibility = data.data?.public_visibility || 'full'
+    if (
+      data.data?.is_member_only !== 'true' &&
+      publicVisibility === 'partial' &&
+      !session
+    ) {
+      const stripHtml = (html: string) =>
+        html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+      const plain = stripHtml(data.data.content || '')
+      data.data.content = plain.length > 100 ? plain.slice(0, 100) + '…' : plain
+      data.data._partial = true
+      data.data._block_reason = 'signup_needed'
     }
 
     return NextResponse.json(data)

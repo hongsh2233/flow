@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Visibility from "@mui/icons-material/Visibility";
 import Group from "@mui/icons-material/Group";
 // import Comment from "@mui/icons-material/Comment"; // 댓글 기능 미구현 - 추후 추가 예정
@@ -14,6 +15,8 @@ export function BoardDetail({
   backLabel = '목록으로',
 }: BoardDetailProps) {
   const hasHtml = post.content.includes('<') && post.content.includes('>');
+  const isPartial = (post as { _partial?: boolean })._partial;
+  const pathname = usePathname();
 
   return (
     <article className={styles.wrap}>
@@ -53,10 +56,39 @@ export function BoardDetail({
         ) : (
           <div className={styles.bodyContent}>{post.content}</div>
         )}
+        {isPartial && (
+          <div className={styles.partialSignup} style={{
+            marginTop: "1.5rem",
+            padding: "1.5rem",
+            background: "var(--app-card-bg, #f8f9fa)",
+            borderRadius: "0.75rem",
+            border: "1px solid var(--app-border-light, #eee)",
+            textAlign: "center",
+          }}>
+            <p style={{ fontSize: "0.9375rem", color: "var(--app-text-muted)", marginBottom: "1rem", lineHeight: 1.6 }}>
+              전체 내용을 보려면 회원가입 후 로그인해 주세요.
+            </p>
+            <Link
+              href={`/login?callbackUrl=${encodeURIComponent(pathname || "/board")}`}
+              style={{
+                display: "inline-block",
+                padding: "0.75rem 2rem",
+                borderRadius: "0.75rem",
+                background: "var(--app-primary, #f97316)",
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: "0.9375rem",
+                textDecoration: "none",
+              }}
+            >
+              회원가입 / 로그인
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* 첨부파일 */}
-      {post.attachments && post.attachments.length > 0 && (
+      {/* 첨부파일 - 일부 노출 시 숨김 */}
+      {!isPartial && post.attachments && post.attachments.length > 0 && (
         <div className={styles.attachments}>
           <h4 className={styles.attachmentsTitle}>첨부파일</h4>
           <ul className={styles.attachmentsList}>

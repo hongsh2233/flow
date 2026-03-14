@@ -206,6 +206,21 @@
       </label>
       <input type="hidden" name="is_member_only" value="false">
     </div>
+    <div id="member_only_options" class="form-group" style="margin-left: 1.5rem; display: {% if post.is_member_only == 'true' %}block{% else %}none{% endif %};">
+      <label style="font-size: 0.9rem; color: #666;">열람 가능 등급</label>
+      <select name="member_only_grade" style="padding: 6px 10px; border-radius: 4px; margin-top: 4px;">
+        <option value="all" {% if (post.member_only_grade or 'all') == 'all' %}selected{% endif %}>전체 회원 (로그인 시)</option>
+        <option value="vip" {% if post.member_only_grade == 'vip' %}selected{% endif %}>VIP 이상</option>
+        <option value="family" {% if post.member_only_grade == 'family' %}selected{% endif %}>FAMILY만</option>
+      </select>
+    </div>
+    <div id="public_visibility_options" class="form-group" style="margin-left: 1.5rem; display: {% if post.is_member_only == 'true' %}none{% else %}block{% endif %};">
+      <label style="font-size: 0.9rem; color: #666;">전체공개 시 노출 방식</label>
+      <select name="public_visibility" style="padding: 6px 10px; border-radius: 4px; margin-top: 4px;">
+        <option value="full" {% if (post.public_visibility or 'full') == 'full' %}selected{% endif %}>전체 노출</option>
+        <option value="partial" {% if post.public_visibility == 'partial' %}selected{% endif %}>일부 노출 (100자 + 회원가입 유도)</option>
+      </select>
+    </div>
 
     <div class="form-group">
       <label style="display: flex; align-items: center; cursor: pointer;">
@@ -359,6 +374,18 @@
       isMemberOnlyHidden.value = isMemberOnlyCheckbox.checked ? 'true' : 'false';
     }
   });
+
+  // 회원전용 체크 시 열람등급/전체공개노출 옵션 토글
+  const isMemberOnlyCheckbox2 = document.getElementById('is_member_only');
+  const memberOnlyOpts = document.getElementById('member_only_options');
+  const publicVisOpts = document.getElementById('public_visibility_options');
+  function toggleMemberOptions() {
+    const checked = isMemberOnlyCheckbox2 && isMemberOnlyCheckbox2.checked;
+    if (memberOnlyOpts) memberOnlyOpts.style.display = checked ? 'block' : 'none';
+    if (publicVisOpts) publicVisOpts.style.display = checked ? 'none' : 'block';
+  }
+  if (isMemberOnlyCheckbox2) isMemberOnlyCheckbox2.addEventListener('change', toggleMemberOptions);
+  toggleMemberOptions();
 
   // 파일 업로드 기능
   const fileUploadArea = document.getElementById('fileUploadArea');

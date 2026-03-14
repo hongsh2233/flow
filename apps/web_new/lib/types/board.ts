@@ -50,6 +50,8 @@ export interface PostFromApi {
   views: number;
   is_secret: string;
   is_member_only?: string;
+  member_only_grade?: 'all' | 'vip' | 'family';
+  public_visibility?: 'full' | 'partial';
   created_at: string;
   updated_at: string;
   category?: string | null;
@@ -62,6 +64,7 @@ export interface PostFromApi {
   };
   _blocked?: boolean;
   _block_reason?: string;
+  _partial?: boolean;
 }
 
 // ── UI 컴포넌트 Props 타입 ──
@@ -98,6 +101,8 @@ export interface BoardPost {
   boardName?: string;
   attachments?: PostAttachment[];
   is_member_only?: boolean;
+  _partial?: boolean;
+  _block_reason?: string;
 }
 
 export interface BoardDetailProps {

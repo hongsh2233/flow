@@ -426,6 +426,8 @@ async def admin_create_post(
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
+    member_only_grade: Optional[str] = Form("all"),
+    public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
@@ -485,6 +487,8 @@ async def admin_create_post(
             author=user.email,
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
             is_member_only=is_member_only if is_member_only in ["true", "false"] else "false",
+            member_only_grade=member_only_grade if member_only_grade in ["all", "vip", "family"] else "all",
+            public_visibility=public_visibility if public_visibility in ["full", "partial"] else "full",
             show_on_main=show_on_main == "true",
             category_id=category_id if category_id else None,
             created_at=datetime.now()
@@ -614,6 +618,8 @@ async def admin_post_edit(
     content: str = Form(...),
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
+    member_only_grade: Optional[str] = Form("all"),
+    public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
@@ -678,6 +684,8 @@ async def admin_post_edit(
         post.content = final_content
         post.is_secret = is_secret if is_secret in ["true", "false"] else "false"
         post.is_member_only = is_member_only if is_member_only in ["true", "false"] else "false"
+        post.member_only_grade = member_only_grade if member_only_grade in ["all", "vip", "family"] else "all"
+        post.public_visibility = public_visibility if public_visibility in ["full", "partial"] else "full"
         post.show_on_main = show_on_main == "true"
         post.category_id = category_id if category_id else None
         post.updated_at = datetime.now()
