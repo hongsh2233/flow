@@ -7,7 +7,7 @@
 """
 import re
 import httpx
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from sqlalchemy.orm import Session
@@ -184,18 +184,66 @@ def _get_or_create_category(db: Session) -> Optional[int]:
     return new_cat.id
 
 
+def _format_single_post(items: List[Dict]) -> Tuple[str, str]:
+    """
+    추출된 여러 건을 하나의 게시글 형식으로 가공.
+    증권사별로 묶어서 표시:
+      신영증권
+      삼성전자 목표가 상향 40만원
+      반도체 추정실적 600조 달성 예정
+      키움증권
+      ...
+    Returns: (title, content)
+    """
+    from collections import defaultdict
+    by_broker = defaultdict(list)
+    for it in items:
+        broker = it.get("증권사") or "기타"
+        by_broker[broker].append(it)
+
+    lines = []
+    for broker in sorted(by_broker.keys()):
+        lines.append(f"<p><strong>{broker}</strong></p>")
+        for it in by_broker[broker]:
+            stock = it.get("종목명", "-")
+            adj = it.get("조정", "")
+            price = it.get("목표가", "")
+            summary = it.get("요약", "")
+            line = f"{stock} 목표가 {adj} {price}".strip()
+            if summary:
+                line += f"<br>{summary}"
+            lines.append(f"<p>{line}</p>")
+        lines.append("")  # 증권사 간 간격
+
+    content = "\n".join(lines).strip()
+    if not content:
+        return "", ""
+
+    # 제목: "목표가 조정 브리핑 (YYYY-MM-DD HH:MM)"
+    now = datetime.now(timezone.utc)
+    try:
+        import pytz
+        kst = pytz.timezone("Asia/Seoul")
+        now_kst = now.astimezone(kst)
+        title = f"목표가 조정 브리핑 ({now_kst.strftime('%Y-%m-%d %H:%M')})"
+    except Exception:
+        title = f"목표가 조정 브리핑 ({now.strftime('%Y-%m-%d %H:%M')})"
+
+    return title[:255], content
+
+
 async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
     """
-    목표가 상향 뉴스 수집 → Gemini 가공 → B002 게시판 등록
-    Returns: {"fetched": N, "posted": M}
+    목표가 상향 뉴스 수집 → Gemini 가공 → 하나의 게시글로 B002 등록
+    Returns: {"fetched": N, "posted": 0|1, "items": M}
     """
     total_fetched = 0
-    total_posted = 0
     seen_urls = set()
+    extracted_items: List[Dict] = []
 
     category_id = _get_or_create_category(db)
     if not category_id:
-        return {"fetched": 0, "posted": 0}
+        return {"fetched": 0, "posted": 0, "items": 0}
 
     for keyword in SEARCH_QUERIES:
         news_list = await _search_news(keyword, display=MAX_NEWS_PER_QUERY)
@@ -214,38 +262,25 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
                 continue
 
             seen_urls.add(link)
-
             extracted = _process_with_gemini(title, description)
             if not extracted:
                 continue
 
-            # 중복 체크: content에 동일 링크가 이미 포함된 게시글
-            existing = (
-                db.query(Post)
-                .filter(
-                    Post.board_id == BOARD_ID,
-                    Post.category_id == category_id,
-                    Post.content.like(f"%{link}%"),
-                )
-                .first()
-            )
-            if existing:
-                continue
+            extracted_items.append(extracted)
 
-            post_title = f"[{extracted.get('증권사', '')}] {extracted.get('종목명', '')} 목표가 {extracted.get('조정', '')} - {extracted.get('목표가', '')}"
-            post_content = f"""<p>{extracted.get('요약', title)}</p>
-<p><strong>종목:</strong> {extracted.get('종목명', '-')} | <strong>증권사:</strong> {extracted.get('증권사', '-')} | <strong>목표가:</strong> {extracted.get('목표가', '-')} | <strong>조정:</strong> {extracted.get('조정', '-')}</p>
-<p><a href="{link}" target="_blank" rel="noopener">원문 보기</a></p>"""
-
+    posted = 0
+    if extracted_items:
+        post_title, post_content = _format_single_post(extracted_items)
+        if post_title and post_content:
             new_post = Post(
                 board_id=BOARD_ID,
                 category_id=category_id,
-                title=post_title[:255],
+                title=post_title,
                 content=post_content,
                 author="AI목표가",
             )
             db.add(new_post)
-            total_posted += 1
+            posted = 1
 
     try:
         db.commit()
@@ -253,4 +288,4 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
         db.rollback()
         raise
 
-    return {"fetched": total_fetched, "posted": total_posted}
+    return {"fetched": total_fetched, "posted": posted, "items": len(extracted_items)}

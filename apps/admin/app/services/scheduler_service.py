@@ -1533,7 +1533,7 @@ async def collect_target_price_news():
     db = SessionLocal()
     try:
         result = await fetch_and_post_target_price_news(db)
-        print(f"[목표가 뉴스] 완료: fetched={result['fetched']}, posted={result['posted']}")
+        print(f"[목표가 뉴스] 완료: fetched={result['fetched']}, items={result.get('items', 0)}, posted={result['posted']}")
     except Exception as e:
         import traceback
         print(f"[목표가 뉴스] 오류: {e}")

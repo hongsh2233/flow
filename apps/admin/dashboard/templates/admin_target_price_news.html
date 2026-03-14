@@ -48,7 +48,7 @@
       resultBox.style.display = 'block';
       resultBox.classList.remove('error');
       if (data.success) {
-        resultBox.textContent = `수집 완료: 검색 ${data.fetched}건 → 등록 ${data.posted}건`;
+        resultBox.textContent = `수집 완료: 검색 ${data.fetched}건 → 추출 ${data.items || 0}건 → 게시글 ${data.posted}건`;
       } else {
         resultBox.textContent = data.message || '오류 발생';
         resultBox.classList.add('error');

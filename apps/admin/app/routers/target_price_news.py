@@ -44,5 +44,6 @@ async def manual_collect_target_price_news(
     return JSONResponse({
         "success": True,
         "fetched": result["fetched"],
+        "items": result.get("items", 0),
         "posted": result["posted"],
     })

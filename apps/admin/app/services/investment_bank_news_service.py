@@ -1,13 +1,15 @@
 """
 투자은행 뉴스 (GS, MS, JPM) - Yahoo Finance 검색 API로 한국증시 관련 뉴스 수집
 매일 12:00 KST 실행
+Yahoo 뉴스(영어) → Gemini 한글 번역 후 DB 저장
 """
 import re
 import httpx
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
+from app.config import GEMINI_API_KEY
 from app.engine.models import InvestmentBankNews
 
 _YAHOO_HEADERS = {
@@ -45,6 +47,50 @@ def _strip_html(text: str) -> str:
 def _is_korea_related(title: str, summary: str) -> bool:
     combined = f"{title} {summary}".lower()
     return any(kw.lower() in combined for kw in KR_KEYWORDS)
+
+
+def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]]:
+    """영어 뉴스 제목·요약을 Gemini로 한글로 번역. Returns (translated_title, translated_summary) or None"""
+    if not GEMINI_API_KEY:
+        return None
+    try:
+        from google import genai
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        prompt = f"""다음 영어 뉴스의 제목과 요약을 자연스러운 한국어로 번역해주세요.
+JSON 형식으로만 응답하세요. 다른 설명 없이.
+
+영어 제목: {title}
+영어 요약: {summary}
+
+응답 형식:
+{{"title": "한글 제목", "summary": "한글 요약"}}"""
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        text = ""
+        parts = getattr(response, "parts", None)
+        if parts:
+            for part in parts:
+                pt = getattr(part, "text", None)
+                if pt:
+                    text += str(pt)
+        if not text and hasattr(response, "text"):
+            text = (response.text or "").strip()
+        if not text:
+            return None
+        text = text.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```\w*\n?", "", text).strip()
+            text = re.sub(r"\n?```\s*$", "", text).strip()
+        import json
+        data = json.loads(text)
+        if isinstance(data, dict) and data.get("title"):
+            return (data.get("title", title), data.get("summary", summary))
+        return None
+    except Exception as e:
+        print(f"[투자은행 뉴스] Gemini 번역 오류: {e}")
+        return None
 
 
 async def _fetch_yahoo_search_news(query: str, news_count: int = 10) -> List[Dict]:
@@ -105,6 +151,12 @@ async def fetch_and_save_investment_bank_news(db: Session) -> Dict[str, int]:
             ).first()
             if existing:
                 continue
+
+            # 영어 → 한글 번역 (Gemini)
+            translated = _translate_with_gemini(title, summary)
+            if translated:
+                title, summary = translated[0], translated[1]
+            # 번역 실패 시 원문 그대로 저장
 
             pub_date = item.get("pub_date")
             if isinstance(pub_date, (int, float)):
