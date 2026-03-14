@@ -11,6 +11,7 @@ from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_, text
 from typing import Optional
 from datetime import datetime, date
 import json
+import re
 import asyncio
 import time
 import httpx
@@ -486,10 +487,19 @@ async def get_main_posts(
         .limit(limit)
         .all()
     )
+    def _strip_html(text: str) -> str:
+        if not text:
+            return ""
+        t = re.sub(r"<[^>]+>", "", text)
+        t = t.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+        t = t.replace("&quot;", '"').replace("&#39;", "'").replace("&nbsp;", " ")
+        return t.strip()
+
     result = []
     for post in posts:
         attachments = parse_attached_files(post.content or "")
         cleaned = clean_content(post.content or "")
+        cleaned = _strip_html(cleaned)
         result.append({
             "id": post.id,
             "board_id": post.board_id,
