@@ -140,8 +140,8 @@
   if (initialContent) {
     quill.root.innerHTML = initialContent;
   }
-
-  document.getElementById('htmlSource').value = quill.root.innerHTML;
+  // HTML 모드에서 편집 시 원본을 유지 (Quill이 정제한 결과로 덮어쓰지 않음)
+  document.getElementById('htmlSource').value = initialContent || '';
 
   function switchMode(mode) {
     if (mode === currentMode) return;
