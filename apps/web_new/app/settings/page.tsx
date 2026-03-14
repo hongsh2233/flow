@@ -183,9 +183,8 @@ function SettingsScreen() {
               <div className={styles.profileText}>
                 <div className={styles.profileNameRow}>
                   <h3 className={styles.profileName}>
-                  {session?.user?.name || "플로우"}
-                  {jubtiType ? `(${JUBTI_LABELS[jubtiType] ?? jubtiType})` : "(주비티야)"}
-                </h3>
+                    {session?.user?.name || "플로우"}
+                  </h3>
                   {(session?.user as { grade?: string })?.grade === "vip" && (
                     <span className={styles.gradeBadgeVip}>V</span>
                   )}
@@ -193,6 +192,9 @@ function SettingsScreen() {
                     <span className={styles.gradeBadgeFamily}>F</span>
                   )}
                 </div>
+                <span className={styles.profileJubti}>
+                  {jubtiType ? `(${JUBTI_LABELS[jubtiType] ?? jubtiType})` : "(주비티야)"}
+                </span>
               </div>
               <ChevronRight className={styles.profileArrow} />
             </div>

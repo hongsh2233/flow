@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ShieldCheck, ShieldOff } from "lucide-react";
+import { ShieldCheck, ShieldOff } from "lucide-react";
 import PinKeypad from "../../components/ui/PinKeypad";
 import { StockTermBox } from "../../components/module/stock-term-box";
 import { Button } from "../../components/ui/Button";
@@ -118,19 +118,6 @@ export default function PinSettingsPage() {
     return (
       <div className="content__wrap">
         <div className={styles.screen}>
-          <div className={styles.topBar}>
-            <button
-              type="button"
-              className={styles.backBtn}
-              onClick={() => router.back()}
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h2 className={styles.topBarTitle}>간편 비밀번호</h2>
-            <div className={styles.topBarSpacer} />
-          </div>
-
           <div className={styles.statusSection}>
             <div className={styles.statusIcon}>
               {pinEnabled ? (
@@ -193,19 +180,6 @@ export default function PinSettingsPage() {
     return (
       <div className="content__wrap">
         <div className={styles.screen}>
-          <div className={styles.topBar}>
-            <button
-              type="button"
-              className={styles.backBtn}
-              onClick={() => router.back()}
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h2 className={styles.topBarTitle}>간편 비밀번호</h2>
-            <div className={styles.topBarSpacer} />
-          </div>
-
           <div className={styles.doneSection}>
             <div className={styles.doneIcon}>
               {action === "remove" ? (
@@ -242,22 +216,16 @@ export default function PinSettingsPage() {
   return (
     <div className="content__wrap">
       <div className={styles.screen}>
-        <div className={styles.topBar}>
-          <button
-            type="button"
-            className={styles.backBtn}
-            onClick={() => {
-              resetState();
-              setStep("menu");
-            }}
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h2 className={styles.topBarTitle}>간편 비밀번호</h2>
-          <div className={styles.topBarSpacer} />
-        </div>
-
+        <button
+          type="button"
+          className={styles.cancelBtn}
+          onClick={() => {
+            resetState();
+            setStep("menu");
+          }}
+        >
+          취소
+        </button>
         <PinKeypad
           pin={pin}
           maxLength={6}

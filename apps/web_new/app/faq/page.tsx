@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import styles from "./Faq.module.css";
 
@@ -35,7 +34,6 @@ const FALLBACK_FAQ: FaqCategory[] = [
 ];
 
 export default function FaqPage() {
-  const router = useRouter();
   const [openIndex, setOpenIndex] = useState<string | null>(null);
   const [faqCategories, setFaqCategories] = useState<FaqCategory[]>(FALLBACK_FAQ);
 
@@ -57,19 +55,6 @@ export default function FaqPage() {
   return (
     <div className="content__wrap">
       <div className={styles.screen}>
-        {/* 상단 바 */}
-        <div className={styles.topBar}>
-          <button
-            type="button"
-            className={styles.backBtn}
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h2 className={styles.topBarTitle}>자주하는 질문</h2>
-          <div className={styles.topBarSpacer} />
-        </div>
         <StockTermBox wrapperStyle={{ marginTop: "1.5rem" }} />
         {/* FAQ 목록 */}
         <div className={styles.categories}>

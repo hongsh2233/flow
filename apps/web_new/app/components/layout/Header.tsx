@@ -39,17 +39,26 @@ export default function Header() {
     const [panelOpen, setPanelOpen] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
 
+    const PAGE_HEADER_TITLES: Record<string, string> = {
+        "/faq": "자주하는 질문",
+        "/about": "플로우 앱 소개",
+        "/settings/profile": "정보 수정",
+        "/settings/pin": "간편 비밀번호",
+    };
+
     const defaultItem = navItems.find((item) => item.id === "home") ?? navItems[0];
+    const pageTitle = pathname ? PAGE_HEADER_TITLES[pathname] : undefined;
     const currentItem =
-        navItems.find((item) => item.href === pathname) ??
-        (pathname.startsWith("/report") ? navItems.find((item) => item.id === "briefing") : null) ??
-        (pathname.startsWith("/stocks") ? navItems.find((item) => item.id === "market") : null) ??
-        navItems.find((item) => item.href !== "/" && pathname.startsWith(item.href)) ??
-        defaultItem;
+        pageTitle
+            ? { ...defaultItem, headerTitle: pageTitle }
+            : navItems.find((item) => item.href === pathname) ??
+              (pathname?.startsWith("/report") ? navItems.find((item) => item.id === "briefing") : null) ??
+              (pathname?.startsWith("/stocks") ? navItems.find((item) => item.id === "market") : null) ??
+              navItems.find((item) => item.href !== "/" && pathname?.startsWith(item.href)) ??
+              defaultItem;
 
     const isHome = pathname === "/" || pathname === "";
     const nickname = session?.user?.name || "플로우";
-    const grade = (session?.user as { grade?: string } | undefined)?.grade;
     const greetingTitle = isHome
         ? status === "loading"
             ? "안녕하세요."
@@ -144,9 +153,6 @@ export default function Header() {
                     </button>
 
                     <div className={styles.centerTitle}>
-                        <div className={styles.centerTitleIcon}>
-                            <BarChart3 className={styles.centerTitleIconSvg} aria-hidden />
-                        </div>
                         <span className={styles.centerTitleText}>{currentItem.headerTitle}</span>
                     </div>
 
@@ -215,15 +221,9 @@ export default function Header() {
                     <span className={styles.logoText}>FLOW</span>
                 </div>
 
-                {/* 제목 + 등급 배지 + 부제목 (알림벨 앞) */}
+                {/* 제목 (알림벨 앞) */}
                 <div className={styles.titleRow}>
                     <h2 className={styles.title}>{greetingTitle}</h2>
-                    {isHome && session && grade === "vip" && (
-                        <span className={styles.gradeBadgeVip}>VIP</span>
-                    )}
-                    {isHome && session && grade === "family" && (
-                        <span className={styles.gradeBadgeFamily}>Family</span>
-                    )}
                 </div>
 
                 {/* 알림 아이콘 */}

@@ -5,6 +5,7 @@
     border-bottom: 1px solid var(--app-border-light, #e5e7eb);
     color: var(--app-text, #111827);
     margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .topRow {
@@ -121,7 +122,6 @@
     gap: 0.15rem;
     /* flex: 1; */
     min-width: 0;
-    flex-direction: column;
 }
 
 .title {

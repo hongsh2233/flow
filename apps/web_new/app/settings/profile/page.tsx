@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
+import { Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { StockTermBox } from "../../components/module/stock-term-box";
 import { getAuthHeaders, getImageUrl } from "@/lib/config/api";
@@ -122,20 +122,6 @@ export default function ProfileEditPage() {
   return (
     <div className="content__wrap">
       <div className={styles.screen}>
-        {/* 뒤로가기 헤더 */}
-        <div className={styles.topBar}>
-          <button
-            type="button"
-            className={styles.backBtn}
-            onClick={() => router.back()}
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h2 className={styles.topBarTitle}>정보 수정</h2>
-          <div className={styles.topBarSpacer} />
-        </div>
-
         {/* 프로필 사진 변경 */}
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>프로필 사진</h3>

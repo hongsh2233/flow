@@ -29,7 +29,7 @@
 
 .profileCard {
   background: var(--app-bg-warm);
-  border-radius: 1.5rem;
+  border-radius: 12px;
   padding: 1.25rem;
   border: 1px solid var(--app-accent-border);
 }
@@ -61,6 +61,13 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
+}
+
+.profileJubti {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  display: block;
+  margin-top: 0.125rem;
 }
 
 .profileName {
