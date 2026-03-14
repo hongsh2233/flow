@@ -514,7 +514,7 @@ export default function JuTalkPage() {
         {latestPosts.length > 0 && (
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>공부노트</h2>
+              <h2 className={`${styles.sectionTitle} ${styles.studyNoteTitle}`}>공부노트</h2>
             </div>
             <ul className={styles.latestPostList}>
               {latestPosts.map((post) => (
