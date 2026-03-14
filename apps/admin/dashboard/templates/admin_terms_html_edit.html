@@ -76,10 +76,8 @@
     </div>
 
     <div id="htmlSourceWrap" style="margin-bottom: 1rem;">
-      <textarea id="htmlSource" placeholder="HTML 코드를 직접 입력하세요"></textarea>
+      <textarea id="htmlSource" name="content" placeholder="HTML 코드를 직접 입력하세요"></textarea>
     </div>
-
-    <input type="hidden" name="content" id="content" />
 
     <script type="application/json" id="initialContentData">{{ (doc.content or '')|tojson }}</script>
 
@@ -148,6 +146,12 @@
   }
   document.getElementById('htmlSource').value = initialContent || '';
 
+  quill.on('text-change', function() {
+    if (currentMode === 'visual') {
+      document.getElementById('htmlSource').value = quill.root.innerHTML;
+    }
+  });
+
   function switchMode(mode) {
     if (mode === currentMode) return;
     var visualWrap = document.getElementById('visualEditorWrap');
@@ -173,11 +177,9 @@
   }
 
   document.getElementById('editForm').addEventListener('submit', function() {
-    var contentField = document.getElementById('content');
-    if (currentMode === 'html') {
-      contentField.value = document.getElementById('htmlSource').value;
-    } else {
-      contentField.value = quill.root.innerHTML;
+    var htmlSource = document.getElementById('htmlSource');
+    if (currentMode === 'visual') {
+      htmlSource.value = quill.root.innerHTML;
     }
   });
 </script>
