@@ -319,6 +319,12 @@ def run_migrations():
         add_post_grade_visibility()
     except Exception as e:
         print(f"⚠️ 게시글 등급/노출 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_post_member_only_period import upgrade as add_post_member_only_period
+        add_post_member_only_period()
+    except Exception as e:
+        print(f"⚠️ 게시글 회원전용 기간 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
     
     try:
         from app.migrations.add_naver_stock_ranking import upgrade as add_naver_ranking_migration

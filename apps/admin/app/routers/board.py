@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List, Optional
 
 from app.dependencies import get_current_user, get_current_member, verify_api_key
@@ -419,6 +419,15 @@ async def upload_image(
         raise HTTPException(status_code=500, detail=f"이미지 업로드 실패: {str(e)}")
 
 
+def _parse_date(val: Optional[str]) -> Optional[date]:
+    if not val or not val.strip():
+        return None
+    try:
+        return datetime.strptime(val.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
 @router.post("/admin/board/{board_id}/write")
 async def admin_create_post(
     board_id: str,
@@ -427,6 +436,8 @@ async def admin_create_post(
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
     member_only_grade: Optional[str] = Form("all"),
+    member_only_start_date: Optional[str] = Form(None),
+    member_only_end_date: Optional[str] = Form(None),
     public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
@@ -488,6 +499,8 @@ async def admin_create_post(
             is_secret=is_secret if is_secret in ["true", "false"] else "false",
             is_member_only=is_member_only if is_member_only in ["true", "false"] else "false",
             member_only_grade=member_only_grade if member_only_grade in ["all", "vip", "family"] else "all",
+            member_only_start_date=_parse_date(member_only_start_date),
+            member_only_end_date=_parse_date(member_only_end_date),
             public_visibility=public_visibility if public_visibility in ["full", "partial"] else "full",
             show_on_main=show_on_main == "true",
             category_id=category_id if category_id else None,
@@ -619,6 +632,8 @@ async def admin_post_edit(
     is_secret: Optional[str] = Form("false"),
     is_member_only: Optional[str] = Form("false"),
     member_only_grade: Optional[str] = Form("all"),
+    member_only_start_date: Optional[str] = Form(None),
+    member_only_end_date: Optional[str] = Form(None),
     public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
     category_id: Optional[int] = Form(None),
@@ -685,6 +700,8 @@ async def admin_post_edit(
         post.is_secret = is_secret if is_secret in ["true", "false"] else "false"
         post.is_member_only = is_member_only if is_member_only in ["true", "false"] else "false"
         post.member_only_grade = member_only_grade if member_only_grade in ["all", "vip", "family"] else "all"
+        post.member_only_start_date = _parse_date(member_only_start_date)
+        post.member_only_end_date = _parse_date(member_only_end_date)
         post.public_visibility = public_visibility if public_visibility in ["full", "partial"] else "full"
         post.show_on_main = show_on_main == "true"
         post.category_id = category_id if category_id else None

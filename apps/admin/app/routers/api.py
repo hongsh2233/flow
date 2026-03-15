@@ -90,6 +90,20 @@ def serialize_date(d: Optional[date]) -> Optional[str]:
     return d.isoformat()
 
 
+def _effective_is_member_only(post) -> str:
+    """회원전용 기간을 고려한 유효 is_member_only 반환"""
+    if getattr(post, "is_member_only", None) != "true":
+        return "false"
+    today = date.today()
+    start = getattr(post, "member_only_start_date", None)
+    end = getattr(post, "member_only_end_date", None)
+    if start and today < start:
+        return "false"  # 아직 시작 전
+    if end and today > end:
+        return "false"  # 기간 만료
+    return "true"
+
+
 # =========================================================
 # 한국거래소(KRX) 데이터 API (API Key 인증)
 # =========================================================
@@ -607,7 +621,7 @@ async def get_board_posts(
             "author": post.author,
             "views": post.views or 0,
             "is_secret": post.is_secret or "false",
-            "is_member_only": getattr(post, "is_member_only", None) or "false",
+            "is_member_only": _effective_is_member_only(post),
             "created_at": serialize_datetime(post.created_at),
             "updated_at": serialize_datetime(post.updated_at),
             "attachments": attachments
@@ -884,7 +898,7 @@ async def get_post(
         "author": post.author,
         "views": post.views or 0,
         "is_secret": post.is_secret or "false",
-        "is_member_only": getattr(post, "is_member_only", None) or "false",
+        "is_member_only": _effective_is_member_only(post),
         "member_only_grade": getattr(post, "member_only_grade", None) or "all",
         "public_visibility": getattr(post, "public_visibility", None) or "full",
         "created_at": serialize_datetime(post.created_at),

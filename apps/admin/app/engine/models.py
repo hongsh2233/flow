@@ -185,6 +185,8 @@ class Post(Base):
     is_secret = Column(String(20), default="false")
     is_member_only = Column(String(20), default="false")
     member_only_grade = Column(String(20), default="all")  # all|vip|family (회원전용 시)
+    member_only_start_date = Column(Date, nullable=True)  # 제한 시작일 (null=즉시)
+    member_only_end_date = Column(Date, nullable=True)  # 제한 종료일 (null=무기한)
     public_visibility = Column(String(20), default="full")  # full|partial (전체공개 시)
     show_on_main = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

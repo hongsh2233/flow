@@ -153,6 +153,9 @@ export default function Header() {
                     </button>
 
                     <div className={styles.centerTitle}>
+                        <div className={styles.centerTitleIcon}>
+                            <BarChart3 className={styles.centerTitleIconSvg} aria-hidden />
+                        </div>
                         <span className={styles.centerTitleText}>{currentItem.headerTitle}</span>
                     </div>
 
