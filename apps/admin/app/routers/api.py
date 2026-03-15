@@ -90,18 +90,35 @@ def serialize_date(d: Optional[date]) -> Optional[str]:
     return d.isoformat()
 
 
-def _effective_is_member_only(post) -> str:
-    """회원전용 기간을 고려한 유효 is_member_only 반환"""
-    if getattr(post, "is_member_only", None) != "true":
-        return "false"
+def _is_within_period(post) -> bool:
+    """제한 기간 내인지 (start/end가 없으면 True)"""
     today = date.today()
     start = getattr(post, "member_only_start_date", None)
     end = getattr(post, "member_only_end_date", None)
     if start and today < start:
-        return "false"  # 아직 시작 전
+        return False  # 아직 시작 전
     if end and today > end:
-        return "false"  # 기간 만료
+        return False  # 기간 만료
+    return True
+
+
+def _effective_is_member_only(post) -> str:
+    """회원전용 기간을 고려한 유효 is_member_only 반환"""
+    if getattr(post, "is_member_only", None) != "true":
+        return "false"
+    if not _is_within_period(post):
+        return "false"  # 기간 만료 → 공개
     return "true"
+
+
+def _effective_public_visibility(post) -> str:
+    """일부 노출 기간을 고려한 유효 public_visibility 반환"""
+    pv = getattr(post, "public_visibility", None) or "full"
+    if pv != "partial":
+        return pv
+    if not _is_within_period(post):
+        return "full"  # 기간 만료 → 전체 노출
+    return "partial"
 
 
 # =========================================================
@@ -900,7 +917,7 @@ async def get_post(
         "is_secret": post.is_secret or "false",
         "is_member_only": _effective_is_member_only(post),
         "member_only_grade": getattr(post, "member_only_grade", None) or "all",
-        "public_visibility": getattr(post, "public_visibility", None) or "full",
+        "public_visibility": _effective_public_visibility(post),
         "created_at": serialize_datetime(post.created_at),
         "updated_at": serialize_datetime(post.updated_at),
         "attachments": attachments
