@@ -4,7 +4,8 @@
 import os
 import re
 import time
-from fastapi import APIRouter, Form, Request, Depends, HTTPException, status
+from fastapi import APIRouter, Form, Request, Depends, HTTPException, Header, status
+from typing import Optional
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -17,6 +18,7 @@ from app import models, utils
 from app.database import get_db
 from app.dependencies import get_current_user, AUTH_COOKIE_NAME
 from app.config import JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
+from app.dependencies import API_SECRET_KEY
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
@@ -1599,6 +1601,34 @@ async def api_reset_password(
     del _password_reset_codes[request.email]
 
     return {"success": True, "message": "비밀번호가 변경되었습니다."}
+
+
+class ReissueTokenRequest(BaseModel):
+    email: str
+
+
+@router.post("/api/auth/member/reissue-token")
+async def reissue_member_token(
+    body: ReissueTokenRequest,
+    x_api_key: Optional[str] = Header(None, alias="X-API-KEY"),
+    db: Session = Depends(get_db),
+):
+    """
+    회원 JWT 액세스 토큰 재발급 (X-API-KEY 인증 필요)
+    NextAuth 세션에 저장된 backendAccessToken이 만료될 때 자동 갱신에 사용됩니다.
+    """
+    if not x_api_key or x_api_key.strip() != API_SECRET_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    member = db.query(models.Member).filter(
+        models.Member.email == body.email,
+        models.Member.status == "active",
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
+    return {"success": True, "access_token": access_token}
 
 
 @router.get("/api/auth/random-profile-image")

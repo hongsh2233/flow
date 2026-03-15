@@ -4,6 +4,18 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import NaverProvider from 'next-auth/providers/naver'
 import GoogleProvider from 'next-auth/providers/google'
 
+/** JWT payload에서 만료 시간 추출 (라이브러리 없이 base64 디코딩) */
+function getTokenExpiry(token: string): number | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'))
+    return typeof payload.exp === 'number' ? payload.exp : null
+  } catch {
+    return null
+  }
+}
+
 export const dynamic = 'force-dynamic'
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || ''
@@ -140,6 +152,31 @@ export const authOptions = {
         if (session.user.image !== undefined) token.picture = session.user.image
         if (session.user.email !== undefined) token.email = session.user.email
       }
+
+      // backendAccessToken 만료 시 자동 재발급 (만료 5분 전 또는 이미 만료된 경우)
+      if (token.backendAccessToken && token.email) {
+        try {
+          const exp = getTokenExpiry(token.backendAccessToken as string)
+          const nowSec = Date.now() / 1000
+          if (!exp || exp < nowSec + 300) {
+            const res = await fetch(`${API_BASE_URL}/api/auth/member/reissue-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': API_SECRET_KEY,
+              },
+              body: JSON.stringify({ email: token.email }),
+            })
+            if (res.ok) {
+              const data = await res.json()
+              if (data.access_token) {
+                token.backendAccessToken = data.access_token
+              }
+            }
+          }
+        } catch { /* 갱신 실패 시 기존 토큰 유지 */ }
+      }
+
       return token
     },
     async session({ session, token }) {
