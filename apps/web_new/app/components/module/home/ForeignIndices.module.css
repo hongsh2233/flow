@@ -74,6 +74,11 @@
   border-color: var(--app-down);
 }
 
+.cardNeutral {
+  border-color: var(--app-border);
+  background: var(--app-bg-secondary);
+}
+
 .label {
   font-size: 0.75rem;
   color: var(--app-text-muted);
@@ -116,6 +121,10 @@
 
 .changeDown {
   color: var(--app-down);
+}
+
+.changeNeutral {
+  color: var(--app-text-muted);
 }
 
 .loading,

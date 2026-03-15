@@ -49,6 +49,8 @@ export interface MarketIndexItem {
   value: string;
   change: string;
   isPositive: boolean;
+  /** 0% 등락 시 그레이 보더 적용 */
+  isNeutral?: boolean;
 }
 
 /* ── 컴포넌트 Props ── */

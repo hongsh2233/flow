@@ -53,6 +53,11 @@
   border-color: var(--app-down);
 }
 
+.cardNeutral {
+  border-color: var(--app-border);
+  background: var(--app-bg-secondary);
+}
+
 .cardLabel {
   font-size: 0.875rem;
   color: var(--app-text-muted);
@@ -95,4 +100,8 @@
 
 .changeDown {
   color: var(--app-down);
+}
+
+.changeNeutral {
+  color: var(--app-text-muted);
 }

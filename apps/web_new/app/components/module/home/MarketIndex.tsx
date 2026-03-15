@@ -31,15 +31,21 @@ export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }:
       </div>
 
       <div className={styles.grid}>
-        {indices.map((item) => (
+        {indices.map((item) => {
+          const cardVariant = item.isNeutral
+            ? styles.cardNeutral
+            : item.isPositive
+              ? styles.cardUp
+              : styles.cardDown;
+          return (
           <div
             key={item.name}
-            className={`${styles.card} ${item.isPositive ? styles.cardUp : styles.cardDown}`}
+            className={`${styles.card} ${cardVariant}`}
           >
             <p className={styles.cardLabel}>{item.name}</p>
             <p className={styles.cardValue}>{item.value}</p>
             <div className={styles.changeRow}>
-              {item.isPositive ? (
+              {item.isNeutral ? null : item.isPositive ? (
                 <TrendingUp
                   className={`${styles.changeIcon} ${styles.changeIconUp}`}
                 />
@@ -50,14 +56,15 @@ export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }:
               )}
               <p
                 className={`${styles.changeText} ${
-                  item.isPositive ? styles.changeUp : styles.changeDown
+                  item.isNeutral ? styles.changeNeutral : item.isPositive ? styles.changeUp : styles.changeDown
                 }`}
               >
                 {item.change}
               </p>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

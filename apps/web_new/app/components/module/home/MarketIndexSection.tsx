@@ -27,12 +27,17 @@ export function MarketIndexSection() {
         const result = await response.json();
 
         if (result.success && result.data?.length > 0) {
-          const mapped: MarketIndexItem[] = result.data.map((item: DomesticIndexItem) => ({
-            name: item.name,
-            value: item.value,
-            change: `${item.change} (${item.percent})`,
-            isPositive: item.change.startsWith("+") || parseFloat(item.change) >= 0,
-          }));
+          const mapped: MarketIndexItem[] = result.data.map((item: DomesticIndexItem) => {
+            const pct = parseFloat(item.percent);
+            const isZero = pct === 0;
+            return {
+              name: item.name,
+              value: item.value,
+              change: `${item.change} (${item.percent})`,
+              isPositive: item.change.startsWith("+") || parseFloat(item.change) >= 0,
+              isNeutral: isZero,
+            };
+          });
           setIndices(mapped);
           setCollectedDate(result.timestamp ?? null);
         } else {

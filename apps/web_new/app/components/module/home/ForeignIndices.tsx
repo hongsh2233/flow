@@ -99,21 +99,25 @@ export function ForeignIndices() {
       </div>
       <div className={styles.grid}>
         {indices.map((item, idx) => {
-          const isUp = item.change.startsWith("+") || parseFloat(item.change) >= 0;
+          const pct = parseFloat(item.percent);
+          const isNeutral = pct === 0;
+          const isUp = !isNeutral && (item.change.startsWith("+") || parseFloat(item.change) >= 0);
+          const cardVariant = isNeutral ? styles.cardNeutral : isUp ? styles.cardUp : styles.cardDown;
+          const textVariant = isNeutral ? styles.changeNeutral : isUp ? styles.changeUp : styles.changeDown;
           return (
             <div
               key={`${item.symbol}-${idx}`}
-              className={`${styles.card} ${isUp ? styles.cardUp : styles.cardDown}`}
+              className={`${styles.card} ${cardVariant}`}
             >
               <p className={styles.label}>{item.name}</p>
               <p className={styles.value}>{item.value}</p>
               <div className={styles.changeRow}>
-                {isUp ? (
+                {isNeutral ? null : isUp ? (
                   <TrendingUp className={`${styles.changeIcon} ${styles.changeIconUp}`} />
                 ) : (
                   <TrendingDown className={`${styles.changeIcon} ${styles.changeIconDown}`} />
                 )}
-                <p className={`${styles.changeText} ${isUp ? styles.changeUp : styles.changeDown}`}>
+                <p className={`${styles.changeText} ${textVariant}`}>
                   {item.change} ({item.percent})
                 </p>
               </div>
