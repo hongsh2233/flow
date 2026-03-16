@@ -1082,11 +1082,12 @@ async def approve_post(
     post.approved_at = datetime.now()
     db.commit()
 
-    # 앱 내 알림 생성 (비밀글 제외)
+    # 앱 내 알림 + FCM 전체 푸시 (비밀글 제외)
     if post.is_secret != "true":
+        board_obj = db.query(models.Board).filter(models.Board.id == post.board_id).first()
+        board_name = board_obj.name if board_obj else post.board_id
+
         try:
-            board_obj = db.query(models.Board).filter(models.Board.id == post.board_id).first()
-            board_name = board_obj.name if board_obj else post.board_id
             noti = models.Notification(
                 type="new_post",
                 title=f"[{board_name}] {post.title}",
@@ -1096,21 +1097,18 @@ async def approve_post(
             )
             db.add(noti)
             db.commit()
-        except Exception as noti_err:
+        except Exception:
             pass
 
-        # FCM 전체 푸시
         try:
             from app.services.fcm_service import send_push_to_all
-            board_obj = db.query(models.Board).filter(models.Board.id == post.board_id).first()
-            board_name = board_obj.name if board_obj else post.board_id
             await send_push_to_all(
                 db,
                 title=f"[{board_name}] 새 글이 등록됐습니다",
                 body=post.title,
                 data={"link_url": f"/board/{post.id}?from={post.board_id}", "type": "new_post"},
             )
-        except Exception as fcm_err:
+        except Exception:
             pass
 
     return JSONResponse({"success": True, "message": "승인되었습니다."})
