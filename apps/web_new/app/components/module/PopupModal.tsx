@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { getImageUrl } from "@/lib/config/api";
+import { sanitizeHtml } from "@/lib/sanitize";
 import styles from "./PopupModal.module.css";
 
 interface PopupData {
@@ -127,7 +128,7 @@ export function PopupModal() {
           {current.content_type === "html" && current.html_content ? (
             <div
               className={styles.htmlContent}
-              dangerouslySetInnerHTML={{ __html: current.html_content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(current.html_content) }}
             />
           ) : current.content_type === "image" && current.image_url ? (
             <img

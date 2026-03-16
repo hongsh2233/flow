@@ -26,6 +26,8 @@ from app.config import (
 )
 from app.dependencies import API_SECRET_KEY
 from app.utils.profile_generator import generate_profile
+from app.utils.login_attempts import check_locked, record_failure, clear_attempts
+from app.utils.safe_logger import safe_log_error
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -494,8 +496,14 @@ async def login_page(request: Request):
       <script>
         // URL에 error 파라미터가 있으면 에러 메시지 표시
         const params = new URLSearchParams(window.location.search);
-        if (params.get('error') === '1') {
-          document.getElementById('errorMsg').classList.add('show');
+        const err = params.get('error');
+        const msgEl = document.getElementById('errorMsg');
+        if (err === '1') {
+          msgEl.textContent = '이메일 또는 비밀번호를 확인해주세요.';
+          msgEl.classList.add('show');
+        } else if (err === 'locked') {
+          msgEl.textContent = params.get('msg') || '너무 많은 로그인 시도입니다. 15분 후 다시 시도해 주세요.';
+          msgEl.classList.add('show');
         }
       </script>
     </body>
@@ -503,17 +511,35 @@ async def login_page(request: Request):
     """
 
 
+def _get_client_ip(request: Request) -> str:
+    """클라이언트 IP 추출 (X-Forwarded-For, X-Real-IP 지원)"""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.headers.get("X-Real-IP") or request.client.host if request.client else "unknown"
+
+
 @router.post("/login")
 async def do_login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """로그인 처리"""
+    ip = _get_client_ip(request)
+    locked, msg = check_locked(db, username, ip)
+    if locked:
+        from urllib.parse import quote
+        return RedirectResponse(url=f"/login?error=locked&msg={quote(msg or '')}", status_code=303)
+
     user = db.query(models.AdminUser).filter(models.AdminUser.email == username).first()
     
     if not user or not utils.verify_password(password, user.hashed_password):
+        record_failure(db, username, ip)
         return RedirectResponse(url="/login?error=1", status_code=303)
+
+    clear_attempts(db, username, ip)
     
     # 로그인 성공 시 관리자 세션 쿠키 설정 (30분 유효)
     response = RedirectResponse(url="/admin/dashboard", status_code=303)
@@ -628,6 +654,7 @@ def _generate_token_response(user: models.AdminUser, db: Session) -> TokenRespon
 
 @router.post("/api/auth/token", response_model=TokenResponse)
 async def api_token(
+    http_request: Request,
     token_request: TokenRequest,
     db: Session = Depends(get_db)
 ):
@@ -675,58 +702,85 @@ async def api_token(
     }
     ```
     """
+    ip = _get_client_ip(http_request)
+    locked, msg = check_locked(db, token_request.username, ip)
+    if locked:
+        raise HTTPException(status_code=429, detail=msg, headers={"WWW-Authenticate": "Bearer"})
+
     user = db.query(models.AdminUser).filter(models.AdminUser.email == token_request.username).first()
     
     if not user or not utils.verify_password(token_request.password, user.hashed_password):
+        record_failure(db, token_request.username, ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="아이디 또는 비밀번호가 잘못되었습니다",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    clear_attempts(db, token_request.username, ip)
     return _generate_token_response(user, db)
 
 
 @router.post("/api/auth/login", response_model=TokenResponse)
 async def api_login(
+    http_request: Request,
     token_request: TokenRequest,
     db: Session = Depends(get_db)
 ):
     """
-    API용 로그인 엔드포인트 (JWT 토큰 발급)
-    
-    /api/auth/token과 동일한 기능을 제공합니다. (하위 호환성 유지)
-    
-    사용 예시:
-    ```json
-    POST /api/auth/login
-    {
-        "username": "admin@example.com",
-        "password": "password123"
-    }
-    ```
-    
-    응답:
-    ```json
-    {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "refresh_token": "refresh-token-here...",
-        "token_type": "bearer",
-        "expires_in": 3600,
-        "refresh_expires_in": 2592000
-    }
-    ```
+    API용 로그인 엔드포인트 (JWT 토큰 발급) - api_token과 동일
     """
-    user = db.query(models.AdminUser).filter(models.AdminUser.email == token_request.username).first()
-    
-    if not user or not utils.verify_password(token_request.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="아이디 또는 비밀번호가 잘못되었습니다",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
+    return await api_token(http_request, token_request, db)
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/api/auth/refresh", response_model=TokenResponse)
+async def api_refresh_token(
+    body: RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Refresh Token으로 새 Access Token + 새 Refresh Token 발급 (로테이션)
+    기존 Refresh Token은 무효화됨.
+    """
+    rt = db.query(models.RefreshToken).filter(
+        models.RefreshToken.token == body.refresh_token
+    ).first()
+    if not rt:
+        raise HTTPException(status_code=401, detail="유효하지 않은 Refresh Token입니다.")
+    now = datetime.utcnow()
+    expires_naive = rt.expires_at.replace(tzinfo=None) if rt.expires_at.tzinfo else rt.expires_at
+    if now > expires_naive:
+        db.delete(rt)
+        db.commit()
+        raise HTTPException(status_code=401, detail="Refresh Token이 만료되었습니다.")
+    user = db.query(models.AdminUser).filter(models.AdminUser.id == rt.user_id).first()
+    if not user:
+        db.delete(rt)
+        db.commit()
+        raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다.")
+    db.delete(rt)
+    db.commit()
     return _generate_token_response(user, db)
+
+
+@router.post("/api/auth/logout")
+async def api_logout(body: LogoutRequest, db: Session = Depends(get_db)):
+    """
+    Refresh Token 블랙리스트 - DB에서 삭제하여 무효화
+    """
+    db.query(models.RefreshToken).filter(
+        models.RefreshToken.token == body.refresh_token
+    ).delete()
+    db.commit()
+    return {"success": True, "message": "로그아웃되었습니다."}
 
 
 @router.post("/api/auth/social-login", response_model=SocialLoginResponse)
@@ -1448,11 +1502,17 @@ async def api_member_login(
     """
     일반 회원 로그인 API 엔드포인트 (이메일/비밀번호)
     """
+    ip = _get_client_ip(request)
+    locked, msg = check_locked(db, login_request.email, ip)
+    if locked:
+        raise HTTPException(status_code=429, detail=msg)
+
     member = db.query(models.Member).filter(
         models.Member.email == login_request.email
     ).first()
 
     if not member:
+        record_failure(db, login_request.email, ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="이메일 또는 비밀번호가 잘못되었습니다."
@@ -1460,16 +1520,20 @@ async def api_member_login(
 
     # 소셜 로그인 사용자인 경우 (비밀번호 없음)
     if not member.hashed_password:
+        record_failure(db, login_request.email, ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="소셜 로그인으로 가입된 계정입니다. 소셜 로그인을 이용해주세요."
         )
 
     if not utils.verify_password(login_request.password, member.hashed_password):
+        record_failure(db, login_request.email, ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="이메일 또는 비밀번호가 잘못되었습니다."
         )
+
+    clear_attempts(db, login_request.email, ip)
 
     access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
     return MemberLoginResponse(
@@ -1549,7 +1613,7 @@ def _send_password_reset_email(to_email: str, code: str) -> bool:
         })
         return True
     except Exception as e:
-        print(f"비밀번호 재설정 이메일 발송 실패: {e}")
+        safe_log_error("비밀번호 재설정 이메일 발송", e)
         return False
 
 

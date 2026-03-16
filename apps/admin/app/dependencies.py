@@ -37,8 +37,9 @@ API_SECRET_KEY = os.environ.get("NEXT_PUBLIC_X_API_KEY", "1978022019820308200705
 
 # Railway 배포 환경에서 API_SECRET_KEY가 기본값인지 확인 (경고 출력)
 if API_SECRET_KEY == "1978022019820308200705092018111420220303" and os.environ.get("RAILWAY_ENVIRONMENT"):
-    print("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 기본값입니다. Railway Variables에서 설정하세요.")
-    print("💡 Railway → Admin 서비스 → Variables → NEXT_PUBLIC_X_API_KEY 설정 필요")
+    from app.utils.safe_logger import safe_log
+    safe_log("⚠️ 경고: NEXT_PUBLIC_X_API_KEY가 기본값입니다. Railway Variables에서 설정하세요.")
+    safe_log("💡 Railway → Admin 서비스 → Variables → NEXT_PUBLIC_X_API_KEY 설정 필요")
 
 # 기존 설정들...
 AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "bo_session_id")
