@@ -151,6 +151,8 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response, debug_on_empty=True)
+        # (N자) 패턴 제거: "(33자)", "(50자 이내)" 등
+        text = re.sub(r'\s*\(\d+자[^)]*\)', '', text).strip()
         if len(text) > STATEMENT_MAX_LEN:
             text = text[:STATEMENT_MAX_LEN - 1] + "…"
         return text if text else None

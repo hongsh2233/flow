@@ -36,6 +36,18 @@ const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop";
 
+const SOURCE_INITIALS: Record<string, string> = {
+  GS: "GS", MS: "MS", JPM: "JPM", Citi: "CT",
+  BofA: "BA", Barclays: "BC", UBS: "UBS",
+  Jefferies: "JF", BlackRock: "BR", Vanguard: "VG", Fidelity: "FD",
+};
+const SOURCE_COLORS: Record<string, string> = {
+  GS: "#003594", MS: "#003DA5", JPM: "#005EB8",
+  Citi: "#003B70", BofA: "#E31837", Barclays: "#00AEEF",
+  UBS: "#E60000", Jefferies: "#6A1B9A", BlackRock: "#2C3E50",
+  Vanguard: "#8B0000", Fidelity: "#49A84C",
+};
+
 export default function JuTalkPage() {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -235,12 +247,13 @@ export default function JuTalkPage() {
         const res = await fetch("/api/market-voices?limit=30", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        const items = (json?.data as Array<{ id: number; name: string; title: string; image: string; statement: string; source_url?: string; source_title?: string; time: string }>) ?? [];
+        const items = (json?.data as Array<{ id: number; name: string; title: string; image: string; sourceCode?: string; statement: string; source_url?: string; source_title?: string; time: string }>) ?? [];
         const mapped: MarketVoice[] = items.map((v) => ({
           id: v.id,
           name: v.name,
           title: v.title || "",
           image: v.image || DEFAULT_AVATAR,
+          sourceCode: v.sourceCode,
           statement: v.statement,
           time: v.time || "",
           source: v.source_title || v.source_url || "",
@@ -551,11 +564,20 @@ export default function JuTalkPage() {
             {displayedVoices.map((voice, idx) => (
               <article key={voice.id} className={`${styles.voiceCard} ${idx === 0 ? styles.voiceCardNew : ""}`}>
                 <div className={styles.voiceMain}>
-                  <img
-                    src={voice.image}
-                    alt={voice.name}
-                    className={styles.voiceAvatar}
-                  />
+                  {voice.sourceCode ? (
+                    <div
+                      className={styles.voiceInitials}
+                      style={{ background: SOURCE_COLORS[voice.sourceCode] ?? "#6B7280" }}
+                    >
+                      {SOURCE_INITIALS[voice.sourceCode] ?? voice.sourceCode.slice(0, 2).toUpperCase()}
+                    </div>
+                  ) : (
+                    <img
+                      src={voice.image}
+                      alt={voice.name}
+                      className={styles.voiceAvatar}
+                    />
+                  )}
                   <div className={styles.voiceContent}>
                     <div className={styles.voiceHeaderRow}>
                       <div>
