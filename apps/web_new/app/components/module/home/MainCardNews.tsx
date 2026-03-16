@@ -39,7 +39,7 @@ export function MainCardNews() {
       <div className={styles.headingRow}>
         <h3 className={styles.heading}>
           <Sparkles className={styles.headingIcon} aria-hidden />
-          투데이 하이라이트
+          이슈 체크
         </h3>
       </div>
       <Link
