@@ -904,8 +904,8 @@ async def collect_market_morning_summary():
 
 async def collect_market_closing_summary():
     """
-    장마감 시황 생성 및 board/B001 게시 (15:40 KST)
-    - 15:30 수집된 KR지수·수급동향·뉴스 데이터를 Gemini로 요약
+    장마감 시황 생성 및 board/B001 게시 (15:50 KST)
+    - 15:40 수집된 KR지수·수급동향·뉴스 데이터를 Gemini로 요약
     - 주말/공휴일은 건너뜀
     """
     if should_skip_today():

@@ -277,7 +277,7 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
                 category_id=category_id,
                 title=post_title,
                 content=post_content,
-                author="AI목표가",
+                author="플로우Ai",
             )
             db.add(new_post)
             posted = 1
