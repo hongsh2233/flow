@@ -1349,7 +1349,7 @@ async def collect_daily_issue_summary():
 
 
 class DailyIssueScheduler:
-    """금일 이슈 Gemini 요약 스케줄러 (평일 20:00)"""
+    """금일 이슈 Gemini 요약 스케줄러 (뉴스 수집 10분 후: 08:40 / 12:40 / 19:40, 월~금)"""
     def __init__(self):
         self.scheduler = None
         self.kst = pytz.timezone("Asia/Seoul")
@@ -1358,18 +1358,23 @@ class DailyIssueScheduler:
         if self.scheduler is not None:
             return
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
-        self.scheduler.add_job(
-            collect_daily_issue_summary,
-            trigger=CronTrigger(day_of_week="mon-fri", hour=20, minute=0, timezone=self.kst),
-            id="daily_issue_summary",
-            name="금일 이슈 Gemini 요약 (20:00, 월~금)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=600,
-        )
+        for slot_hour, slot_minute, slot_id, slot_name in [
+            (8,  40, "daily_issue_summary_0840", "금일 이슈 Gemini 요약 (08:40, 월~금)"),
+            (12, 40, "daily_issue_summary_1240", "금일 이슈 Gemini 요약 (12:40, 월~금)"),
+            (19, 40, "daily_issue_summary_1940", "금일 이슈 Gemini 요약 (19:40, 월~금)"),
+        ]:
+            self.scheduler.add_job(
+                collect_daily_issue_summary,
+                trigger=CronTrigger(day_of_week="mon-fri", hour=slot_hour, minute=slot_minute, timezone=self.kst),
+                id=slot_id,
+                name=slot_name,
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=600,
+            )
         self.scheduler.start()
-        print("✅ 금일 이슈 스케줄러 시작 (20:00, 월~금)")
+        print("✅ 금일 이슈 스케줄러 시작 (08:40 / 12:40 / 19:40, 월~금)")
 
     def shutdown(self):
         if self.scheduler:
