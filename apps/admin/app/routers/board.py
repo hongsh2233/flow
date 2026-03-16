@@ -441,6 +441,7 @@ async def admin_create_post(
     member_only_end_date: Optional[str] = Form(None),
     public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
+    status: Optional[str] = Form("approved"),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -491,6 +492,8 @@ async def admin_create_post(
                 files_html = f'<!-- ATTACHED_FILES:{files_json} -->'
                 final_content = content + files_html
         
+        post_status = status if status in ["pending", "approved"] else "approved"
+
         # 게시글 저장 (파일 정보가 포함된 content로 저장)
         new_post = models.Post(
             board_id=board_id,
@@ -504,6 +507,8 @@ async def admin_create_post(
             member_only_end_date=_parse_date(member_only_end_date),
             public_visibility=public_visibility if public_visibility in ["full", "partial"] else "full",
             show_on_main=show_on_main == "true",
+            status=post_status,
+            approved_at=datetime.now() if post_status == "approved" else None,
             category_id=category_id if category_id else None,
             created_at=datetime.now()
         )
@@ -512,11 +517,11 @@ async def admin_create_post(
 
         db.commit()
 
-        # 앱 내 알림 생성 (비밀글 제외)
-        try:
-            if is_secret != "true":
-                board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
-                board_name = board_obj.name if board_obj else board_id
+        # 알림 + FCM 전체 푸시 (승인 상태 + 비밀글 제외)
+        if post_status == "approved" and is_secret != "true":
+            board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
+            board_name = board_obj.name if board_obj else board_id
+            try:
                 noti = models.Notification(
                     type="new_post",
                     title=f"[{board_name}] {title.strip()}",
@@ -526,27 +531,18 @@ async def admin_create_post(
                 )
                 db.add(noti)
                 db.commit()
-        except Exception as noti_err:
-            pass
-
-        # FCM 전체 푸시 (비밀글 제외)
-        if is_secret != "true":
+            except Exception:
+                pass
             try:
                 from app.services.fcm_service import send_push_to_all
-                import logging as _logging
-                _fcm_logger = _logging.getLogger(__name__)
-                board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
-                board_name = board_obj.name if board_obj else board_id
-                sent = await send_push_to_all(
+                await send_push_to_all(
                     db,
                     title=f"[{board_name}] 새 글이 등록됐습니다",
                     body=title.strip(),
                     data={"link_url": f"/board/{new_post.id}?from={board_id}", "type": "new_post"},
                 )
-                _fcm_logger.info(f"[FCM] 새 게시글 알림 전송 완료: {sent}건 (post_id={new_post.id})")
-            except Exception as fcm_err:
-                import logging as _logging
-                _logging.getLogger(__name__).error(f"[FCM] 새 게시글 알림 전송 실패: {fcm_err}", exc_info=True)
+            except Exception:
+                pass
 
         return RedirectResponse(url=f"/admin/board/{board_id}/posts", status_code=303)
     except Exception as e:
@@ -637,6 +633,7 @@ async def admin_post_edit(
     member_only_end_date: Optional[str] = Form(None),
     public_visibility: Optional[str] = Form("full"),
     show_on_main: Optional[str] = Form("false"),
+    status: Optional[str] = Form(None),
     category_id: Optional[int] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     user=Depends(get_current_user),
@@ -706,6 +703,10 @@ async def admin_post_edit(
         post.public_visibility = public_visibility if public_visibility in ["full", "partial"] else "full"
         post.show_on_main = show_on_main == "true"
         post.category_id = category_id if category_id else None
+        if status in ["pending", "approved"]:
+            post.status = status
+            if status == "approved" and not post.approved_at:
+                post.approved_at = datetime.now()
         post.updated_at = datetime.now()
 
         db.commit()

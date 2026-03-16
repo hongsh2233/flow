@@ -249,6 +249,14 @@
     </div>
 
     <div class="form-group">
+      <label for="status">게시 상태</label>
+      <select id="status" name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+        <option value="approved" {% if (post.status|default('approved')) == 'approved' %}selected{% endif %}>✅ 승인 (즉시 노출)</option>
+        <option value="pending" {% if (post.status|default('approved')) == 'pending' %}selected{% endif %}>⏳ 대기 (관리자 승인 후 노출)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label>파일 첨부</label>
       <div class="file-upload-area" id="fileUploadArea">
         <p style="margin: 0; color: #666;">📎 파일을 드래그하거나 클릭하여 첨부하세요</p>
@@ -289,10 +297,10 @@
     placeholder: '게시글 내용을 입력하세요...'
   });
 
-  // 기존 content를 에디터에 로드
+  // 기존 content를 에디터에 로드 (dangerouslyPasteHTML: AI HTML 등 복잡 구조도 올바르게 렌더링)
   const existingContent = {{ post.content | tojson | safe }};
   if (existingContent) {
-    quill.root.innerHTML = existingContent;
+    quill.clipboard.dangerouslyPasteHTML(existingContent);
   }
 
   // 이미지 업로드 핸들러
