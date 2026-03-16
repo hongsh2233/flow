@@ -6,13 +6,23 @@ import styles from "./MarketIndex.module.css";
 function formatMarketCloseDate(ts: string | null | undefined): string {
   if (!ts) return "";
   try {
-    const [datePart] = ts.split(" ");
-    const [y, m, d] = datePart.split("-").map(Number);
-    if (m && d) return `${m}월 ${d}일 장 마감 기준`;
+    const parts = ts.split(" ");
+    const datePart = parts[0];
+    const timePart = parts[1] || "";
+    const [, m, d] = datePart.split("-").map(Number);
+    if (!m || !d) return `수집일자: ${ts}`;
+    if (timePart) {
+      const [h, min] = timePart.split(":").map(Number);
+      const totalMin = h * 60 + (min || 0);
+      if (totalMin >= 15 * 60 + 30) {
+        return `${m}월 ${d}일 장 마감 기준`;
+      }
+      return `${m}월 ${d}일 ${timePart} 수집`;
+    }
+    return `${m}월 ${d}일 장 마감 기준`;
   } catch {
     return `수집일자: ${ts}`;
   }
-  return `수집일자: ${ts}`;
 }
 
 export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }: MarketIndexProps) {

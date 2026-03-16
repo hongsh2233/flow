@@ -33,6 +33,7 @@ interface SummaryData {
   indices: IndexItem[];
   exchangeRates: ExchangeRateItem[];
   collectedDate: string | null;
+  collectedTime: string | null;
   aiSummary: AiSummary | null;
 }
 
@@ -206,7 +207,7 @@ export function MarketSummaryPopup() {
 
           {data.collectedDate && (
             <p className={styles.footerNote}>
-              기준일 {data.collectedDate} · 06:35 수집
+              기준일 {data.collectedDate}{data.collectedTime ? ` · ${data.collectedTime} 수집` : ""}
             </p>
           )}
         </div>

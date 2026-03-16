@@ -14,6 +14,15 @@ interface ForeignIndexItem {
 
 function formatBaseTimestamp(ts: string | null | undefined): string {
   if (!ts) return "";
+  try {
+    const [datePart, timePart] = ts.split(" ");
+    const [, m, d] = datePart.split("-").map(Number);
+    if (m && d) {
+      return timePart ? `${m}월 ${d}일 ${timePart} 수집` : `${m}월 ${d}일 수집`;
+    }
+  } catch {
+    // fallthrough
+  }
   return `${ts} 기준`;
 }
 
