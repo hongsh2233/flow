@@ -7,6 +7,7 @@ interface VoiceItem {
   name: string;
   title: string;
   image: string;
+  sourceCode?: string;
   statement: string;
   source_url?: string;
   source_title?: string;
@@ -81,7 +82,8 @@ export async function GET(request: NextRequest) {
       id: 100000 + r.id,
       name: SOURCE_NAMES[r.source] || r.source,
       title: "주요 투자사",
-      image: DEFAULT_AVATAR,
+      image: "",
+      sourceCode: r.source,
       statement: r.title,
       source_url: r.source_url,
       source_title: r.title,

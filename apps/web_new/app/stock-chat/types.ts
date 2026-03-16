@@ -25,6 +25,7 @@ export interface MarketVoice {
   name: string;
   title: string;
   image: string;
+  sourceCode?: string;
   statement: string;
   time: string;
   source: string;
