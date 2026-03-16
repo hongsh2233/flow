@@ -15,6 +15,7 @@ export const FavoriteStocks = memo(function FavoriteStocks({ stocks, onSelect }:
         </h3>
         <span className={styles.count}>{stocks.length}개</span>
       </div>
+      <p className={styles.subtext}>관심종목에 추가하면 종목뉴스를 빠르게 보실수 있습니다.</p>
 
       <div className={styles.grid}>
         {stocks.map((stock) => (

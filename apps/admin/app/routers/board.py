@@ -5,7 +5,7 @@ import os
 import json
 import re
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -83,10 +83,11 @@ async def get_board_posts_json(
     from sqlalchemy.orm import joinedload
     all_posts = db.query(models.Post).options(
         joinedload(models.Post.category)
-    ).filter(models.Post.board_id == board_id)\
-     .order_by(models.Post.created_at.desc())\
-     .all()
-    
+    ).filter(
+        models.Post.board_id == board_id,
+        models.Post.status == "approved",
+    ).order_by(models.Post.created_at.desc()).all()
+
     # 비밀글 필터링: API Key로 호출하는 경우 모든 글 표시 (관리자 권한으로 간주)
     posts = all_posts
     
@@ -1048,7 +1049,7 @@ async def public_post_delete(
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
-    
+
     try:
         db.delete(post)
         db.commit()
@@ -1056,3 +1057,79 @@ async def public_post_delete(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"게시글 삭제 중 오류가 발생했습니다: {str(e)}")
+
+
+# =========================================================
+# [게시글 승인/거절 API]
+# =========================================================
+
+@router.post("/api/admin/board/posts/{post_id}/approve")
+async def approve_post(
+    post_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """게시글 승인 (pending → approved) + 알림/FCM 발송"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        return JSONResponse({"success": False, "message": "게시글을 찾을 수 없습니다."}, status_code=404)
+    if post.status == "approved":
+        return JSONResponse({"success": False, "message": "이미 승인된 게시글입니다."})
+
+    post.status = "approved"
+    post.approved_at = datetime.now()
+    db.commit()
+
+    # 앱 내 알림 + FCM 전체 푸시 (비밀글 제외)
+    if post.is_secret != "true":
+        board_obj = db.query(models.Board).filter(models.Board.id == post.board_id).first()
+        board_name = board_obj.name if board_obj else post.board_id
+
+        try:
+            noti = models.Notification(
+                type="new_post",
+                title=f"[{board_name}] {post.title}",
+                message=post.title,
+                link_url=f"/board/{post.id}?from={post.board_id}",
+                is_global="true",
+            )
+            db.add(noti)
+            db.commit()
+        except Exception:
+            pass
+
+        try:
+            from app.services.fcm_service import send_push_to_all
+            await send_push_to_all(
+                db,
+                title=f"[{board_name}] 새 글이 등록됐습니다",
+                body=post.title,
+                data={"link_url": f"/board/{post.id}?from={post.board_id}", "type": "new_post"},
+            )
+        except Exception:
+            pass
+
+    return JSONResponse({"success": True, "message": "승인되었습니다."})
+
+
+@router.post("/api/admin/board/posts/{post_id}/reject")
+async def reject_post(
+    post_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """게시글 거절 (삭제)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        return JSONResponse({"success": False, "message": "게시글을 찾을 수 없습니다."}, status_code=404)
+    try:
+        db.delete(post)
+        db.commit()
+        return JSONResponse({"success": True, "message": "거절 및 삭제되었습니다."})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)

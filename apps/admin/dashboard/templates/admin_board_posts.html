@@ -251,6 +251,58 @@
     background: #e74c3c;
     vertical-align: middle;
   }
+
+  .status-badge-pending {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #92400e;
+    background: #fef3c7;
+    vertical-align: middle;
+  }
+
+  .status-badge-approved {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #065f46;
+    background: #d1fae5;
+    vertical-align: middle;
+  }
+
+  .btn-approve {
+    padding: 5px 12px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .btn-approve:hover {
+    background: #1e8449;
+  }
+
+  .btn-reject {
+    padding: 5px 12px;
+    background: #e67e22;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .btn-reject:hover {
+    background: #ca6f1e;
+  }
 </style>
 {% endblock %}
 
@@ -342,6 +394,11 @@
               {% if new_post_ids and (post.id in new_post_ids) %}
               <span class="new-badge">NEW</span>
               {% endif %}
+              {% if (post.status|default('approved')) == 'pending' %}
+              <span class="status-badge-pending">⏳ 대기</span>
+              {% else %}
+              <span class="status-badge-approved">✅ 승인</span>
+              {% endif %}
             </div>
             <div class="post-meta">
               <span>작성자: {{ post.author or '관리자' }}</span>
@@ -351,6 +408,10 @@
           </div>
         </div>
         <div class="post-actions">
+          {% if (post.status|default('approved')) == 'pending' %}
+          <button class="btn-approve" onclick="approvePost({{ post.id }}, this)">승인</button>
+          <button class="btn-reject" onclick="rejectPost({{ post.id }}, this)">거절</button>
+          {% endif %}
           <a href="/admin/board/{{ board.id }}/post/{{ post.id }}" class="btn-edit" style="background: #27ae60;">보기</a>
           <a href="/admin/board/{{ board.id }}/post/{{ post.id }}/edit" class="btn-edit">수정</a>
           <a
@@ -429,6 +490,44 @@
 
     syncButtonState();
   })();
+
+  async function approvePost(postId, btn) {
+    if (!confirm('이 게시글을 승인하시겠습니까?\n승인 시 알림 및 FCM 푸시가 발송됩니다.')) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/admin/board/posts/${postId}/approve`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('승인되었습니다.');
+        location.reload();
+      } else {
+        alert('오류: ' + data.message);
+        btn.disabled = false;
+      }
+    } catch (e) {
+      alert('요청 중 오류가 발생했습니다.');
+      btn.disabled = false;
+    }
+  }
+
+  async function rejectPost(postId, btn) {
+    if (!confirm('이 게시글을 거절(삭제)하시겠습니까?')) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/admin/board/posts/${postId}/reject`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('거절 및 삭제되었습니다.');
+        location.reload();
+      } else {
+        alert('오류: ' + data.message);
+        btn.disabled = false;
+      }
+    } catch (e) {
+      alert('요청 중 오류가 발생했습니다.');
+      btn.disabled = false;
+    }
+  }
 </script>
 {% endblock %}
 

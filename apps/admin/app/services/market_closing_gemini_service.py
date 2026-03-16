@@ -448,6 +448,7 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
             title=title,
             content=content,
             author="플로우Ai",
+            status="pending",
         ))
     db.commit()
     print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date})")

@@ -530,6 +530,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ B002 목표가 조정 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_post_status_column import upgrade as add_post_status_migration
+        add_post_status_migration()
+    except Exception as e:
+        print(f"⚠️ posts status 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
