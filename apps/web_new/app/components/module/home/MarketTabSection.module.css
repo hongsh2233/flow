@@ -37,10 +37,6 @@
   white-space: nowrap;
 }
 
-.tab:hover {
-  background: var(--app-bg-hover, #f3f4f6);
-}
-
 .tabActive {
   background: var(--app-accent, #2563eb);
   color: #fff;
