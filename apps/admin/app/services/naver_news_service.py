@@ -9,6 +9,7 @@
     (네이버 개발자 센터 https://developers.naver.com 에서 애플리케이션 등록 후 발급)
 """
 import re
+import random
 import httpx
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -277,10 +278,8 @@ class NaverNewsService:
         Returns:
             List[Dict]: 뉴스 리스트
         """
-        query = db.query(NaverStockNews).order_by(
-            NaverStockNews.pub_datetime.desc().nullslast(),
-            NaverStockNews.collected_at.desc(),
-        )
+        from sqlalchemy import func as sa_func
+        query = db.query(NaverStockNews).order_by(sa_func.random())
         if category:
             query = query.filter(NaverStockNews.category == category)
 

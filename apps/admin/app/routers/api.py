@@ -2451,6 +2451,32 @@ async def get_daily_issue_summary(
         return {"success": False, "summary": None, "error": str(e)}
 
 
+@router.post("/api/daily-issue-summary/generate")
+async def trigger_daily_issue_summary(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    금일 이슈 Gemini 요약 수동 생성 (수동 트리거 / 검증용)
+    naver_stock_news 기반으로 즉시 생성·저장
+    """
+    from datetime import date as dt_date
+    from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
+    try:
+        today = dt_date.today()
+        saved = generate_and_save_daily_issue_summary(db, today)
+        if saved:
+            row = db.execute(text("""
+                SELECT summary FROM daily_issue_summaries WHERE date = :d
+            """), {"d": today}).fetchone()
+            summary = row[0] if row else None
+            return {"success": True, "generated": True, "summary": summary, "date": today.isoformat()}
+        else:
+            return {"success": False, "generated": False, "message": "뉴스 없음 또는 Gemini 오류", "date": today.isoformat()}
+    except Exception as e:
+        return {"success": False, "generated": False, "error": str(e)}
+
+
 @router.get("/api/naver-stock-news")
 async def get_naver_stock_news(
     category: Optional[str] = Query(None, description="카테고리 필터 (수주/실적발표/배당/연구개발/기술이전/유상증자/무상증자/자사주매입/합병인수/특허/임상/적자전환/상장/분할)"),
