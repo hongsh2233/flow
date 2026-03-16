@@ -22,11 +22,13 @@ class KrxApiService:
     """
     def __init__(self):
         self.base_url = "https://data-dbg.krx.co.kr/svc/apis"
-        # 환경 변수에서 API 키 읽기 (없으면 기본값 사용)
-        self.api_key = os.getenv("KRX_API_KEY", "73346D637E1B47AA8B653668D4D969288CEAB195")
+        # 하드코딩 제거: 환경 변수에서만 로드
+        self.api_key = os.environ.get("KRX_API_KEY")
         self.timeout = 30.0
-        # 보안: API 키는 콘솔에 출력하지 않음
-        print(f"🔑 KRX API 키 로드 완료")
+        if self.api_key:
+            print("🔑 KRX API 키 로드 완료")
+        elif os.environ.get("RAILWAY_ENVIRONMENT"):
+            print("⚠️ KRX_API_KEY가 설정되지 않았습니다. KRX 데이터 수집 기능이 동작하지 않습니다.")
 
     def _get_data_from_db(self, db: Session, data_type: str, bas_dd: str) -> Optional[List]:
         """
@@ -237,10 +239,10 @@ krx_api_service = KrxApiService()
 
 
 class FscApiService:
-    """금융위원회 API 서비스"""
+    """금융위원회 API 서비스 (공공데이터포털 DATA_GO_KR_API_KEY 사용)"""
     def __init__(self):
         self.base_url = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService"
-        self.api_key = "4614abeae6a355ee62d9d9ac6ff0799dae33fca08be8939ee0199563ac8e2f61"
+        self.api_key = os.environ.get("DATA_GO_KR_API_KEY")
         self.timeout = 30.0
 
     def _get_latest_date_from_db(self, db: Session) -> Optional[str]:

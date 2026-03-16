@@ -9,14 +9,14 @@
 - **영향:** 사용자가 비밀번호 찾기를 해도 코드를 받지 못함. "인증코드가 이메일로 발송되었습니다" 메시지는 거짓
 - **조치:** Resend 연동 완료 (`RESEND_API_KEY` 설정 시 실제 이메일 발송)
 
-### 2. API 키·시크릿 기본값 하드코딩
+### 2. API 키·시크릿 기본값 하드코딩 ✅ 조치 완료
 **위치:**
-- `apps/admin/app/dependencies.py`: `API_SECRET_KEY` 기본값 `"1978022019820308200705092018111420220303"`
-- `apps/admin/app/config.py`: `SECRET_TOKEN` 기본값 `"dev-secret-token-change-in-production-12345"`
-- `apps/admin/app/services/api_service.py`: `KRX_API_KEY` 기본값 `"73346D637E1B47AA8B653668D4D969288CEAB195"`
+- `apps/admin/app/dependencies.py`: `API_SECRET_KEY` (NEXT_PUBLIC_X_API_KEY)
+- `apps/admin/app/config.py`: `SECRET_TOKEN`
+- `apps/admin/app/services/api_service.py`, `app/engine/services/api_service.py`: `KRX_API_KEY`
 
 - **문제:** 프로덕션에서 환경 변수 미설정 시 기본값 사용 → 예측 가능한 키로 인증 우회 가능
-- **조치:** 프로덕션 배포 시 환경 변수 필수화, 기본값 사용 시 앱 시작 차단
+- **조치:** 하드코딩 제거. 프로덕션(RAILWAY_ENVIRONMENT)에서 미설정 시 앱 시작 차단
 
 ### 3. XSS 위험 - dangerouslySetInnerHTML ✅ 조치 완료
 **위치:**
@@ -95,6 +95,6 @@
 ## 권장 조치 순서
 
 1. ~~**비밀번호 재설정 이메일 발송 구현**~~ (Critical) ✅ 완료
-2. **프로덕션 시크릿/API 키 환경 변수 필수화** (Critical)
+2. ~~**프로덕션 시크릿/API 키 환경 변수 필수화**~~ (Critical) ✅ 완료
 3. ~~**XSS 방지 - HTML 새니타이즈**~~ (Critical) ✅ 완료
 4. ~~**비밀번호 재설정 Rate Limit + 코드 저장소 개선**~~ (High) ✅ 완료
