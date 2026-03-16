@@ -723,8 +723,8 @@ async def collect_yahoo_foreign_indices():
     """
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
-    if now.weekday() == 6:  # 일요일
-        print("ℹ️ 일요일: Yahoo(해외) 지수 수집 건너뜀")
+    if now.weekday() in (0, 6):  # 월요일, 일요일 건너뜀 (미국장은 토요일 KST 기준 마감)
+        print("ℹ️ 월요일/일요일: Yahoo(해외) 지수 수집 건너뜀")
         return
     if is_korean_holiday(now):
         print("ℹ️ 공휴일: Yahoo(해외) 지수 수집 건너뜀")
@@ -831,24 +831,62 @@ async def collect_market_morning_summary():
                     target_date=today,
                 )
                 if ok:
+                    # B001 게시판에 모닝 브리핑 등록 (upsert)
+                    try:
+                        from app.engine.models import Post as _Post
+                        morning_title = f"{today.strftime('%Y-%m-%d')} 출근길 모닝 브리핑"
+                        morning_row = db.query(_models.MarketMorningAiSummary).filter(
+                            _models.MarketMorningAiSummary.date == today
+                        ).first()
+                        if morning_row:
+                            morning_content = (
+                                f"<p>안녕하세요. {today.strftime('%Y-%m-%d')} 출근길 브리핑입니다.</p>"
+                                f"<p>전일자 미국증시 마감시황입니다.</p>"
+                                f"<p>{morning_row.us_market}</p>"
+                                f"<br>"
+                                f"<p>이중 한국관련 지수는</p>"
+                                f"<p>{morning_row.kr_indices}</p>"
+                                f"<br>"
+                                f"<p>환율은</p>"
+                                f"<p>{morning_row.exchange_rate}</p>"
+                                f"<br>"
+                                f"<p>오늘 한국증시 주요 포인트</p>"
+                                f"<p>{morning_row.kr_focus}</p>"
+                            )
+                            existing_post = db.query(_Post).filter(
+                                _Post.board_id == "B001", _Post.title == morning_title
+                            ).first()
+                            if existing_post:
+                                existing_post.content = morning_content
+                            else:
+                                db.add(_Post(
+                                    board_id="B001",
+                                    title=morning_title,
+                                    content=morning_content,
+                                    author="플로우Ai",
+                                ))
+                            db.commit()
+                            print(f"[morning-gemini] B001 모닝 브리핑 게시 완료 ({today})")
+                    except Exception as board_err:
+                        print(f"[morning-gemini] B001 게시 오류: {board_err}")
                     try:
                         from app.engine import models as _models
                         from app.services.fcm_service import send_push_to_all
                         # 앱 내 알림(벨)에도 표시되도록 Notification 생성
                         noti = _models.Notification(
                             type="morning_summary",
-                            title="📊 오늘 아침 시황이 도착했습니다",
-                            message="뉴욕 마감·한국 증시 주목 포인트를 확인하세요",
-                            link_url="/?show_morning=1",
+                            title="🌅 출근길 모닝 브리핑이 도착했습니다",
+                            message="오늘 아침 증시 브리핑을 확인하세요",
+                            link_url="/board?board=B001",
                             is_global="true",
                         )
                         db.add(noti)
                         db.commit()
                         await send_push_to_all(
                             db,
-                            title="📊 오늘 아침 시황이 도착했습니다",
-                            body="뉴욕 마감·한국 증시 주목 포인트를 확인하세요",
-                            data={"link_url": "/?show_morning=1", "type": "morning_summary"},
+                            title="🌅 출근길 모닝 브리핑이 도착했습니다",
+                            body="오늘 아침 증시 브리핑을 확인하세요",
+                            data={"link_url": "/board?board=B001", "type": "morning_summary"},
                         )
                         print("[morning-gemini] FCM 모닝 알림 발송 완료")
                     except Exception as fcm_err:
@@ -917,7 +955,7 @@ async def collect_market_closing_summary():
 async def collect_yahoo_kr_indices():
     """
     Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
-    - 09:20 / 11:30 / 14:00 / 15:30 (KST)
+    - 09:15 / 10:00 / 11:30 / 13:30 / 15:40 (KST)
     - 기존 데이터를 덮어쓰되, 날짜별 마지막 값 유지 (date+symbol upsert)
     - 최대 7일만 보관
     - 주말/공휴일은 건너뜀
@@ -989,6 +1027,17 @@ class YahooIndexScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
+        # 해외지수 토요일 07:00 - 미국 금요일 마감 확정 데이터 수집
+        self.scheduler.add_job(
+            collect_yahoo_foreign_indices,
+            CronTrigger(hour=7, minute=0, day_of_week="sat", timezone=self.kst),
+            id="yahoo_foreign_sat_0700",
+            name="Yahoo 해외지수 토요일 (07:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
         # 아침 시장 요약 (뉴욕 마감, 나스닥 선물, 코스피200) - 06:35 KST
         self.scheduler.add_job(
             collect_market_morning_summary,
@@ -1043,12 +1092,22 @@ class YahooIndexScheduler:
             misfire_grace_time=300,
         )
 
-        # KR: 09:20, 11:30, 14:00, 15:30 (KST)
+        # KR: 09:15, 10:00, 11:30, 13:30, 15:40 (KST)
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
-            CronTrigger(hour=9, minute=20, timezone=self.kst),
-            id="yahoo_kr_0920",
-            name="Yahoo KR Indices (09:20)",
+            CronTrigger(hour=9, minute=15, timezone=self.kst),
+            id="yahoo_kr_0915",
+            name="Yahoo KR Indices (09:15)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_yahoo_kr_indices,
+            CronTrigger(hour=10, minute=0, timezone=self.kst),
+            id="yahoo_kr_1000",
+            name="Yahoo KR Indices (10:00)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -1066,9 +1125,9 @@ class YahooIndexScheduler:
         )
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
-            CronTrigger(hour=14, minute=0, timezone=self.kst),
-            id="yahoo_kr_1400",
-            name="Yahoo KR Indices (14:00)",
+            CronTrigger(hour=13, minute=30, timezone=self.kst),
+            id="yahoo_kr_1330",
+            name="Yahoo KR Indices (13:30)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -1076,20 +1135,20 @@ class YahooIndexScheduler:
         )
         self.scheduler.add_job(
             collect_yahoo_kr_indices,
-            CronTrigger(hour=15, minute=30, timezone=self.kst),
-            id="yahoo_kr_1530",
-            name="Yahoo KR Indices (15:30)",
+            CronTrigger(hour=15, minute=40, timezone=self.kst),
+            id="yahoo_kr_1540",
+            name="Yahoo KR Indices (15:40)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             misfire_grace_time=300,
         )
-        # 장마감 시황 생성: 15:40 (15:30 KR지수 수집 완료 후)
+        # 장마감 시황 생성: 15:50 (15:40 KR지수 수집 완료 후)
         self.scheduler.add_job(
             collect_market_closing_summary,
-            CronTrigger(hour=15, minute=40, timezone=self.kst),
+            CronTrigger(hour=15, minute=50, timezone=self.kst),
             id="market_closing_summary",
-            name="장마감 시황 생성 (15:40)",
+            name="장마감 시황 생성 (15:50)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
