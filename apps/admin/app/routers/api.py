@@ -1783,15 +1783,51 @@ DOMESTIC_INDICES = [
 
 @router.get("/api/domestic-indices")
 async def get_domestic_indices(
+    db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key)
 ):
     """
-    Yahoo Finance API를 통해 국내 지수(코스피, 코스닥) 데이터를 조회합니다.
-    프론트엔드 StockIndex(국내지수) 컴포넌트에서 사용합니다.
+    국내 지수(코스피, 코스닥) 데이터를 조회합니다.
+    - DB(YahooIndexSnapshot group='kr')에 저장된 최신 데이터 우선 반환
+    - DB 데이터 없으면 Yahoo Finance 실시간 조회 (fallback)
     """
     cached = _get_cached("domestic-indices")
     if cached is not None:
         return cached
+
+    # 1) DB 최신 KR 지수 조회 (스케줄러가 저장한 데이터)
+    try:
+        _KR_SYMBOLS = ["^KS11", "^KQ11"]
+        latest_at = db.query(func.max(models.YahooIndexSnapshot.collected_at)).filter(
+            models.YahooIndexSnapshot.group == "kr",
+            models.YahooIndexSnapshot.symbol.in_(_KR_SYMBOLS),
+        ).scalar()
+        if latest_at:
+            rows = db.query(models.YahooIndexSnapshot).filter(
+                models.YahooIndexSnapshot.group == "kr",
+                models.YahooIndexSnapshot.collected_at == latest_at,
+                models.YahooIndexSnapshot.symbol.in_(_KR_SYMBOLS),
+            ).all()
+            if rows:
+                kr_results = []
+                for r in rows:
+                    if r.price is not None and r.change is not None and r.change_percent is not None:
+                        kr_results.append({
+                            "name": r.name,
+                            "value": f"{r.price:,.2f}",
+                            "change": f"+{r.change:.2f}" if r.change >= 0 else f"{r.change:.2f}",
+                            "percent": f"+{r.change_percent:.2f}%" if r.change_percent >= 0 else f"{r.change_percent:.2f}%",
+                        })
+                if kr_results:
+                    r0 = rows[0]
+                    timestamp = f"{r0.collected_date.strftime('%Y-%m-%d')} {r0.collected_time or '00:00'}"
+                    result = {"success": True, "data": kr_results, "timestamp": timestamp}
+                    _set_cached("domestic-indices", result)
+                    return result
+    except Exception as e:
+        print(f"⚠️ domestic-indices DB 조회 실패: {e}")
+
+    # 2) Fallback: Yahoo 실시간 조회
 
     def _last_non_null(values):
         if not values:

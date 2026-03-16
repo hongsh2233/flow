@@ -447,7 +447,7 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
             board_id="B001",
             title=title,
             content=content,
-            author="AI시황",
+            author="플로우Ai",
         ))
     db.commit()
     print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date})")
