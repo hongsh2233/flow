@@ -189,6 +189,8 @@ class Post(Base):
     member_only_end_date = Column(Date, nullable=True)  # 제한 종료일 (null=무기한)
     public_visibility = Column(String(20), default="full")  # full|partial (전체공개 시)
     show_on_main = Column(Boolean, nullable=False, default=False)
+    status = Column(String(20), nullable=False, default="approved", index=True)  # pending | approved
+    approved_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     board = relationship("Board", back_populates="posts")

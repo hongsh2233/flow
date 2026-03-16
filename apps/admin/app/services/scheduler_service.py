@@ -864,33 +864,13 @@ async def collect_market_morning_summary():
                                     title=morning_title,
                                     content=morning_content,
                                     author="플로우Ai",
+                                    status="pending",
                                 ))
                             db.commit()
                             print(f"[morning-gemini] B001 모닝 브리핑 게시 완료 ({today})")
                     except Exception as board_err:
                         print(f"[morning-gemini] B001 게시 오류: {board_err}")
-                    try:
-                        from app.engine import models as _models
-                        from app.services.fcm_service import send_push_to_all
-                        # 앱 내 알림(벨)에도 표시되도록 Notification 생성
-                        noti = _models.Notification(
-                            type="morning_summary",
-                            title="🌅 출근길 모닝 브리핑이 도착했습니다",
-                            message="오늘 아침 증시 브리핑을 확인하세요",
-                            link_url="/board?board=B001",
-                            is_global="true",
-                        )
-                        db.add(noti)
-                        db.commit()
-                        await send_push_to_all(
-                            db,
-                            title="🌅 출근길 모닝 브리핑이 도착했습니다",
-                            body="오늘 아침 증시 브리핑을 확인하세요",
-                            data={"link_url": "/board?board=B001", "type": "morning_summary"},
-                        )
-                        print("[morning-gemini] FCM 모닝 알림 발송 완료")
-                    except Exception as fcm_err:
-                        print(f"[morning-gemini] FCM 발송 오류: {fcm_err}")
+                    # 알림/FCM은 관리자가 게시글 승인 시 발송됩니다.
             else:
                 print("[morning-gemini] 지수 데이터 없어 AI 요약 건너뜀")
         except Exception as e:

@@ -8,13 +8,11 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import type { StockDetail, AdBannerItem, ManagedBannerItem } from "@/lib/types";
 import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
-import { MarketIndexSection } from "./components/module/home/MarketIndexSection";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
-import { ForeignIndices } from "./components/module/home/ForeignIndices";
-import { ExchangeRatesSection } from "./components/module/home/ExchangeRatesSection";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
+import { MarketTabSection } from "./components/module/home/MarketTabSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }
@@ -72,11 +70,8 @@ export default function Home() {
 
   return (
     <div className="content__wrap">
-      <StockTermBox wrapperClassName="home-term-wrap" />
       <MainCardNews />
-      <ForeignIndices />
-      <ExchangeRatesSection />
-      <MarketIndexSection />
+      <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
 
       {status === "loading" ? (
@@ -102,6 +97,7 @@ export default function Home() {
 
       <RealtimeSearchSection />
       <JubtiSection />
+      <StockTermBox wrapperClassName="home-term-wrap" />
       {bannerBottom.length > 0 && (
         <section style={{ margin: "1rem 0" }}>
           <AdBanner items={bannerBottom} autoSlide interval={5000} />

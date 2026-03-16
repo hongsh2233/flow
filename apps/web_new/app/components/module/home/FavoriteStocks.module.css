@@ -7,6 +7,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.subtext {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
   margin-bottom: 0.75rem;
 }
 

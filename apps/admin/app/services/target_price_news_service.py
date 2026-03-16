@@ -278,6 +278,7 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
                 title=post_title,
                 content=post_content,
                 author="플로우Ai",
+                status="pending",
             )
             db.add(new_post)
             posted = 1
