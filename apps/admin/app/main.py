@@ -148,6 +148,9 @@ ALLOWED_ORIGINS = [
     for o in _raw_origins.split(",")
     if o.strip()
 ]
+if os.environ.get("RAILWAY_ENVIRONMENT") and not ALLOWED_ORIGINS:
+    print("⚠️ CORS: ALLOWED_ORIGINS가 비어있습니다. 프론트엔드 API 호출이 차단됩니다.")
+    print("   Railway Variables에 ALLOWED_ORIGINS=https://your-web-domain.com 형식으로 설정하세요.")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,

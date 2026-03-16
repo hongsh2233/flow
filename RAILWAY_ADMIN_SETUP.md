@@ -26,6 +26,7 @@ Railway 배포 후 관리자 계정이 자동으로 생성되지 않는 경우�
    - `ADMIN_EMAIL`: 관리자 이메일 (로그인 시 사용)
    - `ADMIN_PW`: 관리자 비밀번호 (최소 8자 권장)
    - `RESEND_API_KEY`: 비밀번호 재설정 이메일 발송용 (resend.com에서 API 키 발급, 미설정 시 이메일 미발송)
+   - `ALLOWED_ORIGINS`: CORS 허용 Origin (쉼표 구분, 예: `https://jurin-i-web.up.railway.app,https://jurin-i.com`). **미설정 시 프론트엔드 API 호출 차단**
 
 3. **Admin 서비스 Redeploy** (Variables 변경 후 재배포 필요)
 
@@ -154,6 +155,7 @@ python create-admin.py
 
 - [ ] Railway Variables에 `ADMIN_EMAIL` 설정
 - [ ] Railway Variables에 `ADMIN_PW` 설정 (최소 8자)
+- [ ] Railway Variables에 `ALLOWED_ORIGINS` 설정 (프론트엔드 도메인, CORS)
 - [ ] Admin 서비스 재배포 완료
 - [ ] 배포 로그에서 "✅ 초기 관리자 생성 완료" 메시지 확인
 - [ ] Admin 로그인 페이지 접속 가능
@@ -188,6 +190,16 @@ python create-admin.py
 1. Railway → Admin 서비스 → Variables에 `SECRET_TOKEN` 추가
 2. `openssl rand -base64 32`로 생성한 값 사용
 3. Admin 서비스 재배포
+
+### 문제 4: 프론트엔드에서 API 호출 시 CORS 오류
+
+**원인**: `ALLOWED_ORIGINS` 미설정 또는 빈 값
+
+**해결**:
+1. Railway → Admin 서비스 → Variables에 `ALLOWED_ORIGINS` 추가
+2. 형식: `https://your-web-domain.com` (쉼표로 여러 개 구분)
+3. 예: `https://jurin-i-web.up.railway.app,https://jurin-i.com`
+4. 배포 로그에 "⚠️ CORS: ALLOWED_ORIGINS가 비어있습니다" 메시지가 있으면 설정 필요
 
 ---
 

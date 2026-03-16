@@ -547,8 +547,9 @@ async def do_login(
         key=AUTH_COOKIE_NAME,
         value=SECRET_TOKEN,
         httponly=True,
+        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
         max_age=30 * 60,  # 30분
-        samesite="lax"
+        samesite="lax",
     )
     # 로그인 시각 전달용 쿠키 (프론트엔드 세션 타이머 표시용, httponly 아님)
     login_time_ms = int(time.time() * 1000)
@@ -556,8 +557,9 @@ async def do_login(
         key="bo_login_time",
         value=str(login_time_ms),
         httponly=False,
+        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
         max_age=30 * 60,
-        samesite="lax"
+        samesite="lax",
     )
     return response
 
@@ -596,6 +598,7 @@ async def extend_login(request: Request):
         key=AUTH_COOKIE_NAME,
         value=SECRET_TOKEN,
         httponly=True,
+        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
         max_age=30 * 60,  # 30분 재설정
         samesite="lax",
     )
@@ -603,6 +606,7 @@ async def extend_login(request: Request):
         key="bo_login_time",
         value=str(login_time_ms),
         httponly=False,
+        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
         max_age=30 * 60,
         samesite="lax",
     )

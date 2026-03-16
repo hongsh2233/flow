@@ -47,25 +47,25 @@
 - **문제:** 서버 재시작 시 모든 코드 무효화. 다중 인스턴스 환경에서 공유 불가
 - **조치:** `password_reset_codes` 테이블에 DB 저장으로 전환 완료
 
-### 6. NEXTAUTH_SECRET 개발용 기본값
+### 6. NEXTAUTH_SECRET 개발용 기본값 ✅ 조치 완료
 **위치:** `apps/web_new/app/api/auth/[...nextauth]/route.ts`
 
 - **문제:** `NEXTAUTH_SECRET` 미설정 시 `'dev-secret-change-in-production'` 사용
-- **조치:** 프로덕션에서는 미설정 시 undefined로 두어 오류 발생시키기 (이미 일부 적용됨)
+- **조치:** 프로덕션(NODE_ENV=production, RAILWAY_ENVIRONMENT, VERCEL)에서 미설정 시 undefined
 
-### 7. CORS allow_origins 빈 값 시 동작
+### 7. CORS allow_origins 빈 값 시 동작 ✅ 조치 완료
 **위치:** `apps/admin/app/main.py`
 
 - **문제:** `ALLOWED_ORIGINS`가 빈 문자열이면 `[]` → 모든 Origin 차단. 설정 오타 시 서비스 장애
-- **조치:** 배포 체크리스트에 CORS 설정 검증 추가
+- **조치:** 프로덕션에서 빈 값 시 경고 로그 출력, RAILWAY_ADMIN_SETUP 체크리스트 및 문제 해결 가이드 추가
 
 ---
 
 ## 🟡 Medium (점진적 개선)
 
-### 8. 쿠키 보안 옵션
+### 8. 쿠키 보안 옵션 ✅ 조치 완료
 - **문제:** `SECRET_TOKEN` 쿠키에 `HttpOnly`, `Secure`, `SameSite` 설정 확인 필요
-- **조치:** `auth.py` 로그인 응답 시 `set_cookie(..., httponly=True, secure=True, samesite='lax')` 적용
+- **조치:** `auth.py` 로그인 응답 시 `httponly=True`, `secure=True`(프로덕션), `samesite='lax'` 적용
 
 ### 9. JWT Refresh Token 저장 ✅ 조치 완료
 - **문제:** Refresh Token이 DB에 저장되나, 탈취 시 장기 악용 가능

@@ -21,8 +21,9 @@ export const dynamic = 'force-dynamic'
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || ''
 const API_SECRET_KEY = process.env.NEXT_PUBLIC_X_API_KEY || ''
 
-// 개발 환경에서 NEXTAUTH_SECRET 미설정 시 기본값 사용 (배포 시 반드시 .env에 설정)
-const secret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-secret-change-in-production' : undefined)
+// 프로덕션에서는 NEXTAUTH_SECRET 필수. 개발 환경에서만 미설정 시 기본값 허용
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT || !!process.env.VERCEL
+const secret = process.env.NEXTAUTH_SECRET || (!isProduction ? 'dev-secret-change-in-production' : undefined)
 
 export const authOptions = {
   secret,
