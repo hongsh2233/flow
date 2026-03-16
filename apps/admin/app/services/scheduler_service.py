@@ -1319,13 +1319,13 @@ naver_news_scheduler = NaverNewsScheduler()
 
 
 # =========================================================
-# 금일 이슈 Gemini 요약 스케줄러 (20:00, 뉴스 수집 후)
+# 금일 이슈 Gemini 요약 스케줄러 (뉴스 수집 10분 후: 08:40 / 12:40 / 19:40)
 # =========================================================
 
 async def collect_daily_issue_summary():
     """
     오늘 수집된 naver_stock_news를 Gemini로 요약해 daily_issue_summaries에 저장
-    평일 20:00 KST 실행 (19:00 뉴스 수집 이후)
+    평일 08:40 / 12:40 / 19:40 KST 실행 (뉴스 수집 08:30 / 12:30 / 19:30 각 10분 후)
     """
     if should_skip_today():
         return

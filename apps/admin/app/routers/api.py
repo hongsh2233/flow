@@ -2437,7 +2437,7 @@ async def get_daily_issue_summary(
 ):
     """
     금일 이슈 Gemini 요약 조회 (briefing 이슈 탭 상단용)
-    20:00 스케줄러가 naver_stock_news 기반으로 생성
+    08:40 / 12:40 / 19:40 스케줄러가 naver_stock_news 기반으로 생성 (뉴스 수집 10분 후)
     """
     from datetime import date as dt_date
     try:
