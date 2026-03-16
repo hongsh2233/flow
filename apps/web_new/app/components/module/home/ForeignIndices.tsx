@@ -18,7 +18,7 @@ function formatBaseTimestamp(ts: string | null | undefined): string {
     const [datePart, timePart] = ts.split(" ");
     const [, m, d] = datePart.split("-").map(Number);
     if (m && d) {
-      return timePart ? `${m}월 ${d}일 ${timePart} 수집` : `${m}월 ${d}일 수집`;
+      return timePart ? `${m}월 ${d}일 ${timePart} 기준` : `${m}월 ${d}일 기준`;
     }
   } catch {
     // fallthrough

@@ -17,7 +17,7 @@ function formatMarketCloseDate(ts: string | null | undefined): string {
       if (totalMin >= 15 * 60 + 30) {
         return `${m}월 ${d}일 장 마감 기준`;
       }
-      return `${m}월 ${d}일 ${timePart} 수집`;
+      return `${m}월 ${d}일 ${timePart} 기준`;
     }
     return `${m}월 ${d}일 장 마감 기준`;
   } catch {
