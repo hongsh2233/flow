@@ -93,6 +93,17 @@ export default function Header() {
         return () => window.removeEventListener("fcm-notification", handler);
     }, [fetchNotifications]);
 
+    // 앱/탭이 백그라운드에서 포그라운드로 복귀할 때 즉시 알림 갱신
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                fetchNotifications();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    }, [fetchNotifications]);
+
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(e.target as Node)) {

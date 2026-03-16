@@ -635,7 +635,7 @@ export default function JuTalkPage() {
           </div>
         </section>
 
-        {/* 시장의 목소리 방명록 (B005 게시판) */}
+        {/* 시장의 목소리 방명록 (B005 게시판) — 주석처리
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시장의 목소리 방명록</h2>
@@ -695,6 +695,7 @@ export default function JuTalkPage() {
             })}
           </div>
         </section>
+        */}
 
         {/* 주식 용어 박스 */}
         <section className={styles.section}>
