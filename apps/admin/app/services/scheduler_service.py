@@ -955,7 +955,7 @@ async def collect_market_closing_summary():
 async def collect_yahoo_kr_indices():
     """
     Yahoo Finance 국내지수(코스피/코스닥) 수집/저장
-    - 09:15 / 10:00 / 11:30 / 13:30 / 15:40 (KST)
+    - 09:10 / 09:50 / 10:30 / 11:10 / 11:50 / 12:30 / 13:10 / 13:50 / 14:30 / 15:10 / 15:40 (KST, 40분 간격 + 장마감)
     - 기존 데이터를 덮어쓰되, 날짜별 마지막 값 유지 (date+symbol upsert)
     - 최대 7일만 보관
     - 주말/공휴일은 건너뜀
@@ -1092,57 +1092,30 @@ class YahooIndexScheduler:
             misfire_grace_time=300,
         )
 
-        # KR: 09:15, 10:00, 11:30, 13:30, 15:40 (KST)
-        self.scheduler.add_job(
-            collect_yahoo_kr_indices,
-            CronTrigger(hour=9, minute=15, timezone=self.kst),
-            id="yahoo_kr_0915",
-            name="Yahoo KR Indices (09:15)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.add_job(
-            collect_yahoo_kr_indices,
-            CronTrigger(hour=10, minute=0, timezone=self.kst),
-            id="yahoo_kr_1000",
-            name="Yahoo KR Indices (10:00)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.add_job(
-            collect_yahoo_kr_indices,
-            CronTrigger(hour=11, minute=30, timezone=self.kst),
-            id="yahoo_kr_1130",
-            name="Yahoo KR Indices (11:30)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.add_job(
-            collect_yahoo_kr_indices,
-            CronTrigger(hour=13, minute=30, timezone=self.kst),
-            id="yahoo_kr_1330",
-            name="Yahoo KR Indices (13:30)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.add_job(
-            collect_yahoo_kr_indices,
-            CronTrigger(hour=15, minute=40, timezone=self.kst),
-            id="yahoo_kr_1540",
-            name="Yahoo KR Indices (15:40)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
+        # KR: 09:10 ~ 15:10 (40분 간격) + 15:40 장마감 (KST)
+        for _h, _m, _id in [
+            (9, 10, "yahoo_kr_0910"),
+            (9, 50, "yahoo_kr_0950"),
+            (10, 30, "yahoo_kr_1030"),
+            (11, 10, "yahoo_kr_1110"),
+            (11, 50, "yahoo_kr_1150"),
+            (12, 30, "yahoo_kr_1230"),
+            (13, 10, "yahoo_kr_1310"),
+            (13, 50, "yahoo_kr_1350"),
+            (14, 30, "yahoo_kr_1430"),
+            (15, 10, "yahoo_kr_1510"),
+            (15, 40, "yahoo_kr_1540"),
+        ]:
+            self.scheduler.add_job(
+                collect_yahoo_kr_indices,
+                CronTrigger(hour=_h, minute=_m, timezone=self.kst),
+                id=_id,
+                name=f"Yahoo KR Indices ({_h:02d}:{_m:02d})",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=300,
+            )
         # 장마감 시황 생성: 15:50 (15:40 KR지수 수집 완료 후)
         self.scheduler.add_job(
             collect_market_closing_summary,
@@ -1159,7 +1132,7 @@ class YahooIndexScheduler:
         print("✅ Yahoo 지수 수집 스케줄러 시작")
         print("   - 해외(메인): 00:00 / 05:00 / 06:30 (KST)")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
-        print("   - KR: 09:20 / 11:30 / 14:00 / 15:30 (KST)")
+        print("   - KR: 09:10 ~ 15:10 (40분 간격) / 15:40 장마감 (KST)")
         print("   - 장마감 시황: 15:40 (KST, 주말/공휴일 제외)")
         print("   - 최근 7일치만 유지\n")
 

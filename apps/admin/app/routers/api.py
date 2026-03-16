@@ -2175,12 +2175,14 @@ async def get_market_morning_summary(
                 "krFocus":      ai_row.kr_focus or "",
             }
 
+        morning_collected_time = rows[0].last_collected_time if rows else None
         return {
             "success": True,
             "data": {
                 "indices": indices,
                 "exchangeRates": exchange_rates,
                 "collectedDate": today.isoformat(),
+                "collectedTime": morning_collected_time,
                 "aiSummary": ai_summary,
             },
         }
