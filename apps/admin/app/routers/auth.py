@@ -17,15 +17,18 @@ import secrets
 from app import models, utils
 from app.database import get_db
 from app.dependencies import get_current_user, AUTH_COOKIE_NAME
-from app.config import JWT_ACCESS_TOKEN_EXPIRE_HOURS, JWT_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_TOKEN
+from app.config import (
+    JWT_ACCESS_TOKEN_EXPIRE_HOURS,
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS,
+    SECRET_TOKEN,
+    RESEND_API_KEY,
+    PASSWORD_RESET_FROM_EMAIL,
+)
 from app.dependencies import API_SECRET_KEY
 from app.utils.profile_generator import generate_profile
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
-
-# 비밀번호 재설정 인증코드 저장 (이메일 -> (code, expires_at))
-_password_reset_codes: dict[str, tuple[str, datetime]] = {}
 
 
 def get_effective_grade(member) -> str:
@@ -1525,6 +1528,31 @@ async def api_find_email(
     return {"success": True, "emails": emails}
 
 
+def _send_password_reset_email(to_email: str, code: str) -> bool:
+    """Resend로 비밀번호 재설정 인증코드 이메일 발송. 성공 시 True, 실패 시 False."""
+    if not RESEND_API_KEY:
+        return False
+    try:
+        import resend
+        resend.api_key = RESEND_API_KEY
+        html = f"""
+        <p>플로우 비밀번호 재설정 인증코드입니다.</p>
+        <p><strong>{code}</strong></p>
+        <p>이 코드는 10분간 유효합니다.</p>
+        <p>본인이 요청하지 않았다면 이 메일을 무시해 주세요.</p>
+        """
+        resend.Emails.send({
+            "from": PASSWORD_RESET_FROM_EMAIL,
+            "to": [to_email],
+            "subject": "[플로우] 비밀번호 재설정 인증코드",
+            "html": html,
+        })
+        return True
+    except Exception as e:
+        print(f"비밀번호 재설정 이메일 발송 실패: {e}")
+        return False
+
+
 @router.post("/api/auth/member/request-password-reset")
 @limiter.limit("5/minute")
 async def api_request_password_reset(
@@ -1533,7 +1561,8 @@ async def api_request_password_reset(
     db: Session = Depends(get_db)
 ):
     """
-    비밀번호 재설정 인증코드 요청 - 6자리 코드 생성 후 이메일로 발송 (개발용: 응답에 코드 포함)
+    비밀번호 재설정 인증코드 요청 - 6자리 코드 생성 후 이메일로 발송.
+    RESEND_API_KEY 설정 시 Resend로 실제 발송, 미설정 시 개발용으로 응답에 코드 포함.
     """
     member = db.query(models.Member).filter(
         models.Member.email == request.email,
@@ -1547,22 +1576,41 @@ async def api_request_password_reset(
     code = "".join(secrets.choice("0123456789") for _ in range(6))
     expires_at = datetime.utcnow() + timedelta(minutes=10)
 
-    global _password_reset_codes
-    _password_reset_codes[request.email] = (code, expires_at)
+    # DB에 인증코드 저장 (다중 인스턴스/재시작 대응)
+    from app.engine.models import PasswordResetCode
+    db.query(PasswordResetCode).filter(PasswordResetCode.email == request.email).delete()
+    db.add(PasswordResetCode(email=request.email, code=code, expires_at=expires_at))
+    db.commit()
 
+    # Resend API 키가 있으면 실제 이메일 발송
+    if RESEND_API_KEY:
+        if not _send_password_reset_email(request.email, code):
+            return {
+                "success": False,
+                "message": "이메일이 발송되지 않고 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+            }
+        return {
+            "success": True,
+            "message": "인증코드가 이메일로 발송되었습니다.",
+        }
+
+    # 개발 환경: 이메일 발송 없이 응답에 코드 포함 (테스트용)
     return {
         "success": True,
         "message": "인증코드가 이메일로 발송되었습니다.",
+        "code": code,
     }
 
 
 @router.post("/api/auth/member/reset-password")
+@limiter.limit("10/minute")
 async def api_reset_password(
+    http_request: Request,
     request: ResetPasswordRequest,
     db: Session = Depends(get_db)
 ):
     """
-    비밀번호 재설정 - 인증코드 검증 후 새 비밀번호로 변경
+    비밀번호 재설정 - 인증코드 검증 후 새 비밀번호로 변경 (Rate Limit 10/분)
     """
     if len(request.new_password) < 8:
         raise HTTPException(
@@ -1570,21 +1618,28 @@ async def api_reset_password(
             detail="비밀번호는 8자 이상이어야 합니다."
         )
 
-    global _password_reset_codes
-    stored = _password_reset_codes.get(request.email)
-    if not stored:
+    from app.engine.models import PasswordResetCode
+    # 만료된 코드 정리
+    now = datetime.utcnow()
+    db.query(PasswordResetCode).filter(PasswordResetCode.expires_at <= now).delete(synchronize_session=False)
+    row = db.query(PasswordResetCode).filter(
+        PasswordResetCode.email == request.email
+    ).order_by(PasswordResetCode.created_at.desc()).first()
+
+    if not row:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="인증코드가 만료되었거나 올바르지 않습니다. 다시 요청해주세요."
         )
-    code, expires_at = stored
-    if datetime.utcnow() > expires_at:
-        del _password_reset_codes[request.email]
+    expires_naive = row.expires_at.replace(tzinfo=None) if row.expires_at.tzinfo else row.expires_at
+    if datetime.utcnow() > expires_naive:
+        db.delete(row)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="인증코드가 만료되었습니다. 다시 요청해주세요."
         )
-    if request.code != code:
+    if request.code != row.code:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="인증코드가 일치하지 않습니다."
@@ -1597,8 +1652,8 @@ async def api_reset_password(
         raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
 
     member.hashed_password = utils.get_password_hash(request.new_password)
+    db.delete(row)
     db.commit()
-    del _password_reset_codes[request.email]
 
     return {"success": True, "message": "비밀번호가 변경되었습니다."}
 

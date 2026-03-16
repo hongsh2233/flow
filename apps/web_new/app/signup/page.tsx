@@ -251,6 +251,7 @@ export default function SignupPage() {
                   <span>{emailCheckMsg}</span>
                 </div>
               )}
+              <p className={styles.idNotice}>아이디는 꼭 기억해두셔야 합니다.</p>
               <FormField
                 label="비밀번호"
                 type="password"

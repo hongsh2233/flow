@@ -86,6 +86,11 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")  # 네이버 API 클라이언트 시크릿
 
+# Resend 이메일 발송 (비밀번호 재설정 등)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+# 발신 이메일 (Resend 도메인 검증 필요. 미설정 시 onboarding@resend.dev 사용 - 수신 제한 있음)
+PASSWORD_RESET_FROM_EMAIL = os.environ.get("PASSWORD_RESET_FROM_EMAIL", "플로우 <onboarding@resend.dev>")
+
 
 # 디버깅: API 키 로드 확인 (서버 시작 시 한 번만 출력)
 # 보안: API 키 미리보기는 콘솔에 출력하지 않음

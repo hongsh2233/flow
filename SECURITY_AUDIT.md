@@ -33,18 +33,18 @@
 
 ## 🟠 High (우선 조치 권장)
 
-### 4. 비밀번호 재설정 API Rate Limit 부족
+### 4. 비밀번호 재설정 API Rate Limit 부족 ✅ 조치 완료
 **위치:** `api_reset_password` (POST /api/auth/member/reset-password)
 
 - **문제:** `api_request_password_reset`은 5/minute 제한 있으나, `api_reset_password`에는 제한 없음
 - **영향:** 6자리 코드 브루트포스 시도 가능 (10^6 = 100만 조합)
-- **조치:** `@limiter.limit("10/minute")` 등 Rate Limit 추가
+- **조치:** `@limiter.limit("10/minute")` 적용 완료
 
-### 5. 비밀번호 재설정 코드 메모리 저장
-**위치:** `_password_reset_codes` (in-memory dict)
+### 5. 비밀번호 재설정 코드 메모리 저장 ✅ 조치 완료
+**위치:** `password_reset_codes` 테이블 (DB 저장)
 
 - **문제:** 서버 재시작 시 모든 코드 무효화. 다중 인스턴스 환경에서 공유 불가
-- **조치:** Redis 또는 DB에 저장 (만료 시간 포함)
+- **조치:** `password_reset_codes` 테이블에 DB 저장으로 전환 완료
 
 ### 6. NEXTAUTH_SECRET 개발용 기본값
 **위치:** `apps/web_new/app/api/auth/[...nextauth]/route.ts`
@@ -96,4 +96,4 @@
 1. **비밀번호 재설정 이메일 발송 구현** (Critical)
 2. **프로덕션 시크릿/API 키 환경 변수 필수화** (Critical)
 3. **XSS 방지 - HTML 새니타이즈** (Critical)
-4. **비밀번호 재설정 Rate Limit + 코드 저장소 개선** (High)
+4. ~~**비밀번호 재설정 Rate Limit + 코드 저장소 개선**~~ (High) ✅ 완료

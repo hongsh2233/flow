@@ -123,7 +123,7 @@ export default function LoginPage() {
                 </Link>
                 <span className={styles.findSep}>|</span>
                 <Link href="/login/find-password" className={styles.forgotLink}>
-                  비밀번호 찾기
+                  비밀번호 재설정
                 </Link>
               </div>
             </div>

@@ -39,6 +39,7 @@ class NavMenuTab(Base):
 
 __all__ = [
     "Base",
+    "PasswordResetCode",
     "Poll",
     "PollOption",
     "PollVote",
@@ -129,6 +130,16 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_used_at = Column(DateTime(timezone=True))
+
+
+class PasswordResetCode(Base):
+    """비밀번호 재설정 인증코드 (DB 저장, 다중 인스턴스/재시작 대응)"""
+    __tablename__ = "password_reset_codes"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), nullable=False, index=True)
+    code = Column(String(10), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Schedule(Base):

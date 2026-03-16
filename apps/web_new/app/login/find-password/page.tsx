@@ -121,7 +121,7 @@ export default function FindPasswordPage() {
           <Link href="/login" className={styles.backLink} aria-label="뒤로가기">
             <ArrowLeft size={20} />
           </Link>
-          <h1 className={styles.headerTitle}>비밀번호 찾기</h1>
+          <h1 className={styles.headerTitle}>비밀번호 재설정</h1>
           <p className={styles.headerSub}>
             {step === "email"
               ? "가입한 이메일로 인증코드를 발송합니다."

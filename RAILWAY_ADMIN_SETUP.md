@@ -25,6 +25,7 @@ Railway 배포 후 관리자 계정이 자동으로 생성되지 않는 경우�
    ```
    - `ADMIN_EMAIL`: 관리자 이메일 (로그인 시 사용)
    - `ADMIN_PW`: 관리자 비밀번호 (최소 8자 권장)
+   - `RESEND_API_KEY`: 비밀번호 재설정 이메일 발송용 (resend.com에서 API 키 발급, 미설정 시 이메일 미발송)
 
 3. **Admin 서비스 Redeploy** (Variables 변경 후 재배포 필요)
 

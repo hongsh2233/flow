@@ -85,20 +85,33 @@ export default function FindIdPage() {
                 ))}
               </div>
             )}
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              large
-              disabled={loading}
-              className={styles.submitBtn}
-            >
-              {loading ? "조회 중..." : "찾기"}
-            </Button>
+            {emails && emails.length > 0 ? (
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                large
+                className={styles.submitBtn}
+                onClick={() => router.push("/login")}
+              >
+                로그인 하기
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                large
+                disabled={loading}
+                className={styles.submitBtn}
+              >
+                {loading ? "조회 중..." : "찾기"}
+              </Button>
+            )}
           </form>
           <p className={styles.switchLink}>
             <Link href="/login">로그인</Link> |{" "}
-            <Link href="/login/find-password">비밀번호 찾기</Link>
+            <Link href="/login/find-password">비밀번호 재설정</Link>
           </p>
         </div>
       </div>
