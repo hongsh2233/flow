@@ -298,6 +298,50 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 
 ---
 
+## AI 데이터 파이프라인 (Gemini)
+
+백엔드 스케줄러가 주기적으로 시장 데이터를 수집하고, Gemini AI로 요약·분석 콘텐츠를 자동 생성합니다.
+
+### 수집 → 분석 흐름
+
+```
+[Yahoo Finance / Naver API / KRX]
+         ↓ 수집 (APScheduler)
+   [DB: 지수·환율·뉴스 저장]
+         ↓
+  [Gemini 2.5 Flash 요약]
+         ↓
+  [DB 저장 / 게시판 자동 포스팅]
+```
+
+### Gemini 서비스 목록
+
+| 서비스 파일 | 실행 시각 (KST) | 설명 |
+|------------|----------------|------|
+| `market_morning_gemini_service.py` | 매일 06:35 | 미국·한국 지수·환율 기반 **모닝 브리핑** 생성 → `MarketMorningAiSummary` 저장 |
+| `daily_issue_gemini_service.py` | 평일 08:40, 12:40, 19:40 | 당일 Naver 수집 뉴스를 3~5줄로 요약 → `daily_issue_summaries` 저장 |
+| `market_closing_gemini_service.py` | 평일 15:50 | 장마감 후 코스피·코스닥·환율·투자자동향·상한가 종목을 분석해 **플로우Ai** 계정으로 B001 게시판에 자동 포스팅 |
+
+### 데이터 수집 스케줄 (scheduler_service.py)
+
+| 데이터 | 수집 주기 | 보관 기간 | 소스 |
+|--------|----------|-----------|------|
+| 코스피·코스닥 지수 | 평일 09:10~15:10 (30분 간격, 13회) + 15:40 | 7일 | Yahoo Finance (`^KS11`, `^KQ11`) |
+| 해외 지수 | 평일 장전·장중 수회 | 7일 | Yahoo Finance (NASDAQ, S&P500, Dow 등) |
+| 환율 | 평일 30분마다 | 최신 스냅샷 | Yahoo Finance (`KRW=X`, `JPYKRW=X`, `EURKRW=X`) |
+| 금리 | on-demand (1시간 캐시) | - | Yahoo Finance (`^TNX`, `^FVX`, `^IRX`) |
+| 주식 영향 뉴스 | 평일 08:30, 12:30, 19:30 | 2일 | Naver 뉴스 검색 API |
+
+### Gemini 환경 변수
+
+| 변수 | 설명 |
+|------|------|
+| `GEMINI_API_KEY` | Google AI Studio에서 발급 (`gemini-2.5-flash` 사용) |
+
+> **참고**: API 키 미설정 또는 Gemini 오류 시 해당 서비스는 스킵되고 앱은 정상 동작합니다.
+
+---
+
 ## 기술 스택
 
 | 영역 | 기술 |

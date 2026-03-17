@@ -188,12 +188,20 @@ function isSchedulePast(schedule: ScheduleItem): boolean {
   return nowMin > scheduleMin;
 }
 
+/** 제목에서 [증권사명] 패턴 추출 → 없으면 null */
+function extractBrokerName(title: string): string | null {
+  const m = title.match(/\[([^\]]+)\]/);
+  return m ? m[1] : null;
+}
+
 export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false, isPast: isPastProp }: ScheduleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const rawDetail = schedule.detail != null ? String(schedule.detail) : "";
   const hasDetail = rawDetail.trim().length > 0 && !isEmptyHtml(rawDetail);
   const displayTitle = schedule.title || schedule.subject || "";
   const isPast = isPastProp ?? isSchedulePast(schedule);
+  const brokerName = schedule.link_url ? extractBrokerName(displayTitle) : null;
+  const linkLabel = brokerName ?? "MTS 바로가기";
 
   return (
     <>
@@ -240,7 +248,20 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                   <span className={styles.time}>{schedule.time}</span>
                 </div>
               )}
-              <p className={styles.date}>{schedule.date}</p>
+              <div className={styles.bottomRight}>
+                {schedule.link_url && (
+                  <a
+                    href={schedule.link_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.linkBtn}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {linkLabel}
+                  </a>
+                )}
+                <p className={styles.date}>{schedule.date}</p>
+              </div>
             </div>
           </div>
         </div>

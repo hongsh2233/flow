@@ -21,4 +21,5 @@ export interface ScheduleItem {
   time?: string;
   content?: string;
   detail?: string;
+  link_url?: string;    // 증권사 MTS/모바일웹 링크 등 외부 URL
 }

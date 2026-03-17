@@ -43,6 +43,13 @@ export interface ExchangeRateItem {
   isPositive: boolean;
 }
 
+export interface InterestRateItem {
+  name: string;
+  rate: string;
+  change: string;
+  isPositive: boolean;
+}
+
 /* ── 지수 ── */
 export interface MarketIndexItem {
   name: string;
@@ -75,6 +82,7 @@ export interface TradeRankingProps {
 
 export interface ExchangeRatesProps {
   rates: ExchangeRateItem[];
+  interestRates?: InterestRateItem[];
   baseTimestamp?: string | null;
 }
 

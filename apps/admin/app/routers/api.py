@@ -15,6 +15,7 @@ import re
 import asyncio
 import time
 import httpx
+import pytz
 
 from app.database import get_db
 from app import models
@@ -1306,6 +1307,7 @@ async def get_schedules(
                 "content": schedule.content or "",
                 "detail": getattr(schedule, "detail", None) or "",
                 "type": schedule.type,
+                "link_url": getattr(schedule, "link_url", None) or "",
                 "show_main_popup": getattr(schedule, "show_main_popup", False) or False,
                 "created_at": serialize_datetime(schedule.created_at),
                 "updated_at": serialize_datetime(schedule.updated_at)
@@ -1374,6 +1376,7 @@ async def get_schedule(
             "content": schedule.content or "",
             "detail": getattr(schedule, "detail", None) or "",
             "type": schedule.type,
+            "link_url": getattr(schedule, "link_url", None) or "",
             "created_at": serialize_datetime(schedule.created_at),
             "updated_at": serialize_datetime(schedule.updated_at)
         }
@@ -2229,6 +2232,65 @@ async def get_exchange_rate(
     except Exception as e:
         print(f"⚠️ exchange-rate DB 조회 실패: {e}")
     return {"success": False, "data": [], "base_timestamp": None}
+
+
+# ── 금리 (Interest Rate) ───────────────────────────────────────────────────
+_INTEREST_RATE_SYMBOLS = [
+    {"symbol": "^TNX", "name": "미국 10년물", "unit": "%"},
+    {"symbol": "^FVX", "name": "미국 5년물",  "unit": "%"},
+    {"symbol": "^IRX", "name": "미국 단기",   "unit": "%"},
+]
+_INTEREST_RATE_CACHE_TTL = 3600  # 1시간
+
+
+@router.get("/api/interest-rate")
+async def get_interest_rate(
+    authorized: bool = Depends(verify_api_key)
+):
+    """
+    주요 금리 조회 - Yahoo Finance에서 on-demand 조회 (1시간 캐시)
+    ^TNX: 미국 10년물 국채금리, ^FVX: 5년물, ^IRX: 단기(3개월)
+    """
+    cache_key = "interest-rate"
+    cached = _get_cached(cache_key)
+    if cached:
+        return cached
+
+    results = []
+    now_str = datetime.now(pytz.timezone("Asia/Seoul")).strftime("%Y-%m-%d %H:%M")
+
+    async with httpx.AsyncClient(headers=_YAHOO_HEADERS, timeout=15.0) as client:
+        for item in _INTEREST_RATE_SYMBOLS:
+            try:
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{item['symbol']}?interval=1d&range=1d"
+                resp = await client.get(url)
+                if resp.status_code != 200:
+                    continue
+                data = resp.json()
+                if not data or "chart" not in data or not data["chart"].get("result"):
+                    continue
+                meta = data["chart"]["result"][0].get("meta", {})
+                price = meta.get("regularMarketPrice") or meta.get("chartPreviousClose")
+                prev = meta.get("previousClose") or meta.get("chartPreviousClose") or price
+                if price is None:
+                    continue
+                change_val = float(price) - float(prev) if prev else 0.0
+                results.append({
+                    "name": item["name"],
+                    "rate": f"{float(price):.2f}{item['unit']}",
+                    "change": f"+{change_val:.2f}" if change_val >= 0 else f"{change_val:.2f}",
+                    "isPositive": change_val >= 0,
+                })
+            except Exception as e:
+                print(f"⚠️ 금리 {item['symbol']} 조회 실패: {e}")
+
+    if not results:
+        return {"success": False, "data": [], "base_timestamp": None}
+
+    response = {"success": True, "data": results, "base_timestamp": now_str}
+    # 성공 시에만 캐시 (TTL을 직접 설정)
+    _yahoo_cache[cache_key] = {"data": response, "expires": time.time() + _INTEREST_RATE_CACHE_TTL}
+    return response
 
 
 @router.get("/api/holidays")

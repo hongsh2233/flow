@@ -30,7 +30,7 @@ from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_r
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup
+from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup, broker
 try:
     from app.routers import profile
 except ImportError as e:
@@ -645,3 +645,4 @@ if target_price_news:
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리
+app.include_router(broker.router)       # 증권사 설정

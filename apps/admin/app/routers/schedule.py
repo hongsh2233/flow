@@ -84,6 +84,7 @@ async def add_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
+    link_url: str = Form(None),
     schedule_type_param: str = Form("etc"),
     show_main_popup: str = Form("false"),
     user=Depends(get_current_user),
@@ -106,6 +107,7 @@ async def add_schedule(
             if end_date_obj < date_obj:
                 raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
         
+        link_url_val = (link_url or "").strip() or None
         new_schedule = models.Schedule(
             date=date_obj,
             end_date=end_date_obj,
@@ -114,7 +116,7 @@ async def add_schedule(
             content=content or "",
             detail=detail or None,
             type=schedule_type,
-            link_url=None,
+            link_url=link_url_val,
             underwriter=None,
             show_main_popup=show_main_popup.lower() in ("true", "1", "on", "yes"),
         )
@@ -200,6 +202,7 @@ async def update_schedule(
     subject: str = Form(...),
     content: str = Form(None),
     detail: str = Form(None),
+    link_url: str = Form(None),
     schedule_type_param: str = Form("etc"),
     show_main_popup: str = Form("false"),
     user=Depends(get_current_user),
@@ -234,6 +237,7 @@ async def update_schedule(
         schedule.content = content or ""
         schedule.detail = detail or None
         schedule.type = schedule_type
+        schedule.link_url = (link_url or "").strip() or None
         schedule.show_main_popup = show_main_popup.lower() in ("true", "1", "on", "yes")
 
         db.commit()
