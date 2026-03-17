@@ -13,6 +13,8 @@ const config: CapacitorConfig = {
     // Android에서 HTTP 허용 (개발용, 운영은 HTTPS 사용)
     cleartext: false,
     androidScheme: "https",
+    // 소셜 로그인 OAuth 콜백을 위한 허용 도메인 (Chrome Custom Tab 쿠키 공유)
+    allowNavigation: ["accounts.google.com", "nid.naver.com"],
   },
   plugins: {
     PushNotifications: {

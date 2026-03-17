@@ -1,10 +1,11 @@
 "use client";
 
 import { BarChart3, Mail, Lock, Home } from "lucide-react";
-import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect, useRef } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Capacitor } from "@capacitor/core";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
@@ -16,12 +17,14 @@ type LoginMethod = "credentials" | "kakao" | "naver" | "google";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lastLoginProvider, setLastLoginProvider] = useState<LoginMethod | null>(null);
+  const browserListenerRef = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -58,7 +61,55 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialLogin = (provider: SocialProvider) => {
+  const handleSocialLogin = async (provider: SocialProvider) => {
+    // Capacitor 네이티브 앱에서는 Chrome Custom Tab을 사용해 OAuth 수행
+    // Google/Naver는 WebView에서 OAuth를 차단하므로 시스템 브라우저를 통해 인증
+    if (Capacitor.isNativePlatform()) {
+      try {
+        setSubmitting(true);
+        setError("");
+
+        // 서버에서 OAuth URL 획득
+        const res = await fetch(
+          `/api/auth/get-oauth-url/${provider}?callbackUrl=${encodeURIComponent("/auth/mobile-callback")}`
+        );
+        const data = await res.json();
+
+        if (!data.url) {
+          throw new Error("OAuth URL을 가져오지 못했습니다.");
+        }
+
+        const { Browser } = await import("@capacitor/browser");
+        const { App } = await import("@capacitor/app");
+
+        // Chrome Custom Tab에서 OAuth 페이지 열기
+        await Browser.open({ url: data.url, presentationStyle: "popover" });
+
+        // Custom Tab이 닫히면 세션 갱신 후 홈으로 이동
+        const listener = await App.addListener("appStateChange", async ({ isActive }) => {
+          if (isActive) {
+            listener.remove();
+            browserListenerRef.current = null;
+            await Browser.close().catch(() => {});
+            // 세션 쿠키가 WebView와 공유되므로 세션 업데이트
+            await updateSession();
+            localStorage.setItem(LAST_LOGIN_KEY, provider);
+            router.push("/");
+            router.refresh();
+            setSubmitting(false);
+          }
+        });
+
+        browserListenerRef.current = listener;
+      } catch (err) {
+        console.error("소셜 로그인 오류:", err);
+        setError("소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // 웹 브라우저: 기존 NextAuth 방식
     signIn(provider, { callbackUrl: "/" });
   };
 
