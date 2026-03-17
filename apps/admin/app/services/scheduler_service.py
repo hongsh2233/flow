@@ -1532,31 +1532,67 @@ investment_bank_news_scheduler = InvestmentBankNewsScheduler()
 
 
 # =========================================================
-# 증권사 목표가 상향 뉴스 - 매일 1회 (08:30 KST)
+# 증권사 목표가 상향 뉴스 - 매일 2회 (08:30 / 12:00 KST)
+#   08:30 : 전일 12:00 KST ~ 당일 08:30 KST (전날 오후·저녁 리포트)
+#   12:00 : 당일 08:30 KST ~ 당일 12:00 KST (장중 오전 리포트)
 # =========================================================
 
 async def collect_target_price_news():
-    """네이버 뉴스 검색(48h 이내) → Gemini 가공 결과만 → B002 '목표가 조정' 카테고리에 등록"""
+    """08:30 수집: 전일 12:00 KST ~ 당일 08:30 KST 게시된 목표가 기사만 처리"""
+    from datetime import timezone as _tz, timedelta as _td
     from app.services.target_price_news_service import fetch_and_post_target_price_news
 
     kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
-    print(f"\n[목표가 뉴스] 수집·등록 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    now_kst = datetime.now(kst)
+    print(f"\n[목표가 뉴스 08:30] 수집·등록 시작: {now_kst.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # 전일 12:00 KST ~ 지금
+    yesterday = now_kst.date() - _td(days=1)
+    after_kst = kst.localize(datetime(yesterday.year, yesterday.month, yesterday.day, 12, 0, 0))
+    after_utc = after_kst.astimezone(_tz.utc)
+    before_utc = now_kst.astimezone(_tz.utc)
 
     db = SessionLocal()
     try:
-        result = await fetch_and_post_target_price_news(db)
-        print(f"[목표가 뉴스] 완료: fetched={result['fetched']}, items={result.get('items', 0)}, posted={result['posted']}")
+        result = await fetch_and_post_target_price_news(db, after_dt=after_utc, before_dt=before_utc)
+        print(f"[목표가 뉴스 08:30] 완료: fetched={result['fetched']}, items={result.get('items', 0)}, posted={result['posted']}")
     except Exception as e:
         import traceback
-        print(f"[목표가 뉴스] 오류: {e}")
+        print(f"[목표가 뉴스 08:30] 오류: {e}")
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+async def collect_target_price_news_noon():
+    """12:00 수집: 당일 08:30 KST ~ 당일 12:00 KST 게시된 목표가 기사만 처리"""
+    from datetime import timezone as _tz
+    from app.services.target_price_news_service import fetch_and_post_target_price_news
+
+    kst = pytz.timezone("Asia/Seoul")
+    now_kst = datetime.now(kst)
+    print(f"\n[목표가 뉴스 12:00] 수집·등록 시작: {now_kst.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # 당일 08:30 KST ~ 지금 (12:00)
+    today = now_kst.date()
+    after_kst = kst.localize(datetime(today.year, today.month, today.day, 8, 30, 0))
+    after_utc = after_kst.astimezone(_tz.utc)
+    before_utc = now_kst.astimezone(_tz.utc)
+
+    db = SessionLocal()
+    try:
+        result = await fetch_and_post_target_price_news(db, after_dt=after_utc, before_dt=before_utc)
+        print(f"[목표가 뉴스 12:00] 완료: fetched={result['fetched']}, items={result.get('items', 0)}, posted={result['posted']}")
+    except Exception as e:
+        import traceback
+        print(f"[목표가 뉴스 12:00] 오류: {e}")
         traceback.print_exc()
     finally:
         db.close()
 
 
 class TargetPriceNewsScheduler:
-    """증권사 목표가 상향 뉴스 수집 스케줄러 (매일 1회 08:30 KST)"""
+    """증권사 목표가 상향 뉴스 수집 스케줄러 (매일 2회: 08:30 / 12:00 KST)"""
 
     def __init__(self):
         self.scheduler = None
@@ -1566,18 +1602,30 @@ class TargetPriceNewsScheduler:
         if self.scheduler is not None:
             return
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        # 08:30 - 전일 12:00 ~ 당일 08:30
         self.scheduler.add_job(
             collect_target_price_news,
             trigger=CronTrigger(hour=8, minute=30, timezone=self.kst),
-            id="target_price_news_daily",
-            name="목표가 상향 뉴스 수집·등록 (08:30, 매일 1회)",
+            id="target_price_news_0830",
+            name="목표가 상향 뉴스 수집·등록 (08:30, 전일 12:00~)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        # 12:00 - 당일 09:00 ~ 12:00
+        self.scheduler.add_job(
+            collect_target_price_news_noon,
+            trigger=CronTrigger(hour=12, minute=0, timezone=self.kst),
+            id="target_price_news_1200",
+            name="목표가 상향 뉴스 수집·등록 (12:00, 당일 09:00~12:00)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             misfire_grace_time=600,
         )
         self.scheduler.start()
-        print("목표가 상향 뉴스 스케줄러 시작 (08:30, 매일 1회)")
+        print("목표가 상향 뉴스 스케줄러 시작 (08:30 전일 12:00~, 12:00 당일 08:30~12:00)")
 
     def shutdown(self):
         if self.scheduler:

@@ -320,7 +320,15 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 |------------|----------------|------|
 | `market_morning_gemini_service.py` | 매일 06:35 | 미국·한국 지수·환율 기반 **모닝 브리핑** 생성 → `MarketMorningAiSummary` 저장 |
 | `daily_issue_gemini_service.py` | 평일 08:40, 12:40, 19:40 | 당일 Naver 수집 뉴스를 3~5줄로 요약 → `daily_issue_summaries` 저장 |
-| `market_closing_gemini_service.py` | 평일 15:50 | 장마감 후 코스피·코스닥·환율·투자자동향·상한가 종목을 분석해 **플로우Ai** 계정으로 B001 게시판에 자동 포스팅 |
+| `market_closing_gemini_service.py` | 평일 15:50 | 장마감 후 코스피·코스닥·환율·투자자동향·상한가 종목을 분석해 **플로우Ai** 계정으로 B001 게시판에 자동 포스팅. 수급(순매수·순매도) 섹션은 DB 원본 데이터를 직접 렌더링해 AI 오류를 방지함 |
+| `target_price_news_service.py` | 매일 08:30, 12:00 | 증권사 목표가 상향 뉴스를 Gemini로 가공해 B002 게시판에 자동 포스팅 |
+
+### 목표가 상향 뉴스 수집 시간 윈도우
+
+| 슬롯 | 수집 범위 (KST) | 대상 리포트 |
+|------|----------------|-------------|
+| **08:30** | 전일 12:00 ~ 당일 08:30 | 전날 오후·저녁 리포트 |
+| **12:00** | 당일 08:30 ~ 당일 12:00 | 장중 오전 리포트 |
 
 ### 데이터 수집 스케줄 (scheduler_service.py)
 
@@ -331,14 +339,15 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 | 환율 | 평일 30분마다 | 최신 스냅샷 | Yahoo Finance (`KRW=X`, `JPYKRW=X`, `EURKRW=X`) |
 | 금리 | on-demand (1시간 캐시) | - | Yahoo Finance (`^TNX`, `^FVX`, `^IRX`) |
 | 주식 영향 뉴스 | 평일 08:30, 12:30, 19:30 | 2일 | Naver 뉴스 검색 API |
+| 목표가 상향 뉴스 | 매일 08:30, 12:00 | - | Naver 뉴스 검색 API + Gemini 가공 |
 
-### Gemini 환경 변수
+### AI 환경 변수
 
 | 변수 | 설명 |
 |------|------|
 | `GEMINI_API_KEY` | Google AI Studio에서 발급 (`gemini-2.5-flash` 사용) |
 
-> **참고**: API 키 미설정 또는 Gemini 오류 시 해당 서비스는 스킵되고 앱은 정상 동작합니다.
+> **참고**: API 키 미설정 또는 AI 오류 시 해당 서비스는 스킵되고 앱은 정상 동작합니다.
 
 ---
 

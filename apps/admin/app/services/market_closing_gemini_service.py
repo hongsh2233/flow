@@ -331,12 +331,38 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
 # Post 내용 조립 (HTML)
 # ──────────────────────────────────────────────
 
+def _build_supply_html(deal_rank: Dict[str, List[str]], ai_comment: str) -> str:
+    """외국인·기관 수급을 DB 원본 데이터로 직접 렌더링.
+    AI(Gemini)는 순매수/순매도 종목 나열이 아닌 해석 코멘트만 보조로 사용."""
+    html = ""
+    markets = [
+        ("코스피", "foreign_buy_kospi", "foreign_sell_kospi", "inst_buy_kospi", "inst_sell_kospi"),
+        ("코스닥", "foreign_buy_kosdaq", "foreign_sell_kosdaq", "inst_buy_kosdaq", "inst_sell_kosdaq"),
+    ]
+    for market, fb, fs, ib, is_ in markets:
+        fb_names = ", ".join(deal_rank.get(fb, [])) or "없음"
+        fs_names = ", ".join(deal_rank.get(fs, [])) or "없음"
+        ib_names = ", ".join(deal_rank.get(ib, [])) or "없음"
+        is_names = ", ".join(deal_rank.get(is_, [])) or "없음"
+        html += (
+            f"<p><strong>[{market}]</strong></p>\n"
+            f"<p>• 외국인 순매수: {fb_names}</p>\n"
+            f"<p>• 외국인 순매도: {fs_names}</p>\n"
+            f"<p>• 기관 순매수: {ib_names}</p>\n"
+            f"<p>• 기관 순매도: {is_names}</p>\n"
+        )
+    if ai_comment:
+        html += f'<p style="color:#555;margin-top:8px;">{ai_comment}</p>\n'
+    return html
+
+
 def _build_post_content(
     kr_indices: List[dict],
     exchange_rates: List[dict],
     news: List[dict],
     ai: Dict[str, str],
     upper_limit: List[str],
+    deal_rank: Optional[Dict[str, List[str]]] = None,
 ) -> str:
     # ① 주가지수 HTML
     idx_html = ""
@@ -359,6 +385,9 @@ def _build_post_content(
             news_html += f'<p style="margin-left:16px;color:#555;">{n["description"]}</p>\n'
     if not news_html:
         news_html = "<p>오늘 주요 뉴스 없음</p>\n"
+
+    # ⑤ 외국인·기관 동향: DB 원본 데이터 직접 렌더링 (AI 오류 방지)
+    supply_html = _build_supply_html(deal_rank or {}, ai.get("supply_trend", ""))
 
     # 상한가
     upper_html = (
@@ -387,8 +416,7 @@ def _build_post_content(
 <p>{ai.get("exchange_rate", "")}</p>
 
 <h3>⑤ 외국인·기관 동향</h3>
-<p>{ai.get("supply_trend", "")}</p>
-
+{supply_html}
 <h3>⑥ 오늘 특징 (상한가·업종·테마)</h3>
 {upper_html}<p>{ai.get("today_highlight", "")}</p>
 
@@ -431,8 +459,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     if not ai:
         return False
 
-    # 게시글 내용 조립
-    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit)
+    # 게시글 내용 조립 (deal_rank 전달 → 수급 섹션을 DB 원본으로 직접 렌더링)
+    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank)
 
     # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
     existing = (
