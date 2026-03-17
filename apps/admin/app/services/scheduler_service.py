@@ -1534,7 +1534,7 @@ investment_bank_news_scheduler = InvestmentBankNewsScheduler()
 # =========================================================
 # 증권사 목표가 상향 뉴스 - 매일 2회 (08:30 / 12:00 KST)
 #   08:30 : 전일 12:00 KST ~ 당일 08:30 KST (전날 오후·저녁 리포트)
-#   12:00 : 당일 09:00 KST ~ 당일 12:00 KST (장중 오전 리포트)
+#   12:00 : 당일 08:30 KST ~ 당일 12:00 KST (장중 오전 리포트)
 # =========================================================
 
 async def collect_target_price_news():
@@ -1565,7 +1565,7 @@ async def collect_target_price_news():
 
 
 async def collect_target_price_news_noon():
-    """12:00 수집: 당일 09:00 KST ~ 당일 12:00 KST 게시된 목표가 기사만 처리"""
+    """12:00 수집: 당일 08:30 KST ~ 당일 12:00 KST 게시된 목표가 기사만 처리"""
     from datetime import timezone as _tz
     from app.services.target_price_news_service import fetch_and_post_target_price_news
 
@@ -1573,9 +1573,9 @@ async def collect_target_price_news_noon():
     now_kst = datetime.now(kst)
     print(f"\n[목표가 뉴스 12:00] 수집·등록 시작: {now_kst.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # 당일 09:00 KST ~ 지금 (12:00)
+    # 당일 08:30 KST ~ 지금 (12:00)
     today = now_kst.date()
-    after_kst = kst.localize(datetime(today.year, today.month, today.day, 9, 0, 0))
+    after_kst = kst.localize(datetime(today.year, today.month, today.day, 8, 30, 0))
     after_utc = after_kst.astimezone(_tz.utc)
     before_utc = now_kst.astimezone(_tz.utc)
 
@@ -1625,7 +1625,7 @@ class TargetPriceNewsScheduler:
             misfire_grace_time=600,
         )
         self.scheduler.start()
-        print("목표가 상향 뉴스 스케줄러 시작 (08:30 전일 12:00~, 12:00 당일 09:00~12:00)")
+        print("목표가 상향 뉴스 스케줄러 시작 (08:30 전일 12:00~, 12:00 당일 08:30~12:00)")
 
     def shutdown(self):
         if self.scheduler:
