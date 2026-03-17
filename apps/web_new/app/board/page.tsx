@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { useSession } from "next-auth/react";
 import styles from "./Board.module.css";
 import BoardList from "../components/module/board/BoardList";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -12,6 +13,8 @@ function BoardPageContent() {
   const searchParams = useSearchParams();
   const boardId = searchParams.get("board") || "";
   const [board, setBoard] = useState<Board | null>(null);
+  const { status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     if (!boardId) return;
@@ -38,7 +41,22 @@ function BoardPageContent() {
   return (
     <>
       <main className={styles.wrap}>
-        {board && <h2 className={styles.pageTitle}>{board.name}</h2>}
+        <div className={styles.boardHeader}>
+          {board ? (
+            <h2 className={styles.pageTitle}>{board.name}</h2>
+          ) : (
+            <div />
+          )}
+          {board && (board.auth === "all" || (board.auth === "member" && status === "authenticated")) && (
+            <button
+              type="button"
+              className={styles.writeBtn}
+              onClick={() => router.push(`/board/write?board=${boardId}`)}
+            >
+              ✏ 글쓰기
+            </button>
+          )}
+        </div>
         <BoardList
           boardId={boardId}
           detailHref={(id) => `/board/${id}?from=${boardId}`}
