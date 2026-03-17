@@ -326,7 +326,7 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 
 | 데이터 | 수집 주기 | 보관 기간 | 소스 |
 |--------|----------|-----------|------|
-| 코스피·코스닥 지수 | 평일 09:10~15:10 (40분 간격, 11회) + 15:40 | 7일 | Yahoo Finance (`^KS11`, `^KQ11`) |
+| 코스피·코스닥 지수 | 평일 09:10~15:10 (30분 간격, 13회) + 15:40 | 7일 | Yahoo Finance (`^KS11`, `^KQ11`) |
 | 해외 지수 | 평일 장전·장중 수회 | 7일 | Yahoo Finance (NASDAQ, S&P500, Dow 등) |
 | 환율 | 평일 30분마다 | 최신 스냅샷 | Yahoo Finance (`KRW=X`, `JPYKRW=X`, `EURKRW=X`) |
 | 금리 | on-demand (1시간 캐시) | - | Yahoo Finance (`^TNX`, `^FVX`, `^IRX`) |
