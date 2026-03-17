@@ -37,15 +37,15 @@ def _strip_html(text: str) -> str:
     return text.strip()
 
 
-def _is_within_24h(pub_date_str: str) -> bool:
+def _is_in_time_window(pub_date_str: str, after_dt: datetime, before_dt: datetime) -> bool:
+    """pub_date_str 이 after_dt ~ before_dt 범위 안에 있으면 True"""
     if not pub_date_str:
         return False
     try:
         dt = parsedate_to_datetime(pub_date_str)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-        return dt >= cutoff
+        return after_dt <= dt <= before_dt
     except Exception:
         return False
 
@@ -232,11 +232,24 @@ def _format_single_post(items: List[Dict]) -> Tuple[str, str]:
     return title[:255], content
 
 
-async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
+async def fetch_and_post_target_price_news(
+    db: Session,
+    after_dt: Optional[datetime] = None,
+    before_dt: Optional[datetime] = None,
+) -> Dict[str, int]:
     """
     목표가 상향 뉴스 수집 → Gemini 가공 → 하나의 게시글로 B002 등록
+
+    after_dt / before_dt : 수집 대상 기사의 게시 시각 범위 (UTC 기준).
+                           미전달 시 최근 24시간.
     Returns: {"fetched": N, "posted": 0|1, "items": M}
     """
+    now_utc = datetime.now(timezone.utc)
+    if after_dt is None:
+        after_dt = now_utc - timedelta(hours=24)
+    if before_dt is None:
+        before_dt = now_utc
+
     total_fetched = 0
     seen_urls = set()
     extracted_items: List[Dict] = []
@@ -253,7 +266,7 @@ async def fetch_and_post_target_price_news(db: Session) -> Dict[str, int]:
             link = (item.get("link") or "").strip()
             if not link or link in seen_urls:
                 continue
-            if not _is_within_24h(item.get("pub_date", "")):
+            if not _is_in_time_window(item.get("pub_date", ""), after_dt, before_dt):
                 continue
 
             title = (item.get("title") or "").strip()
