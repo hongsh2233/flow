@@ -100,6 +100,7 @@ export function Calendar() {
           time: s.scheduled_time || undefined,
           content: s.content || undefined,
           detail: s.detail != null && s.detail !== "" ? String(s.detail) : undefined,
+          link_url: s.link_url || undefined,
         }));
         setSchedules(items);
       } else {

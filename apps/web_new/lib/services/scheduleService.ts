@@ -11,6 +11,7 @@ export interface ScheduleFromApi {
   content: string
   detail: string
   type: string
+  link_url?: string
   created_at?: string
   updated_at?: string
 }

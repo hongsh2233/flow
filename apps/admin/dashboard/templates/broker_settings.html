@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}증권사 설정 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .broker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .broker-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: box-shadow 0.2s;
+  }
+
+  .broker-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .broker-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .broker-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .broker-name {
+    font-weight: 700;
+    font-size: 16px;
+    color: #1e293b;
+  }
+
+  .broker-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    line-height: 1;
+  }
+
+  .link-btn:hover {
+    opacity: 0.85;
+    text-decoration: none;
+  }
+
+  .link-btn-android {
+    background: #3DDC84;
+    color: #fff;
+  }
+
+  .link-btn-ios {
+    background: #555;
+    color: #fff;
+  }
+
+  .link-btn-web {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .link-btn-copy {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  .link-btn-copy:hover {
+    background: #e2e8f0;
+  }
+
+  .broker-url-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: #64748b;
+    word-break: break-all;
+  }
+
+  .url-label {
+    font-weight: 700;
+    color: #475569;
+    flex-shrink: 0;
+    min-width: 52px;
+  }
+
+  .url-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .copy-icon {
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #94a3b8;
+    padding: 2px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  .copy-icon:hover {
+    color: #3b82f6;
+    background: #dbeafe;
+  }
+
+  .info-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.6;
+  }
+
+  .info-box strong {
+    font-weight: 700;
+  }
+
+  .info-box code {
+    background: #dbeafe;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 0;
+  }
+
+  /* 복사 완료 토스트 */
+  #copyToast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s;
+    z-index: 9999;
+  }
+
+  #copyToast.show {
+    opacity: 1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h3>🏦 증권사 설정</h3>
+  <p style="color:#64748b; font-size:14px; margin-top:4px;">대한민국 주요 증권사 MTS 실행 링크 및 모바일웹 바로가기</p>
+</div>
+
+<div class="info-box">
+  <strong>📱 링크 동작 방식</strong><br>
+  • <strong>Android MTS</strong>: 앱 설치 시 바로 실행 → 미설치 시 Play Store로 이동 (intent:// 방식)<br>
+  • <strong>iOS MTS</strong>: App Store 링크 (앱 설치 유도 또는 실행)<br>
+  • <strong>모바일웹</strong>: 앱 없이 바로 접근 가능한 모바일 전용 웹<br>
+  <br>
+  <strong>📅 일정 자동 링크:</strong> 일정 제목에 <code>[신한투자증권]</code>, <code>[키움증권]</code> 등 증권사 이름을 입력하면 자동으로 모바일웹 링크가 연결됩니다.
+</div>
+
+<div class="broker-grid">
+  {% for b in brokers %}
+  <div class="broker-card">
+    <div class="broker-header">
+      <div class="broker-badge" style="background: {{ b.logo_color }}">
+        {{ b.short[:2] }}
+      </div>
+      <div>
+        <div class="broker-name">{{ b.name }}</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-title">🚀 MTS 실행 / 다운로드</div>
+      <div class="broker-links">
+        <a class="link-btn link-btn-android"
+           href="intent://{{ b.android_package }}/#Intent;package={{ b.android_package }};scheme=market;action=android.intent.action.VIEW;end"
+           title="Android: 앱 설치 시 실행, 미설치 시 스토어 이동"
+           target="_blank" rel="noopener">
+          🤖 Android MTS
+        </a>
+        <a class="link-btn link-btn-android"
+           href="{{ b.android_store }}"
+           title="Play Store 바로가기"
+           target="_blank" rel="noopener"
+           style="background:#1DA462;">
+          Play Store
+        </a>
+        <a class="link-btn link-btn-ios"
+           href="{{ b.ios_store }}"
+           title="iOS App Store 바로가기"
+           target="_blank" rel="noopener">
+           iOS App Store
+        </a>
+        <a class="link-btn link-btn-web"
+           href="{{ b.mobile_web }}"
+           title="모바일 웹 바로가기"
+           target="_blank" rel="noopener">
+          🌐 모바일웹
+        </a>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">🔗 링크 정보</div>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <div class="broker-url-row">
+          <span class="url-label">Android</span>
+          <span class="url-text" title="{{ b.android_store }}">{{ b.android_store }}</span>
+          <span class="copy-icon" onclick="copyText('{{ b.android_store }}')" title="복사">📋</span>
+        </div>
+        <div class="broker-url-row">
+          <span class="url-label">iOS</span>
+          <span class="url-text" title="{{ b.ios_store }}">{{ b.ios_store }}</span>
+          <span class="copy-icon" onclick="copyText('{{ b.ios_store }}')" title="복사">📋</span>
+        </div>
+        <div class="broker-url-row">
+          <span class="url-label">모바일웹</span>
+          <span class="url-text" title="{{ b.mobile_web }}">{{ b.mobile_web }}</span>
+          <span class="copy-icon" onclick="copyText('{{ b.mobile_web }}')" title="복사">📋</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div id="copyToast">클립보드에 복사됐습니다</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showToast);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast();
+    }
+  }
+
+  function showToast() {
+    var t = document.getElementById('copyToast');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 1800);
+  }
+</script>
+{% endblock %}

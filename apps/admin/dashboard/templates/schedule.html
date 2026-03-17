@@ -243,15 +243,24 @@
       <input
         type="text"
         name="subject"
-        placeholder="일정 제목"
-        style="width: 180px"
+        id="add_subject"
+        placeholder="일정 제목 (예: [신한투자증권] 실적발표)"
+        style="width: 220px"
         required
       />
       <input
         type="text"
         name="content"
         placeholder="요약 내용 (선택)"
-        style="width: 220px"
+        style="width: 180px"
+      />
+      <input
+        type="url"
+        name="link_url"
+        id="add_link_url"
+        placeholder="링크 URL (자동입력 또는 직접 입력)"
+        style="width: 260px"
+        title="증권사 이름 입력 시 자동 완성됩니다"
       />
       <button type="button" class="btn-detail-toggle" id="btnDetailToggle">상세입력</button>
       <button type="submit" class="btn-add">등록</button>
@@ -321,6 +330,7 @@
             data-type="{{ s.type or 'etc' }}"
             data-subject="{{ (s.subject or '')|e }}"
             data-content="{{ (s.content or '')|e }}"
+            data-link-url="{{ (s.link_url or '')|e }}"
             data-show-main-popup="{{ 'true' if s.show_main_popup else 'false' }}"
             style="
               color: #3498db;
@@ -378,6 +388,8 @@
       <input type="text" name="subject" id="edit_subject" required />
       <label>요약 내용</label>
       <input type="text" name="content" id="edit_content" />
+      <label>링크 URL</label>
+      <input type="url" name="link_url" id="edit_link_url" placeholder="https://..." />
       <label>상세 내용</label>
       <div id="edit_editor" class="editor-wrap"></div>
       <input type="hidden" name="detail" id="edit_detail" />
@@ -411,6 +423,54 @@
 {% block extra_scripts %}
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 <script>
+  // 증권사 이름 → 모바일웹 URL 매핑
+  var BROKER_MAP = {
+    "삼성증권": "https://m.samsungpop.com",
+    "삼성": "https://m.samsungpop.com",
+    "미래에셋증권": "https://securities.miraeasset.com/hkd/hkd8000/h/hkd8000h.do",
+    "미래에셋": "https://securities.miraeasset.com/hkd/hkd8000/h/hkd8000h.do",
+    "한국투자증권": "https://m.truefriend.com",
+    "한국투자": "https://m.truefriend.com",
+    "NH투자증권": "https://m.nhqv.com",
+    "NH투자": "https://m.nhqv.com",
+    "KB증권": "https://m.kbsec.com",
+    "KB": "https://m.kbsec.com",
+    "신한투자증권": "https://m.shinhaninvest.com",
+    "신한증권": "https://m.shinhaninvest.com",
+    "신한투자": "https://m.shinhaninvest.com",
+    "신한": "https://m.shinhaninvest.com",
+    "키움증권": "https://m.kiwoom.com",
+    "키움": "https://m.kiwoom.com",
+    "대신증권": "https://m.daishin.com",
+    "대신": "https://m.daishin.com",
+    "메리츠증권": "https://m.meritz.co.kr",
+    "메리츠": "https://m.meritz.co.kr",
+    "하나증권": "https://m.hanasec.co.kr",
+    "하나": "https://m.hanasec.co.kr",
+    "이베스트투자증권": "https://m.ebest.co.kr",
+    "이베스트증권": "https://m.ebest.co.kr",
+    "이베스트": "https://m.ebest.co.kr",
+    "토스증권": "https://securities.toss.im",
+    "토스": "https://securities.toss.im",
+    "카카오페이증권": "https://securities.kakaopay.com",
+    "카카오페이": "https://securities.kakaopay.com",
+    "유안타증권": "https://m.yuanta.co.kr",
+    "유안타": "https://m.yuanta.co.kr",
+    "현대차증권": "https://m.hmcib.com",
+    "현대차": "https://m.hmcib.com",
+  };
+
+  /**
+   * 제목에서 [증권사명] 패턴을 찾아 link_url 자동완성
+   * 예: "[신한투자증권] 3분기 실적발표" → https://m.shinhaninvest.com
+   */
+  function detectBrokerLink(subject) {
+    var match = subject.match(/\[([^\]]+)\]/);
+    if (!match) return null;
+    var name = match[1].trim();
+    return BROKER_MAP[name] || null;
+  }
+
   var quillAdd, quillEdit;
 
   function createImageHandler(quill) {
@@ -529,6 +589,22 @@
       });
     }
 
+    // 증권사 자동 링크: 등록 폼의 제목 입력 감지
+    var addSubject = document.getElementById('add_subject');
+    var addLinkUrl = document.getElementById('add_link_url');
+    if (addSubject && addLinkUrl) {
+      addSubject.addEventListener('input', function() {
+        var detected = detectBrokerLink(addSubject.value);
+        if (detected && !addLinkUrl.value) {
+          addLinkUrl.value = detected;
+        }
+        // 값이 이미 있어도 증권사 감지 시 덮어씌움 (다른 증권사로 교체)
+        if (detected) {
+          addLinkUrl.value = detected;
+        }
+      });
+    }
+
     var btnToggle = document.getElementById('btnDetailToggle');
     var detailWrap = document.getElementById('detailToggleWrap');
     if (btnToggle && detailWrap) {
@@ -552,6 +628,7 @@
           btn.getAttribute('data-type') || 'etc',
           btn.getAttribute('data-subject') || '',
           btn.getAttribute('data-content') || '',
+          btn.getAttribute('data-link-url') || '',
           detail,
           btn.getAttribute('data-show-main-popup') === 'true'
         );
@@ -569,7 +646,7 @@
     });
   });
 
-  function openEditModal(id, date, endDate, scheduledTime, type, subject, content, detail, showMainPopup) {
+  function openEditModal(id, date, endDate, scheduledTime, type, subject, content, linkUrl, detail, showMainPopup) {
     document.getElementById("edit_id").value = id;
     document.getElementById("edit_date").value = date;
     var editPeriodCheck = document.getElementById("edit_period_check");
@@ -588,6 +665,8 @@
     document.getElementById("edit_type").value = type || 'etc';
     document.getElementById("edit_subject").value = subject;
     document.getElementById("edit_content").value = content;
+    var editLinkUrl = document.getElementById("edit_link_url");
+    if (editLinkUrl) editLinkUrl.value = linkUrl || '';
     quillEdit.root.innerHTML = detail || '';
     document.getElementById("edit_detail").value = detail || '';
     var popupCheck = document.getElementById("edit_show_main_popup");

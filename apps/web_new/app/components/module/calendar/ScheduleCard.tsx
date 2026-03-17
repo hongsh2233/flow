@@ -240,7 +240,20 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                   <span className={styles.time}>{schedule.time}</span>
                 </div>
               )}
-              <p className={styles.date}>{schedule.date}</p>
+              <div className={styles.bottomRight}>
+                {schedule.link_url && (
+                  <a
+                    href={schedule.link_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.linkBtn}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    MTS 바로가기
+                  </a>
+                )}
+                <p className={styles.date}>{schedule.date}</p>
+              </div>
             </div>
           </div>
         </div>
