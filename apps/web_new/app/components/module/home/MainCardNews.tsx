@@ -17,22 +17,22 @@ interface MainPostItem {
 }
 
 export function MainCardNews() {
-  const [post, setPost] = useState<MainPostItem | null>(null);
+  const [posts, setPosts] = useState<MainPostItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/main-posts?limit=1")
+    fetch("/api/main-posts?limit=3")
       .then((res) => res.json())
       .then((result) => {
-        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-          setPost(result.data[0]);
+        if (result.success && Array.isArray(result.data)) {
+          setPosts(result.data.slice(0, 3));
         }
       })
-      .catch(() => setPost(null))
+      .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !post) return null;
+  if (loading || posts.length === 0) return null;
 
   return (
     <section className={styles.section}>
@@ -42,15 +42,20 @@ export function MainCardNews() {
           이슈 체크
         </h3>
       </div>
-      <Link
-        href={`/board/${post.id}?from=${post.board_id}`}
-        className={styles.card}
-      >
-        <h2 className={styles.title}>{post.title}</h2>
-        {post.content && (
-          <p className={styles.excerpt}>{post.content}</p>
-        )}
-      </Link>
+      <div className={styles.cardList}>
+        {posts.map((post) => (
+          <Link
+            key={post.id}
+            href={`/board/${post.id}?from=${post.board_id}`}
+            className={styles.card}
+          >
+            <h2 className={styles.title}>{post.title}</h2>
+            {post.content && (
+              <p className={styles.excerpt}>{post.content}</p>
+            )}
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }

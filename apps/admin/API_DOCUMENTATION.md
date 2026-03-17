@@ -1,223 +1,91 @@
-# REST API 문서
+# Admin API 문서
 
-이 문서는 Stock BO 시스템의 REST API 엔드포인트를 설명합니다.
+FastAPI 백엔드 REST API 명세. 전체 API 문서는 `/docs` (Swagger UI) 또는 루트 `README.md` 참고.
+
+## 베이스 URL
+
+- 로컬: `http://localhost:8080`
+- 프로덕션: Railway 배포 URL
 
 ## 인증
 
-모든 API 엔드포인트는 JWT 토큰 기반 인증을 사용합니다.
-
-### 인증 방법
-
 ```
+# 서비스 간 인증 (프론트엔드 → 백엔드)
+X-API-KEY: your-api-key
+
+# 회원 API 인증
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-### 토큰 발급
+## 주요 엔드포인트
 
-로그인 API를 통해 토큰을 발급받을 수 있습니다.
+### 인증 (`/api/auth`)
 
-```
-POST /api/auth/token
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | `/api/auth/member/login` | 이메일 로그인 → JWT 반환 |
+| POST | `/api/auth/member/signup` | 회원가입 |
+| POST | `/api/auth/social-login` | 소셜 로그인 (google/naver) |
+| POST | `/api/auth/member/reissue-token` | 토큰 재발급 |
+| GET  | `/api/auth/member/me` | 내 정보 조회 (Bearer 필요) |
+| PUT  | `/api/auth/member/me` | 내 정보 수정 (Bearer 필요) |
+
+### 게시판 (`/api/boards`, `/api/posts`)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET  | `/api/boards` | 게시판 목록 |
+| GET  | `/api/boards/{id}/posts` | 게시글 목록 |
+| GET  | `/api/posts/{id}` | 게시글 상세 |
+| GET  | `/api/main-posts?limit=3` | 메인 노출 게시글 (최대 3개) |
+
+### 일정 (`/api/schedules`)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET  | `/api/schedules` | 일정 목록 (`?start_date&end_date`) |
+| POST | `/api/schedule-alarms` | 일정 알림 신청 |
+
+### 주식 데이터
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET  | `/api/market/indices` | 시장 지수 |
+| GET  | `/api/market/investor-trend` | 투자자 동향 |
+| GET  | `/api/stocks/search?q=삼성` | 종목 검색 |
+
+### 알림 / FCM
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET  | `/api/notifications` | 알림 목록 |
+| POST | `/api/fcm-token` | FCM 토큰 등록 |
+
+## 소셜 로그인 상세
+
+```json
+POST /api/auth/social-login
 Content-Type: application/json
+X-API-KEY: your-api-key
 
 {
-  "username": "admin@example.com",
-  "password": "password"
+  "provider": "google",
+  "email": "user@example.com",
+  "name": "홍길동",
+  "provider_id": "google_unique_user_id"
 }
-```
-
-응답:
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "expires_in": 86400
-}
-```
-
----
-
-## 게시판 API
-
-### 게시판 목록 조회
-
-```
-GET /api/boards
-Authorization: Bearer <token>
 ```
 
 응답:
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "B001",
-      "name": "공지사항",
-      "type": "korean",
-      "auth": "all",
-      "created_at": "2025-01-01T00:00:00",
-      "updated_at": "2025-01-01T00:00:00",
-      "post_count": 10
-    }
-  ],
-  "count": 1
+  "message": "회원 정보가 저장되었습니다.",
+  "member_id": 1,
+  "nickname": "투자자123",
+  "profile_image": "https://...",
+  "grade": "regular",
+  "has_nickname": false,
+  "access_token": "eyJ..."
 }
 ```
-
-### 게시판 상세 조회
-
-```
-GET /api/boards/{board_id}
-Authorization: Bearer <token>
-```
-
-### 게시판의 게시글 목록 조회
-
-```
-GET /api/boards/{board_id}/posts?page=1&limit=10
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `page`: 페이지 번호 (기본값: 1)
-- `limit`: 페이지당 항목 수 (기본값: 10, 최대: 100)
-
-### 게시글 상세 조회
-
-```
-GET /api/posts/{post_id}
-Authorization: Bearer <token>
-```
-
----
-
-## 일정 관리 API
-
-### 일정 목록 조회
-
-```
-GET /api/schedules?start_date=2025-01-01&end_date=2025-12-31&type=manual
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `start_date`: 시작 날짜 (YYYY-MM-DD, 선택)
-- `end_date`: 종료 날짜 (YYYY-MM-DD, 선택)
-- `type`: 일정 타입 ('manual', 'api', 선택)
-
-### 일정 상세 조회
-
-```
-GET /api/schedules/{schedule_id}
-Authorization: Bearer <token>
-```
-
----
-
-## 한국거래소(KRX) 데이터 API
-
-### KRX 데이터 조회
-
-```
-GET /api/krx-data?data_type=kospi&bas_dd=20251230
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `data_type`: 데이터 타입 ('kospi', 'kosdaq', 'market', 선택)
-- `bas_dd`: 기준일자 (YYYYMMDD, 선택, 없으면 최신 데이터)
-
-### KRX 데이터 날짜 목록 조회
-
-```
-GET /api/krx-data/dates?data_type=kospi
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `data_type`: 데이터 타입 ('kospi', 'kosdaq', 'market', 선택)
-
----
-
-## 금융위원회(FSC) 주식시세정보 API
-
-### 주식시세정보 조회
-
-```
-GET /api/fsc-stock-price?bas_dt=20251230&limit=200
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `bas_dt`: 기준일자 (YYYYMMDD, 선택, 없으면 최신 데이터)
-- `limit`: 반환할 최대 항목 수 (기본값: 200, 최대: 1000)
-
-응답:
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "bas_dt": "20251230",
-      "srtn_cd": "005930",
-      "itms_nm": "삼성전자",
-      "mrkt_tot_amt": "500000000000",
-      "clpr": "75000",
-      "flt_rt": "1.5",
-      ...
-    }
-  ],
-  "bas_dt": "20251230",
-  "count": 200
-}
-```
-
-### 주식시세정보 날짜 목록 조회
-
-```
-GET /api/fsc-stock-price/dates
-Authorization: Bearer <token>
-```
-
----
-
-## 수집 데이터 API
-
-### 수집 데이터 조회
-
-```
-GET /api/collected-data?type=api&status=success&limit=100
-Authorization: Bearer <token>
-```
-
-쿼리 파라미터:
-- `type`: 데이터 타입 필터 (선택)
-- `status`: 상태 필터 (예: 'success', 'failed', 선택)
-- `limit`: 반환할 최대 항목 수 (기본값: 100, 최대: 1000)
-
-### 수집 데이터 상세 조회
-
-```
-GET /api/collected-data/{data_id}
-Authorization: Bearer <token>
-```
-
----
-
-## 에러 응답
-
-모든 API는 에러 발생 시 다음 형식으로 응답합니다:
-
-```json
-{
-  "detail": "에러 메시지"
-}
-```
-
-HTTP 상태 코드:
-- `200`: 성공
-- `401`: 인증 실패
-- `404`: 리소스를 찾을 수 없음
-- `500`: 서버 오류
