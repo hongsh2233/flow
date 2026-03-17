@@ -1,33 +1,26 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useThemeContext } from "@/app/components/providers/ThemeProvider";
-import type { Editor as EditorType } from "@toast-ui/react-editor";
 import styles from "./PostWriteForm.module.css";
-
-// TOAST UI Editor는 SSR 미지원 → 클라이언트 전용 동적 임포트
-const Editor = dynamic(
-  () => import("@toast-ui/react-editor").then((m) => m.Editor),
-  {
-    ssr: false,
-    loading: () => (
-      <div className={styles.editorLoading}>에디터 로딩 중...</div>
-    ),
-  }
-);
 
 interface PostWriteFormProps {
   boardId: string;
 }
 
-// TOAST UI addImageBlobHook 콜백 타입
 type ImageUploadCallback = (url: string, altText: string) => void;
 
+// @toast-ui/editor 인스턴스 타입 (최소 필요한 메서드만 선언)
+interface ToastEditorInstance {
+  getHTML(): string;
+  destroy(): void;
+}
+
 export function PostWriteForm({ boardId }: PostWriteFormProps) {
-  const editorRef = useRef<EditorType | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const editorInstanceRef = useRef<ToastEditorInstance | null>(null);
   const { isDark } = useThemeContext();
   const { status } = useSession();
   const router = useRouter();
@@ -35,19 +28,9 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
   const [title, setTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [cssLoaded, setCssLoaded] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
 
-  // TOAST UI Editor CSS는 클라이언트에서만 로드 (SSR 오류 방지)
-  useEffect(() => {
-    const loadCss = async () => {
-      await import("@toast-ui/editor/dist/toastui-editor.css");
-      await import("@toast-ui/editor/dist/theme/toastui-editor-dark.css");
-      setCssLoaded(true);
-    };
-    loadCss();
-  }, []);
-
-  // 클라이언트 측 인증 이중 보호
+  // 클라이언트 측 인증 보호
   useEffect(() => {
     if (status === "unauthenticated") {
       const callbackUrl = encodeURIComponent(`/board/write?board=${boardId}`);
@@ -55,30 +38,79 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
     }
   }, [status, boardId, router]);
 
-  // 이미지 업로드: blob → /api/upload-image → URL 반환
-  const handleImageUpload = async (
+  // 이미지 업로드 핸들러
+  const handleImageUpload = useCallback(async (
     blob: Blob | File,
     callback: ImageUploadCallback
   ) => {
     const formData = new FormData();
     formData.append("file", blob);
-
     try {
-      const res = await fetch("/api/upload-image", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/upload-image", { method: "POST", body: formData });
       const data = await res.json();
       if (data.url) {
-        const altText = blob instanceof File ? blob.name : "이미지";
-        callback(data.url, altText);
+        callback(data.url, blob instanceof File ? blob.name : "이미지");
       } else {
         alert("이미지 업로드에 실패했습니다.");
       }
     } catch {
       alert("이미지 업로드 중 오류가 발생했습니다.");
     }
-  };
+  }, []);
+
+  // @toast-ui/editor 동적 로드 및 초기화 (SSR 없이 클라이언트 전용)
+  useEffect(() => {
+    if (!editorContainerRef.current || editorInstanceRef.current) return;
+
+    let destroyed = false;
+
+    const initEditor = async () => {
+      // CSS 로드
+      await import("@toast-ui/editor/dist/toastui-editor.css");
+      if (isDark) {
+        await import("@toast-ui/editor/dist/theme/toastui-editor-dark.css");
+      }
+
+      if (destroyed || !editorContainerRef.current) return;
+
+      // 순수 JS Editor 동적 import
+      const { default: Editor } = await import("@toast-ui/editor");
+
+      if (destroyed || !editorContainerRef.current) return;
+
+      editorInstanceRef.current = new Editor({
+        el: editorContainerRef.current,
+        height: "500px",
+        initialEditType: "wysiwyg",
+        previewStyle: "vertical",
+        theme: isDark ? "dark" : "",
+        placeholder: "내용을 입력하세요...",
+        useCommandShortcut: true,
+        hooks: { addImageBlobHook: handleImageUpload },
+        toolbarItems: [
+          ["heading", "bold", "italic", "strike"],
+          ["hr", "quote"],
+          ["ul", "ol", "task", "indent", "outdent"],
+          ["table", "image", "link"],
+          ["code", "codeblock"],
+        ],
+      }) as ToastEditorInstance;
+
+      setEditorReady(true);
+    };
+
+    initEditor();
+
+    return () => {
+      destroyed = true;
+      if (editorInstanceRef.current) {
+        editorInstanceRef.current.destroy();
+        editorInstanceRef.current = null;
+      }
+    };
+    // isDark는 초기 마운트 시 한 번만 적용 (이후 CSS 오버라이드로 처리)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleImageUpload]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -86,11 +118,10 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
       return;
     }
 
-    const editorInstance = editorRef.current?.getInstance();
-    if (!editorInstance) return;
+    const instance = editorInstanceRef.current;
+    if (!instance) return;
 
-    const content = editorInstance.getHTML();
-    // 빈 에디터 체크: 내용 없음 또는 줄바꿈만 있는 경우
+    const content = instance.getHTML();
     const stripped = content.replace(/<[^>]+>/g, "").trim();
     const isEmptyEditor = !stripped || content === "<p><br></p>";
     if (isEmptyEditor) {
@@ -155,31 +186,15 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
         maxLength={200}
       />
 
-      {/* data-theme 속성으로 CSS 변수 기반 다크모드 오버라이드 적용 */}
+      {/* data-theme 속성으로 CSS 변수 기반 다크모드 오버라이드 */}
       <div
         className={styles.editorWrap}
         data-theme={isDark ? "dark" : "light"}
       >
-        {cssLoaded && (
-          <Editor
-            ref={editorRef}
-            initialValue=""
-            previewStyle="vertical"
-            height="500px"
-            initialEditType="wysiwyg"
-            useCommandShortcut={true}
-            theme={isDark ? "dark" : ""}
-            hooks={{ addImageBlobHook: handleImageUpload }}
-            placeholder="내용을 입력하세요..."
-            toolbarItems={[
-              ["heading", "bold", "italic", "strike"],
-              ["hr", "quote"],
-              ["ul", "ol", "task", "indent", "outdent"],
-              ["table", "image", "link"],
-              ["code", "codeblock"],
-            ]}
-          />
+        {!editorReady && (
+          <div className={styles.editorLoading}>에디터 로딩 중...</div>
         )}
+        <div ref={editorContainerRef} />
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
