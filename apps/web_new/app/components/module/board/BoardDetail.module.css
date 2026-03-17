@@ -127,6 +127,22 @@
   white-space: pre-wrap;
 }
 
+/* HTML 콘텐츠: 글로벌 CSS 격리 - 에디터/웹데이터 서식 유지 */
+.bodyContentIsolated,
+.bodyContentIsolated * {
+  all: revert;
+}
+.bodyContentIsolated {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--app-text-secondary);
+  font-family: inherit;
+}
+.bodyContentIsolated img {
+  max-width: 100%;
+  height: auto;
+}
+
 .footer {
   display: flex;
   align-items: center;

@@ -51,7 +51,7 @@ export function BoardDetail({
       <div className={styles.body}>
         {hasHtml ? (
           <div
-            className={styles.bodyContent}
+            className={`${styles.bodyContent} ${styles.bodyContentIsolated}`}
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
           />
         ) : (
