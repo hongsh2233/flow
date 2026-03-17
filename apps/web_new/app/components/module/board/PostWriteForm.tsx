@@ -3,41 +3,62 @@
 import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/lib/hooks/useTheme";
+import { useSession } from "next-auth/react";
+import { useThemeContext } from "@/app/components/providers/ThemeProvider";
 import type { Editor as EditorType } from "@toast-ui/react-editor";
 import styles from "./PostWriteForm.module.css";
 
 // TOAST UI Editor는 SSR 미지원 → 클라이언트 전용 동적 임포트
 const Editor = dynamic(
   () => import("@toast-ui/react-editor").then((m) => m.Editor),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className={styles.editorLoading}>에디터 로딩 중...</div>
+    ),
+  }
 );
 
 interface PostWriteFormProps {
   boardId: string;
 }
 
+// TOAST UI addImageBlobHook 콜백 타입
+type ImageUploadCallback = (url: string, altText: string) => void;
+
 export function PostWriteForm({ boardId }: PostWriteFormProps) {
-  const editorRef = useRef<EditorType>(null);
-  const { isDark } = useTheme();
+  const editorRef = useRef<EditorType | null>(null);
+  const { isDark } = useThemeContext();
+  const { status } = useSession();
   const router = useRouter();
+
   const [title, setTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [editorReady, setEditorReady] = useState(false);
+  const [cssLoaded, setCssLoaded] = useState(false);
 
-  // TOAST UI Editor CSS 동적 로드 (SSR에서 오류 방지)
+  // TOAST UI Editor CSS는 클라이언트에서만 로드 (SSR 오류 방지)
   useEffect(() => {
-    Promise.all([
-      import("@toast-ui/editor/dist/toastui-editor.css" as string),
-      import("@toast-ui/editor/dist/theme/toastui-editor-dark.css" as string),
-    ]).finally(() => setEditorReady(true));
+    const loadCss = async () => {
+      await import("@toast-ui/editor/dist/toastui-editor.css");
+      await import("@toast-ui/editor/dist/theme/toastui-editor-dark.css");
+      setCssLoaded(true);
+    };
+    loadCss();
   }, []);
 
-  // 이미지 업로드 훅: blob → /api/upload-image → URL 반환
-  const addImageBlobHook = async (
-    blob: File | Blob,
-    callback: (url: string, alt: string) => void
+  // 클라이언트 측 인증 이중 보호
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      const callbackUrl = encodeURIComponent(`/board/write?board=${boardId}`);
+      router.push(`/login?callbackUrl=${callbackUrl}`);
+    }
+  }, [status, boardId, router]);
+
+  // 이미지 업로드: blob → /api/upload-image → URL 반환
+  const handleImageUpload = async (
+    blob: Blob | File,
+    callback: ImageUploadCallback
   ) => {
     const formData = new FormData();
     formData.append("file", blob);
@@ -49,7 +70,8 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
       });
       const data = await res.json();
       if (data.url) {
-        callback(data.url, "이미지");
+        const altText = blob instanceof File ? blob.name : "이미지";
+        callback(data.url, altText);
       } else {
         alert("이미지 업로드에 실패했습니다.");
       }
@@ -68,8 +90,10 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
     if (!editorInstance) return;
 
     const content = editorInstance.getHTML();
+    // 빈 에디터 체크: 내용 없음 또는 줄바꿈만 있는 경우
     const stripped = content.replace(/<[^>]+>/g, "").trim();
-    if (!stripped) {
+    const isEmptyEditor = !stripped || content === "<p><br></p>";
+    if (isEmptyEditor) {
       setError("내용을 입력해 주세요.");
       return;
     }
@@ -100,8 +124,26 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
     }
   };
 
+  if (status === "loading") {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)" }}>
+        로딩 중...
+      </div>
+    );
+  }
+
   return (
     <div className={styles.wrap}>
+      <div className={styles.backWrap}>
+        <button
+          type="button"
+          className={styles.backBtn}
+          onClick={() => router.push(`/board?board=${boardId}`)}
+        >
+          ← 목록으로
+        </button>
+      </div>
+
       <h2 className={styles.pageTitle}>게시글 작성</h2>
 
       <input
@@ -113,8 +155,12 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
         maxLength={200}
       />
 
-      <div className={styles.editorWrap}>
-        {editorReady && (
+      {/* data-theme 속성으로 CSS 변수 기반 다크모드 오버라이드 적용 */}
+      <div
+        className={styles.editorWrap}
+        data-theme={isDark ? "dark" : "light"}
+      >
+        {cssLoaded && (
           <Editor
             ref={editorRef}
             initialValue=""
@@ -122,8 +168,9 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
             height="500px"
             initialEditType="wysiwyg"
             useCommandShortcut={true}
-            theme={isDark ? "dark" : "light"}
-            hooks={{ addImageBlobHook }}
+            theme={isDark ? "dark" : ""}
+            hooks={{ addImageBlobHook: handleImageUpload }}
+            placeholder="내용을 입력하세요..."
             toolbarItems={[
               ["heading", "bold", "italic", "strike"],
               ["hr", "quote"],
@@ -141,7 +188,7 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
         <button
           type="button"
           className={styles.cancelBtn}
-          onClick={() => router.back()}
+          onClick={() => router.push(`/board?board=${boardId}`)}
           disabled={submitting}
         >
           취소

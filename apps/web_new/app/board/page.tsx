@@ -47,7 +47,7 @@ function BoardPageContent() {
           ) : (
             <div />
           )}
-          {status === "authenticated" && (
+          {board && (board.auth === "all" || (board.auth === "member" && status === "authenticated")) && (
             <button
               type="button"
               className={styles.writeBtn}

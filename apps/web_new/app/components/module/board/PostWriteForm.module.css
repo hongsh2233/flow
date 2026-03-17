@@ -4,6 +4,20 @@
   max-width: 100%;
 }
 
+.backWrap {
+  margin-bottom: 1rem;
+}
+
+.backBtn {
+  font-size: 0.875rem;
+  color: var(--app-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-family: inherit;
+}
+
 .pageTitle {
   font-size: 1.125rem;
   font-weight: 700;
@@ -40,26 +54,63 @@
   border: 1px solid var(--app-border-light, #e5e7eb);
 }
 
-/* TOAST UI Editor 다크모드 스타일 보정 */
-.editorWrap :global(.toastui-editor-defaultUI) {
-  border: none;
+/* 에디터 로딩 플레이스홀더 */
+.editorLoading {
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-text-muted, #6b7280);
+  font-size: 0.9375rem;
+  background: var(--app-card-bg, #fff);
 }
 
-.editorWrap :global(.toastui-editor-toolbar) {
-  background: var(--app-card-bg, #fff);
-  border-bottom: 1px solid var(--app-border-light, #e5e7eb);
+/* ── TOAST UI Editor 다크모드 CSS 변수 오버라이드 ───────────────── */
+/* TOAST UI의 dark theme은 고정 색상을 사용하므로 앱 CSS 변수로 재정의 */
+
+[data-theme="dark"] :global(.toastui-editor-defaultUI) {
+  background: var(--app-card-bg) !important;
+  border-color: var(--app-border-light) !important;
 }
 
-.editorWrap :global(.toastui-editor-main) {
-  background: var(--app-card-bg, #fff);
-  color: var(--app-text, #111827);
+[data-theme="dark"] :global(.toastui-editor-toolbar) {
+  background: var(--app-bg-secondary) !important;
+  border-bottom-color: var(--app-border-light) !important;
 }
+
+[data-theme="dark"] :global(.toastui-editor-toolbar-group button) {
+  color: var(--app-text-muted) !important;
+}
+
+[data-theme="dark"] :global(.toastui-editor-toolbar-group button:hover) {
+  background: var(--app-bg-tertiary) !important;
+}
+
+[data-theme="dark"] :global(.toastui-editor-main),
+[data-theme="dark"] :global(.toastui-editor-ww-container),
+[data-theme="dark"] :global(.ProseMirror) {
+  background: var(--app-card-bg) !important;
+  color: var(--app-text) !important;
+}
+
+[data-theme="dark"] :global(.toastui-editor-md-container) {
+  background: var(--app-card-bg) !important;
+  color: var(--app-text) !important;
+}
+
+[data-theme="dark"] :global(.toastui-editor-md-splitter) {
+  background: var(--app-border-light) !important;
+}
+
+/* ── 오류 메시지 ──────────────────────────────────────────────── */
 
 .error {
   color: #ef4444;
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
 }
+
+/* ── 버튼 영역 ────────────────────────────────────────────────── */
 
 .btnRow {
   display: flex;
@@ -80,8 +131,13 @@
   transition: background 0.15s;
 }
 
-.cancelBtn:hover {
+.cancelBtn:hover:not(:disabled) {
   background: var(--app-bg-hover, #f9fafb);
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .submitBtn {

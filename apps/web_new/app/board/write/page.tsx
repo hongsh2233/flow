@@ -1,53 +1,29 @@
-"use client";
-
-import { Suspense, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PostWriteForm } from "../../components/module/board/PostWriteForm";
 
-function WritePageContent() {
-  const searchParams = useSearchParams();
-  const boardId = searchParams.get("board") || "";
-  const { status } = useSession();
-  const router = useRouter();
-
-  // 미인증 시 로그인 페이지로 이동
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      const callbackUrl = encodeURIComponent(`/board/write?board=${boardId}`);
-      router.push(`/login?callbackUrl=${callbackUrl}`);
-    }
-  }, [status, boardId, router]);
-
-  if (status === "loading") {
-    return (
-      <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)" }}>
-        로딩 중...
-      </div>
-    );
-  }
-
-  if (!boardId) {
-    return (
-      <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)" }}>
-        게시판 정보가 없습니다. 게시판 목록에서 다시 시도해 주세요.
-      </div>
-    );
-  }
-
-  if (status !== "authenticated") return null;
-
-  return <PostWriteForm boardId={boardId} />;
+interface WritePageProps {
+  searchParams: Promise<{ board?: string }>;
 }
 
-export default function BoardWritePage() {
+export default async function BoardWritePage({ searchParams }: WritePageProps) {
+  const { board: boardId } = await searchParams;
+
+  if (!boardId) {
+    redirect("/board");
+  }
+
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect(
+      `/login?callbackUrl=${encodeURIComponent(`/board/write?board=${boardId}`)}`
+    );
+  }
+
   return (
-    <Suspense fallback={
-      <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)" }}>
-        로딩 중...
-      </div>
-    }>
-      <WritePageContent />
-    </Suspense>
+    <main style={{ paddingBottom: "5rem" }}>
+      <PostWriteForm boardId={boardId} />
+    </main>
   );
 }
