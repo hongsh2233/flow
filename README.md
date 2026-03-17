@@ -298,7 +298,7 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 
 ---
 
-## AI 데이터 파이프라인 (Gemini / Claude)
+## AI 데이터 파이프라인 (Gemini)
 
 백엔드 스케줄러가 주기적으로 시장 데이터를 수집하고, Gemini AI로 요약·분석 콘텐츠를 자동 생성합니다.
 
@@ -346,7 +346,6 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 | 변수 | 설명 |
 |------|------|
 | `GEMINI_API_KEY` | Google AI Studio에서 발급 (`gemini-2.5-flash` 사용) |
-| `ANTHROPIC_API_KEY` | Anthropic에서 발급 (`claude-sonnet-4-6` 사용, 예비) |
 
 > **참고**: API 키 미설정 또는 AI 오류 시 해당 서비스는 스킵되고 앱은 정상 동작합니다.
 
