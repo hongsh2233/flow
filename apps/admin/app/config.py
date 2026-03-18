@@ -83,9 +83,6 @@ OPENDART_API_KEY = os.environ.get("OPENDART")  # Open DART 인증키 (40자리)
 # Google Gemini API (시장의 목소리 AI 요약)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Anthropic Claude API (장마감 시황 검증·교정 레이어)
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-
 # 네이버 검색 API 설정 (뉴스 검색)
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")  # 네이버 API 클라이언트 시크릿

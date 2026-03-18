@@ -20,7 +20,7 @@ import pytz
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.config import GEMINI_API_KEY, ANTHROPIC_API_KEY
+from app.config import GEMINI_API_KEY
 from app.engine.models import (
     YahooIndexDaily,
     ExchangeRateSnapshot,
@@ -328,121 +328,6 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
 
 
 # ──────────────────────────────────────────────
-# Claude 검증·교정 레이어
-# ──────────────────────────────────────────────
-
-def _call_claude_validation(raw_data: dict, gemini_json: dict) -> Optional[Dict[str, str]]:
-    """
-    Gemini 초안 JSON을 원본 수집 데이터 기준으로 검증·교정한다.
-    실패 시 None 반환 → 호출부에서 gemini_json을 그대로 사용(graceful degradation).
-    """
-    if not ANTHROPIC_API_KEY:
-        return None
-
-    # 원본 데이터 요약
-    indices = raw_data.get("indices", [])
-    exchange = raw_data.get("exchange", [])
-    deal = raw_data.get("deal", {})
-    upper = raw_data.get("upper", [])
-    news = raw_data.get("news", [])
-
-    idx_lines = []
-    for idx in indices:
-        sign = "+" if idx["change"] >= 0 else ""
-        idx_lines.append(f"- {idx['name']}: {idx['price']:,.2f}P {sign}{idx['change']:,.2f}P ({sign}{idx['change_percent']:.2f}%)")
-
-    ex_lines = []
-    for ex in exchange:
-        sign = "+" if ex["change"] >= 0 else ""
-        ex_lines.append(f"- {ex['currency']}: {ex['rate']:,.2f}원 ({sign}{ex['change']:.2f})")
-
-    def _rank(key: str) -> str:
-        names = deal.get(key, [])
-        return ", ".join(names) if names else "없음"
-
-    supply_lines = [
-        "[코스피] 외국인 순매수: " + _rank("foreign_buy_kospi"),
-        "[코스피] 외국인 순매도: " + _rank("foreign_sell_kospi"),
-        "[코스피] 기관 순매수: " + _rank("inst_buy_kospi"),
-        "[코스피] 기관 순매도: " + _rank("inst_sell_kospi"),
-        "[코스닥] 외국인 순매수: " + _rank("foreign_buy_kosdaq"),
-        "[코스닥] 외국인 순매도: " + _rank("foreign_sell_kosdaq"),
-        "[코스닥] 기관 순매수: " + _rank("inst_buy_kosdaq"),
-        "[코스닥] 기관 순매도: " + _rank("inst_sell_kosdaq"),
-    ]
-
-    news_lines = [f"{i+1}. {n['title']}" for i, n in enumerate(news)]
-
-    raw_text = "\n".join([
-        "[주가지수]",
-        *idx_lines,
-        "",
-        "[환율]",
-        *ex_lines,
-        "",
-        "[수급 동향]",
-        *supply_lines,
-        "",
-        "[상한가]",
-        ", ".join(upper) if upper else "없음",
-        "",
-        "[뉴스]",
-        *news_lines,
-    ])
-
-    gemini_text = json.dumps(gemini_json, ensure_ascii=False, indent=2)
-
-    prompt = f"""[원본 수집 데이터]
-{raw_text}
-
-[Gemini 초안 JSON]
-{gemini_text}
-
-[지시]
-위 원본 수집 데이터를 기준으로 Gemini 초안을 검증·교정해주세요.
-1. 수치 오류(지수값, 등락률, 환율)가 있으면 원본 기준으로 교정하세요.
-2. 사실과 다른 표현이 있으면 수정하세요.
-3. 5개 필드(summary, exchange_rate, supply_trend, today_highlight, tomorrow_focus)가 모두 있어야 합니다. 누락된 필드는 채워 넣으세요.
-4. 각 필드 내용이 자연스럽고 한국어로 잘 작성되어 있으면 그대로 유지하세요.
-5. 반드시 동일한 5개 필드 JSON만 응답하세요. 다른 텍스트나 마크다운 코드블록은 포함하지 마세요.
-
-응답 형식:
-{{"summary": "...", "exchange_rate": "...", "supply_trend": "...", "today_highlight": "...", "tomorrow_focus": "..."}}"""
-
-    text = ""
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.content[0].text.strip()
-
-        # 코드블록 제거
-        text = re.sub(r"```(?:json)?\s*", "", text)
-        text = re.sub(r"```", "", text)
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if m:
-            text = m.group(0)
-        data = json.loads(text)
-        validated = {
-            "summary":          str(data.get("summary", "") or "").strip(),
-            "exchange_rate":    str(data.get("exchange_rate", "") or "").strip(),
-            "supply_trend":     str(data.get("supply_trend", "") or "").strip(),
-            "today_highlight":  str(data.get("today_highlight", "") or "").strip(),
-            "tomorrow_focus":   str(data.get("tomorrow_focus", "") or "").strip(),
-        }
-        print("[closing-claude] 검증·교정 완료")
-        return validated
-    except Exception as e:
-        print(f"[closing-claude] Claude 검증 오류: {e}")
-        print(f"[closing-claude] 응답 텍스트(첫 300자): {text[:300]!r}")
-        return None
-
-
-# ──────────────────────────────────────────────
 # Post 내용 조립 (HTML)
 # ──────────────────────────────────────────────
 
@@ -574,23 +459,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     if not ai:
         return False
 
-    # Claude 검증·교정 (실패 시 Gemini 원본으로 fallback)
-    raw_data = {
-        "indices": kr_indices,
-        "exchange": exchange_rates,
-        "deal": deal_rank,
-        "upper": upper_limit,
-        "news": news,
-    }
-    validated = _call_claude_validation(raw_data, ai)
-    final_ai = validated if validated else ai
-    if validated:
-        print("[closing-claude] Claude 교정 결과 적용")
-    else:
-        print("[closing-claude] Gemini 원본 결과 사용 (Claude 교정 없음)")
-
     # 게시글 내용 조립 (deal_rank 전달 → 수급 섹션을 DB 원본으로 직접 렌더링)
-    content = _build_post_content(kr_indices, exchange_rates, news, final_ai, upper_limit, deal_rank)
+    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank)
 
     # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
     existing = (
