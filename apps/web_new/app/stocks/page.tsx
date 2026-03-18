@@ -103,6 +103,13 @@ export default function StocksPage() {
   const [marketCapDate, setMarketCapDate] = useState<string | null>(null);
   const [marketCapLoading, setMarketCapLoading] = useState(false);
 
+  // 상승종목
+  const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
+  const [risingKospi, setRisingKospi] = useState<Array<{rank:number;stock_code:string;stock_name:string;current_price:string;change:string;change_percent:string;volume:string}>>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<Array<{rank:number;stock_code:string;stock_name:string;current_price:string;change:string;change_percent:string;volume:string}>>([]);
+  const [risingCollectedTime, setRisingCollectedTime] = useState<string | null>(null);
+  const [risingLoading, setRisingLoading] = useState(false);
+
   useEffect(() => {
     if (activeTab !== "marketcap") return;
     const load = async () => {
@@ -142,7 +149,32 @@ export default function StocksPage() {
     load();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== "rising") return;
+    const load = async () => {
+      setRisingLoading(true);
+      try {
+        const [kospiRes, kosdaqRes] = await Promise.all([
+          fetch("/api/naver-rising-stocks?market_type=kospi&limit=100"),
+          fetch("/api/naver-rising-stocks?market_type=kosdaq&limit=100"),
+        ]);
+        const kospiJson = await kospiRes.json();
+        const kosdaqJson = await kosdaqRes.json();
+        setRisingKospi(kospiJson.data ?? []);
+        setRisingKosdaq(kosdaqJson.data ?? []);
+        setRisingCollectedTime(kospiJson.collected_time ?? kosdaqJson.collected_time ?? null);
+      } catch {
+        setRisingKospi([]);
+        setRisingKosdaq([]);
+      } finally {
+        setRisingLoading(false);
+      }
+    };
+    load();
+  }, [activeTab]);
+
   const marketCapStocks = marketCapTab === "KOSPI" ? marketCapKospi : marketCapKosdaq;
+  const risingStocks = risingTab === "KOSPI" ? risingKospi : risingKosdaq;
   const handleSearch = useCallback(
     (query: string) => {
       const q = query.trim();
@@ -173,6 +205,7 @@ export default function StocksPage() {
         <TabsList className={styles.tabList}>
           <TabsTrigger value="favorite" className={styles.tab}>관심종목</TabsTrigger>
           <TabsTrigger value="marketcap" className={styles.tab}>시총상위</TabsTrigger>
+          <TabsTrigger value="rising" className={styles.tab}>상승종목</TabsTrigger>
         </TabsList>
 
         {/* 관심종목 */}
@@ -295,6 +328,60 @@ export default function StocksPage() {
               );
             })}
           </div>
+          )}
+        </TabsContent>
+
+        {/* 상승종목 */}
+        <TabsContent value="rising" className={styles.tabContent}>
+          <div className={styles.subTabRow}>
+            <div className={styles.subTabList}>
+              <button
+                type="button"
+                className={risingTab === "KOSPI" ? styles.subTabActive : styles.subTab}
+                onClick={() => setRisingTab("KOSPI")}
+              >
+                코스피
+              </button>
+              <button
+                type="button"
+                className={risingTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
+                onClick={() => setRisingTab("KOSDAQ")}
+              >
+                코스닥
+              </button>
+            </div>
+            {risingCollectedTime && (
+              <span className={styles.dateLabel}>기준 {risingCollectedTime}</span>
+            )}
+          </div>
+          {risingLoading ? (
+            <p className={styles.loadingText}>로딩 중...</p>
+          ) : risingStocks.length === 0 ? (
+            <p className={styles.loadingText}>데이터가 없습니다.</p>
+          ) : (
+            <div className={styles.cardList}>
+              {risingStocks.map((stock) => (
+                <div key={`${stock.stock_code}-${stock.rank}`} className={styles.risingCard}>
+                  <div className={styles.marketCapInner}>
+                    <div className={styles.rankBadgeOrange}>
+                      <span>{stock.rank}</span>
+                    </div>
+                    <div className={styles.marketCapInfo}>
+                      <h4>{stock.stock_name}</h4>
+                      <p>{stock.stock_code}</p>
+                    </div>
+                    <div className={styles.marketCapPrice}>
+                      <p>{Number(stock.current_price.replace(/,/g, "")).toLocaleString()}</p>
+                      <p className={styles.changeUp}>{stock.change_percent}</p>
+                    </div>
+                    <div className={styles.marketCapCol}>
+                      <p>거래량</p>
+                      <p>{stock.volume ? Number(stock.volume.replace(/,/g, "")).toLocaleString() : "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </TabsContent>
 
