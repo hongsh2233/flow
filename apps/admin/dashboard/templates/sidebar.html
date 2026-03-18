@@ -8,6 +8,16 @@
     </a>
   </h2>
   <nav class="sidebar-nav">
+    <!-- 설정 -->
+    <div class="menu-group">
+      <div class="menu-group-title">설정</div>
+      <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
+        <span class="menu-icon">🏦</span> 증권사 설정
+      </a>
+      <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
+        <span class="menu-icon">🎨</span> 프로필 설정
+      </a>
+    </div>
     <!-- 회원관리 -->
     <div class="menu-group">
       <div class="menu-group-title">회원관리</div>
@@ -16,9 +26,6 @@
       </a>
       <a href="/admin/members" class="menu-item menu-sub {% if active_page == 'members' %}active{% endif %}">
         <span class="menu-icon">👥</span> 회원관리
-      </a>
-      <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
-        <span class="menu-icon">🎨</span> 프로필 설정
       </a>
     </div>
     <!-- 게시관리 -->
@@ -42,9 +49,6 @@
       <a href="/admin/popup" class="menu-item menu-sub {% if active_page == 'popup' %}active{% endif %}">
         <span class="menu-icon">🪟</span> 팝업관리
       </a>
-      <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
-        <span class="menu-icon">🏦</span> 증권사 설정
-      </a>
     </div>
     <!-- 주식 데이터 -->
     <div class="menu-group">
@@ -65,9 +69,9 @@
         <span class="menu-icon">📰</span> 이슈
       </a>
     </div>
-    <!-- 위키 -->
+    <!-- 위키 & 뉴스 -->
     <div class="menu-group">
-      <div class="menu-group-title">위키</div>
+      <div class="menu-group-title">위키 & 뉴스</div>
       <a href="/admin/stock-terms" class="menu-item menu-sub {% if active_page == 'stock-terms' %}active{% endif %}">
         <span class="menu-icon">📖</span> 주식용어 사전
       </a>
