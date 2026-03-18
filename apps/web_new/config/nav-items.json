@@ -2,7 +2,7 @@
   {"id":"home","label":"홈","href":"/","headerTitle":"안녕하세요, 투자자님!","headerSubtitle":"오늘도 현명한 투자 되세요!"},
   {"id":"briefing","label":"브리핑","href":"/briefing","headerTitle":"브리핑","headerSubtitle":"뉴스와 시황이 통합된 정보 허브"},
   {"id":"calendar","label":"캘린더","href":"/calendar","headerTitle":"일정 캘린더","headerSubtitle":"중요한 주식 일정을 놓치지 마세요"},
-  {"id":"market","label":"수급","href":"/market/supply","headerTitle":"수급","headerSubtitle":"수급 동향 및 종목 검색"},
+  {"id":"market","label":"수급","href":"/supply","headerTitle":"수급","headerSubtitle":"수급 동향 및 종목 검색"},
   {"id":"stockChat","label":"주톡","href":"/stock-chat","headerTitle":"주톡","headerSubtitle":"주식 대가들의 한마디"},
   {"id":"settings","label":"설정","href":"/settings","headerTitle":"설정","headerSubtitle":"앱을 내 마음대로 설정하세요"}
 ]

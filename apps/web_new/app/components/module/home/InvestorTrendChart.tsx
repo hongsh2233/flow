@@ -100,9 +100,10 @@ interface Props {
   defaultMarket?: "kospi" | "kosdaq";
   /** main: 시간별 15개 | stocks: 일자별 5일 */
   variant?: "main" | "stocks";
+  hideMoreLink?: boolean;
 }
 
-export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main" }: Props) {
+export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main", hideMoreLink = false }: Props) {
   const router = useRouter();
   const [market, setMarket] = useState<"kospi" | "kosdaq">(defaultMarket);
   const [data, setData] = useState<InvestorTrendItem[]>([]);
@@ -221,13 +222,15 @@ export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main" }
 
       <div className={styles.footer}>
         <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>
-        <button
-          type="button"
-          className={styles.moreBtn}
-          onClick={() => router.push("/market/supply")}
-        >
-          수급동향 더보기 →
-        </button>
+        {!hideMoreLink && (
+          <button
+            type="button"
+            className={styles.moreBtn}
+            onClick={() => router.push("/supply")}
+          >
+            수급동향 더보기 →
+          </button>
+        )}
       </div>
     </div>
   );
