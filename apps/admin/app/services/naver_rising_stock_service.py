@@ -156,11 +156,11 @@ async def _fetch_rising_page(market_type: str, page: int = 1) -> List[Dict]:
 async def collect_and_save(db: Session) -> Dict[str, int]:
     """
     코스피/코스닥 상승률 10%이상 종목 수집 후 DB 저장.
+    새 데이터가 들어오면 기존 데이터를 전부 삭제하고 최신 데이터만 보관.
     Returns: {"kospi": N, "kosdaq": M}
     """
     now_kst = datetime.now(KST)
     collected_time = now_kst.strftime("%H:%M")
-    # collected_at은 분 단위로 truncate (초 제거)
     collected_at = now_kst.replace(second=0, microsecond=0)
 
     totals: Dict[str, int] = {}
@@ -170,10 +170,9 @@ async def collect_and_save(db: Session) -> Dict[str, int]:
         saved = 0
 
         if items:
-            # 같은 collected_at + market_type 이전 데이터 삭제 후 재저장 (upsert 대신 replace)
+            # 기존 데이터 전부 삭제 후 최신 데이터만 저장
             db.query(NaverRisingStock).filter(
                 NaverRisingStock.market_type == market_type,
-                NaverRisingStock.collected_at == collected_at,
             ).delete(synchronize_session=False)
 
             for item in items:
@@ -202,38 +201,7 @@ async def collect_and_save(db: Session) -> Dict[str, int]:
         print(f"[상승종목] DB 저장 오류: {e}")
         raise
 
-    # 오래된 데이터 정리 (3일 이상 전 데이터 삭제)
-    _cleanup_old_data(db)
     return totals
-
-
-def _cleanup_old_data(db: Session, keep_slots: int = 21):
-    """
-    수집 슬롯 기준으로 오래된 데이터 삭제 (하루 3회 × 7일 = 21슬롯 유지).
-    각 market_type별로 최신 keep_slots개의 collected_at만 보존.
-    """
-    try:
-        for market_type in ("kospi", "kosdaq"):
-            # 최신 collected_at 목록 조회
-            recent_times = (
-                db.query(NaverRisingStock.collected_at)
-                .filter(NaverRisingStock.market_type == market_type)
-                .distinct()
-                .order_by(NaverRisingStock.collected_at.desc())
-                .limit(keep_slots)
-                .all()
-            )
-            if not recent_times:
-                continue
-            keep_list = [r[0] for r in recent_times]
-            db.query(NaverRisingStock).filter(
-                NaverRisingStock.market_type == market_type,
-                NaverRisingStock.collected_at.notin_(keep_list),
-            ).delete(synchronize_session=False)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        print(f"[상승종목] 정리 중 오류 (무시 가능): {e}")
 
 
 def get_latest_rising_stocks(db: Session, market_type: str, limit: int = 100) -> Dict:
