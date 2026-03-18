@@ -1634,3 +1634,61 @@ class TargetPriceNewsScheduler:
 
 
 target_price_news_scheduler = TargetPriceNewsScheduler()
+
+
+# =========================================================
+# 네이버증권 상승종목 수집 스케줄러 (12:00 / 15:40 / 20:30 KST)
+# =========================================================
+
+async def collect_naver_rising_stocks():
+    """네이버증권 상승률 10%이상 종목 수집 (코스피/코스닥)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.naver_rising_stock_service import collect_and_save
+    db = SessionLocal()
+    try:
+        result = await collect_and_save(db)
+        print(f"[상승종목] 수집 완료: 코스피 {result.get('kospi', 0)}개, 코스닥 {result.get('kosdaq', 0)}개")
+    except Exception as e:
+        print(f"[상승종목] 수집 오류: {e}")
+    finally:
+        db.close()
+
+
+class NaverRisingScheduler:
+    """네이버증권 상승종목 수집 스케줄러 (매일 12:00 / 15:40 / 20:30 KST)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        for hour, minute, slot_id in [
+            (12,  0, "1200"),
+            (15, 40, "1540"),
+            (20, 30, "2030"),
+        ]:
+            self.scheduler.add_job(
+                collect_naver_rising_stocks,
+                trigger=CronTrigger(hour=hour, minute=minute, timezone=self.kst),
+                id=f"naver_rising_{slot_id}",
+                name=f"네이버 상승종목 수집 ({hour:02d}:{minute:02d})",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=300,
+            )
+        self.scheduler.start()
+        print("✅ 네이버 상승종목 스케줄러 시작 (12:00 / 15:40 / 20:30 KST)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+naver_rising_scheduler = NaverRisingScheduler()

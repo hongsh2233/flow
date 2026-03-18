@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { PriceChange } from "@/app/components/ui/PriceChange";
-import type { TradeRankingProps, VolumeStock, ValueStock, StockDetail } from "@/lib/types";
+import type { TradeRankingProps, VolumeStock, ValueStock, RisingStock, StockDetail } from "@/lib/types";
 import styles from "./TradeRanking.module.css";
 
 const RankingList = memo(function RankingList({
@@ -61,6 +61,36 @@ const RankingList = memo(function RankingList({
   );
 });
 
+const RisingList = memo(function RisingList({ stocks }: { stocks: RisingStock[] }) {
+  return (
+    <div className={styles.list}>
+      {stocks.map((stock) => {
+        const pct = parseFloat(stock.change_percent.replace(/[%+,]/g, "")) || 0;
+        const isUp = pct >= 0;
+        return (
+          <div key={`${stock.stock_code}-${stock.rank}`} className={styles.card}>
+            <div className={styles.cardInner}>
+              <span className={styles.rankBlue}>{stock.rank}</span>
+              <div className={styles.info}>
+                <h4 className={styles.stockName}>{stock.stock_name}</h4>
+                <p className={styles.stockSub}>{stock.stock_code}</p>
+              </div>
+              <div className={styles.priceArea}>
+                <p className={styles.price}>
+                  {Number(stock.current_price.replace(/,/g, "")).toLocaleString()}
+                </p>
+                <p className={`${styles.changeText} ${isUp ? styles.changeUp : styles.changeDown}`}>
+                  {stock.change_percent}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
 function formatBaseTimestamp(ts: string | null | undefined): string {
   if (!ts) return "";
   return `${ts}분 기준 데이터`;
@@ -71,6 +101,9 @@ export const TradeRanking = memo(function TradeRanking({
   kosdaqVolume,
   kospiValue,
   kosdaqValue,
+  risingKospi,
+  risingKosdaq,
+  risingCollectedTime,
   onSelect,
   baseTimestamp,
 }: TradeRankingProps) {
@@ -84,18 +117,12 @@ export const TradeRanking = memo(function TradeRanking({
           )}
         </div>
         <TabsList className={styles.tabsList}>
-          <TabsTrigger value="kospi-volume">
-            거래량(코스피)
-          </TabsTrigger>
-          <TabsTrigger value="kosdaq-volume">
-            거래량(코스닥)
-          </TabsTrigger>
-          <TabsTrigger value="kospi-value">
-            거래대금(코스피)
-          </TabsTrigger>
-          <TabsTrigger value="kosdaq-value">
-            거래대금(코스닥)
-          </TabsTrigger>
+          <TabsTrigger value="kospi-volume">거래량(코스피)</TabsTrigger>
+          <TabsTrigger value="kosdaq-volume">거래량(코스닥)</TabsTrigger>
+          <TabsTrigger value="kospi-value">거래대금(코스피)</TabsTrigger>
+          <TabsTrigger value="kosdaq-value">거래대금(코스닥)</TabsTrigger>
+          <TabsTrigger value="rising-kospi">상승(코스피)</TabsTrigger>
+          <TabsTrigger value="rising-kosdaq">상승(코스닥)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="kospi-volume">
@@ -112,6 +139,20 @@ export const TradeRanking = memo(function TradeRanking({
 
         <TabsContent value="kosdaq-value">
           <RankingList stocks={kosdaqValue} rankClass={styles.rankPurple} onSelect={onSelect} subKey="value" />
+        </TabsContent>
+
+        <TabsContent value="rising-kospi">
+          {risingCollectedTime && (
+            <p className={styles.baseTimestamp} style={{ marginBottom: "0.5rem" }}>기준 {risingCollectedTime}</p>
+          )}
+          <RisingList stocks={risingKospi} />
+        </TabsContent>
+
+        <TabsContent value="rising-kosdaq">
+          {risingCollectedTime && (
+            <p className={styles.baseTimestamp} style={{ marginBottom: "0.5rem" }}>기준 {risingCollectedTime}</p>
+          )}
+          <RisingList stocks={risingKosdaq} />
         </TabsContent>
       </Tabs>
     </div>

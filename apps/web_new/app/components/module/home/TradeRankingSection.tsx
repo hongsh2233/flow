@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { TradeRanking } from "./TradeRanking";
-import type { VolumeStock, ValueStock, StockDetail } from "@/lib/types";
+import type { VolumeStock, ValueStock, RisingStock, StockDetail } from "@/lib/types";
 
 interface NaverRankingItem {
   rank: number;
@@ -30,6 +30,9 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
   const [kosdaqVolume, setKosdaqVolume] = useState<VolumeStock[]>([]);
   const [kospiValue, setKospiValue] = useState<ValueStock[]>([]);
   const [kosdaqValue, setKosdaqValue] = useState<ValueStock[]>([]);
+  const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
+  const [risingCollectedTime, setRisingCollectedTime] = useState<string | null>(null);
   const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,11 +61,13 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [vKospi, vKosdaq, aKospi, aKosdaq] = await Promise.all([
+        const [vKospi, vKosdaq, aKospi, aKosdaq, rKospi, rKosdaq] = await Promise.all([
           fetch("/api/naver-ranking?ranking_type=volume&market_type=kospi&limit=10").then((r) => r.json()),
           fetch("/api/naver-ranking?ranking_type=volume&market_type=kosdaq&limit=10").then((r) => r.json()),
           fetch("/api/naver-ranking?ranking_type=amount&market_type=kospi&limit=10").then((r) => r.json()),
           fetch("/api/naver-ranking?ranking_type=amount&market_type=kosdaq&limit=10").then((r) => r.json()),
+          fetch("/api/naver-rising-stocks?market_type=kospi&limit=100").then((r) => r.json()),
+          fetch("/api/naver-rising-stocks?market_type=kosdaq&limit=100").then((r) => r.json()),
         ]);
 
         setKospiVolume(vKospi.success && vKospi.data ? mapVolume(vKospi.data) : []);
@@ -70,12 +75,17 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
         setKospiValue(aKospi.success && aKospi.data ? mapValue(aKospi.data) : []);
         setKosdaqValue(aKosdaq.success && aKosdaq.data ? mapValue(aKosdaq.data) : []);
         setBaseTimestamp(vKospi.base_timestamp ?? aKospi.base_timestamp ?? null);
+        setRisingKospi(rKospi.data ?? []);
+        setRisingKosdaq(rKosdaq.data ?? []);
+        setRisingCollectedTime(rKospi.collected_time ?? rKosdaq.collected_time ?? null);
       } catch (err) {
         console.error("네이버 랭킹 로딩 실패:", err);
         setKospiVolume([]);
         setKosdaqVolume([]);
         setKospiValue([]);
         setKosdaqValue([]);
+        setRisingKospi([]);
+        setRisingKosdaq([]);
       } finally {
         setLoading(false);
       }
@@ -98,6 +108,9 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
       kosdaqVolume={kosdaqVolume}
       kospiValue={kospiValue}
       kosdaqValue={kosdaqValue}
+      risingKospi={risingKospi}
+      risingKosdaq={risingKosdaq}
+      risingCollectedTime={risingCollectedTime}
       onSelect={onSelect}
       baseTimestamp={baseTimestamp}
     />

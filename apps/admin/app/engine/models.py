@@ -464,6 +464,26 @@ class NaverStockRanking(Base):
     __table_args__ = (UniqueConstraint('ranking_type', 'market_type', 'rank', 'collected_at', name='uq_naver_ranking'),)
 
 
+class NaverRisingStock(Base):
+    """
+    네이버증권 상승률 상위 종목 (10%이상) - 하루 3회 수집 (12:00, 15:40, 20:30 KST)
+    """
+    __tablename__ = "naver_rising_stock"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)   # 'kospi' | 'kosdaq'
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))
+    change = Column(String(20))                # 전일비
+    change_percent = Column(String(20))        # 등락률 (예: +15.23%)
+    volume = Column(String(30))                # 거래량
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    collected_time = Column(String(5), nullable=False, index=True)  # 'HH:MM'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint('market_type', 'rank', 'collected_at', name='uq_naver_rising_stock'),)
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터

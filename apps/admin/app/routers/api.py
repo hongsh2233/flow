@@ -390,6 +390,21 @@ async def get_fsc_rising_stocks(
     return {"success": True, "data": result, "bas_dt": bas_dt, "count": len(result)}
 
 
+@router.get("/api/naver-rising-stocks")
+async def get_naver_rising_stocks(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    네이버증권 상승종목 조회 (10%이상, 최신 수집 슬롯 기준)
+    """
+    from app.services.naver_rising_stock_service import get_latest_rising_stocks
+    result = get_latest_rising_stocks(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, **result}
+
+
 @router.get("/api/fsc-stock-price/dates")
 async def get_fsc_stock_price_dates(
     db: Session = Depends(get_db),

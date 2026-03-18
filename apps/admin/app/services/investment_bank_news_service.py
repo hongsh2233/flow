@@ -150,7 +150,7 @@ def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]
 
 응답 (JSON만):
 {{"title": "한글 제목", "summary": "한글 요약"}}"""
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             from google import genai
             client = genai.Client(api_key=GEMINI_API_KEY)
@@ -164,6 +164,12 @@ def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]
             result = _parse_translation_json(text)
             if result:
                 return result
+            # JSON 파싱 실패 시 응답 텍스트에서 첫 줄을 제목으로 사용
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            if lines and len(lines[0]) > 5:
+                translated_title = lines[0][:500]
+                translated_summary = " ".join(lines[1:])[:2000] if len(lines) > 1 else ""
+                return (translated_title, translated_summary)
         except Exception as e:
             print(f"[투자은행 뉴스] Gemini 번역 오류 (attempt {attempt + 1}): {e}")
     return None

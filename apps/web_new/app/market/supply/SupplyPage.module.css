@@ -1,5 +1,5 @@
 .page {
-  padding: 1.5rem 1.25rem 2rem;
+  padding: 1.5rem 1.25rem 5rem;
 }
 
 .title {
@@ -136,3 +136,284 @@
   margin-top: 0.3rem;
 }
 
+/* ─── 검색 영역 ─────────────────────────────────────────────── */
+.searchArea {
+  margin-bottom: 0.75rem;
+}
+
+/* ─── 관심종목/시총상위 탭 섹션 ─────────────────────────────── */
+.stockTabsSection {
+  margin-top: 2rem;
+}
+
+.stockTabList {
+  border-bottom: 1px solid var(--app-border-light, #e5e7eb);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.2rem;
+  display: flex;
+  overflow-x: auto;
+}
+
+.stockTabList::-webkit-scrollbar {
+  display: none;
+}
+
+.stockTab {
+  flex-shrink: 0;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stockTabContent {
+  padding: 0;
+}
+
+/* ─── 공통 카드 리스트 ──────────────────────────────────────── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 관심종목 */
+.favoriteCard {
+  width: 100%;
+  background: var(--app-card-bg, #fff);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0,0,0,0.08));
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  text-align: left;
+  cursor: pointer;
+}
+
+.favoriteInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.favoriteLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.heartBtn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.heart {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--app-up, #ef4444);
+  color: var(--app-up, #ef4444);
+}
+
+.favoriteInfo h4 {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.favoriteInfo p {
+  font-size: 0.75rem;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.favoriteRight {
+  text-align: right;
+}
+
+.favoritePrice {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.favoriteChangeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.changeUp {
+  color: var(--app-up, #ef4444);
+}
+
+.changeDown {
+  color: var(--app-down, #3b82f6);
+}
+
+.changeIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* 시총상위 */
+.subTabRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.dateLabel {
+  font-size: 0.75rem;
+  color: var(--app-text-muted, #6b7280);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.subTabList {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.subTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  cursor: pointer;
+  height: 2.25rem;
+  background: var(--app-bg-secondary, #f3f4f6);
+  color: var(--app-text-muted, #6b7280);
+}
+
+.subTabActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  cursor: pointer;
+  height: 2.25rem;
+  background: var(--app-accent, #f97316);
+  color: #fff;
+}
+
+.loadingText {
+  font-size: 0.875rem;
+  color: var(--app-text-muted, #6b7280);
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.marketCapCard {
+  width: 100%;
+  background: var(--app-card-bg, #fff);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0,0,0,0.08));
+  border: 1px solid var(--app-border-light, #e5e7eb);
+  text-align: left;
+  cursor: pointer;
+}
+
+.marketCapInner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rankBadgeOrange {
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--app-accent-bg, #fff7ed);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rankBadgeOrange span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--app-accent-hover, #ea580c);
+}
+
+.marketCapInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.marketCapInfo h4 {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.marketCapInfo p {
+  font-size: 0.75rem;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.marketCapPrice {
+  text-align: right;
+}
+
+.marketCapPrice p:first-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.marketCapPrice p:last-child {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.marketCapCol {
+  text-align: right;
+}
+
+.marketCapCol p:first-child {
+  font-size: 0.75rem;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.marketCapCol p:last-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--app-kosdaq-label, #7c3aed);
+}
+
+/* Toast */
+.toastSuccess,
+.toastError {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 100;
+}
+
+.toastSuccess {
+  background: var(--app-accent, #f97316);
+  color: #fff;
+}
+
+.toastError {
+  background: #ef4444;
+  color: #fff;
+}

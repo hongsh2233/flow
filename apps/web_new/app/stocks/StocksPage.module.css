@@ -521,3 +521,13 @@
   font-weight: 500;
   color: var(--app-text);
 }
+
+/* 상승종목 카드 (클릭 불필요, 정보 표시용) */
+.risingCard {
+  width: 100%;
+  background: var(--app-card-bg);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: var(--app-card-shadow);
+  border: 1px solid var(--app-border-light);
+}

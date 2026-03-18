@@ -26,6 +26,16 @@ export interface ValueStock {
   value: string;
 }
 
+/* ── 상승종목 (네이버증권 10%이상) ── */
+export interface RisingStock {
+  rank: number;
+  stock_code: string;
+  stock_name: string;
+  current_price: string;
+  change_percent: string;
+  volume: string;
+}
+
 /* ── 관심종목 ── */
 export interface FavoriteStockItem {
   id: string;
@@ -76,6 +86,9 @@ export interface TradeRankingProps {
   kosdaqVolume: VolumeStock[];
   kospiValue: ValueStock[];
   kosdaqValue: ValueStock[];
+  risingKospi: RisingStock[];
+  risingKosdaq: RisingStock[];
+  risingCollectedTime?: string | null;
   onSelect: (stock: StockDetail) => void;
   baseTimestamp?: string | null;
 }
