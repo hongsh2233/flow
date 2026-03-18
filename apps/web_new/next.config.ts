@@ -39,6 +39,15 @@ try {
 const projectRoot = __dirname;
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/market/supply",
+        destination: "/supply",
+        permanent: true,
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
