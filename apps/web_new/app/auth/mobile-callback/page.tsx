@@ -9,11 +9,14 @@ import { useEffect } from "react";
  */
 export default function MobileCallbackPage() {
   useEffect(() => {
-    // Chrome Custom Tab에서 페이지가 로드되면 자동으로 닫기 시도
-    // (Custom Tab은 window.close()로 닫힐 수 있음)
+    // Chrome Custom Tab은 window.close()로 닫을 수 없음 (네이티브로 열렸기 때문).
+    // 딥링크로 앱을 호출하면 OS가 앱을 포그라운드로 전환하고 Custom Tab을 자동으로 닫는다.
+    window.location.href = "com.jurini.app://auth/callback";
+
+    // 딥링크 미지원 환경(일반 브라우저) 대비 fallback
     const timer = setTimeout(() => {
-      window.close();
-    }, 500);
+      try { window.close(); } catch (_) {}
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 

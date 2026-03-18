@@ -177,6 +177,69 @@ npx cap sync android
 
 ---
 
+## 소셜 로그인 딥링크 설정 (필수)
+
+Google/Naver 로그인 후 앱으로 자동 복귀하려면 **딥링크(Custom URL Scheme)** 설정이 필요합니다.
+`npx cap add android` 후 아래 작업을 반드시 수행하세요.
+
+### Android — `android/app/src/main/AndroidManifest.xml`
+
+`<activity>` 태그 안에 기존 `<intent-filter>` 블록 **다음에** 아래 블록을 추가:
+
+```xml
+<!-- 소셜 로그인(Google/Naver) 완료 후 앱 복귀용 딥링크 -->
+<intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="com.jurini.app" />
+</intent-filter>
+```
+
+추가 후 동기화:
+```bash
+npx cap sync android
+```
+
+### iOS — `ios/App/App/Info.plist` (iOS 빌드 시)
+
+`<dict>` 최상위에 추가:
+
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>com.jurini.app</string>
+        </array>
+    </dict>
+</array>
+```
+
+추가 후 동기화:
+```bash
+npx cap sync ios
+```
+
+### 동작 원리
+
+```
+OAuth 완료 → /auth/mobile-callback 페이지 로드 (Chrome Custom Tab)
+    ↓
+페이지가 com.jurini.app://auth/callback 으로 리다이렉트
+    ↓
+Android/iOS OS가 딥링크를 인식 → 앱을 포그라운드로 전환
+    ↓
+Chrome Custom Tab 자동 닫힘
+    ↓
+App.addListener("appUrlOpen") 이벤트 발동 → 세션 갱신 → 홈으로 이동
+```
+
+> **이 설정 없이 빌드한 APK에서는 로그인 후 브라우저에 머물고 앱으로 복귀하지 못합니다.**
+
+---
+
 ## 트러블슈팅
 
 ### FCM 토큰이 등록되지 않을 때
