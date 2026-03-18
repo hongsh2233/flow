@@ -138,9 +138,11 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
     try:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = f"""다음 뉴스에서 "{person_name}"의 핵심 발언을 50자 이내로 요약해주세요.
-반드시 "~했다", "~했다고 밝혔다" 등 한 문장으로 끝내주세요.
-50자를 초과하면 안 됩니다.
+        prompt = f"""다음 뉴스를 50자 이내 한 문장으로 요약해주세요.
+- "{person_name}"의 직접 발언이 있으면 발언 내용을 중심으로 요약하세요.
+- 직접 발언이 없으면 뉴스의 핵심 내용을 "{person_name}"을 주어로 요약하세요.
+- 반드시 "~했다", "~밝혔다", "~전망했다" 등 한 문장으로 끝내주세요.
+- 50자를 초과하면 안 됩니다. 다른 설명 없이 요약문만 출력하세요.
 
 뉴스 제목: {title}
 뉴스 요약: {description}

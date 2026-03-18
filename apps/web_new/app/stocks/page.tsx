@@ -4,8 +4,6 @@ import {
   TrendingUp,
   TrendingDown,
   Heart,
-  BarChart3,
-  Building2,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -14,9 +12,8 @@ import dynamic from "next/dynamic";
 import { Search } from "../components/module/Search";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
-import { StockCard } from "../components/module/StockCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
+import type { StockDetail, MarketCapStock } from "@/lib/types";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import styles from "./StocksPage.module.css";
@@ -46,12 +43,6 @@ function formatDateLabel(dt: string | null | undefined): string {
 }
 
 type MarketType = "KOSPI" | "KOSDAQ";
-
-interface SectorItem {
-  name: string;
-  value: number;
-  change: number;
-}
 
 export default function StocksPage() {
   const router = useRouter();
@@ -106,91 +97,11 @@ export default function StocksPage() {
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const handleClose = useCallback(() => setSelectedStock(null), []);
 
-  const [kospiSectors, setKospiSectors] = useState<SectorItem[]>([]);
-  const [kosdaqSectors, setKosdaqSectors] = useState<SectorItem[]>([]);
-  const [marketLoading, setMarketLoading] = useState(false);
-  const [marketDate, setMarketDate] = useState<string | null>(null);
-
-  const [marketSectorTab, setMarketSectorTab] = useState<MarketType>("KOSPI");
   const [marketCapTab, setMarketCapTab] = useState<MarketType>("KOSPI");
-  const [risingTab, setRisingTab] = useState<MarketType>("KOSPI");
   const [marketCapKospi, setMarketCapKospi] = useState<MarketCapStock[]>([]);
   const [marketCapKosdaq, setMarketCapKosdaq] = useState<MarketCapStock[]>([]);
   const [marketCapDate, setMarketCapDate] = useState<string | null>(null);
-  const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
-  const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
-  const [risingDate, setRisingDate] = useState<string | null>(null);
   const [marketCapLoading, setMarketCapLoading] = useState(false);
-  const [risingLoading, setRisingLoading] = useState(false);
-
-  useEffect(() => {
-    if (activeTab !== "market") return;
-    const load = async () => {
-      setMarketLoading(true);
-      try {
-        const [krxKospi, krxKosdaq, domestic] = await Promise.all([
-          fetch("/api/krx-data?data_type=kospi"),
-          fetch("/api/krx-data?data_type=kosdaq"),
-          fetch("/api/domestic-indices"),
-        ]);
-        const krxKospiJson = await krxKospi.json();
-        const krxKosdaqJson = await krxKosdaq.json();
-        const domesticJson = await domestic.json();
-
-        // 기준일자 추출 (bas_dd 필드)
-        const dataList = krxKospiJson.data ?? [];
-        const firstRecord = dataList[0];
-        if (firstRecord?.bas_dd) {
-          setMarketDate(firstRecord.bas_dd);
-        }
-
-        const mapKrxToSectors = (arr: unknown[]): SectorItem[] => {
-          if (!Array.isArray(arr) || arr.length === 0) return [];
-          return arr.map((it) => {
-            const rec = it as Record<string, unknown>;
-            const name = String(rec.IDX_NM ?? rec.idx_nm ?? "");
-            const val = parseFloat(String(rec.CLSPRC_IDX ?? rec.clsprc_idx ?? rec.CLPR ?? rec.clpr ?? 0).replace(/,/g, "")) || 0;
-            const chg = parseFloat(String(rec.FLUC_RT ?? rec.fluc_rt ?? rec.FLT_RT ?? rec.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0;
-            return { name: name || "지수", value: val, change: chg };
-          }).filter((s) => s.name);
-        };
-
-        const extractFirstData = (json: { data?: Array<{ data?: unknown }> }): unknown[] => {
-          const list = json.data ?? [];
-          const rec = list.find((r) => r.data);
-          const d = rec?.data;
-          return Array.isArray(d) ? d : [];
-        };
-
-        const hideSector = (name: string) =>
-          name.includes("외국인포함") || name.trim() === "코스피(외국인포함)";
-        let kospiItems = mapKrxToSectors(extractFirstData(krxKospiJson))
-          .filter((s) => !hideSector(s.name));
-        let kosdaqItems = mapKrxToSectors(extractFirstData(krxKosdaqJson));
-
-        if (kospiItems.length === 0 || kosdaqItems.length === 0) {
-          const data = domesticJson.data ?? [];
-          const kospi = data.find((d: { name: string }) => d.name === "코스피");
-          const kosdaq = data.find((d: { name: string }) => d.name === "코스닥");
-          if (kospiItems.length === 0 && kospi) {
-            kospiItems = [{ name: kospi.name, value: parseFloat(String(kospi.value).replace(/,/g, "")) || 0, change: parseFloat(String(kospi.percent || kospi.change).replace(/[%,+]/g, "")) || 0 }];
-          }
-          if (kosdaqItems.length === 0 && kosdaq) {
-            kosdaqItems = [{ name: kosdaq.name, value: parseFloat(String(kosdaq.value).replace(/,/g, "")) || 0, change: parseFloat(String(kosdaq.percent || kosdaq.change).replace(/[%,+]/g, "")) || 0 }];
-          }
-        }
-
-        setKospiSectors(kospiItems);
-        setKosdaqSectors(kosdaqItems);
-      } catch {
-        setKospiSectors([]);
-        setKosdaqSectors([]);
-      } finally {
-        setMarketLoading(false);
-      }
-    };
-    load();
-  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== "marketcap") return;
@@ -231,49 +142,7 @@ export default function StocksPage() {
     load();
   }, [activeTab]);
 
-  useEffect(() => {
-    if (activeTab !== "rising") return;
-    const load = async () => {
-      setRisingLoading(true);
-      try {
-        const [kospiRes, kosdaqRes] = await Promise.all([
-          fetch("/api/fsc-rising-stocks?limit=50&mrkt_ctg=KOSPI"),
-          fetch("/api/fsc-rising-stocks?limit=50&mrkt_ctg=KOSDAQ"),
-        ]);
-        const kospiJson = await kospiRes.json();
-        const kosdaqJson = await kosdaqRes.json();
-        const kospiData = kospiJson.data ?? [];
-        const kosdaqData = kosdaqJson.data ?? [];
-
-        // 기준일자 추출
-        if (kospiJson.bas_dt) setRisingDate(kospiJson.bas_dt);
-
-        setRisingKospi(kospiData.map((r: { rank?: number; srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string }) => ({
-          rank: r.rank ?? 0,
-          name: r.itms_nm ?? "",
-          code: r.srtn_cd ?? "",
-          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
-          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
-        })));
-        setRisingKosdaq(kosdaqData.map((r: { rank?: number; srtn_cd?: string; itms_nm?: string; clpr?: string; flt_rt?: string }) => ({
-          rank: r.rank ?? 0,
-          name: r.itms_nm ?? "",
-          code: r.srtn_cd ?? "",
-          price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
-          change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
-        })));
-      } catch {
-        setRisingKospi([]);
-        setRisingKosdaq([]);
-      } finally {
-        setRisingLoading(false);
-      }
-    };
-    load();
-  }, [activeTab]);
-
   const marketCapStocks = marketCapTab === "KOSPI" ? marketCapKospi : marketCapKosdaq;
-  const risingStocks = risingTab === "KOSPI" ? risingKospi : risingKosdaq;
   const handleSearch = useCallback(
     (query: string) => {
       const q = query.trim();
@@ -303,9 +172,7 @@ export default function StocksPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
         <TabsList className={styles.tabList}>
           <TabsTrigger value="favorite" className={styles.tab}>관심종목</TabsTrigger>
-          <TabsTrigger value="market" className={styles.tab}>시장현황</TabsTrigger>
           <TabsTrigger value="marketcap" className={styles.tab}>시총상위</TabsTrigger>
-          <TabsTrigger value="rising" className={styles.tab}>상승종목</TabsTrigger>
         </TabsList>
 
         {/* 관심종목 */}
@@ -365,84 +232,6 @@ export default function StocksPage() {
               );
             })}
           </div>
-          )}
-        </TabsContent>
-
-        {/* 시장현황 */}
-        <TabsContent value="market" className={styles.tabContent}>
-          {marketLoading && kospiSectors.length === 0 && kosdaqSectors.length === 0 ? (
-            <p className={styles.loadingText}>로딩 중...</p>
-          ) : (
-            <>
-              <div className={styles.subTabRow}>
-                <div className={styles.subTabList}>
-                  <button
-                    type="button"
-                    className={marketSectorTab === "KOSPI" ? styles.subTabActive : styles.subTab}
-                    onClick={() => setMarketSectorTab("KOSPI")}
-                  >
-                    코스피
-                  </button>
-                  <button
-                    type="button"
-                    className={marketSectorTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
-                    onClick={() => setMarketSectorTab("KOSDAQ")}
-                  >
-                    코스닥
-                  </button>
-                </div>
-                {marketDate && (
-                  <span className={styles.dateLabel}>{formatDateLabel(marketDate)}</span>
-                )}
-              </div>
-              <div className={styles.sectorSection}>
-                <div className={styles.sectorList}>
-                  {marketSectorTab === "KOSPI" ? (
-                    kospiSectors.length === 0 ? (
-                      <p className={styles.loadingText}>데이터가 없습니다.</p>
-                    ) : (
-                      kospiSectors
-                        .filter((s) => !s.name.includes("외국인포함") && s.name.trim() !== "코스피(외국인포함)")
-                        .map((sector) => {
-                          const isPositive = sector.change >= 0;
-                          return (
-                            <div key={sector.name} className={styles.sectorCard}>
-                              <div>
-                                <p>{sector.name}</p>
-                                <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                              </div>
-                              <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                                {isPositive ? "+" : ""}
-                                {sector.change.toFixed(2)}%
-                              </p>
-                            </div>
-                          );
-                        })
-                    )
-                  ) : kosdaqSectors.length === 0 ? (
-                    <p className={styles.loadingText}>데이터가 없습니다.</p>
-                  ) : (
-                    kosdaqSectors
-                      .filter((s) => !s.name.includes("외국인포함"))
-                      .map((sector) => {
-                        const isPositive = sector.change >= 0;
-                        return (
-                          <div key={sector.name} className={styles.sectorCard}>
-                            <div>
-                              <p>{sector.name}</p>
-                              <p>{sector.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                            </div>
-                            <p className={`${styles.sectorChange} ${isPositive ? styles.sectorChangeUp : styles.sectorChangeDown}`}>
-                              {isPositive ? "+" : ""}
-                              {sector.change.toFixed(2)}%
-                            </p>
-                          </div>
-                        );
-                      })
-                  )}
-                </div>
-              </div>
-            </>
           )}
         </TabsContent>
 
@@ -506,39 +295,6 @@ export default function StocksPage() {
               );
             })}
           </div>
-          )}
-        </TabsContent>
-
-        {/* 상승종목 */}
-        <TabsContent value="rising" className={styles.tabContent}>
-          <div className={styles.subTabRow}>
-            <div className={styles.subTabList}>
-              <button
-                type="button"
-                className={risingTab === "KOSPI" ? styles.subTabActive : styles.subTab}
-                onClick={() => setRisingTab("KOSPI")}
-              >
-                코스피
-              </button>
-              <button
-                type="button"
-                className={risingTab === "KOSDAQ" ? styles.subTabActive : styles.subTab}
-                onClick={() => setRisingTab("KOSDAQ")}
-              >
-                코스닥
-              </button>
-            </div>
-            {risingDate && (
-              <span className={styles.dateLabel}>{formatDateLabel(risingDate)}</span>
-            )}
-          </div>
-          {risingLoading ? (
-            <p className={styles.loadingText}>로딩 중...</p>
-          ) : (
-          <StockCard
-            stocks={risingStocks}
-            onSelect={(s) => setSelectedStock(toStockDetail(s))}
-          />
           )}
         </TabsContent>
 
