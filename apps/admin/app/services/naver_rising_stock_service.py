@@ -207,9 +207,9 @@ async def collect_and_save(db: Session) -> Dict[str, int]:
     return totals
 
 
-def _cleanup_old_data(db: Session, keep_slots: int = 9):
+def _cleanup_old_data(db: Session, keep_slots: int = 21):
     """
-    수집 슬롯 기준으로 오래된 데이터 삭제 (하루 3회 × 3일 = 9슬롯 유지).
+    수집 슬롯 기준으로 오래된 데이터 삭제 (하루 3회 × 7일 = 21슬롯 유지).
     각 market_type별로 최신 keep_slots개의 collected_at만 보존.
     """
     try:
