@@ -10,6 +10,7 @@ import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
+import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
@@ -71,6 +72,7 @@ export default function Home() {
   return (
     <div className="content__wrap">
       <MainCardNews />
+      <SupplySummaryCard />
       <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
 
