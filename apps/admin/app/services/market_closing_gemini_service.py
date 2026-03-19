@@ -557,6 +557,31 @@ def _build_post_content(
 # 메인 진입점
 # ──────────────────────────────────────────────
 
+def _make_closing_title(target_date: date, investor_summary: Dict[str, dict]) -> str:
+    """
+    제목 예시: 외국인 3,211억 순매도, 개인 8,432억 순매수, 기관 4,987억 순매도 | 2026년 3월 12일 마감시황
+    코스피 investor_day 데이터 기준. 데이터 없으면 기본 형식 사용.
+    """
+    date_str = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
+    inv = investor_summary.get("kospi", {})
+    if not inv:
+        return date_str
+
+    parts = []
+    for label, key in [("외국인", "외국인"), ("개인", "개인"), ("기관", "기관계")]:
+        raw = inv.get(key, "")
+        try:
+            num = int(str(raw).replace(",", "").replace("+", ""))
+            direction = "순매수" if num > 0 else "순매도"
+            parts.append(f"{label} {abs(num):,}억 {direction}")
+        except (ValueError, TypeError):
+            pass
+
+    if not parts:
+        return date_str
+    return f"{', '.join(parts)} | {date_str}"
+
+
 def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     """
     장마감 시황을 Gemini로 생성하고 board/B001에 Post로 등록(upsert)한다.
@@ -565,7 +590,6 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
         True if saved, False on failure
     """
     bizdate = target_date.strftime("%Y%m%d")
-    title = f"{target_date.strftime('%Y-%m-%d')} 장마감 시황"
 
     # 데이터 수집
     kr_indices       = _get_kr_indices(db, target_date)
@@ -591,6 +615,9 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     if not ai:
         return False
 
+    # 제목 생성 (investor_summary 수집 후)
+    title = _make_closing_title(target_date, investor_summary)
+
     # 게시글 내용 조립
     content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary, investor_summary)
 
@@ -610,13 +637,15 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     except Exception as e:
         print(f"[closing-gemini] 카테고리 조회 오류: {e}")
 
-    # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
+    # B001 게시판에 upsert: 날짜 기준으로 조회 (제목 숫자가 달라도 당일 재실행 시 덮어씀)
+    date_keyword = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
     existing = (
         db.query(Post)
-        .filter(Post.board_id == "B001", Post.title == title)
+        .filter(Post.board_id == "B001", Post.title.like(f"%{date_keyword}%"))
         .first()
     )
     if existing:
+        existing.title = title
         existing.content = content
         if category_id is not None:
             existing.category_id = category_id
