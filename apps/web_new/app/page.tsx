@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { StockTermBox } from "./components/module/stock-term-box";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
+import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import type { StockDetail, AdBannerItem, ManagedBannerItem } from "@/lib/types";
 import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
@@ -46,11 +48,44 @@ function byOrder(a: ManagedBannerItem, b: ManagedBannerItem) {
 }
 
 export default function Home() {
-  const { status } = useSession();
-  const { favoriteStocks, isLoading: isLoadingFavorites } = useFavoriteStocks();
+  const { data: session, status } = useSession();
+  const { favoriteStocks, favCodes, isLoading: isLoadingFavorites } = useFavoriteStocks();
+  const { addFavCode, removeFavCode } = useFavoriteStore();
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const [bannerBottom, setBannerBottom] = useState<AdBannerItem[]>([]);
   const handleClose = useCallback(() => setSelectedStock(null), []);
+
+  const refreshFavorites = useCallback(() => {
+    window.dispatchEvent(new Event("favoritesUpdated"));
+  }, []);
+
+  const handleAddFavorite = useCallback(
+    async (stock: StockDetail) => {
+      if (!session?.user?.email) return;
+      addFavCode(stock.code);
+      const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
+      if (res.success) {
+        refreshFavorites();
+      } else {
+        removeFavCode(stock.code);
+      }
+    },
+    [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  );
+
+  const handleRemoveFavorite = useCallback(
+    async (stock: StockDetail) => {
+      if (!session?.user?.email) return;
+      removeFavCode(stock.code);
+      const res = await removeFavoriteStock({ email: session.user.email, stock_code: stock.code });
+      if (res.success) {
+        refreshFavorites();
+      } else {
+        addFavCode(stock.code);
+      }
+    },
+    [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  );
 
   /* 메인 페이지 하단 배너 (상단은 LayoutShell의 ManagedBannerSection이 처리) */
   useEffect(() => {
@@ -106,7 +141,15 @@ export default function Home() {
         </section>
       )}
 
-      {selectedStock && <LazyStockDetailModal stock={selectedStock} onClose={handleClose} />}
+      {selectedStock && (
+        <LazyStockDetailModal
+          stock={selectedStock}
+          onClose={handleClose}
+          isFavorited={favCodes.has(selectedStock.code)}
+          onAddFavorite={handleAddFavorite}
+          onRemoveFavorite={handleRemoveFavorite}
+        />
+      )}
       <LazyPopupModal />
       <Suspense fallback={null}>
         <LazyMarketSummaryPopup />
