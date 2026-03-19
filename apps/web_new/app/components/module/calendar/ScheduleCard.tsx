@@ -188,6 +188,57 @@ function isSchedulePast(schedule: ScheduleItem): boolean {
   return nowMin > scheduleMin;
 }
 
+/** 증권사명 → MTS/홈페이지 URL 매핑 */
+const SECURITIES_LINKS: Record<string, string> = {
+  "미래에셋증권": "https://securities.miraeasset.com",
+  "한국투자증권": "https://www.koreainvestment.com",
+  "NH투자증권":   "https://www.nhqv.com",
+  "키움증권":     "https://www.kiwoom.com",
+  "삼성증권":     "https://www.samsungsecurities.com",
+  "KB증권":       "https://www.kbsec.com",
+  "하나증권":     "https://www.hanaw.com",
+  "신한투자증권": "https://www.shinhaninvestment.com",
+  "대신증권":     "https://www.daishin.com",
+  "메리츠증권":   "https://www.meritz.co.kr",
+  "IBK투자증권":  "https://www.ibks.com",
+  "SK증권":       "https://www.sksecurities.com",
+  "교보증권":     "https://www.kyobosec.co.kr",
+  "한화투자증권": "https://www.hanwhawm.com",
+  "유진투자증권": "https://www.eugenefn.com",
+  "BNK투자증권":  "https://www.bnkfn.co.kr",
+  "DB금융투자":   "https://www.db-fi.com",
+  "카카오페이증권": "https://www.kakaopaysec.com",
+  "토스증권":     "https://tosssecurities.com",
+  "한국포스증권": "https://www.fossec.co.kr",
+  "케이프투자증권": "https://www.cape.co.kr",
+  "흥국증권":     "https://www.heungkuk.co.kr",
+};
+
+/** content/company 텍스트에서 증권사명을 찾아 URL 반환 */
+function findSecuritiesUrl(text: string): string | null {
+  if (!text) return null;
+  for (const [name, url] of Object.entries(SECURITIES_LINKS)) {
+    if (text.includes(name)) return url;
+  }
+  return null;
+}
+
+/** HTML 내 텍스트에서 증권사명을 <a> 링크로 치환 (detail 본문용) */
+function linkifySecuritiesInHtml(html: string): string {
+  if (!html) return html;
+  let result = html;
+  for (const [name, url] of Object.entries(SECURITIES_LINKS)) {
+    if (!result.includes(name)) continue;
+    // 이미 <a> 태그 안에 있는 경우는 건너뛰기 위해 부정 전후방 탐색 대신 단순 치환
+    // (DOMPurify가 중첩 <a>를 정리하므로 안전)
+    result = result.replaceAll(
+      name,
+      `<a href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`
+    );
+  }
+  return result;
+}
+
 /** 제목에서 [증권사명] 패턴 추출 → 없으면 null */
 function extractBrokerName(title: string): string | null {
   const m = title.match(/\[([^\]]+)\]/);
@@ -223,11 +274,23 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                     </span>
                   )}
                 </button>
-                {(schedule.company || schedule.content) && (
-                  <p className={styles.company}>
-                    {schedule.company || schedule.content}
-                  </p>
-                )}
+                {(schedule.company || schedule.content) && (() => {
+                  const text = schedule.company || schedule.content || "";
+                  const secUrl = findSecuritiesUrl(text);
+                  return secUrl ? (
+                    <a
+                      href={secUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.companyLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    <p className={styles.company}>{text}</p>
+                  );
+                })()}
               </div>
               {canUseAlarm ? (
                 <NotifyButton scheduleId={schedule.id} isPast={isPast} />
@@ -277,7 +340,7 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
             <div
               className={styles.detailContent}
               dangerouslySetInnerHTML={{
-                __html: sanitizeHtml(rewriteDetailUrls(rawDetail)),
+                __html: sanitizeHtml(linkifySecuritiesInHtml(rewriteDetailUrls(rawDetail))),
               }}
             />
           ) : (

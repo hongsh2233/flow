@@ -1,8 +1,8 @@
 """
 장마감 시황 Gemini AI 처리 서비스
 
-15:30 수집된 KR지수·수급동향·뉴스 데이터를 Gemini에 전달하고
-구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다.
+15:40 수집된 KR지수·수급동향·뉴스 데이터 + 이슈 AI요약을 Gemini에 전달하고
+구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다(pending 상태).
 
 Gemini 응답 JSON 필드:
   - summary:        시장 총평 (코스피/코스닥 등락 요약)
@@ -28,6 +28,7 @@ from app.engine.models import (
     FscRisingStock,
     NaverStockNews,
     Post,
+    BoardCategory,
 )
 
 
@@ -36,12 +37,33 @@ from app.engine.models import (
 # ──────────────────────────────────────────────
 
 def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
-    """YahooIndexDaily에서 오늘 KR 지수 조회 (^KS11, ^KQ11)"""
+    """YahooIndexDaily에서 KR 지수 조회 (^KS11, ^KQ11).
+    오늘 데이터가 없으면 가장 최근 수집된 날짜로 폴백."""
+    # 1차: 오늘 날짜
     rows = db.query(YahooIndexDaily).filter(
         YahooIndexDaily.date == target_date,
         YahooIndexDaily.group == "kr",
         YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
     ).all()
+
+    if not rows:
+        # 폴백: 가장 최근 날짜의 KR 지수
+        latest_date = (
+            db.query(func.max(YahooIndexDaily.date))
+            .filter(
+                YahooIndexDaily.group == "kr",
+                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
+            )
+            .scalar()
+        )
+        if latest_date:
+            print(f"[closing-gemini] 오늘({target_date}) KR지수 없음 → 최근 날짜({latest_date})로 폴백")
+            rows = db.query(YahooIndexDaily).filter(
+                YahooIndexDaily.date == latest_date,
+                YahooIndexDaily.group == "kr",
+                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
+            ).all()
+
     return [
         {
             "name": r.name,
@@ -162,6 +184,59 @@ def _get_top_news(db: Session, target_date: date) -> List[dict]:
     ]
 
 
+def _get_investor_summary(db: Session, bizdate: str) -> Dict[str, dict]:
+    """NaverSupplyData investor_day에서 오늘 투자자별 매매동향 (코스피/코스닥) 조회.
+    반환: {"kospi": {"개인": "...", "외국인": "...", "기관계": "..."}, "kosdaq": {...}}
+    """
+    result: Dict[str, dict] = {}
+    for market in ["kospi", "kosdaq"]:
+        row = (
+            db.query(NaverSupplyData)
+            .filter(
+                NaverSupplyData.data_type == "investor_day",
+                NaverSupplyData.market == market,
+                NaverSupplyData.bizdate == bizdate,
+            )
+            .order_by(NaverSupplyData.collected_at.desc())
+            .first()
+        )
+        if not row or not row.data_json:
+            result[market] = {}
+            continue
+        try:
+            data = json.loads(row.data_json)
+            headers = data.get("headers", [])
+            rows = data.get("rows", [])
+            # 첫 번째 행 = 오늘(가장 최근) 날짜 데이터
+            result[market] = dict(zip(headers, rows[0])) if rows else {}
+        except Exception:
+            result[market] = {}
+    return result
+
+
+def _get_issue_summary(db: Session, target_date: date) -> Optional[str]:
+    """daily_issue_summaries에서 오늘 이슈 AI요약 전체 조회 (여러 시간대 누적)"""
+    try:
+        from sqlalchemy import text
+        rows = db.execute(
+            text("SELECT collected_time, summary FROM daily_issue_summaries WHERE date = :d ORDER BY collected_time"),
+            {"d": target_date},
+        ).fetchall()
+        if not rows:
+            return None
+        parts = []
+        for row in rows:
+            t, s = row[0], row[1]
+            if t:
+                parts.append(f"[{t}]\n{s.strip()}")
+            else:
+                parts.append(s.strip())
+        return "\n\n".join(parts)
+    except Exception as e:
+        print(f"[closing-gemini] 이슈 요약 조회 오류: {e}")
+        return None
+
+
 # ──────────────────────────────────────────────
 # Gemini 프롬프트 생성
 # ──────────────────────────────────────────────
@@ -172,6 +247,8 @@ def _build_prompt(
     deal_rank: Dict[str, List[str]],
     upper_limit: List[str],
     news: List[dict],
+    issue_summary: Optional[str] = None,
+    investor_summary: Optional[Dict[str, dict]] = None,
 ) -> str:
     # ① 주가지수
     idx_lines = []
@@ -218,6 +295,19 @@ def _build_prompt(
             news_lines.append(f"   {n['description']}")
     news_section = "\n".join(news_lines) if news_lines else "- 오늘 주요 뉴스 없음"
 
+    # ⑥ 이슈 AI요약
+    issue_section = issue_summary.strip() if issue_summary else "- 데이터 없음"
+
+    # ⑦ 투자자별 매매동향 (개인/외국인/기관 합계)
+    inv_lines = []
+    key_cols = ["개인", "외국인", "기관계"]
+    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
+        inv = (investor_summary or {}).get(mkt_key, {})
+        if inv:
+            cols = ", ".join(f"{k}: {inv.get(k, '-')}" for k in key_cols if k in inv)
+            inv_lines.append(f"- [{mkt_label}] {cols}")
+    inv_section = "\n".join(inv_lines) if inv_lines else "- 데이터 없음"
+
     return f"""다음은 오늘 한국 주식시장 장마감 데이터입니다.
 한국 개인 주식 투자자를 위해 아래 JSON 형식으로 장마감 시황 코멘트를 작성해주세요.
 
@@ -235,6 +325,12 @@ def _build_prompt(
 
 [오늘 핵심 뉴스]
 {news_section}
+
+[투자자별 매매동향 (개인/외국인/기관 합계, 단위: 억원)]
+{inv_section}
+
+[오늘 이슈 AI요약]
+{issue_section}
 
 작성 규칙:
 - 각 항목은 2~3문장, 자연스러운 한국어 문장
@@ -363,6 +459,8 @@ def _build_post_content(
     ai: Dict[str, str],
     upper_limit: List[str],
     deal_rank: Optional[Dict[str, List[str]]] = None,
+    issue_summary: Optional[str] = None,
+    investor_summary: Optional[Dict[str, dict]] = None,
 ) -> str:
     # ① 주가지수 HTML
     idx_html = ""
@@ -389,6 +487,26 @@ def _build_post_content(
     # ⑤ 외국인·기관 동향: DB 원본 데이터 직접 렌더링 (AI 오류 방지)
     supply_html = _build_supply_html(deal_rank or {}, ai.get("supply_trend", ""))
 
+    # 투자자별 매매동향 HTML (개인/외국인/기관계)
+    inv_html = ""
+    key_cols = ["개인", "외국인", "기관계", "금융투자", "보험", "투신(사모)", "연기금등"]
+    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
+        inv = (investor_summary or {}).get(mkt_key, {})
+        if inv:
+            inv_html += f"<p><strong>[{mkt_label}]</strong></p>\n"
+            for k in key_cols:
+                if k in inv:
+                    val = inv[k]
+                    try:
+                        num = int(str(val).replace(",", "").replace("+", ""))
+                        color = "#e53935" if num > 0 else "#1565c0" if num < 0 else ""
+                        style_str = f' style="color:{color}"' if color else ""
+                        inv_html += f"<p>• {k}: <strong{style_str}>{val}</strong></p>\n"
+                    except (ValueError, TypeError):
+                        inv_html += f"<p>• {k}: {val}</p>\n"
+    if not inv_html:
+        inv_html = "<p>데이터 없음</p>\n"
+
     # 상한가
     upper_html = (
         f'<p>{", ".join(upper_limit)}</p>\n'
@@ -403,24 +521,31 @@ def _build_post_content(
         sign = "+" if usd["change"] >= 0 else ""
         ex_str = f'{usd["rate"]:,.2f}원 ({sign}{usd["change"]:.2f})'
 
+    # 이슈 AI요약 HTML
+    issue_html = f'<p>{issue_summary.strip()}</p>\n' if issue_summary else "<p>데이터 없음</p>\n"
+
     content = f"""<div class="market-closing-summary">
 <h3>① 주가지수</h3>
 {idx_html}
-<h3>② 핵심 뉴스</h3>
+<h3>② 오늘 이슈 AI요약</h3>
+{issue_html}
+<h3>③ 핵심 뉴스</h3>
 {news_html}
-<h3>③ 시장 총평</h3>
+<h3>④ 시장 총평</h3>
 <p>{ai.get("summary", "")}</p>
 
-<h3>④ 환율</h3>
+<h3>⑤ 환율</h3>
 <p>USD/KRW {ex_str}</p>
 <p>{ai.get("exchange_rate", "")}</p>
 
-<h3>⑤ 외국인·기관 동향</h3>
+<h3>⑥ 투자자별 매매동향</h3>
+{inv_html}
+<h3>⑦ 외국인·기관 수급 순위</h3>
 {supply_html}
-<h3>⑥ 오늘 특징 (상한가·업종·테마)</h3>
+<h3>⑧ 오늘 특징 (상한가·업종·테마)</h3>
 {upper_html}<p>{ai.get("today_highlight", "")}</p>
 
-<h3>⑦ 내일 주목할 점</h3>
+<h3>⑨ 내일 주목할 점</h3>
 <p>{ai.get("tomorrow_focus", "")}</p>
 
 <p style="margin-top:24px;font-size:12px;color:#999;">※ 본 시황은 AI가 자동 생성한 콘텐츠로, 데이터 수집 시점의 차이로 인해 실제 수치와 약간의 오차가 있을 수 있습니다. 투자 판단의 참고 자료로만 활용하시기 바랍니다.</p>
@@ -432,6 +557,31 @@ def _build_post_content(
 # 메인 진입점
 # ──────────────────────────────────────────────
 
+def _make_closing_title(target_date: date, investor_summary: Dict[str, dict]) -> str:
+    """
+    제목 예시: 외국인 3,211억 순매도, 개인 8,432억 순매수, 기관 4,987억 순매도 | 2026년 3월 12일 마감시황
+    코스피 investor_day 데이터 기준. 데이터 없으면 기본 형식 사용.
+    """
+    date_str = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
+    inv = investor_summary.get("kospi", {})
+    if not inv:
+        return date_str
+
+    parts = []
+    for label, key in [("외국인", "외국인"), ("개인", "개인"), ("기관", "기관계")]:
+        raw = inv.get(key, "")
+        try:
+            num = int(str(raw).replace(",", "").replace("+", ""))
+            direction = "순매수" if num > 0 else "순매도"
+            parts.append(f"{label} {abs(num):,}억 {direction}")
+        except (ValueError, TypeError):
+            pass
+
+    if not parts:
+        return date_str
+    return f"{', '.join(parts)} | {date_str}"
+
+
 def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     """
     장마감 시황을 Gemini로 생성하고 board/B001에 Post로 등록(upsert)한다.
@@ -440,36 +590,65 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
         True if saved, False on failure
     """
     bizdate = target_date.strftime("%Y%m%d")
-    title = f"{target_date.strftime('%Y-%m-%d')} 장마감 시황"
 
     # 데이터 수집
-    kr_indices    = _get_kr_indices(db, target_date)
-    exchange_rates = _get_exchange_rate(db)
-    deal_rank     = _get_deal_rank(db, bizdate)
-    upper_limit   = _get_upper_limit_stocks(db, bizdate)
-    news          = _get_top_news(db, target_date)
+    kr_indices       = _get_kr_indices(db, target_date)
+    exchange_rates   = _get_exchange_rate(db)
+    deal_rank        = _get_deal_rank(db, bizdate)
+    investor_summary = _get_investor_summary(db, bizdate)
+    upper_limit      = _get_upper_limit_stocks(db, bizdate)
+    news             = _get_top_news(db, target_date)
+    issue_summary    = _get_issue_summary(db, target_date)
 
     if not kr_indices:
         print("[closing-gemini] KR 지수 데이터 없음, 건너뜀")
         return False
 
+    if issue_summary:
+        print(f"[closing-gemini] 이슈 AI요약 포함 ({len(issue_summary)}자)")
+    else:
+        print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
+
     # Gemini 호출
-    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news)
+    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news, issue_summary, investor_summary)
     ai = _call_gemini(prompt)
     if not ai:
         return False
 
-    # 게시글 내용 조립 (deal_rank 전달 → 수급 섹션을 DB 원본으로 직접 렌더링)
-    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank)
+    # 제목 생성 (investor_summary 수집 후)
+    title = _make_closing_title(target_date, investor_summary)
 
-    # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
+    # 게시글 내용 조립
+    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary, investor_summary)
+
+    # "시황" 카테고리 ID 조회
+    category_id = None
+    try:
+        cat = (
+            db.query(BoardCategory)
+            .filter(BoardCategory.board_id == "B001", BoardCategory.name == "시황")
+            .first()
+        )
+        if cat:
+            category_id = cat.id
+            print(f"[closing-gemini] 시황 카테고리 ID: {category_id}")
+        else:
+            print("[closing-gemini] 시황 카테고리 없음 (category_id=None으로 등록)")
+    except Exception as e:
+        print(f"[closing-gemini] 카테고리 조회 오류: {e}")
+
+    # B001 게시판에 upsert: 날짜 기준으로 조회 (제목 숫자가 달라도 당일 재실행 시 덮어씀)
+    date_keyword = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
     existing = (
         db.query(Post)
-        .filter(Post.board_id == "B001", Post.title == title)
+        .filter(Post.board_id == "B001", Post.title.like(f"%{date_keyword}%"))
         .first()
     )
     if existing:
+        existing.title = title
         existing.content = content
+        if category_id is not None:
+            existing.category_id = category_id
     else:
         db.add(Post(
             board_id="B001",
@@ -477,7 +656,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
             content=content,
             author="플로우Ai",
             status="pending",
+            category_id=category_id,
         ))
     db.commit()
-    print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date})")
+    print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date}, category_id={category_id})")
     return True
