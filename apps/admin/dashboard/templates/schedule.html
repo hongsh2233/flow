@@ -213,6 +213,7 @@
     opacity: 0.8;
     margin-left: 3px;
   }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -671,7 +672,7 @@
       var months = Object.keys(monthCounts).sort().reverse(); // 최신 월 먼저
       if (months.length < 2) return; // 1개월치면 탭 불필요
 
-      // 오늘 기준 이번 달
+      // 이번 달 데이터가 있으면 이번 달, 없으면 가장 최근 달 (months[0])
       var today = new Date();
       var thisMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
       var activeMonth = months.indexOf(thisMonth) !== -1 ? thisMonth : months[0];
