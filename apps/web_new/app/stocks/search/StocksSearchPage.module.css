@@ -37,11 +37,55 @@
   margin-bottom: 1.5rem;
 }
 
+.searchSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 .searchSectionTitle {
   font-weight: 700;
   font-size: 1rem;
-  margin-bottom: 0.5rem;
   color: var(--app-text);
+}
+
+.favBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 999px;
+  background: var(--app-bg);
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.favBtn:hover {
+  background: var(--app-bg-secondary);
+}
+
+.favBtnActive {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.favToast {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height, 60px) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 9999;
+  pointer-events: none;
 }
 
 /* 가로 스크롤 적용 */
