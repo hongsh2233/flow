@@ -174,12 +174,45 @@
     margin: 10px 0;
   }
 
-  #viewDetailModal .detail-content table td,
-  #viewDetailModal .detail-content table th {
-    border: 1px solid #ddd;
-    padding: 8px 12px;
+  /* 월 탭 필터 */
+  .month-tab-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    align-items: center;
   }
-</style>
+
+  .month-tab {
+    padding: 6px 14px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .month-tab:hover {
+    background: #f0f4ff;
+    border-color: #3498db;
+    color: #3498db;
+  }
+
+  .month-tab.active {
+    background: #3498db;
+    border-color: #3498db;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .month-tab .tab-count {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-left: 3px;
+  }
 {% endblock %}
 
 {% block content %}
@@ -275,6 +308,7 @@
 
 <div class="card">
   <h4>📋 일정 리스트</h4>
+  <div class="month-tab-bar" id="monthTabBar"></div>
   <table>
     <thead>
       <tr>
@@ -614,6 +648,75 @@
         btnToggle.textContent = isVisible ? '상세입력' : '상세입력 닫기';
       });
     }
+
+    // ── 월 탭 필터 ──────────────────────────────────────────────
+    (function() {
+      var tbody = document.querySelector('table tbody');
+      var rows = Array.from(tbody ? tbody.querySelectorAll('tr') : []);
+      if (!rows.length) return;
+
+      // 각 행에서 날짜(YYYY-MM-DD) 추출 → YYYY-MM 키 부여
+      var monthCounts = {};
+      rows.forEach(function(tr) {
+        var dateCell = tr.cells[0];
+        var dateText = dateCell ? dateCell.textContent.trim().slice(0, 7) : '';
+        if (/^\d{4}-\d{2}$/.test(dateText)) {
+          tr.dataset.month = dateText;
+          monthCounts[dateText] = (monthCounts[dateText] || 0) + 1;
+        } else {
+          tr.dataset.month = '';
+        }
+      });
+
+      var months = Object.keys(monthCounts).sort().reverse(); // 최신 월 먼저
+      if (months.length < 2) return; // 1개월치면 탭 불필요
+
+      // 오늘 기준 이번 달
+      var today = new Date();
+      var thisMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+      var activeMonth = months.indexOf(thisMonth) !== -1 ? thisMonth : months[0];
+
+      var bar = document.getElementById('monthTabBar');
+
+      // "전체" 탭
+      var totalCount = rows.length;
+      var allTab = document.createElement('button');
+      allTab.type = 'button';
+      allTab.className = 'month-tab';
+      allTab.dataset.month = 'all';
+      allTab.innerHTML = '전체 <span class="tab-count">(' + totalCount + ')</span>';
+      bar.appendChild(allTab);
+
+      // 월별 탭
+      months.forEach(function(m) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'month-tab' + (m === activeMonth ? ' active' : '');
+        btn.dataset.month = m;
+        var parts = m.split('-');
+        var label = parts[0] + '년 ' + parseInt(parts[1]) + '월';
+        btn.innerHTML = label + ' <span class="tab-count">(' + monthCounts[m] + ')</span>';
+        bar.appendChild(btn);
+      });
+
+      function applyFilter(month) {
+        rows.forEach(function(tr) {
+          tr.style.display = (month === 'all' || tr.dataset.month === month) ? '' : 'none';
+        });
+        bar.querySelectorAll('.month-tab').forEach(function(t) {
+          t.classList.toggle('active', t.dataset.month === month);
+        });
+      }
+
+      // 초기 필터 적용 (이번 달)
+      applyFilter(activeMonth);
+
+      bar.addEventListener('click', function(e) {
+        var btn = e.target.closest('.month-tab');
+        if (btn) applyFilter(btn.dataset.month);
+      });
+    })();
+    // ──────────────────────────────────────────────────────────────
 
     document.querySelectorAll('.btn-edit-schedule').forEach(function(btn) {
       btn.addEventListener('click', function() {
