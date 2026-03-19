@@ -223,6 +223,22 @@ function findSecuritiesUrl(text: string): string | null {
   return null;
 }
 
+/** HTML 내 텍스트에서 증권사명을 <a> 링크로 치환 (detail 본문용) */
+function linkifySecuritiesInHtml(html: string): string {
+  if (!html) return html;
+  let result = html;
+  for (const [name, url] of Object.entries(SECURITIES_LINKS)) {
+    if (!result.includes(name)) continue;
+    // 이미 <a> 태그 안에 있는 경우는 건너뛰기 위해 부정 전후방 탐색 대신 단순 치환
+    // (DOMPurify가 중첩 <a>를 정리하므로 안전)
+    result = result.replaceAll(
+      name,
+      `<a href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`
+    );
+  }
+  return result;
+}
+
 /** 제목에서 [증권사명] 패턴 추출 → 없으면 null */
 function extractBrokerName(title: string): string | null {
   const m = title.match(/\[([^\]]+)\]/);
@@ -324,7 +340,7 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
             <div
               className={styles.detailContent}
               dangerouslySetInnerHTML={{
-                __html: sanitizeHtml(rewriteDetailUrls(rawDetail)),
+                __html: sanitizeHtml(linkifySecuritiesInHtml(rewriteDetailUrls(rawDetail))),
               }}
             />
           ) : (

@@ -892,22 +892,50 @@ async def collect_market_closing_summary():
         print("ℹ️ 주말/공휴일: 장마감 시황 생성 건너뜀")
         return
 
-    now = datetime.now(pytz.timezone("Asia/Seoul"))
-    print(f"\n📰 장마감 시황 생성 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    print(f"\n{'='*60}")
+    print(f"📰 장마감 시황 생성 시작: {now.strftime('%Y-%m-%d %H:%M:%S KST')}")
+    print(f"{'='*60}")
+
     db = SessionLocal()
     try:
+        from app.engine import models as _m
+        from sqlalchemy import func as _func
+
+        # 진단: KR 지수 데이터 현황 확인
+        kr_latest = (
+            db.query(_func.max(_m.YahooIndexDaily.date))
+            .filter(_m.YahooIndexDaily.group == "kr")
+            .scalar()
+        )
+        print(f"  KR 지수 최근 날짜: {kr_latest} (오늘: {now.date()})")
+
+        # 진단: 수급 데이터 현황 확인
+        bizdate_today = now.strftime("%Y%m%d")
+        supply_count = (
+            db.query(_m.NaverSupplyData)
+            .filter(
+                _m.NaverSupplyData.data_type == "deal_rank",
+                _m.NaverSupplyData.bizdate == bizdate_today,
+            )
+            .count()
+        )
+        print(f"  오늘 수급 deal_rank 데이터: {supply_count}건")
+
         from app.services.market_closing_gemini_service import generate_and_post_closing_summary
         ok = generate_and_post_closing_summary(db, now.date())
         if ok:
             print("✅ 장마감 시황 게시 완료 (pending 상태 - 관리자 승인 후 알림 발송)")
         else:
-            print("⚠️ 장마감 시황 생성 실패 (데이터 부족 또는 Gemini 오류)")
+            print("⚠️ 장마감 시황 생성 실패 (KR지수 없음 또는 Gemini 오류)")
     except Exception as e:
         import traceback
         print(f"❌ 장마감 시황 생성 오류: {e}")
         print(traceback.format_exc())
     finally:
         db.close()
+    print(f"{'='*60}\n")
 
 
 async def collect_yahoo_kr_indices():

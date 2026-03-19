@@ -28,6 +28,7 @@ from app.engine.models import (
     FscRisingStock,
     NaverStockNews,
     Post,
+    BoardCategory,
 )
 
 
@@ -36,12 +37,33 @@ from app.engine.models import (
 # ──────────────────────────────────────────────
 
 def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
-    """YahooIndexDaily에서 오늘 KR 지수 조회 (^KS11, ^KQ11)"""
+    """YahooIndexDaily에서 KR 지수 조회 (^KS11, ^KQ11).
+    오늘 데이터가 없으면 가장 최근 수집된 날짜로 폴백."""
+    # 1차: 오늘 날짜
     rows = db.query(YahooIndexDaily).filter(
         YahooIndexDaily.date == target_date,
         YahooIndexDaily.group == "kr",
         YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
     ).all()
+
+    if not rows:
+        # 폴백: 가장 최근 날짜의 KR 지수
+        latest_date = (
+            db.query(func.max(YahooIndexDaily.date))
+            .filter(
+                YahooIndexDaily.group == "kr",
+                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
+            )
+            .scalar()
+        )
+        if latest_date:
+            print(f"[closing-gemini] 오늘({target_date}) KR지수 없음 → 최근 날짜({latest_date})로 폴백")
+            rows = db.query(YahooIndexDaily).filter(
+                YahooIndexDaily.date == latest_date,
+                YahooIndexDaily.group == "kr",
+                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
+            ).all()
+
     return [
         {
             "name": r.name,
@@ -495,6 +517,22 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     # 게시글 내용 조립
     content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary)
 
+    # "시황" 카테고리 ID 조회
+    category_id = None
+    try:
+        cat = (
+            db.query(BoardCategory)
+            .filter(BoardCategory.board_id == "B001", BoardCategory.name == "시황")
+            .first()
+        )
+        if cat:
+            category_id = cat.id
+            print(f"[closing-gemini] 시황 카테고리 ID: {category_id}")
+        else:
+            print("[closing-gemini] 시황 카테고리 없음 (category_id=None으로 등록)")
+    except Exception as e:
+        print(f"[closing-gemini] 카테고리 조회 오류: {e}")
+
     # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
     existing = (
         db.query(Post)
@@ -503,6 +541,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     )
     if existing:
         existing.content = content
+        if category_id is not None:
+            existing.category_id = category_id
     else:
         db.add(Post(
             board_id="B001",
@@ -510,7 +550,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
             content=content,
             author="플로우Ai",
             status="pending",
+            category_id=category_id,
         ))
     db.commit()
-    print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date})")
+    print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date}, category_id={category_id})")
     return True
