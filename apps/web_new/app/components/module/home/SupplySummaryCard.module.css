@@ -30,9 +30,9 @@
 }
 
 .timeLabel {
-  font-size: 0.8125rem;
-  font-weight: 600;
   color: var(--app-text-muted);
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 .body {

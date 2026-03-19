@@ -37,7 +37,12 @@ function formatLabel(n: number, type: "foreign" | "individual" | "institution"):
   return "0";
 }
 
-export function SupplySummaryCard() {
+interface SupplySummaryCardProps {
+  /** true면 Link 대신 div로 렌더 (supply 페이지 등) */
+  standalone?: boolean;
+}
+
+export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps = {}) {
   const [data, setData] = useState<SupplySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,8 +62,8 @@ export function SupplySummaryCard() {
 
   if (loading || !data) return null;
 
-  return (
-    <Link href="/supply" className={styles.card}>
+  const content = (
+    <>
       <div className={styles.header}>
         <BarChart3 className={styles.icon} aria-hidden />
         <span className={styles.timeLabel}>{data.timeLabel}</span>
@@ -94,6 +99,12 @@ export function SupplySummaryCard() {
           </>
         )}
       </div>
-    </Link>
+    </>
+  );
+
+  return standalone ? (
+    <div className={styles.card}>{content}</div>
+  ) : (
+    <Link href="/supply" className={styles.card}>{content}</Link>
   );
 }
