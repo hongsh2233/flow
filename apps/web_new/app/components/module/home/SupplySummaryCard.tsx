@@ -30,7 +30,7 @@ function formatSigned(n: number): string {
   return n >= 0 ? `+${s}` : `-${s}`;
 }
 
-function formatLabel(n: number, type: "foreign" | "individual" | "institution"): string {
+function formatLabel(n: number): string {
   const formatted = formatSigned(n);
   if (n > 0) return `순매수 ${formatted}`;
   if (n < 0) return `순매도 ${formatted}`;
@@ -40,6 +40,35 @@ function formatLabel(n: number, type: "foreign" | "individual" | "institution"):
 interface SupplySummaryCardProps {
   /** true면 Link 대신 div로 렌더 (supply 페이지 등) */
   standalone?: boolean;
+}
+
+function NumbersBlock({ data }: { data: SupplySummary }) {
+  return (
+    <div className={styles.numbersRow}>
+      <div className={styles.investorRow}>
+        <span className={data.foreign >= 0 ? styles.up : styles.down}>
+          외국인 {formatLabel(data.foreign)}
+        </span>
+        <span className={styles.sep}>·</span>
+        <span className={data.individual >= 0 ? styles.up : styles.down}>
+          개인 {formatLabel(data.individual)}
+        </span>
+        <span className={styles.sep}>·</span>
+        <span className={data.institution >= 0 ? styles.up : styles.down}>
+          기관 {formatLabel(data.institution)}
+        </span>
+      </div>
+      <div className={styles.programRow}>
+        <span className={data.programArbitrage >= 0 ? styles.up : styles.down}>
+          차익 {formatSigned(data.programArbitrage)}
+        </span>
+        <span className={styles.sep}>·</span>
+        <span className={data.programNonArbitrage >= 0 ? styles.up : styles.down}>
+          비차익 {formatSigned(data.programNonArbitrage)}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps = {}) {
@@ -62,49 +91,33 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
 
   if (loading || !data) return null;
 
-  const content = (
+  const cardContent = (
     <>
-      <div className={styles.header}>
-        <BarChart3 className={styles.icon} aria-hidden />
-        <span className={styles.timeLabel}>{data.timeLabel}</span>
-      </div>
-      <div className={styles.body}>
-        {data.aiSummary ? (
-          <p className={styles.aiSummary}>{data.aiSummary}</p>
-        ) : (
-          <>
-            <div className={styles.investorRow}>
-              <span className={data.foreign >= 0 ? styles.up : styles.down}>
-                외국인 {formatLabel(data.foreign, "foreign")}
-              </span>
-              <span className={styles.sep}>·</span>
-              <span className={data.individual >= 0 ? styles.up : styles.down}>
-                개인 {formatLabel(data.individual, "individual")}
-              </span>
-              <span className={styles.sep}>·</span>
-              <span className={data.institution >= 0 ? styles.up : styles.down}>
-                기관 {formatLabel(data.institution, "institution")}
-              </span>
-            </div>
-            <div className={styles.programRow}>
-              <span>프로그램매매</span>
-              <span className={data.programArbitrage >= 0 ? styles.up : styles.down}>
-                차익 {formatSigned(data.programArbitrage)}
-              </span>
-              <span className={styles.sep}>·</span>
-              <span className={data.programNonArbitrage >= 0 ? styles.up : styles.down}>
-                비차익 {formatSigned(data.programNonArbitrage)}
-              </span>
-            </div>
-          </>
-        )}
-      </div>
+      <h2 className={styles.title}>{data.timeLabel}</h2>
+      {data.aiSummary && (
+        <p className={styles.excerpt}>{data.aiSummary}</p>
+      )}
+      <NumbersBlock data={data} />
     </>
   );
 
-  return standalone ? (
-    <div className={styles.card}>{content}</div>
-  ) : (
-    <Link href="/supply" className={styles.card}>{content}</Link>
+  return (
+    <section className={styles.section}>
+      <div className={styles.headingRow}>
+        <h3 className={styles.heading}>
+          <BarChart3 className={styles.headingIcon} aria-hidden />
+          수급 요약
+        </h3>
+      </div>
+      <div className={styles.cardList}>
+        {standalone ? (
+          <div className={styles.card}>{cardContent}</div>
+        ) : (
+          <Link href="/supply" className={styles.card}>
+            {cardContent}
+          </Link>
+        )}
+      </div>
+    </section>
   );
 }
