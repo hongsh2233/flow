@@ -59,6 +59,7 @@ function NumbersBlock({ data }: { data: SupplySummary }) {
         </span>
       </div>
       <div className={styles.programRow}>
+        <span>프로그램매매 :</span>
         <span className={data.programArbitrage >= 0 ? styles.up : styles.down}>
           차익 {formatSigned(data.programArbitrage)}
         </span>
