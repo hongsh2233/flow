@@ -884,8 +884,8 @@ async def collect_market_morning_summary():
 
 async def collect_market_closing_summary():
     """
-    장마감 시황 생성 및 board/B001 게시 (15:50 KST)
-    - 15:40 수집된 KR지수·수급동향·뉴스 데이터를 Gemini로 요약
+    장마감 시황 생성 및 board/B001 게시 (15:45 KST)
+    - 15:40 수집된 KR지수·수급동향·뉴스 데이터 + 이슈 AI요약을 Gemini로 요약
     - 주말/공휴일은 건너뜀
     """
     if should_skip_today():
@@ -1077,12 +1077,12 @@ class YahooIndexScheduler:
                 coalesce=True,
                 misfire_grace_time=300,
             )
-        # 장마감 시황 생성: 15:50 (15:40 KR지수 수집 완료 후)
+        # 장마감 시황 생성: 15:45 (15:40 KR지수 수집 완료 후)
         self.scheduler.add_job(
             collect_market_closing_summary,
-            CronTrigger(hour=15, minute=50, timezone=self.kst),
+            CronTrigger(hour=15, minute=45, timezone=self.kst),
             id="market_closing_summary",
-            name="장마감 시황 생성 (15:50)",
+            name="장마감 시황 생성 (15:45)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -1094,7 +1094,7 @@ class YahooIndexScheduler:
         print("   - 해외(메인): 00:00 / 05:00 / 06:30 (KST)")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
         print("   - KR: 09:10 ~ 15:10 (30분 간격) / 15:40 장마감 (KST)")
-        print("   - 장마감 시황: 15:40 (KST, 주말/공휴일 제외)")
+        print("   - 장마감 시황: 15:45 (KST, 주말/공휴일 제외)")
         print("   - 최근 7일치만 유지\n")
 
     def shutdown(self):

@@ -188,6 +188,41 @@ function isSchedulePast(schedule: ScheduleItem): boolean {
   return nowMin > scheduleMin;
 }
 
+/** 증권사명 → MTS/홈페이지 URL 매핑 */
+const SECURITIES_LINKS: Record<string, string> = {
+  "미래에셋증권": "https://securities.miraeasset.com",
+  "한국투자증권": "https://www.koreainvestment.com",
+  "NH투자증권":   "https://www.nhqv.com",
+  "키움증권":     "https://www.kiwoom.com",
+  "삼성증권":     "https://www.samsungsecurities.com",
+  "KB증권":       "https://www.kbsec.com",
+  "하나증권":     "https://www.hanaw.com",
+  "신한투자증권": "https://www.shinhaninvestment.com",
+  "대신증권":     "https://www.daishin.com",
+  "메리츠증권":   "https://www.meritz.co.kr",
+  "IBK투자증권":  "https://www.ibks.com",
+  "SK증권":       "https://www.sksecurities.com",
+  "교보증권":     "https://www.kyobosec.co.kr",
+  "한화투자증권": "https://www.hanwhawm.com",
+  "유진투자증권": "https://www.eugenefn.com",
+  "BNK투자증권":  "https://www.bnkfn.co.kr",
+  "DB금융투자":   "https://www.db-fi.com",
+  "카카오페이증권": "https://www.kakaopaysec.com",
+  "토스증권":     "https://tosssecurities.com",
+  "한국포스증권": "https://www.fossec.co.kr",
+  "케이프투자증권": "https://www.cape.co.kr",
+  "흥국증권":     "https://www.heungkuk.co.kr",
+};
+
+/** content/company 텍스트에서 증권사명을 찾아 URL 반환 */
+function findSecuritiesUrl(text: string): string | null {
+  if (!text) return null;
+  for (const [name, url] of Object.entries(SECURITIES_LINKS)) {
+    if (text.includes(name)) return url;
+  }
+  return null;
+}
+
 /** 제목에서 [증권사명] 패턴 추출 → 없으면 null */
 function extractBrokerName(title: string): string | null {
   const m = title.match(/\[([^\]]+)\]/);
@@ -223,11 +258,23 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                     </span>
                   )}
                 </button>
-                {(schedule.company || schedule.content) && (
-                  <p className={styles.company}>
-                    {schedule.company || schedule.content}
-                  </p>
-                )}
+                {(schedule.company || schedule.content) && (() => {
+                  const text = schedule.company || schedule.content || "";
+                  const secUrl = findSecuritiesUrl(text);
+                  return secUrl ? (
+                    <a
+                      href={secUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.companyLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    <p className={styles.company}>{text}</p>
+                  );
+                })()}
               </div>
               {canUseAlarm ? (
                 <NotifyButton scheduleId={schedule.id} isPast={isPast} />

@@ -1,8 +1,8 @@
 """
 장마감 시황 Gemini AI 처리 서비스
 
-15:30 수집된 KR지수·수급동향·뉴스 데이터를 Gemini에 전달하고
-구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다.
+15:40 수집된 KR지수·수급동향·뉴스 데이터 + 이슈 AI요약을 Gemini에 전달하고
+구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다(pending 상태).
 
 Gemini 응답 JSON 필드:
   - summary:        시장 총평 (코스피/코스닥 등락 요약)
@@ -162,6 +162,20 @@ def _get_top_news(db: Session, target_date: date) -> List[dict]:
     ]
 
 
+def _get_issue_summary(db: Session, target_date: date) -> Optional[str]:
+    """daily_issue_summaries에서 오늘 이슈 AI요약 조회"""
+    try:
+        from sqlalchemy import text
+        row = db.execute(
+            text("SELECT summary FROM daily_issue_summaries WHERE date = :d"),
+            {"d": target_date},
+        ).fetchone()
+        return row[0] if row else None
+    except Exception as e:
+        print(f"[closing-gemini] 이슈 요약 조회 오류: {e}")
+        return None
+
+
 # ──────────────────────────────────────────────
 # Gemini 프롬프트 생성
 # ──────────────────────────────────────────────
@@ -172,6 +186,7 @@ def _build_prompt(
     deal_rank: Dict[str, List[str]],
     upper_limit: List[str],
     news: List[dict],
+    issue_summary: Optional[str] = None,
 ) -> str:
     # ① 주가지수
     idx_lines = []
@@ -218,6 +233,9 @@ def _build_prompt(
             news_lines.append(f"   {n['description']}")
     news_section = "\n".join(news_lines) if news_lines else "- 오늘 주요 뉴스 없음"
 
+    # ⑥ 이슈 AI요약
+    issue_section = issue_summary.strip() if issue_summary else "- 데이터 없음"
+
     return f"""다음은 오늘 한국 주식시장 장마감 데이터입니다.
 한국 개인 주식 투자자를 위해 아래 JSON 형식으로 장마감 시황 코멘트를 작성해주세요.
 
@@ -235,6 +253,9 @@ def _build_prompt(
 
 [오늘 핵심 뉴스]
 {news_section}
+
+[오늘 이슈 AI요약]
+{issue_section}
 
 작성 규칙:
 - 각 항목은 2~3문장, 자연스러운 한국어 문장
@@ -363,6 +384,7 @@ def _build_post_content(
     ai: Dict[str, str],
     upper_limit: List[str],
     deal_rank: Optional[Dict[str, List[str]]] = None,
+    issue_summary: Optional[str] = None,
 ) -> str:
     # ① 주가지수 HTML
     idx_html = ""
@@ -403,24 +425,29 @@ def _build_post_content(
         sign = "+" if usd["change"] >= 0 else ""
         ex_str = f'{usd["rate"]:,.2f}원 ({sign}{usd["change"]:.2f})'
 
+    # 이슈 AI요약 HTML
+    issue_html = f'<p>{issue_summary.strip()}</p>\n' if issue_summary else "<p>데이터 없음</p>\n"
+
     content = f"""<div class="market-closing-summary">
 <h3>① 주가지수</h3>
 {idx_html}
-<h3>② 핵심 뉴스</h3>
+<h3>② 오늘 이슈 AI요약</h3>
+{issue_html}
+<h3>③ 핵심 뉴스</h3>
 {news_html}
-<h3>③ 시장 총평</h3>
+<h3>④ 시장 총평</h3>
 <p>{ai.get("summary", "")}</p>
 
-<h3>④ 환율</h3>
+<h3>⑤ 환율</h3>
 <p>USD/KRW {ex_str}</p>
 <p>{ai.get("exchange_rate", "")}</p>
 
-<h3>⑤ 외국인·기관 동향</h3>
+<h3>⑥ 외국인·기관 동향</h3>
 {supply_html}
-<h3>⑥ 오늘 특징 (상한가·업종·테마)</h3>
+<h3>⑦ 오늘 특징 (상한가·업종·테마)</h3>
 {upper_html}<p>{ai.get("today_highlight", "")}</p>
 
-<h3>⑦ 내일 주목할 점</h3>
+<h3>⑧ 내일 주목할 점</h3>
 <p>{ai.get("tomorrow_focus", "")}</p>
 
 <p style="margin-top:24px;font-size:12px;color:#999;">※ 본 시황은 AI가 자동 생성한 콘텐츠로, 데이터 수집 시점의 차이로 인해 실제 수치와 약간의 오차가 있을 수 있습니다. 투자 판단의 참고 자료로만 활용하시기 바랍니다.</p>
@@ -448,19 +475,25 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     deal_rank     = _get_deal_rank(db, bizdate)
     upper_limit   = _get_upper_limit_stocks(db, bizdate)
     news          = _get_top_news(db, target_date)
+    issue_summary = _get_issue_summary(db, target_date)
 
     if not kr_indices:
         print("[closing-gemini] KR 지수 데이터 없음, 건너뜀")
         return False
 
+    if issue_summary:
+        print(f"[closing-gemini] 이슈 AI요약 포함 ({len(issue_summary)}자)")
+    else:
+        print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
+
     # Gemini 호출
-    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news)
+    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news, issue_summary)
     ai = _call_gemini(prompt)
     if not ai:
         return False
 
-    # 게시글 내용 조립 (deal_rank 전달 → 수급 섹션을 DB 원본으로 직접 렌더링)
-    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank)
+    # 게시글 내용 조립
+    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary)
 
     # B001 게시판에 upsert (같은 날짜 제목이 있으면 내용 업데이트)
     existing = (

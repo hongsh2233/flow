@@ -113,6 +113,18 @@
   margin-top: 0.125rem;
 }
 
+.companyLink {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: var(--app-accent);
+  margin-top: 0.125rem;
+  text-decoration: none;
+}
+
+.companyLink:hover {
+  text-decoration: underline;
+}
+
 .bottom {
   display: flex;
   align-items: center;
