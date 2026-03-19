@@ -15,6 +15,7 @@ import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import type { StockDetail, MarketCapStock } from "@/lib/types";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import styles from "./StocksPage.module.css";
 
@@ -48,6 +49,7 @@ export default function StocksPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { favoriteStocks, favCodes, isLoading: favLoading } = useFavoriteStocks();
+  const { addFavCode, removeFavCode } = useFavoriteStore();
 
   const refreshFavorites = useCallback(() => {
     window.dispatchEvent(new Event("favoritesUpdated"));
@@ -67,30 +69,34 @@ export default function StocksPage() {
         setToast({ message: "로그인 후 이용해 주세요.", type: "error" });
         return;
       }
+      addFavCode(stock.code); // optimistic
       const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
       if (res.success) {
         refreshFavorites();
         setToast({ message: res.message || "관심종목에 추가되었습니다.", type: "success" });
       } else {
+        removeFavCode(stock.code); // rollback
         setToast({ message: res.message || "추가에 실패했습니다.", type: "error" });
       }
     },
-    [session?.user?.email, refreshFavorites]
+    [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
   );
 
   const handleRemoveFavorite = useCallback(
     async (code: string, e?: React.MouseEvent) => {
       e?.stopPropagation();
       if (!session?.user?.email) return;
+      removeFavCode(code); // optimistic
       const res = await removeFavoriteStock({ email: session.user.email, stock_code: code });
       if (res.success) {
         refreshFavorites();
         setToast({ message: res.message || "해제되었습니다.", type: "success" });
       } else {
+        addFavCode(code); // rollback
         setToast({ message: res.message || "해제에 실패했습니다.", type: "error" });
       }
     },
-    [session?.user?.email, refreshFavorites]
+    [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("favorite");

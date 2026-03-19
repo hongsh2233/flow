@@ -88,9 +88,12 @@ function SearchResultsContent() {
 
   const [searchTerm, setSearchTerm] = useState(q);
 
-  // 주가정보
-  const [stockDetail, setStockDetail] = useState<FscStockDetail | null>(null);
+  // 검색 결과 목록 (동일명 다수 가능)
+  const [stockList, setStockList] = useState<FscStockDetail[]>([]);
   const [stockLoading, setStockLoading] = useState(false);
+
+  // 선택된 종목 (목록에서 클릭 시)
+  const [selectedStock, setSelectedStock] = useState<FscStockDetail | null>(null);
 
   // 주식권리일정정보
   const [rightSchedule, setRightSchedule] = useState<Record<string, unknown>[]>([]);
@@ -105,6 +108,7 @@ function SearchResultsContent() {
       const trimmed = query.trim();
       if (!trimmed) return;
       setSearchTerm(trimmed);
+      setSelectedStock(null);
       router.replace(`/stocks/search?q=${encodeURIComponent(trimmed)}`, { scroll: false });
     },
     [router]
@@ -112,36 +116,49 @@ function SearchResultsContent() {
 
   useEffect(() => {
     setSearchTerm(q);
+    setSelectedStock(null);
   }, [q]);
 
+  // 주가 목록 조회
   useEffect(() => {
     if (!q.trim()) return;
     const query = q.trim();
-
-    // 주가정보 (FSC)
     setStockLoading(true);
-    fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=1`)
+    setStockList([]);
+    fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=20`)
       .then((r) => r.json())
-      .then((j) => setStockDetail(Array.isArray(j.data) && j.data.length > 0 ? j.data[0] : null))
-      .catch(() => setStockDetail(null))
+      .then((j) => {
+        const list: FscStockDetail[] = Array.isArray(j.data) ? j.data : [];
+        setStockList(list);
+        // 정확히 1건이면 자동 선택
+        if (list.length === 1) setSelectedStock(list[0]);
+      })
+      .catch(() => setStockList([]))
       .finally(() => setStockLoading(false));
+  }, [q]);
 
-    // 주식권리일정정보
+  // 선택 종목 변경 시 권리일정·뉴스 조회
+  useEffect(() => {
+    const name = selectedStock?.itms_nm?.trim() ?? q.trim();
+    if (!name) return;
+
     setRightLoading(true);
-    fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(query)}&page_no=1&num_of_rows=1000`)
+    fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(name)}&page_no=1&num_of_rows=1000`)
       .then((r) => r.json())
       .then((j) => setRightSchedule(Array.isArray(j.data) ? j.data : []))
       .catch(() => setRightSchedule([]))
       .finally(() => setRightLoading(false));
 
-    // 관련뉴스 (Naver)
     setNewsLoading(true);
-    fetch(`/api/naver-news?query=${encodeURIComponent(query + " 주가")}&display=5&sort=date`)
+    fetch(`/api/naver-news?query=${encodeURIComponent(name + " 주가")}&display=5&sort=date`)
       .then((r) => r.json())
       .then((j) => setNews(Array.isArray(j.data) ? j.data.slice(0, 5) : []))
       .catch(() => setNews([]))
       .finally(() => setNewsLoading(false));
-  }, [q]);
+  }, [selectedStock, q]);
+
+  // 표시할 주가 정보 (선택 or 단일 결과)
+  const stockDetail = selectedStock;
 
   return (
     <div className={styles.page}>
@@ -164,95 +181,133 @@ function SearchResultsContent() {
         <>
           <p className={styles.searchQueryInfo}>검색어: {q}</p>
 
-          {/* 1. 주가정보 */}
-          <section className={styles.searchSection}>
-            <h4 className={styles.searchSectionTitle}>주가정보</h4>
-            {stockLoading ? (
-              <p className={styles.loadingText}>로딩 중...</p>
-            ) : !stockDetail ? (
-              <p className={styles.loadingText}>주가정보를 불러올 수 없습니다.</p>
-            ) : (
-              <div className={styles.tableScrollWrap}>
-                <table className={styles.infoTable}>
-                  <tbody>
-                    {STOCK_INFO_COLUMNS.map(({ key, label }) => {
-                      let val: string | number = stockDetail[key] ?? "-";
-                      if (key === "mrkt_tot_amt") val = formatMarketCap(val);
-                      return (
-                        <tr key={key}>
-                          <th>{label}</th>
-                          <td>{String(val)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          {/* 2. 주식권리일정정보 */}
-          <section className={styles.searchSection}>
-            <h4 className={styles.searchSectionTitle}>주식권리일정정보</h4>
-            {rightLoading ? (
-              <p className={styles.loadingText}>로딩 중...</p>
-            ) : rightSchedule.length === 0 ? (
-              <p className={styles.loadingText}>조회 결과가 없습니다.</p>
-            ) : (
-              <div className={styles.tableScrollWrap}>
-                <table className={styles.searchTable}>
-                  <thead>
-                    <tr>
-                      <th>기준일자</th>
-                      <th>발행회사명</th>
-                      <th>권리행사사유</th>
-                      <th>권리행사시작일</th>
-                      <th>권리행사종료일</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rightSchedule.slice(0, 20).map((row, idx) => (
-                      <tr key={idx}>
-                        <td>{getCellVal(row, "basDt")}</td>
-                        <td>{getCellVal(row, "stckIssuCmpyNm")}</td>
-                        <td>{getCellVal(row, "rgtExertRcdNm")}</td>
-                        <td>{getCellVal(row, "rgtExertSttgDt")}</td>
-                        <td>{getCellVal(row, "rgtExertEdDt")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          {/* 3. 관련뉴스 */}
-          <section className={styles.searchSection}>
-            <h4 className={styles.searchSectionTitle}>관련뉴스</h4>
-            {newsLoading ? (
-              <p className={styles.loadingText}>로딩 중...</p>
-            ) : news.length === 0 ? (
-              <p className={styles.loadingText}>관련 뉴스를 찾을 수 없습니다.</p>
-            ) : (
-              <div className={styles.newsList}>
-                {news.map((item, idx) => (
-                  <a
-                    key={idx}
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.newsCard}
+          {/* 1. 검색 결과 목록 (다수일 때만 표시) */}
+          {stockLoading ? (
+            <p className={styles.loadingText}>검색 중...</p>
+          ) : stockList.length === 0 ? (
+            <p className={styles.loadingText}>검색 결과가 없습니다.</p>
+          ) : stockList.length > 1 && !selectedStock ? (
+            <section className={styles.searchSection}>
+              <h4 className={styles.searchSectionTitle}>
+                검색 결과 {stockList.length}건 — 종목을 선택해 주세요
+              </h4>
+              <div className={styles.stockSelectList}>
+                {stockList.map((item, idx) => (
+                  <button
+                    key={item.srtn_cd ?? idx}
+                    type="button"
+                    className={styles.stockSelectItem}
+                    onClick={() => setSelectedStock(item)}
                   >
-                    <p className={styles.newsTitle}>{item.title}</p>
-                    {item.description && (
-                      <p className={styles.newsDesc}>{item.description}</p>
-                    )}
-                    <p className={styles.newsDate}>{formatPubDate(item.pubDate)}</p>
-                  </a>
+                    <span className={styles.stockSelectName}>{item.itms_nm ?? "-"}</span>
+                    <span className={styles.stockSelectMeta}>
+                      {item.srtn_cd ?? "-"} · {item.mrkt_ctg ?? "-"}
+                    </span>
+                    <span className={styles.stockSelectPrice}>
+                      {Number(String(item.clpr ?? "0").replace(/,/g, "")).toLocaleString()}원
+                    </span>
+                  </button>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          ) : stockList.length > 1 && selectedStock ? (
+            /* 다수 중 선택한 경우 — 다시 목록으로 버튼 */
+            <button
+              type="button"
+              className={styles.backToListBtn}
+              onClick={() => setSelectedStock(null)}
+            >
+              ← 검색 결과 목록으로
+            </button>
+          ) : null}
+
+          {/* 2. 주가정보 (선택된 종목 or 단일 결과) */}
+          {stockDetail && (
+            <>
+              <section className={styles.searchSection}>
+                <h4 className={styles.searchSectionTitle}>주가정보</h4>
+                <div className={styles.tableScrollWrap}>
+                  <table className={styles.infoTable}>
+                    <tbody>
+                      {STOCK_INFO_COLUMNS.map(({ key, label }) => {
+                        let val: string | number = stockDetail[key] ?? "-";
+                        if (key === "mrkt_tot_amt") val = formatMarketCap(val);
+                        return (
+                          <tr key={key}>
+                            <th>{label}</th>
+                            <td>{String(val)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {/* 3. 주식권리일정정보 */}
+              <section className={styles.searchSection}>
+                <h4 className={styles.searchSectionTitle}>주식권리일정정보</h4>
+                {rightLoading ? (
+                  <p className={styles.loadingText}>로딩 중...</p>
+                ) : rightSchedule.length === 0 ? (
+                  <p className={styles.loadingText}>조회 결과가 없습니다.</p>
+                ) : (
+                  <div className={styles.tableScrollWrap}>
+                    <table className={styles.searchTable}>
+                      <thead>
+                        <tr>
+                          <th>기준일자</th>
+                          <th>발행회사명</th>
+                          <th>권리행사사유</th>
+                          <th>권리행사시작일</th>
+                          <th>권리행사종료일</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rightSchedule.slice(0, 20).map((row, idx) => (
+                          <tr key={idx}>
+                            <td>{getCellVal(row, "basDt")}</td>
+                            <td>{getCellVal(row, "stckIssuCmpyNm")}</td>
+                            <td>{getCellVal(row, "rgtExertRcdNm")}</td>
+                            <td>{getCellVal(row, "rgtExertSttgDt")}</td>
+                            <td>{getCellVal(row, "rgtExertEdDt")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              {/* 4. 관련뉴스 */}
+              <section className={styles.searchSection}>
+                <h4 className={styles.searchSectionTitle}>관련뉴스</h4>
+                {newsLoading ? (
+                  <p className={styles.loadingText}>로딩 중...</p>
+                ) : news.length === 0 ? (
+                  <p className={styles.loadingText}>관련 뉴스를 찾을 수 없습니다.</p>
+                ) : (
+                  <div className={styles.newsList}>
+                    {news.map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.newsCard}
+                      >
+                        <p className={styles.newsTitle}>{item.title}</p>
+                        {item.description && (
+                          <p className={styles.newsDesc}>{item.description}</p>
+                        )}
+                        <p className={styles.newsDate}>{formatPubDate(item.pubDate)}</p>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
         </>
       )}
 
