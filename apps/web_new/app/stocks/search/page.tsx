@@ -128,7 +128,12 @@ function SearchResultsContent() {
     fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=20`)
       .then((r) => r.json())
       .then((j) => {
-        const list: FscStockDetail[] = Array.isArray(j.data) ? j.data : [];
+        const all: FscStockDetail[] = Array.isArray(j.data) ? j.data : [];
+        // 백엔드 필터링이 동작 안 할 경우를 대비해 클라이언트에서 한 번 더 필터
+        const lowerQ = query.toLowerCase();
+        const list = all.filter((item) =>
+          (item.itms_nm ?? "").toLowerCase().includes(lowerQ)
+        );
         setStockList(list);
         // 정확히 1건이면 자동 선택
         if (list.length === 1) setSelectedStock(list[0]);
