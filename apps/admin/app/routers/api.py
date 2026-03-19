@@ -2519,13 +2519,21 @@ async def get_daily_issue_summary(
     from datetime import date as dt_date
     try:
         today = dt_date.today()
-        row = db.execute(text("""
-            SELECT summary FROM daily_issue_summaries WHERE date = :d
-        """), {"d": today}).fetchone()
-        summary = row[0] if row else None
-        return {"success": True, "summary": summary, "date": today.isoformat()}
+        rows = db.execute(text("""
+            SELECT collected_time, summary FROM daily_issue_summaries
+            WHERE date = :d ORDER BY collected_time
+        """), {"d": today}).fetchall()
+        if not rows:
+            return {"success": True, "summary": None, "summaries": [], "date": today.isoformat()}
+        summaries = [{"collected_time": r[0], "summary": r[1]} for r in rows]
+        parts = []
+        for r in rows:
+            t, s = r[0], r[1]
+            parts.append(f"[{t}]\n{s.strip()}" if t else s.strip())
+        combined = "\n\n".join(parts)
+        return {"success": True, "summary": combined, "summaries": summaries, "date": today.isoformat()}
     except Exception as e:
-        return {"success": False, "summary": None, "error": str(e)}
+        return {"success": False, "summary": None, "summaries": [], "error": str(e)}
 
 
 @router.post("/api/daily-issue-summary/generate")

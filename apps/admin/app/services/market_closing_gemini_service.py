@@ -185,14 +185,23 @@ def _get_top_news(db: Session, target_date: date) -> List[dict]:
 
 
 def _get_issue_summary(db: Session, target_date: date) -> Optional[str]:
-    """daily_issue_summaries에서 오늘 이슈 AI요약 조회"""
+    """daily_issue_summaries에서 오늘 이슈 AI요약 전체 조회 (여러 시간대 누적)"""
     try:
         from sqlalchemy import text
-        row = db.execute(
-            text("SELECT summary FROM daily_issue_summaries WHERE date = :d"),
+        rows = db.execute(
+            text("SELECT collected_time, summary FROM daily_issue_summaries WHERE date = :d ORDER BY collected_time"),
             {"d": target_date},
-        ).fetchone()
-        return row[0] if row else None
+        ).fetchall()
+        if not rows:
+            return None
+        parts = []
+        for row in rows:
+            t, s = row[0], row[1]
+            if t:
+                parts.append(f"[{t}]\n{s.strip()}")
+            else:
+                parts.append(s.strip())
+        return "\n\n".join(parts)
     except Exception as e:
         print(f"[closing-gemini] 이슈 요약 조회 오류: {e}")
         return None
