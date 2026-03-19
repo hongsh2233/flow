@@ -4,8 +4,13 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Heart } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Search } from "../../components/module/Search";
 import { StockTermBox } from "../../components/module/stock-term-box";
+import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
+import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
+import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import styles from "./StocksSearchPage.module.css";
 
 /* ─────────────────────────────────────────────── 타입 ── */
@@ -84,6 +89,9 @@ const STOCK_INFO_COLUMNS: { key: keyof FscStockDetail; label: string }[] = [
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const { favCodes } = useFavoriteStocks();
+  const { addFavCode, removeFavCode } = useFavoriteStore();
   const q = searchParams.get("q") ?? "";
 
   const [searchTerm, setSearchTerm] = useState(q);
@@ -102,6 +110,43 @@ function SearchResultsContent() {
   // 관련뉴스
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
+
+  const [favToast, setFavToast] = useState<string>("");
+  useEffect(() => {
+    if (!favToast) return;
+    const t = setTimeout(() => setFavToast(""), 2000);
+    return () => clearTimeout(t);
+  }, [favToast]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    if (!session?.user?.email) {
+      setFavToast("로그인 후 이용해 주세요.");
+      return;
+    }
+    const code = selectedStock?.srtn_cd;
+    const name = selectedStock?.itms_nm ?? "";
+    if (!code) return;
+    const isFav = favCodes.has(code);
+    if (isFav) {
+      removeFavCode(code);
+      const res = await removeFavoriteStock({ email: session.user.email, stock_code: code });
+      if (res.success) {
+        window.dispatchEvent(new Event("favoritesUpdated"));
+        setFavToast(`${name} 관심종목에서 해제했습니다.`);
+      } else {
+        addFavCode(code);
+      }
+    } else {
+      addFavCode(code);
+      const res = await addFavoriteStock({ email: session.user.email, stock_code: code });
+      if (res.success) {
+        window.dispatchEvent(new Event("favoritesUpdated"));
+        setFavToast(`${name} 관심종목에 추가했습니다.`);
+      } else {
+        removeFavCode(code);
+      }
+    }
+  }, [session?.user?.email, selectedStock, favCodes, addFavCode, removeFavCode]);
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -230,7 +275,22 @@ function SearchResultsContent() {
           {stockDetail && (
             <>
               <section className={styles.searchSection}>
-                <h4 className={styles.searchSectionTitle}>주가정보</h4>
+                <div className={styles.searchSectionHeader}>
+                  <h4 className={styles.searchSectionTitle}>주가정보</h4>
+                  {stockDetail.srtn_cd && (
+                    <button
+                      type="button"
+                      className={`${styles.favBtn} ${favCodes.has(stockDetail.srtn_cd) ? styles.favBtnActive : ""}`}
+                      onClick={handleToggleFavorite}
+                    >
+                      <Heart
+                        size={15}
+                        fill={favCodes.has(stockDetail.srtn_cd) ? "currentColor" : "none"}
+                      />
+                      {favCodes.has(stockDetail.srtn_cd) ? "관심해제" : "관심추가"}
+                    </button>
+                  )}
+                </div>
                 <div className={styles.tableScrollWrap}>
                   <table className={styles.infoTable}>
                     <tbody>
@@ -317,6 +377,9 @@ function SearchResultsContent() {
       )}
 
       <StockTermBox wrapperStyle={{ margin: "0 0 1rem" }} />
+      {favToast && (
+        <div className={styles.favToast}>{favToast}</div>
+      )}
     </div>
   );
 }
