@@ -214,13 +214,24 @@ const SECURITIES_LINKS: Record<string, string> = {
   "흥국증권":     "https://www.heungkuk.co.kr",
 };
 
-/** content/company 텍스트에서 증권사명을 찾아 URL 반환 */
-function findSecuritiesUrl(text: string): string | null {
-  if (!text) return null;
-  for (const [name, url] of Object.entries(SECURITIES_LINKS)) {
-    if (text.includes(name)) return url;
+/** 텍스트에서 [증권사명] 패턴을 링크/일반 세그먼트로 분리 */
+function parseCompanySegments(text: string): Array<{ text: string; url?: string }> {
+  const segments: Array<{ text: string; url?: string }> = [];
+  const regex = /\[([^\]]+)\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ text: text.slice(lastIndex, match.index) });
+    }
+    const url = SECURITIES_LINKS[match[1]];
+    segments.push({ text: match[0], url });
+    lastIndex = regex.lastIndex;
   }
-  return null;
+  if (lastIndex < text.length) {
+    segments.push({ text: text.slice(lastIndex) });
+  }
+  return segments;
 }
 
 /** HTML 내 텍스트에서 증권사명을 <a> 링크로 치환 (detail 본문용) */
@@ -276,19 +287,28 @@ export function ScheduleCard({ schedule, canUseAlarm = false, isLoggedIn = false
                 </button>
                 {(schedule.company || schedule.content) && (() => {
                   const text = schedule.company || schedule.content || "";
-                  const secUrl = findSecuritiesUrl(text);
-                  return secUrl ? (
-                    <a
-                      href={secUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.companyLink}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {text}
-                    </a>
-                  ) : (
-                    <p className={styles.company}>{text}</p>
+                  const segments = parseCompanySegments(text);
+                  const hasLinks = segments.some((s) => s.url);
+                  if (!hasLinks) return <p className={styles.company}>{text}</p>;
+                  return (
+                    <p className={styles.company}>
+                      {segments.map((seg, i) =>
+                        seg.url ? (
+                          <a
+                            key={i}
+                            href={seg.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.companyLink}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {seg.text}
+                          </a>
+                        ) : (
+                          <span key={i}>{seg.text}</span>
+                        )
+                      )}
+                    </p>
                   );
                 })()}
               </div>
