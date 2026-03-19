@@ -168,6 +168,70 @@
   text-decoration: underline;
 }
 
+/* 종목 선택 목록 */
+.stockSelectList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stockSelectItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.75rem;
+  background: var(--app-bg);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.stockSelectItem:hover {
+  background: var(--app-bg-secondary);
+}
+
+.stockSelectName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--app-text);
+  flex: 1;
+}
+
+.stockSelectMeta {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin: 0 0.75rem;
+}
+
+.stockSelectPrice {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  white-space: nowrap;
+}
+
+.backToListBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.5rem;
+  background: var(--app-bg);
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.backToListBtn:hover {
+  background: var(--app-bg-secondary);
+}
+
 /* 관련뉴스 */
 .newsList {
   display: flex;
