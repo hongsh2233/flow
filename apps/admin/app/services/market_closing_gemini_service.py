@@ -184,6 +184,36 @@ def _get_top_news(db: Session, target_date: date) -> List[dict]:
     ]
 
 
+def _get_investor_summary(db: Session, bizdate: str) -> Dict[str, dict]:
+    """NaverSupplyData investor_day에서 오늘 투자자별 매매동향 (코스피/코스닥) 조회.
+    반환: {"kospi": {"개인": "...", "외국인": "...", "기관계": "..."}, "kosdaq": {...}}
+    """
+    result: Dict[str, dict] = {}
+    for market in ["kospi", "kosdaq"]:
+        row = (
+            db.query(NaverSupplyData)
+            .filter(
+                NaverSupplyData.data_type == "investor_day",
+                NaverSupplyData.market == market,
+                NaverSupplyData.bizdate == bizdate,
+            )
+            .order_by(NaverSupplyData.collected_at.desc())
+            .first()
+        )
+        if not row or not row.data_json:
+            result[market] = {}
+            continue
+        try:
+            data = json.loads(row.data_json)
+            headers = data.get("headers", [])
+            rows = data.get("rows", [])
+            # 첫 번째 행 = 오늘(가장 최근) 날짜 데이터
+            result[market] = dict(zip(headers, rows[0])) if rows else {}
+        except Exception:
+            result[market] = {}
+    return result
+
+
 def _get_issue_summary(db: Session, target_date: date) -> Optional[str]:
     """daily_issue_summaries에서 오늘 이슈 AI요약 전체 조회 (여러 시간대 누적)"""
     try:
@@ -218,6 +248,7 @@ def _build_prompt(
     upper_limit: List[str],
     news: List[dict],
     issue_summary: Optional[str] = None,
+    investor_summary: Optional[Dict[str, dict]] = None,
 ) -> str:
     # ① 주가지수
     idx_lines = []
@@ -267,6 +298,16 @@ def _build_prompt(
     # ⑥ 이슈 AI요약
     issue_section = issue_summary.strip() if issue_summary else "- 데이터 없음"
 
+    # ⑦ 투자자별 매매동향 (개인/외국인/기관 합계)
+    inv_lines = []
+    key_cols = ["개인", "외국인", "기관계"]
+    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
+        inv = (investor_summary or {}).get(mkt_key, {})
+        if inv:
+            cols = ", ".join(f"{k}: {inv.get(k, '-')}" for k in key_cols if k in inv)
+            inv_lines.append(f"- [{mkt_label}] {cols}")
+    inv_section = "\n".join(inv_lines) if inv_lines else "- 데이터 없음"
+
     return f"""다음은 오늘 한국 주식시장 장마감 데이터입니다.
 한국 개인 주식 투자자를 위해 아래 JSON 형식으로 장마감 시황 코멘트를 작성해주세요.
 
@@ -284,6 +325,9 @@ def _build_prompt(
 
 [오늘 핵심 뉴스]
 {news_section}
+
+[투자자별 매매동향 (개인/외국인/기관 합계, 단위: 억원)]
+{inv_section}
 
 [오늘 이슈 AI요약]
 {issue_section}
@@ -416,6 +460,7 @@ def _build_post_content(
     upper_limit: List[str],
     deal_rank: Optional[Dict[str, List[str]]] = None,
     issue_summary: Optional[str] = None,
+    investor_summary: Optional[Dict[str, dict]] = None,
 ) -> str:
     # ① 주가지수 HTML
     idx_html = ""
@@ -441,6 +486,26 @@ def _build_post_content(
 
     # ⑤ 외국인·기관 동향: DB 원본 데이터 직접 렌더링 (AI 오류 방지)
     supply_html = _build_supply_html(deal_rank or {}, ai.get("supply_trend", ""))
+
+    # 투자자별 매매동향 HTML (개인/외국인/기관계)
+    inv_html = ""
+    key_cols = ["개인", "외국인", "기관계", "금융투자", "보험", "투신(사모)", "연기금등"]
+    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
+        inv = (investor_summary or {}).get(mkt_key, {})
+        if inv:
+            inv_html += f"<p><strong>[{mkt_label}]</strong></p>\n"
+            for k in key_cols:
+                if k in inv:
+                    val = inv[k]
+                    try:
+                        num = int(str(val).replace(",", "").replace("+", ""))
+                        color = "#e53935" if num > 0 else "#1565c0" if num < 0 else ""
+                        style_str = f' style="color:{color}"' if color else ""
+                        inv_html += f"<p>• {k}: <strong{style_str}>{val}</strong></p>\n"
+                    except (ValueError, TypeError):
+                        inv_html += f"<p>• {k}: {val}</p>\n"
+    if not inv_html:
+        inv_html = "<p>데이터 없음</p>\n"
 
     # 상한가
     upper_html = (
@@ -473,12 +538,14 @@ def _build_post_content(
 <p>USD/KRW {ex_str}</p>
 <p>{ai.get("exchange_rate", "")}</p>
 
-<h3>⑥ 외국인·기관 동향</h3>
+<h3>⑥ 투자자별 매매동향</h3>
+{inv_html}
+<h3>⑦ 외국인·기관 수급 순위</h3>
 {supply_html}
-<h3>⑦ 오늘 특징 (상한가·업종·테마)</h3>
+<h3>⑧ 오늘 특징 (상한가·업종·테마)</h3>
 {upper_html}<p>{ai.get("today_highlight", "")}</p>
 
-<h3>⑧ 내일 주목할 점</h3>
+<h3>⑨ 내일 주목할 점</h3>
 <p>{ai.get("tomorrow_focus", "")}</p>
 
 <p style="margin-top:24px;font-size:12px;color:#999;">※ 본 시황은 AI가 자동 생성한 콘텐츠로, 데이터 수집 시점의 차이로 인해 실제 수치와 약간의 오차가 있을 수 있습니다. 투자 판단의 참고 자료로만 활용하시기 바랍니다.</p>
@@ -501,12 +568,13 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     title = f"{target_date.strftime('%Y-%m-%d')} 장마감 시황"
 
     # 데이터 수집
-    kr_indices    = _get_kr_indices(db, target_date)
-    exchange_rates = _get_exchange_rate(db)
-    deal_rank     = _get_deal_rank(db, bizdate)
-    upper_limit   = _get_upper_limit_stocks(db, bizdate)
-    news          = _get_top_news(db, target_date)
-    issue_summary = _get_issue_summary(db, target_date)
+    kr_indices       = _get_kr_indices(db, target_date)
+    exchange_rates   = _get_exchange_rate(db)
+    deal_rank        = _get_deal_rank(db, bizdate)
+    investor_summary = _get_investor_summary(db, bizdate)
+    upper_limit      = _get_upper_limit_stocks(db, bizdate)
+    news             = _get_top_news(db, target_date)
+    issue_summary    = _get_issue_summary(db, target_date)
 
     if not kr_indices:
         print("[closing-gemini] KR 지수 데이터 없음, 건너뜀")
@@ -518,13 +586,13 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
         print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
 
     # Gemini 호출
-    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news, issue_summary)
+    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news, issue_summary, investor_summary)
     ai = _call_gemini(prompt)
     if not ai:
         return False
 
     # 게시글 내용 조립
-    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary)
+    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary, investor_summary)
 
     # "시황" 카테고리 ID 조회
     category_id = None
