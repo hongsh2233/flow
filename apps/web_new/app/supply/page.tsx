@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Search } from "../components/module/Search";
+import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
@@ -380,6 +381,9 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
+      {/* 0. 수급 요약 카드 (최상단) */}
+      <SupplySummaryCard standalone />
+
       {/* 1. 검색 */}
       <div className={styles.searchArea}>
         <Search
