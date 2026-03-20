@@ -37,12 +37,12 @@ function getMonthLabel(weekDates: { fullDate: Date }[]): string {
   const last = weekDates[6].fullDate;
 
   if (first.getMonth() === last.getMonth()) {
-    return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`;
+    return `${first.getFullYear()}년 ${MONTH_NAMES[first.getMonth()]}`;
   }
   if (first.getFullYear() === last.getFullYear()) {
-    return `${MONTH_NAMES[first.getMonth()]}–${MONTH_NAMES[last.getMonth()]} ${first.getFullYear()}`;
+    return `${first.getFullYear()}년 ${MONTH_NAMES[first.getMonth()]}–${MONTH_NAMES[last.getMonth()]}`;
   }
-  return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()} – ${MONTH_NAMES[last.getMonth()]} ${last.getFullYear()}`;
+  return `${first.getFullYear()}년 ${MONTH_NAMES[first.getMonth()]} – ${last.getFullYear()}년 ${MONTH_NAMES[last.getMonth()]}`;
 }
 
 export function Calendar() {

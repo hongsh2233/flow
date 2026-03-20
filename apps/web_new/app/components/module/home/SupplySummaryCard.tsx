@@ -39,7 +39,7 @@ function formatLabel(n: number): string {
   const formatted = formatSigned(n);
   if (n > 0) return `순매수 ${formatted}`;
   if (n < 0) return `순매도 ${formatted}`;
-  return "0";
+  return "보합";
 }
 
 interface SupplySummaryCardProps {
@@ -105,13 +105,22 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !data) return null;
-
   const cardContent = (
     <>
-      <h2 className={styles.title}>{data.timeLabel}</h2>
-      <MarketSection title="코스피" slice={data.kospi} />
-      <MarketSection title="코스닥" slice={data.kosdaq} />
+      {loading ? (
+        <p className={styles.excerpt}>수급 데이터 불러오는 중...</p>
+      ) : !data ? (
+        <p className={styles.excerpt}>수급 데이터를 불러오지 못했습니다.</p>
+      ) : (
+        <>
+          <h2 className={styles.title}>
+            {data.timeLabel ||
+              (data.collectedTime ? `수급 (${data.collectedTime} 기준)` : "수급 요약")}
+          </h2>
+          <MarketSection title="코스피" slice={data.kospi} />
+          <MarketSection title="코스닥" slice={data.kosdaq} />
+        </>
+      )}
     </>
   );
 
@@ -123,15 +132,13 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
           수급 요약
         </h3>
       </div>
-      <div className={styles.cardList}>
-        {standalone ? (
-          <div className={styles.card}>{cardContent}</div>
-        ) : (
-          <Link href="/supply" className={styles.card}>
-            {cardContent}
-          </Link>
-        )}
-      </div>
+      {standalone ? (
+        <div className={styles.card}>{cardContent}</div>
+      ) : (
+        <Link href="/supply" className={styles.card}>
+          {cardContent}
+        </Link>
+      )}
     </section>
   );
 }
