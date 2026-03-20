@@ -106,8 +106,7 @@ export default function Home() {
 
   return (
     <div className="content__wrap">
-      <SupplySummaryCard market="kospi" />
-      <SupplySummaryCard market="kosdaq" />
+      <SupplySummaryCard />
       <MainCardNews />
       <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
