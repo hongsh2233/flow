@@ -1212,7 +1212,8 @@ async def collect_naver_supply_data():
 
     db = SessionLocal()
     try:
-        count = await collect_investor_program_supply_data(db)
+        # 수집·Gemini 저장 모두 동일 collected_time 사용 (DB naver_supply_data ↔ supply_summary_ai 정합)
+        count = await collect_investor_program_supply_data(db, bizdate, collected_time)
         print(f"✅ 수급 동향 수집 완료: {count}건")
 
         if count > 0:

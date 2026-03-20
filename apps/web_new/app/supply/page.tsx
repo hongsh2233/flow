@@ -380,8 +380,8 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
-      {/* 0. 수급 요약 카드 (최상단) */}
-      <SupplySummaryCard standalone />
+      {/* 0. 수급 요약 카드 (최상단) — 숫자는 최신 수집분, 문구는 DB의 Gemini 요약 */}
+      <SupplySummaryCard />
 
       {/* 1. 검색 */}
       <div className={styles.searchArea}>

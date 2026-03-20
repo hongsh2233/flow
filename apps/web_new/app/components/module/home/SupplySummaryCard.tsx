@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import styles from "./SupplySummaryCard.module.css";
 
@@ -40,11 +39,6 @@ function formatLabel(n: number): string {
   if (n > 0) return `순매수 ${formatted}`;
   if (n < 0) return `순매도 ${formatted}`;
   return "0";
-}
-
-interface SupplySummaryCardProps {
-  /** true면 Link 대신 div로 렌더 (supply 페이지 등) */
-  standalone?: boolean;
 }
 
 function NumbersBlock({ slice }: { slice: MarketSlice }) {
@@ -87,7 +81,7 @@ function MarketSection({ title, slice }: { title: string; slice: MarketSlice }) 
   );
 }
 
-export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps = {}) {
+export function SupplySummaryCard() {
   const [data, setData] = useState<SupplySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -124,13 +118,7 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
         </h3>
       </div>
       <div className={styles.cardList}>
-        {standalone ? (
-          <div className={styles.card}>{cardContent}</div>
-        ) : (
-          <Link href="/supply" className={styles.card}>
-            {cardContent}
-          </Link>
-        )}
+        <div className={styles.card}>{cardContent}</div>
       </div>
     </section>
   );

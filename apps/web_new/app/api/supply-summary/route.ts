@@ -129,6 +129,26 @@ function errorBody(): SupplySummary {
   };
 }
 
+/** supply_summary_gemini_service._time_label_for_collected_time 와 동일 (Gemini 프롬프트·UI 라벨 정합) */
+function timeLabelFromCollectedTime(collectedTime: string): Pick<SupplySummary, "mode" | "timeLabel"> {
+  const [hStr, mStr] = collectedTime.split(":");
+  const hour = parseInt(hStr || "0", 10);
+  const minute = parseInt(mStr || "0", 10);
+  if (hour >= 15 && (hour > 15 || minute >= 30)) {
+    return { mode: "closing", timeLabel: "금일 15:30분 정규장 마감 기준" };
+  }
+  const prevH = hour > 0 ? hour - 1 : 23;
+  const slotM = minute >= 30 ? 30 : 0;
+  return {
+    mode: "intraday",
+    timeLabel: `현재 ${String(prevH).padStart(2, "0")}:${String(slotM).padStart(2, "0")}~${String(hour).padStart(2, "0")}:${String(slotM).padStart(2, "0")} 기준`,
+  };
+}
+
+/**
+ * 파이프라인: 관리자 스케줄러가 naver_supply_data 수집 → Gemini 가공 → supply_summary_ai_summaries 저장.
+ * 여기서는 최신 수집분 숫자(naver-supply-data) + 동일 bizdate·collected_time 의 DB 요약(supply-summary-ai)을 합쳐 반환.
+ */
 export async function GET() {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -238,19 +258,11 @@ export async function GET() {
       },
     };
 
-    const collectedTime = result.collectedTime ?? "";
-    const hour = parseInt(collectedTime.split(":")[0] || "0", 10);
-    const minute = parseInt(collectedTime.split(":")[1] || "0", 10);
-
-    if (hour >= 15 && (hour > 15 || minute >= 30)) {
-      result.mode = "closing";
-      result.timeLabel = "금일 15:30분 정규장 마감 기준";
-    } else {
-      const prevH = minute >= 30 ? hour : hour - 1;
-      const prevM = minute >= 30 ? 0 : 30;
-      const currH = minute >= 30 ? hour : hour;
-      const currM = minute >= 30 ? 30 : 0;
-      result.timeLabel = `현재 ${String(prevH).padStart(2, "0")}:${String(prevM).padStart(2, "0")}~${String(currH).padStart(2, "0")}:${String(currM).padStart(2, "0")} 기준`;
+    const ct = result.collectedTime ?? "";
+    if (ct) {
+      const { mode, timeLabel } = timeLabelFromCollectedTime(ct);
+      result.mode = mode;
+      result.timeLabel = timeLabel;
     }
 
     return NextResponse.json(result);

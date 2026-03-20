@@ -321,7 +321,18 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 | `market_morning_gemini_service.py` | 매일 06:35 | 미국·한국 지수·환율 기반 **모닝 브리핑** 생성 → `MarketMorningAiSummary` 저장 |
 | `daily_issue_gemini_service.py` | 평일 08:40, 12:40, 19:40 | 당일 Naver 수집 뉴스를 3~5줄로 요약 → `daily_issue_summaries` 저장 |
 | `market_closing_gemini_service.py` | 평일 15:50 | 장마감 후 코스피·코스닥·환율·투자자동향·상한가 종목을 분석해 **플로우Ai** 계정으로 B001 게시판에 자동 포스팅. 수급(순매수·순매도) 섹션은 DB 원본 데이터를 직접 렌더링해 AI 오류를 방지함 |
+| `supply_summary_gemini_service.py` | 수급 수집 직후 (스케줄러와 동일 시각) | 코스피·코스닥 각각 `naver_supply_data`에서 추출한 투자자·프로그램 순매수 숫자를 Gemini로 2~3문장 요약 → `supply_summary_ai_summaries` (`SupplySummaryAi`) 저장 |
 | `target_price_news_service.py` | 매일 08:30, 12:00 | 증권사 목표가 상향 뉴스를 Gemini로 가공해 B002 게시판에 자동 포스팅 |
+
+### 수급 요약 카드 (웹 `web_new`)
+
+홈과 `/supply` 상단 **수급 요약** UI는 클릭 이동 없이 같은 카드만 표시한다.
+
+1. **수집**: `collect_naver_supply_data`가 `bizdate`·`collected_time`을 한 번 정한 뒤, 동일 값으로 `collect_investor_program_supply_data`에 넘겨 `naver_supply_data`에 저장하고, 이어서 `generate_and_save_supply_summary`로 같은 키로 AI 요약을 저장한다. (수집 행과 AI 행의 시각 레이블이 어긋나지 않게 한다.)
+2. **조회 (관리자 API)**: 최신 스냅샷 숫자는 `GET /api/naver-supply-data`, 저장된 요약 문장은 `GET /api/supply-summary-ai` (`bizdate`, `collected_time`, `market=kospi|kosdaq`).
+3. **조회 (웹 BFF)**: `web_new`의 `GET /api/supply-summary`가 위 네 종류의 시간별 수급 데이터를 모아 숫자를 파싱하고, 동일 `bizdate`·`collected_time`으로 AI 요약을 붙여 JSON으로 내려준다. 카드의 장중/마감 시간 라벨은 백엔드 `supply_summary_gemini_service._time_label_for_collected_time`과 맞춘다.
+
+**수집 스케줄 (월~금, 공휴일 제외)**: 08:40, 09:10~15:40(30분 간격), 16:40~20:40(1시간 간격).
 
 ### 목표가 상향 뉴스 수집 시간 윈도우
 
@@ -340,6 +351,7 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 | 금리 | on-demand (1시간 캐시) | - | Yahoo Finance (`^TNX`, `^FVX`, `^IRX`) |
 | 주식 영향 뉴스 | 평일 08:30, 12:30, 19:30 | 2일 | Naver 뉴스 검색 API |
 | 목표가 상향 뉴스 | 매일 08:30, 12:00 | - | Naver 뉴스 검색 API + Gemini 가공 |
+| 네이버 수급 (투자자·프로그램 시간별) | 평일 08:40~15:40 30분 간격, 16:40~20:40 1시간 간격 | 주기 스케줄만으로는 일자 정리 없음; `collect_all_supply_data` 실행 시 5영업일치 초과분 삭제 | Naver 증권 → `naver_supply_data` |
 
 ### AI 환경 변수
 
