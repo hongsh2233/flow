@@ -106,11 +106,11 @@ export default function Home() {
 
   return (
     <div className="content__wrap">
+      <SupplySummaryCard market="kospi" />
+      <SupplySummaryCard market="kosdaq" />
       <MainCardNews />
       <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
-      <SupplySummaryCard market="kospi" />
-      <SupplySummaryCard market="kosdaq" />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>

@@ -85,23 +85,28 @@ export function SupplySummaryCard({ standalone = false, market = "kospi" }: Supp
     setLoading(true);
     setError(false);
 
-    // 기존에 동작하는 /api/naver-supply 라우트를 직접 호출 (supply 페이지와 동일)
-    const fetchInvestor = fetch(
-      `/api/naver-supply?data_type=investor_day&market=${market}`,
-      { cache: "no-store" }
-    ).then((r) => r.json());
+    // supply 페이지와 동일한 패턴: market별 데이터 없으면 market=all로 fallback
+    const fetchWithFallback = async (dataType: string) => {
+      const res = await fetch(
+        `/api/naver-supply?data_type=${dataType}&market=${market}`,
+        { cache: "no-store" }
+      );
+      const json = await res.json();
+      if (json.success && json.data?.rows?.length) return json;
+      // fallback: market=all
+      const fallback = await fetch(
+        `/api/naver-supply?data_type=${dataType}&market=all`,
+        { cache: "no-store" }
+      );
+      return fallback.json();
+    };
 
-    const fetchProgram = fetch(
-      `/api/naver-supply?data_type=program_day&market=${market}`,
-      { cache: "no-store" }
-    ).then((r) => r.json());
-
-    Promise.all([fetchInvestor, fetchProgram])
+    Promise.all([fetchWithFallback("investor_day"), fetchWithFallback("program_day")])
       .then(([invJson, progJson]) => {
         // investor_day 파싱: 열 순서 = 날짜(0), 개인(1), 외국인(2), 기관계(3)
         const invRows = invJson?.data?.rows;
         if (!invRows || invRows.length === 0) {
-          console.warn(`[SupplySummaryCard] ${market} investor_day 데이터 없음`);
+          console.warn(`[SupplySummaryCard] ${market} investor_day 데이터 없음 (fallback 포함)`);
           setError(true);
           return;
         }
