@@ -113,10 +113,6 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
         <p className={styles.excerpt}>수급 데이터를 불러오지 못했습니다.</p>
       ) : (
         <>
-          <h2 className={styles.title}>
-            {data.timeLabel ||
-              (data.collectedTime ? `수급 (${data.collectedTime} 기준)` : "수급 요약")}
-          </h2>
           <MarketSection title="코스피" slice={data.kospi} />
           <MarketSection title="코스닥" slice={data.kosdaq} />
         </>
@@ -124,13 +120,21 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
     </>
   );
 
+  const headingSubline =
+    !loading && data
+      ? data.timeLabel || (data.collectedTime ? `수급 (${data.collectedTime} 기준)` : "")
+      : "";
+
   return (
     <section className={styles.section}>
       <div className={styles.headingRow}>
-        <h3 className={styles.heading}>
-          <BarChart3 className={styles.headingIcon} aria-hidden />
-          수급 요약
-        </h3>
+        <div className={styles.headingCol}>
+          <h3 className={styles.heading}>
+            <BarChart3 className={styles.headingIcon} aria-hidden />
+            수급 요약
+          </h3>
+          {headingSubline ? <p className={styles.headingSub}>{headingSubline}</p> : null}
+        </div>
       </div>
       {standalone ? (
         <div className={styles.card}>{cardContent}</div>

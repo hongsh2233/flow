@@ -6,9 +6,24 @@
 
 .headingRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.headingCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.headingSub {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--app-text-muted);
 }
 
 .badgeKospi {
@@ -65,14 +80,6 @@
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
-}
-
-.title {
-  color: #374151;
-  font-weight: 600;
-  font-size: 1.15rem;
-  margin: 0 0 0.75rem;
-  line-height: 1.4;
 }
 
 /* 시장별 섹션 (코스피 / 코스닥) — 레이아웃 변형용 */

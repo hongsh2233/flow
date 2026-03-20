@@ -39,10 +39,78 @@ def _find_col_idx(headers: list, keywords: list, excludes: list = None) -> int:
     return -1
 
 
+def _investor_row_score(row: list, idx_i: int, idx_f: int, idx_inst: int) -> int:
+    s = 0
+    if idx_i >= 0 and idx_i < len(row):
+        s += abs(_parse_num(row[idx_i]))
+    if idx_f >= 0 and idx_f < len(row):
+        s += abs(_parse_num(row[idx_f]))
+    if idx_inst >= 0 and idx_inst < len(row):
+        s += abs(_parse_num(row[idx_inst]))
+    return s
+
+
+def _pick_investor_row(headers: list, rows: list) -> Optional[list]:
+    if not rows:
+        return None
+    idx_i = _find_col_idx(headers, ["개인"], ["기타"])
+    idx_f = _find_col_idx(headers, ["외국인계", "외국인"], ["기타외국인"])
+    idx_inst = _find_col_idx(headers, ["기관계", "기관"])
+    if len(rows) == 1:
+        return rows[0]
+    first, last = rows[0], rows[-1]
+    if _investor_row_score(last, idx_i, idx_f, idx_inst) >= _investor_row_score(first, idx_i, idx_f, idx_inst):
+        return last
+    return first
+
+
+def _program_abs_sum_from_row(row: list, headers: list) -> int:
+    arb_col = next(
+        (
+            i
+            for i, h in enumerate(headers)
+            if "차익" in (h or "").replace(" ", "")
+            and "순매수" in (h or "").replace(" ", "")
+            and "비차익" not in (h or "")
+        ),
+        -1,
+    )
+    non_arb_col = next(
+        (
+            i
+            for i, h in enumerate(headers)
+            if "비차익" in (h or "").replace(" ", "")
+            and "순매수" in (h or "").replace(" ", "")
+        ),
+        -1,
+    )
+    arb, non = 0, 0
+    if arb_col >= 0 and arb_col < len(row):
+        arb = _parse_num(row[arb_col])
+    elif len(headers) >= 4 and len(row) > 3:
+        arb = _parse_num(row[3])
+    if non_arb_col >= 0 and non_arb_col < len(row):
+        non = _parse_num(row[non_arb_col])
+    elif len(row) >= 7:
+        non = _parse_num(row[6])
+    return abs(arb) + abs(non)
+
+
+def _pick_program_row(headers: list, rows: list) -> Optional[list]:
+    if not rows:
+        return None
+    if len(rows) == 1:
+        return rows[0]
+    first, last = rows[0], rows[-1]
+    if _program_abs_sum_from_row(last, headers) >= _program_abs_sum_from_row(first, headers):
+        return last
+    return first
+
+
 def _get_supply_numbers(
     db: Session, bizdate: str, collected_time: str, market: str
 ) -> Optional[dict]:
-    """investor_time + program_time에서 해당 시장 마지막 행 수치 추출. 원본 없으면 None."""
+    """investor_time + program_time에서 해당 시장 스냅샷 수치 추출(첫·끝 행 중 신뢰도 높은 행). 원본 없으면 None."""
     result = {
         "foreign": 0,
         "individual": 0,
@@ -74,20 +142,24 @@ def _get_supply_numbers(
             rows = data.get("rows") or []
             if not rows:
                 continue
-            last_row = rows[-1]
-
             if data_type == "investor_time":
+                data_row = _pick_investor_row(headers, rows)
+                if not data_row:
+                    continue
                 idx_i = _find_col_idx(headers, ["개인"], ["기타"])
                 idx_f = _find_col_idx(headers, ["외국인계", "외국인"], ["기타외국인"])
                 idx_inst = _find_col_idx(headers, ["기관계", "기관"])
-                if idx_i >= 0 and idx_i < len(last_row):
-                    result["individual"] = _parse_num(last_row[idx_i])
-                if idx_f >= 0 and idx_f < len(last_row):
-                    result["foreign"] = _parse_num(last_row[idx_f])
-                if idx_inst >= 0 and idx_inst < len(last_row):
-                    result["institution"] = _parse_num(last_row[idx_inst])
+                if idx_i >= 0 and idx_i < len(data_row):
+                    result["individual"] = _parse_num(data_row[idx_i])
+                if idx_f >= 0 and idx_f < len(data_row):
+                    result["foreign"] = _parse_num(data_row[idx_f])
+                if idx_inst >= 0 and idx_inst < len(data_row):
+                    result["institution"] = _parse_num(data_row[idx_inst])
 
             elif data_type == "program_time":
+                data_row = _pick_program_row(headers, rows)
+                if not data_row:
+                    continue
                 arb_col = next(
                     (
                         i
@@ -107,14 +179,14 @@ def _get_supply_numbers(
                     ),
                     -1,
                 )
-                if arb_col >= 0 and arb_col < len(last_row):
-                    result["program_arbitrage"] = _parse_num(last_row[arb_col])
+                if arb_col >= 0 and arb_col < len(data_row):
+                    result["program_arbitrage"] = _parse_num(data_row[arb_col])
                 elif len(headers) >= 4:
-                    result["program_arbitrage"] = _parse_num(last_row[3])
-                if non_arb_col >= 0 and non_arb_col < len(last_row):
-                    result["program_non_arbitrage"] = _parse_num(last_row[non_arb_col])
-                elif len(headers) >= 7:
-                    result["program_non_arbitrage"] = _parse_num(last_row[6])
+                    result["program_arbitrage"] = _parse_num(data_row[3])
+                if non_arb_col >= 0 and non_arb_col < len(data_row):
+                    result["program_non_arbitrage"] = _parse_num(data_row[non_arb_col])
+                elif len(data_row) >= 7:
+                    result["program_non_arbitrage"] = _parse_num(data_row[6])
         except Exception as e:
             print(f"[supply-gemini] 파싱 오류 {market} {data_type}: {e}")
 
