@@ -77,31 +77,64 @@ function NumbersBlock({ data }: { data: SupplySummary }) {
 export function SupplySummaryCard({ standalone = false, market = "kospi" }: SupplySummaryCardProps = {}) {
   const [data, setData] = useState<SupplySummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
     fetch(`/api/supply-summary?market=${market}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
         if (json.success !== false) {
           setData(json);
+          setError(false);
         } else {
+          console.warn(`[SupplySummaryCard] ${market} 데이터 없음:`, json.message);
           setData(null);
+          setError(true);
         }
       })
-      .catch(() => setData(null))
+      .catch((err) => {
+        console.error(`[SupplySummaryCard] ${market} API 호출 실패:`, err);
+        setData(null);
+        setError(true);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [market]);
 
-  if (loading || !data) return null;
+  const marketLabel = market === "kospi" ? "코스피" : "코스닥";
 
-  const cardContent = (
-    <>
-      <h2 className={styles.title}>{data.timeLabel}</h2>
-      {data.aiSummary && (
-        <p className={styles.excerpt}>{data.aiSummary}</p>
-      )}
-      <NumbersBlock data={data} />
-    </>
+  const cardInner = loading ? (
+    <div className={styles.card}>
+      <p style={{ textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.8125rem", margin: 0 }}>
+        수급 데이터 불러오는 중...
+      </p>
+    </div>
+  ) : error || !data ? (
+    <div className={styles.card}>
+      <p style={{ textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.8125rem", margin: 0 }}>
+        {marketLabel} 수급 데이터가 없습니다.
+      </p>
+    </div>
+  ) : (
+    (() => {
+      const content = (
+        <>
+          <h2 className={styles.title}>{data.timeLabel}</h2>
+          {data.aiSummary && (
+            <p className={styles.excerpt}>{data.aiSummary}</p>
+          )}
+          <NumbersBlock data={data} />
+        </>
+      );
+      return standalone ? (
+        <div className={styles.card}>{content}</div>
+      ) : (
+        <Link href="/supply" className={styles.card}>
+          {content}
+        </Link>
+      );
+    })()
   );
 
   return (
@@ -112,17 +145,11 @@ export function SupplySummaryCard({ standalone = false, market = "kospi" }: Supp
           수급 요약
         </h3>
         <span className={market === "kospi" ? styles.badgeKospi : styles.badgeKosdaq}>
-          {market === "kospi" ? "코스피" : "코스닥"}
+          {marketLabel}
         </span>
       </div>
       <div className={styles.cardList}>
-        {standalone ? (
-          <div className={styles.card}>{cardContent}</div>
-        ) : (
-          <Link href="/supply" className={styles.card}>
-            {cardContent}
-          </Link>
-        )}
+        {cardInner}
       </div>
     </section>
   );
