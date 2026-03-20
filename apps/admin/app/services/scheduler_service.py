@@ -1217,7 +1217,9 @@ async def collect_naver_supply_data():
 
         if count > 0:
             try:
-                generate_and_save_supply_summary(db, bizdate, collected_time)
+                n_ai = generate_and_save_supply_summary(db, bizdate, collected_time)
+                if n_ai:
+                    print(f"✅ 수급 Gemini AI 요약 저장: {n_ai}건 (코스피·코스닥)")
             except Exception as gemini_err:
                 import traceback
                 print(f"⚠️ 수급 Gemini AI 요약 오류: {gemini_err}")

@@ -1,7 +1,7 @@
 """
 수급 동향 Gemini AI 요약 서비스
 
-investor_time, program_time 수집 데이터를 Gemini에 전달해
+investor_time, program_time 수집 데이터(코스피·코스닥 각각)를 Gemini에 전달해
 자연스러운 한국어로 수급 상황 요약을 생성·저장한다.
 """
 import json
@@ -12,6 +12,10 @@ from sqlalchemy.orm import Session
 from app.config import GEMINI_API_KEY
 from app.models import NaverSupplyData
 from app.engine.models import SupplySummaryAi
+
+MARKET_KOSPI = "kospi"
+MARKET_KOSDAQ = "kosdaq"
+MARKET_LABEL = {MARKET_KOSPI: "코스피", MARKET_KOSDAQ: "코스닥"}
 
 
 def _parse_num(v) -> int:
@@ -35,8 +39,10 @@ def _find_col_idx(headers: list, keywords: list, excludes: list = None) -> int:
     return -1
 
 
-def _get_supply_numbers(db: Session, bizdate: str, collected_time: str) -> Optional[dict]:
-    """investor_time + program_time (market=all)에서 마지막 행 수치 추출"""
+def _get_supply_numbers(
+    db: Session, bizdate: str, collected_time: str, market: str
+) -> Optional[dict]:
+    """investor_time + program_time에서 해당 시장 마지막 행 수치 추출. 원본 없으면 None."""
     result = {
         "foreign": 0,
         "individual": 0,
@@ -44,13 +50,14 @@ def _get_supply_numbers(db: Session, bizdate: str, collected_time: str) -> Optio
         "program_arbitrage": 0,
         "program_non_arbitrage": 0,
     }
+    found_any = False
 
     for data_type in ("investor_time", "program_time"):
         row = (
             db.query(NaverSupplyData)
             .filter(
                 NaverSupplyData.data_type == data_type,
-                NaverSupplyData.market == "all",
+                NaverSupplyData.market == market,
                 NaverSupplyData.sub_key.is_(None),
                 NaverSupplyData.bizdate == bizdate,
                 NaverSupplyData.collected_time == collected_time,
@@ -60,6 +67,7 @@ def _get_supply_numbers(db: Session, bizdate: str, collected_time: str) -> Optio
         )
         if not row or not row.data_json:
             continue
+        found_any = True
         try:
             data = json.loads(row.data_json)
             headers = data.get("headers") or []
@@ -81,13 +89,22 @@ def _get_supply_numbers(db: Session, bizdate: str, collected_time: str) -> Optio
 
             elif data_type == "program_time":
                 arb_col = next(
-                    (i for i, h in enumerate(headers)
-                    if "차익" in (h or "").replace(" ", "") and "순매수" in (h or "").replace(" ", "") and "비차익" not in (h or "")),
+                    (
+                        i
+                        for i, h in enumerate(headers)
+                        if "차익" in (h or "").replace(" ", "")
+                        and "순매수" in (h or "").replace(" ", "")
+                        and "비차익" not in (h or "")
+                    ),
                     -1,
                 )
                 non_arb_col = next(
-                    (i for i, h in enumerate(headers)
-                    if "비차익" in (h or "").replace(" ", "") and "순매수" in (h or "").replace(" ", "")),
+                    (
+                        i
+                        for i, h in enumerate(headers)
+                        if "비차익" in (h or "").replace(" ", "")
+                        and "순매수" in (h or "").replace(" ", "")
+                    ),
                     -1,
                 )
                 if arb_col >= 0 and arb_col < len(last_row):
@@ -99,12 +116,16 @@ def _get_supply_numbers(db: Session, bizdate: str, collected_time: str) -> Optio
                 elif len(headers) >= 7:
                     result["program_non_arbitrage"] = _parse_num(last_row[6])
         except Exception as e:
-            print(f"[supply-gemini] 파싱 오류 {data_type}: {e}")
+            print(f"[supply-gemini] 파싱 오류 {market} {data_type}: {e}")
 
+    if not found_any:
+        return None
     return result
 
 
-def _build_prompt(nums: dict, time_label: str) -> str:
+def _build_prompt(nums: dict, time_label: str, market_key: str) -> str:
+    market_ko = MARKET_LABEL.get(market_key, market_key)
+
     def fmt(n):
         if n >= 1_0000_0000:
             return f"{n / 1_0000_0000:.1f}억"
@@ -116,7 +137,7 @@ def _build_prompt(nums: dict, time_label: str) -> str:
         s = fmt(abs(n))
         return f"+{s}" if n > 0 else f"-{s}" if n < 0 else "0"
 
-    return f"""다음은 한국 증시 수급 동향 데이터입니다. {time_label}
+    return f"""다음은 한국 증시 {market_ko} 수급 동향 데이터입니다. {time_label}
 
 [투자주체별 순매수/순매도]
 - 외국인: {signed(nums['foreign'])}
@@ -127,7 +148,7 @@ def _build_prompt(nums: dict, time_label: str) -> str:
 - 차익거래 순매수: {signed(nums['program_arbitrage'])}
 - 비차익거래 순매수: {signed(nums['program_non_arbitrage'])}
 
-위 수치를 바탕으로 2~3문장으로 수급 상황을 자연스러운 한국어로 요약해주세요.
+위 수치를 바탕으로 2~3문장으로 {market_ko} 수급 상황을 자연스러운 한국어로 요약해주세요.
 - 외국인/개인/기관의 매매 동향과 프로그램매매 흐름을 간결히 설명
 - 마크다운, JSON, 코드블록 없이 순수 텍스트만 응답
 - "현재", "기준" 등 시점 표현은 생략 가능
@@ -168,6 +189,7 @@ def _call_gemini(prompt: str) -> Optional[str]:
         return None
     try:
         from google import genai
+
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
             model="gemini-2.5-flash",
@@ -180,50 +202,62 @@ def _call_gemini(prompt: str) -> Optional[str]:
         return None
 
 
-def generate_and_save_supply_summary(
-    db: Session,
-    bizdate: str,
-    collected_time: str,
-) -> bool:
-    """
-    investor_time + program_time 데이터를 Gemini로 요약하고 supply_summary_ai_summaries에 저장.
-
-    Returns:
-        True if saved, False on failure
-    """
-    nums = _get_supply_numbers(db, bizdate, collected_time)
-    if not nums:
-        print(f"[supply-gemini] {bizdate} {collected_time} 수급 데이터 없음, 건너뜀")
-        return False
-
+def _time_label_for_collected_time(collected_time: str) -> str:
     hour = int(collected_time.split(":")[0] or "0")
     minute = int(collected_time.split(":")[1] or "0")
     if hour >= 15 and (hour > 15 or minute >= 30):
-        time_label = "금일 15:30분 정규장 마감 기준"
-    else:
-        prev_h = hour - 1 if hour > 0 else 23
-        curr_h = hour
-        prev_m = 30 if minute >= 30 else 0
-        curr_m = 30 if minute >= 30 else 0
-        time_label = f"현재 {prev_h:02d}:{prev_m:02d}~{curr_h:02d}:{curr_m:02d} 기준"
+        return "금일 15:30분 정규장 마감 기준"
+    prev_h = hour - 1 if hour > 0 else 23
+    curr_h = hour
+    prev_m = 30 if minute >= 30 else 0
+    curr_m = 30 if minute >= 30 else 0
+    return f"현재 {prev_h:02d}:{prev_m:02d}~{curr_h:02d}:{curr_m:02d} 기준"
 
-    prompt = _build_prompt(nums, time_label)
-    summary = _call_gemini(prompt)
-    if not summary:
-        return False
 
-    existing = db.query(SupplySummaryAi).filter(
-        SupplySummaryAi.bizdate == bizdate,
-        SupplySummaryAi.collected_time == collected_time,
-    ).first()
-    if existing:
-        existing.ai_summary = summary
-    else:
-        db.add(SupplySummaryAi(
-            bizdate=bizdate,
-            collected_time=collected_time,
-            ai_summary=summary,
-        ))
-    db.commit()
-    print(f"[supply-gemini] 수급 AI 요약 저장 완료 ({bizdate} {collected_time})")
-    return True
+def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: str) -> int:
+    """
+    코스피·코스닥 각각 investor_time + program_time을 Gemini로 요약해 저장.
+
+    Returns:
+        저장에 성공한 시장 수 (0~2)
+    """
+    time_label = _time_label_for_collected_time(collected_time)
+    saved = 0
+
+    for market in (MARKET_KOSPI, MARKET_KOSDAQ):
+        nums = _get_supply_numbers(db, bizdate, collected_time, market)
+        if nums is None:
+            print(f"[supply-gemini] {bizdate} {collected_time} {market} 수급 원본 없음, 건너뜀")
+            continue
+
+        prompt = _build_prompt(nums, time_label, market)
+        summary = _call_gemini(prompt)
+        if not summary:
+            print(f"[supply-gemini] {market} Gemini 응답 없음")
+            continue
+
+        existing = (
+            db.query(SupplySummaryAi)
+            .filter(
+                SupplySummaryAi.bizdate == bizdate,
+                SupplySummaryAi.collected_time == collected_time,
+                SupplySummaryAi.market == market,
+            )
+            .first()
+        )
+        if existing:
+            existing.ai_summary = summary
+        else:
+            db.add(
+                SupplySummaryAi(
+                    bizdate=bizdate,
+                    collected_time=collected_time,
+                    market=market,
+                    ai_summary=summary,
+                )
+            )
+        db.commit()
+        saved += 1
+        print(f"[supply-gemini] 수급 AI 요약 저장 완료 ({bizdate} {collected_time} {market})")
+
+    return saved

@@ -5,18 +5,23 @@ import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import styles from "./SupplySummaryCard.module.css";
 
-interface SupplySummary {
-  success: boolean;
-  mode: "intraday" | "closing";
-  timeLabel: string;
-  bizdate: string | null;
-  collectedTime: string | null;
+interface MarketSlice {
   foreign: number;
   individual: number;
   institution: number;
   programArbitrage: number;
   programNonArbitrage: number;
   aiSummary: string | null;
+}
+
+interface SupplySummary {
+  success: boolean;
+  mode: "intraday" | "closing";
+  timeLabel: string;
+  bizdate: string | null;
+  collectedTime: string | null;
+  kospi: MarketSlice;
+  kosdaq: MarketSlice;
 }
 
 function formatNumber(n: number): string {
@@ -42,32 +47,42 @@ interface SupplySummaryCardProps {
   standalone?: boolean;
 }
 
-function NumbersBlock({ data }: { data: SupplySummary }) {
+function NumbersBlock({ slice }: { slice: MarketSlice }) {
   return (
     <div className={styles.numbersRow}>
       <div className={styles.investorRow}>
-        <span className={data.foreign >= 0 ? styles.up : styles.down}>
-          외국인 {formatLabel(data.foreign)}
+        <span className={slice.foreign >= 0 ? styles.up : styles.down}>
+          외국인 {formatLabel(slice.foreign)}
         </span>
         <span className={styles.sep}>·</span>
-        <span className={data.individual >= 0 ? styles.up : styles.down}>
-          개인 {formatLabel(data.individual)}
+        <span className={slice.individual >= 0 ? styles.up : styles.down}>
+          개인 {formatLabel(slice.individual)}
         </span>
         <span className={styles.sep}>·</span>
-        <span className={data.institution >= 0 ? styles.up : styles.down}>
-          기관 {formatLabel(data.institution)}
+        <span className={slice.institution >= 0 ? styles.up : styles.down}>
+          기관 {formatLabel(slice.institution)}
         </span>
       </div>
       <div className={styles.programRow}>
         <span>프로그램매매 :</span>
-        <span className={data.programArbitrage >= 0 ? styles.up : styles.down}>
-          차익 {formatSigned(data.programArbitrage)}
+        <span className={slice.programArbitrage >= 0 ? styles.up : styles.down}>
+          차익 {formatSigned(slice.programArbitrage)}
         </span>
         <span className={styles.sep}>·</span>
-        <span className={data.programNonArbitrage >= 0 ? styles.up : styles.down}>
-          비차익 {formatSigned(data.programNonArbitrage)}
+        <span className={slice.programNonArbitrage >= 0 ? styles.up : styles.down}>
+          비차익 {formatSigned(slice.programNonArbitrage)}
         </span>
       </div>
+    </div>
+  );
+}
+
+function MarketSection({ title, slice }: { title: string; slice: MarketSlice }) {
+  return (
+    <div className={styles.marketBlock}>
+      <h3 className={styles.marketTitle}>{title}</h3>
+      {slice.aiSummary ? <p className={styles.excerpt}>{slice.aiSummary}</p> : null}
+      <NumbersBlock slice={slice} />
     </div>
   );
 }
@@ -80,7 +95,7 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
     fetch("/api/supply-summary", { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
-        if (json.success !== false) {
+        if (json.success !== false && json.kospi && json.kosdaq) {
           setData(json);
         } else {
           setData(null);
@@ -95,10 +110,8 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
   const cardContent = (
     <>
       <h2 className={styles.title}>{data.timeLabel}</h2>
-      {data.aiSummary && (
-        <p className={styles.excerpt}>{data.aiSummary}</p>
-      )}
-      <NumbersBlock data={data} />
+      <MarketSection title="코스피" slice={data.kospi} />
+      <MarketSection title="코스닥" slice={data.kosdaq} />
     </>
   );
 

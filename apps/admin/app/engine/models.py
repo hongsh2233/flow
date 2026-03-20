@@ -736,11 +736,15 @@ class MarketMorningAiSummary(Base):
 
 
 class SupplySummaryAi(Base):
-    """수급 동향 Gemini AI 요약 (bizdate + collected_time별 1건, 30분 스케줄)"""
+    """수급 동향 Gemini AI 요약 (시장별 bizdate + collected_time, 30분 스케줄)"""
     __tablename__ = "supply_summary_ai_summaries"
     id = Column(Integer, primary_key=True, index=True)
     bizdate = Column(String(8), nullable=False, index=True)   # YYYYMMDD
     collected_time = Column(String(5), nullable=False, index=True)  # HH:MM
+    # kospi | kosdaq | all (레거시 행은 all)
+    market = Column(String(16), nullable=False, default="all", index=True)
     ai_summary = Column(Text, nullable=True)   # Gemini 자연어 요약
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (UniqueConstraint("bizdate", "collected_time", name="uq_supply_summary_ai"),)
+    __table_args__ = (
+        UniqueConstraint("bizdate", "collected_time", "market", name="uq_supply_summary_ai_bizdate_time_market"),
+    )

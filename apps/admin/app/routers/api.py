@@ -489,12 +489,16 @@ async def get_naver_supply_data_public(
 async def get_supply_summary_ai(
     bizdate: Optional[str] = Query(default=None, description="YYYYMMDD, 미입력 시 최신"),
     collected_time: Optional[str] = Query(default=None, description="HH:MM, 미입력 시 최신"),
+    market: Optional[str] = Query(
+        default=None,
+        description="kospi | kosdaq | all, 미입력 시 시장 구분 없이 최신 1건",
+    ),
     db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key),
 ):
     """
     수급 동향 Gemini AI 요약 조회 (공개용, API Key 인증)
-    bizdate, collected_time 미입력 시 가장 최근 1건 반환.
+    bizdate, collected_time, market 미입력 시 가장 최근 1건 반환.
     """
     from app.engine.models import SupplySummaryAi
 
@@ -504,14 +508,23 @@ async def get_supply_summary_ai(
             q = q.filter(SupplySummaryAi.bizdate == bizdate)
         if collected_time:
             q = q.filter(SupplySummaryAi.collected_time == collected_time)
+        if market:
+            q = q.filter(SupplySummaryAi.market == market)
         row = q.order_by(SupplySummaryAi.created_at.desc()).first()
         if not row:
-            return {"success": True, "ai_summary": None, "bizdate": None, "collected_time": None}
+            return {
+                "success": True,
+                "ai_summary": None,
+                "bizdate": None,
+                "collected_time": None,
+                "market": None,
+            }
         return {
             "success": True,
             "ai_summary": row.ai_summary,
             "bizdate": row.bizdate,
             "collected_time": row.collected_time,
+            "market": row.market,
         }
     except Exception as e:
         return {"success": False, "ai_summary": None, "message": str(e)}

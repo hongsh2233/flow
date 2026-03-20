@@ -54,14 +54,29 @@
   color: #374151;
   font-weight: 600;
   font-size: 1.15rem;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   line-height: 1.4;
+}
+
+.marketBlock {
+  margin-top: 0.75rem;
+}
+
+.marketBlock:first-of-type {
+  margin-top: 0;
+}
+
+.marketTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 0.35rem;
 }
 
 .excerpt {
   font-size: 0.875rem;
   color: var(--app-text-muted);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   line-height: 1.5;
   white-space: pre-line;
 }
