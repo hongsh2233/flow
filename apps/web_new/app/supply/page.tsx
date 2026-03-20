@@ -380,7 +380,10 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
-      {/* 1. 검색 */}
+      {/* 1. 수급 요약 카드 */}
+      <SupplySummaryCard standalone />
+
+      {/* 2. 검색 */}
       <div className={styles.searchArea}>
         <Search
           value={searchTerm}
@@ -389,9 +392,6 @@ export default function SupplyPage() {
           placeholder="종목명 검색 (예: 삼성전자)"
         />
       </div>
-
-      {/* 2. 수급 요약 카드 */}
-      <SupplySummaryCard standalone />
 
       {/* 3. 수급 차트 (더보기 링크 숨김) */}
       <InvestorTrendChart variant="stocks" hideMoreLink />
