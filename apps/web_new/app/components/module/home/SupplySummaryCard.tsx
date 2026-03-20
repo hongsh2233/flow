@@ -15,7 +15,6 @@ interface MarketSlice {
 
 interface SupplySummary {
   success: boolean;
-  dataAvailable?: boolean;
   mode: "intraday" | "closing";
   timeLabel: string;
   bizdate: string | null;
@@ -85,27 +84,30 @@ function MarketSection({ title, slice }: { title: string; slice: MarketSlice }) 
 export function SupplySummaryCard() {
   const [data, setData] = useState<SupplySummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    setError(false);
     fetch("/api/supply-summary", { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
-        if (json.success !== false) {
+        if (json.success !== false && json.kospi && json.kosdaq) {
           setData(json);
         } else {
           setData(null);
-          setError(true);
         }
       })
-      .catch(() => {
-        setData(null);
-        setError(true);
-      })
+      .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
+
+  if (loading || !data) return null;
+
+  const cardContent = (
+    <>
+      <h2 className={styles.title}>{data.timeLabel}</h2>
+      <MarketSection title="코스피" slice={data.kospi} />
+      <MarketSection title="코스닥" slice={data.kosdaq} />
+    </>
+  );
 
   return (
     <section className={styles.section}>
@@ -116,21 +118,7 @@ export function SupplySummaryCard() {
         </h3>
       </div>
       <div className={styles.cardList}>
-        <div className={styles.card}>
-          {loading ? (
-            <p className={styles.emptyMsg}>불러오는 중...</p>
-          ) : error || !data ? (
-            <p className={styles.emptyMsg}>데이터를 불러올 수 없습니다</p>
-          ) : data.dataAvailable === false ? (
-            <p className={styles.emptyMsg}>현재 수집된 수급 데이터가 없습니다. 장 시간에 자동 업데이트됩니다.</p>
-          ) : (
-            <>
-              <h2 className={styles.title}>{data.timeLabel}</h2>
-              <MarketSection title="코스피" slice={data.kospi} />
-              <MarketSection title="코스닥" slice={data.kosdaq} />
-            </>
-          )}
-        </div>
+        <div className={styles.card}>{cardContent}</div>
       </div>
     </section>
   );
