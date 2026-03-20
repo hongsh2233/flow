@@ -15,6 +15,7 @@ import { MainCardNews } from "./components/module/home/MainCardNews";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
+import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }
@@ -108,6 +109,8 @@ export default function Home() {
       <MainCardNews />
       <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
+      <SupplySummaryCard market="kospi" />
+      <SupplySummaryCard market="kosdaq" />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>

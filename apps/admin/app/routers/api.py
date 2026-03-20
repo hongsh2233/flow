@@ -486,6 +486,126 @@ async def get_naver_supply_data_public(
 
 
 # =========================================================
+# 수급 요약 API (홈페이지 카드용)
+# =========================================================
+
+def _parse_num(val: str) -> int:
+    """테이블 셀 문자열 → 정수 (콤마, +, 공백 제거)"""
+    s = str(val).replace(",", "").replace("+", "").strip()
+    if not s or s == "-":
+        return 0
+    try:
+        return int(s)
+    except ValueError:
+        return 0
+
+
+@router.get("/api/supply-summary")
+async def get_supply_summary(
+    market: str = Query("kospi", description="시장구분 (kospi, kosdaq)"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    홈페이지 수급 요약 카드용 API.
+    investor_day + program_day 최신 데이터를 파싱해 숫자값으로 반환.
+    """
+    import json as _json
+
+    market = market.lower()
+    if market not in ("kospi", "kosdaq"):
+        market = "kospi"
+
+    from app.models import NaverSupplyData
+
+    try:
+        # ── 1. 투자자별 매매동향 (investor_day) ──────────────────────────
+        inv_row = (
+            db.query(NaverSupplyData)
+            .filter(
+                NaverSupplyData.data_type == "investor_day",
+                NaverSupplyData.market == market,
+                NaverSupplyData.sub_key.is_(None),
+            )
+            .order_by(NaverSupplyData.collected_at.desc())
+            .first()
+        )
+
+        if not inv_row or not inv_row.data_json:
+            return {"success": False, "message": "수급 데이터 없음"}
+
+        inv_data = _json.loads(inv_row.data_json)
+        rows = inv_data.get("rows", [])
+        if not rows:
+            return {"success": False, "message": "투자자 데이터 행 없음"}
+
+        # 가장 최근 행(첫 번째 행): [날짜, 개인, 외국인, 기관계, ...]
+        latest_row = rows[0]
+        individual = _parse_num(latest_row[1]) if len(latest_row) > 1 else 0
+        foreign = _parse_num(latest_row[2]) if len(latest_row) > 2 else 0
+        institution = _parse_num(latest_row[3]) if len(latest_row) > 3 else 0
+
+        # ── 2. 프로그램 매매 (program_day) ──────────────────────────────
+        prog_row = (
+            db.query(NaverSupplyData)
+            .filter(
+                NaverSupplyData.data_type == "program_day",
+                NaverSupplyData.market == market,
+                NaverSupplyData.sub_key.is_(None),
+            )
+            .order_by(NaverSupplyData.collected_at.desc())
+            .first()
+        )
+
+        program_arbitrage = 0
+        program_non_arbitrage = 0
+        if prog_row and prog_row.data_json:
+            prog_data = _json.loads(prog_row.data_json)
+            prog_rows = prog_data.get("rows", [])
+            if prog_rows:
+                pr = prog_rows[0]
+                # 열 순서: 날짜(0), 차익매수(1), 차익매도(2), 차익순매수(3),
+                #           비차익매수(4), 비차익매도(5), 비차익순매수(6), ...
+                program_arbitrage = _parse_num(pr[3]) if len(pr) > 3 else 0
+                program_non_arbitrage = _parse_num(pr[6]) if len(pr) > 6 else 0
+
+        # ── 3. 메타 정보 ─────────────────────────────────────────────────
+        collected_time = inv_row.collected_time or ""
+        bizdate = inv_row.bizdate
+
+        # mode 결정: 15:30 이후 = closing, 이전 = intraday
+        try:
+            hhmm = int(collected_time.replace(":", "")) if collected_time else 0
+        except ValueError:
+            hhmm = 0
+        mode = "closing" if hhmm >= 1530 else "intraday"
+
+        market_label = "코스피" if market == "kospi" else "코스닥"
+        if mode == "closing":
+            time_label = f"{market_label} 장 마감 수급"
+        else:
+            time_label = f"{market_label} 장중 수급 ({collected_time} 기준)" if collected_time else f"{market_label} 수급"
+
+        return {
+            "success": True,
+            "market": market,
+            "mode": mode,
+            "timeLabel": time_label,
+            "bizdate": bizdate,
+            "collectedTime": collected_time,
+            "foreign": foreign,
+            "individual": individual,
+            "institution": institution,
+            "programArbitrage": program_arbitrage,
+            "programNonArbitrage": program_non_arbitrage,
+            "aiSummary": None,
+        }
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+# =========================================================
 # 게시판 API (기존 Token 인증 + API Key 인증 허용)
 # =========================================================
 
@@ -1881,21 +2001,32 @@ async def get_domestic_indices(
             quote = (result.get("indicators") or {}).get("quote") or [{}]
             close = (quote[0] or {}).get("close") or []
 
-            # close 배열 2개 이상이면 최신/직전 종가로 변동 계산 (chartPreviousClose는 5일 전 값일 수 있음)
-            last_close = _last_non_null(close)
-            prev_close = _prev_non_null(close)
-            if last_close is not None and prev_close is not None:
-                current_price = float(last_close)
-                previous_close = float(prev_close)
+            # 변동 계산: Yahoo meta의 regularMarketChange/Percent 우선 사용
+            # (장 중에는 close 배열 당일값이 null이어서 전일/전전일 비교가 돼 방향이 틀릴 수 있음)
+            reg_price = meta.get("regularMarketPrice")
+            reg_change = meta.get("regularMarketChange")
+            reg_change_pct = meta.get("regularMarketChangePercent")
+
+            if reg_price is not None and reg_change is not None and reg_change_pct is not None:
+                current_price = float(reg_price)
+                change = float(reg_change)
+                percent = float(reg_change_pct)
             else:
-                current_price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
-                previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
-            if current_price is None or previous_close is None:
-                return None
-            current_price = float(current_price)
-            previous_close = float(previous_close)
-            change = current_price - previous_close
-            percent = (change / previous_close * 100) if previous_close != 0 else 0
+                last_close = _last_non_null(close)
+                prev_close = _prev_non_null(close)
+                if last_close is not None and prev_close is not None:
+                    current_price = float(last_close)
+                    previous_close = float(prev_close)
+                else:
+                    current_price = reg_price or meta.get("previousClose") or meta.get("chartPreviousClose")
+                    previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+                if current_price is None or previous_close is None:
+                    return None
+                current_price = float(current_price)
+                previous_close = float(previous_close)
+                change = current_price - previous_close
+                percent = (change / previous_close * 100) if previous_close != 0 else 0
+
             return {
                 "name": item["name"],
                 "value": f"{current_price:,.2f}",
