@@ -170,6 +170,12 @@ function timeLabelFromCollectedTime(collectedTime: string): Pick<SupplySummary, 
   };
 }
 
+function normalizeAiSummary(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t.length > 0 ? t : null;
+}
+
 /**
  * 파이프라인: 관리자 스케줄러가 naver_supply_data 수집 → Gemini 가공 → supply_summary_ai_summaries 저장.
  * 여기서는 최신 수집분 숫자(naver-supply-data) + 동일 bizdate·collected_time 의 DB 요약(supply-summary-ai)을 합쳐 반환.
@@ -216,6 +222,7 @@ export async function GET() {
 
     let aiKospiJson = { success: false as boolean, ai_summary: null as string | null };
     let aiKosdaqJson = { success: false as boolean, ai_summary: null as string | null };
+    let aiAnySummary: string | null = null;
 
     if (bizdateForAi && collectedTimeForAi) {
       const qKospi = new URLSearchParams({
@@ -228,6 +235,10 @@ export async function GET() {
         collected_time: String(collectedTimeForAi),
         market: "kosdaq",
       });
+      const qAny = new URLSearchParams({
+        bizdate: String(bizdateForAi),
+        collected_time: String(collectedTimeForAi),
+      });
       const [aiKospiRes, aiKosdaqRes] = await Promise.all([
         fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
         fetch(`${base}/api/supply-summary-ai?${qKosdaq}`, { method: "GET", headers, cache: "no-store" }),
@@ -237,6 +248,16 @@ export async function GET() {
       }
       if (aiKosdaqRes.ok) {
         aiKosdaqJson = await aiKosdaqRes.json();
+      }
+
+      const kospiSummary = normalizeAiSummary((aiKospiJson as any).ai_summary);
+      const kosdaqSummary = normalizeAiSummary((aiKosdaqJson as any).ai_summary);
+      if (!kospiSummary || !kosdaqSummary) {
+        const aiAnyRes = await fetch(`${base}/api/supply-summary-ai?${qAny}`, { method: "GET", headers, cache: "no-store" });
+        if (aiAnyRes.ok) {
+          const aiAnyJson = await aiAnyRes.json();
+          aiAnySummary = normalizeAiSummary((aiAnyJson as any).ai_summary);
+        }
       }
     }
 
@@ -251,13 +272,11 @@ export async function GET() {
       collectedTime: collectedTimeForAi,
       kospi: {
         ...numsKospi,
-        aiSummary:
-          aiKospiJson.success && aiKospiJson.ai_summary ? aiKospiJson.ai_summary : null,
+        aiSummary: normalizeAiSummary(aiKospiJson.ai_summary) ?? aiAnySummary,
       },
       kosdaq: {
         ...numsKosdaq,
-        aiSummary:
-          aiKosdaqJson.success && aiKosdaqJson.ai_summary ? aiKosdaqJson.ai_summary : null,
+        aiSummary: normalizeAiSummary(aiKosdaqJson.ai_summary) ?? aiAnySummary,
       },
     };
 
