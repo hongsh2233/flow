@@ -1929,7 +1929,16 @@ async def get_domestic_indices(
             # close 배열 2개 이상이면 최신/직전 종가로 변동 계산 (chartPreviousClose는 5일 전 값일 수 있음)
             last_close = _last_non_null(close)
             prev_close = _prev_non_null(close)
-            if last_close is not None and prev_close is not None:
+            rm_price = meta.get("regularMarketPrice")
+            baseline = (
+                meta.get("regularMarketPreviousClose")
+                or meta.get("previousClose")
+                or meta.get("chartPreviousClose")
+            )
+            if rm_price is not None and baseline is not None:
+                current_price = float(rm_price)
+                previous_close = float(baseline)
+            elif last_close is not None and prev_close is not None:
                 current_price = float(last_close)
                 previous_close = float(prev_close)
             else:
@@ -2084,6 +2093,30 @@ async def get_foreign_indices(
                 meta = result.get("meta", {})
                 quote = result.get("indicators", {}).get("quote", [{}])[0]
                 timestamps = result.get("timestamp", [])
+
+                rm_price = meta.get("regularMarketPrice")
+                baseline = (
+                    meta.get("regularMarketPreviousClose")
+                    or meta.get("previousClose")
+                    or meta.get("chartPreviousClose")
+                )
+                if rm_price is not None and baseline is not None:
+                    latest_price = float(rm_price)
+                    prev_price = float(baseline)
+                    change = latest_price - prev_price
+                    change_percent = (change / prev_price * 100) if prev_price != 0 else 0
+                    latest_idx = -1
+                    return {
+                        "symbol": index["symbol"],
+                        "name": index["name"],
+                        "market": index["market"],
+                        "price": round(latest_price, 2),
+                        "change": round(change, 2),
+                        "change_percent": round(change_percent, 2),
+                        "currency": meta.get("currency", "USD"),
+                        "exchange": meta.get("exchangeName", ""),
+                        "timestamp": meta.get("regularMarketTime") or (timestamps[-1] if timestamps else None),
+                    }
 
                 if timestamps and quote.get("close"):
                     latest_idx = -1

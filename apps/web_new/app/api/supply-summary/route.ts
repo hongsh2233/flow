@@ -33,6 +33,27 @@ function naverJsonHasRows(json: NaverJson): boolean {
   return Boolean(json.data?.rows?.length);
 }
 
+/** 관리자 naver-ranking·supply 페이지와 동일: 시장별 행이 없으면 market=all 로 재시도 */
+async function fetchNaverSupplySnapshot(
+  base: string,
+  headers: Record<string, string>,
+  dataType: string,
+  market: "kospi" | "kosdaq"
+): Promise<NaverJson> {
+  const root = base.replace(/\/+$/, "");
+  const buildUrl = (m: string) =>
+    `${root}/api/naver-supply-data?data_type=${encodeURIComponent(dataType)}&market=${encodeURIComponent(m)}`;
+  const load = async (m: string): Promise<NaverJson> => {
+    const res = await fetch(buildUrl(m), { method: "GET", headers, cache: "no-store" });
+    if (!res.ok) return { data: undefined, bizdate: null, collected_time: null };
+    return (await res.json()) as NaverJson;
+  };
+  const primary = await load(market);
+  if (naverJsonHasRows(primary)) return primary;
+  const fallback = await load("all");
+  return naverJsonHasRows(fallback) ? fallback : primary;
+}
+
 export interface MarketSlice {
   foreign: number;
   individual: number;
@@ -163,43 +184,11 @@ export async function GET() {
 
   try {
     const base = API_BASE_URL;
-    const [
-      invKospiRes,
-      progKospiRes,
-      invKosdaqRes,
-      progKosdaqRes,
-    ] = await Promise.all([
-      fetch(`${base}/api/naver-supply-data?data_type=investor_time&market=kospi`, {
-        method: "GET",
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${base}/api/naver-supply-data?data_type=program_time&market=kospi`, {
-        method: "GET",
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${base}/api/naver-supply-data?data_type=investor_time&market=kosdaq`, {
-        method: "GET",
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${base}/api/naver-supply-data?data_type=program_time&market=kosdaq`, {
-        method: "GET",
-        headers,
-        cache: "no-store",
-      }),
-    ]);
-
-    if (!invKospiRes.ok || !progKospiRes.ok || !invKosdaqRes.ok || !progKosdaqRes.ok) {
-      return NextResponse.json(errorBody());
-    }
-
     const [invKospi, progKospi, invKosdaq, progKosdaq] = await Promise.all([
-      invKospiRes.json() as Promise<NaverJson>,
-      progKospiRes.json() as Promise<NaverJson>,
-      invKosdaqRes.json() as Promise<NaverJson>,
-      progKosdaqRes.json() as Promise<NaverJson>,
+      fetchNaverSupplySnapshot(base, headers, "investor_time", "kospi"),
+      fetchNaverSupplySnapshot(base, headers, "program_time", "kospi"),
+      fetchNaverSupplySnapshot(base, headers, "investor_time", "kosdaq"),
+      fetchNaverSupplySnapshot(base, headers, "program_time", "kosdaq"),
     ]);
 
     /* 백엔드에 행이 없으면 success:true·data:null 이 와서 숫자만 전부 0이 됨 → 카드 오해 방지 */

@@ -271,9 +271,20 @@ async def _fetch_one_index(
             # chartPreviousClose는 5일 전 값일 수 있어 부정확하므로, close 배열이 2개 이상이면 사용
             last_close = _last_non_null(close)
             prev_close = _prev_non_null(close)
-            use_close_array = last_close is not None and prev_close is not None
 
-            if use_close_array:
+            # Yahoo 메타의 시세·전일(또는 차트 기준 종가)을 우선: close 배열에 null 슬롯이 끼면
+            # _prev_non_null 이 '진짜 전일'이 아닌 더 앞선 막대를 집어 등락 부호가 뒤집힐 수 있음 (^KS11 등).
+            rm_price = meta.get("regularMarketPrice")
+            baseline = (
+                meta.get("regularMarketPreviousClose")
+                or meta.get("previousClose")
+                or meta.get("chartPreviousClose")
+            )
+
+            if rm_price is not None and baseline is not None:
+                price = float(rm_price)
+                prev = float(baseline)
+            elif last_close is not None and prev_close is not None:
                 price = float(last_close)
                 prev = float(prev_close)
             else:

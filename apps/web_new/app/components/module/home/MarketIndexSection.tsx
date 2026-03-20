@@ -28,13 +28,18 @@ export function MarketIndexSection() {
 
         if (result.success && result.data?.length > 0) {
           const mapped: MarketIndexItem[] = result.data.map((item: DomesticIndexItem) => {
-            const pct = parseFloat(item.percent);
-            const isZero = pct === 0;
+            const pct = parseFloat(String(item.percent).replace(/%/g, "").replace(/,/g, ""));
+            const chg = parseFloat(String(item.change).replace(/,/g, ""));
+            const isZero = Number.isFinite(pct) ? Math.abs(pct) < 1e-6 : Math.abs(chg) < 1e-6;
+            const isPositive =
+              Number.isFinite(pct) && !isZero
+                ? pct > 0
+                : item.change.startsWith("+") || (Number.isFinite(chg) && chg >= 0);
             return {
               name: item.name,
               value: item.value,
               change: `${item.change} (${item.percent})`,
-              isPositive: item.change.startsWith("+") || parseFloat(item.change) >= 0,
+              isPositive,
               isNeutral: isZero,
             };
           });
