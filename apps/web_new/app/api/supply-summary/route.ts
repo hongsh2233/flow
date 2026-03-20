@@ -44,6 +44,7 @@ export interface MarketSlice {
 
 interface SupplySummary {
   success: boolean;
+  dataAvailable: boolean;
   mode: "intraday" | "closing";
   timeLabel: string;
   bizdate: string | null;
@@ -124,6 +125,7 @@ function parseNumbersFromTables(investorData?: NaverTable, programData?: NaverTa
 function errorBody(): SupplySummary {
   return {
     success: false,
+    dataAvailable: false,
     mode: "intraday",
     timeLabel: "",
     bizdate: null,
@@ -202,15 +204,8 @@ export async function GET() {
       progKosdaqRes.json() as Promise<NaverJson>,
     ]);
 
-    /* 백엔드에 행이 없으면 success:true·data:null 이 와서 숫자만 전부 0이 됨 → 카드 오해 방지 */
-    if (
-      !naverJsonHasRows(invKospi) &&
-      !naverJsonHasRows(progKospi) &&
-      !naverJsonHasRows(invKosdaq) &&
-      !naverJsonHasRows(progKosdaq)
-    ) {
-      return NextResponse.json(errorBody());
-    }
+    const hasAnyData = naverJsonHasRows(invKospi) || naverJsonHasRows(progKospi) ||
+                       naverJsonHasRows(invKosdaq) || naverJsonHasRows(progKosdaq);
 
     const bizdateForAi =
       invKospi.bizdate ??
@@ -256,6 +251,7 @@ export async function GET() {
 
     const result: SupplySummary = {
       success: true,
+      dataAvailable: hasAnyData,
       mode: "intraday",
       timeLabel: "",
       bizdate: bizdateForAi,
