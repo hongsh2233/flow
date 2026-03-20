@@ -736,7 +736,7 @@ class MarketMorningAiSummary(Base):
 
 
 class SupplySummaryAi(Base):
-    """수급 동향 Gemini AI 요약 (시장별 bizdate + collected_time)"""
+    """수급 동향 Gemini AI 요약 (시장별 bizdate + collected_time, 30분 스케줄)"""
     __tablename__ = "supply_summary_ai_summaries"
     id = Column(Integer, primary_key=True, index=True)
     bizdate = Column(String(8), nullable=False, index=True)   # YYYYMMDD

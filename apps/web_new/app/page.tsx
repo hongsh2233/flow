@@ -12,10 +12,10 @@ import { AdBanner } from "./components/module/AdBanner";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
+import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
-import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
   { ssr: false }

@@ -7,8 +7,8 @@ import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Search } from "../components/module/Search";
-import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
+import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
@@ -380,10 +380,10 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
-      {/* 1. 수급 요약 카드 */}
+      {/* 0. 수급 요약 카드 (최상단) */}
       <SupplySummaryCard standalone />
 
-      {/* 2. 검색 */}
+      {/* 1. 검색 */}
       <div className={styles.searchArea}>
         <Search
           value={searchTerm}
@@ -393,10 +393,10 @@ export default function SupplyPage() {
         />
       </div>
 
-      {/* 3. 수급 차트 (더보기 링크 숨김) */}
+      {/* 2. 수급 차트 (더보기 링크 숨김) */}
       <InvestorTrendChart variant="stocks" hideMoreLink />
 
-      {/* 4. 수급 동향 탭 */}
+      {/* 3. 수급 동향 탭 */}
       <h1 className={styles.title}>수급 동향</h1>
 
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">
@@ -487,7 +487,7 @@ export default function SupplyPage() {
         </TabsContent>
       </Tabs>
 
-      {/* 5. 관심종목 / 시총상위 / 등락률상위 탭 */}
+      {/* 4. 관심종목 / 시총상위 / 등락률상위 탭 */}
       <div className={styles.stockTabsSection}>
         <Tabs value={stockTab} onValueChange={(v) => setStockTab(v as StockTab)} variant="underline">
           <TabsList className={styles.stockTabList}>

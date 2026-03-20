@@ -33,6 +33,7 @@ export function SpotlightNews() {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,8 +76,22 @@ export function SpotlightNews() {
       {error && <div className={styles.error}>{error}</div>}
       {!loading && summary && (
         <section className={styles.issueSummaryCard}>
-          <h3 className={styles.issueSummaryTitle}>📌 금일 이슈</h3>
-          <p className={styles.issueSummaryBody}>{summary}</p>
+          <button
+            type="button"
+            className={styles.issueSummaryHeader}
+            onClick={() => setSummaryExpanded((v) => !v)}
+            aria-expanded={summaryExpanded}
+          >
+            <h3 className={styles.issueSummaryTitle}>📌 AI요약</h3>
+            <span className={styles.expandIcon}>
+              {summaryExpanded ? "▲ 접기" : "▼ 더보기"}
+            </span>
+          </button>
+          <div
+            className={`${styles.issueSummaryBodyWrap} ${summaryExpanded ? styles.expanded : ""}`}
+          >
+            <p className={styles.issueSummaryBody}>{summary}</p>
+          </div>
         </section>
       )}
       {!loading && !error && news.length === 0 && (

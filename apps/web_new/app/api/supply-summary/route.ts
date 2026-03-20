@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
 
-function parseNum(val: string): number {
-  const s = String(val).replace(/,/g, "").replace(/\+/g, "").trim();
-  if (!s || s === "-") return 0;
+function parseNum(v: string | number | undefined | null): number {
+  if (typeof v === "number") return v;
+  if (!v || String(v).trim() === "" || v === "-") return 0;
+  const s = String(v).replace(/,/g, "").replace(/\+/g, "").trim();
   const n = parseInt(s, 10);
   return isNaN(n) ? 0 : n;
 }
@@ -138,7 +139,12 @@ export async function GET() {
 
   try {
     const base = API_BASE_URL;
-    const [invKospiRes, progKospiRes, invKosdaqRes, progKosdaqRes] = await Promise.all([
+    const [
+      invKospiRes,
+      progKospiRes,
+      invKosdaqRes,
+      progKosdaqRes,
+    ] = await Promise.all([
       fetch(`${base}/api/naver-supply-data?data_type=investor_time&market=kospi`, {
         method: "GET",
         headers,
@@ -173,7 +179,11 @@ export async function GET() {
     ]);
 
     const bizdateForAi =
-      invKospi.bizdate ?? progKospi.bizdate ?? invKosdaq.bizdate ?? progKosdaq.bizdate ?? null;
+      invKospi.bizdate ??
+      progKospi.bizdate ??
+      invKosdaq.bizdate ??
+      progKosdaq.bizdate ??
+      null;
     const collectedTimeForAi =
       invKospi.collected_time ??
       progKospi.collected_time ??
@@ -210,30 +220,38 @@ export async function GET() {
     const numsKospi = parseNumbersFromTables(invKospi.data, progKospi.data);
     const numsKosdaq = parseNumbersFromTables(invKosdaq.data, progKosdaq.data);
 
-    let mode: "intraday" | "closing" = "intraday";
-    let timeLabel = "";
-    if (collectedTimeForAi) {
-      const hhmm = parseInt(collectedTimeForAi.replace(":", ""), 10) || 0;
-      mode = hhmm >= 1530 ? "closing" : "intraday";
-      timeLabel =
-        mode === "closing" ? "코스피·코스닥 장 마감 수급" : `장중 수급 (${collectedTimeForAi} 기준)`;
-    }
-
     const result: SupplySummary = {
       success: true,
-      mode,
-      timeLabel,
+      mode: "intraday",
+      timeLabel: "",
       bizdate: bizdateForAi,
       collectedTime: collectedTimeForAi,
       kospi: {
         ...numsKospi,
-        aiSummary: aiKospiJson.success && aiKospiJson.ai_summary ? aiKospiJson.ai_summary : null,
+        aiSummary:
+          aiKospiJson.success && aiKospiJson.ai_summary ? aiKospiJson.ai_summary : null,
       },
       kosdaq: {
         ...numsKosdaq,
-        aiSummary: aiKosdaqJson.success && aiKosdaqJson.ai_summary ? aiKosdaqJson.ai_summary : null,
+        aiSummary:
+          aiKosdaqJson.success && aiKosdaqJson.ai_summary ? aiKosdaqJson.ai_summary : null,
       },
     };
+
+    const collectedTime = result.collectedTime ?? "";
+    const hour = parseInt(collectedTime.split(":")[0] || "0", 10);
+    const minute = parseInt(collectedTime.split(":")[1] || "0", 10);
+
+    if (hour >= 15 && (hour > 15 || minute >= 30)) {
+      result.mode = "closing";
+      result.timeLabel = "금일 15:30분 정규장 마감 기준";
+    } else {
+      const prevH = minute >= 30 ? hour : hour - 1;
+      const prevM = minute >= 30 ? 0 : 30;
+      const currH = minute >= 30 ? hour : hour;
+      const currM = minute >= 30 ? 30 : 0;
+      result.timeLabel = `현재 ${String(prevH).padStart(2, "0")}:${String(prevM).padStart(2, "0")}~${String(currH).padStart(2, "0")}:${String(currM).padStart(2, "0")} 기준`;
+    }
 
     return NextResponse.json(result);
   } catch (err) {
