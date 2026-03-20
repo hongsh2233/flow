@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Search } from "../components/module/Search";
-import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
