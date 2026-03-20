@@ -267,28 +267,26 @@ async def _fetch_one_index(
             quote = (result.get("indicators") or {}).get("quote") or [{}]
             close = (quote[0] or {}).get("close") or []
 
-            # 변동 계산: regularMarketPrice / previousClose 우선 사용 (항상 정확)
-            # close 배열은 오늘 데이터가 없을 때 어제 종가를 반환할 수 있어 오탐 발생 가능
-            regular_price = meta.get("regularMarketPrice")
-            previous_close = meta.get("previousClose")
+            # 변동 계산: close 배열 우선 사용 (최신 = 마지막, 직전 = 그 이전)
+            # chartPreviousClose는 5일 전 값일 수 있어 부정확하므로, close 배열이 2개 이상이면 사용
+            last_close = _last_non_null(close)
+            prev_close = _prev_non_null(close)
+            use_close_array = last_close is not None and prev_close is not None
 
-            if regular_price is not None and previous_close is not None:
-                price = float(regular_price)
-                prev = float(previous_close)
+            if use_close_array:
+                price = float(last_close)
+                prev = float(prev_close)
             else:
-                # fallback: close 배열 사용
-                last_close = _last_non_null(close)
-                prev_close = _prev_non_null(close)
-                if last_close is not None and prev_close is not None:
-                    price = float(last_close)
-                    prev = float(prev_close)
-                else:
-                    price = regular_price or meta.get("chartPreviousClose")
-                    prev = previous_close or meta.get("chartPreviousClose") or price
-                    if price is not None:
-                        price = float(price)
-                    if prev is not None:
-                        prev = float(prev)
+                price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
+                prev = meta.get("previousClose") or meta.get("chartPreviousClose") or price
+                if price is None:
+                    price = last_close
+                if prev is None:
+                    prev = prev_close or price
+                if price is not None:
+                    price = float(price)
+                if prev is not None:
+                    prev = float(prev)
 
             if price is None or prev is None:
                 last_error = "no_price"
