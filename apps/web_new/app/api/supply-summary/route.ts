@@ -22,12 +22,10 @@ interface NaverTable {
   rows?: string[][];
 }
 
-interface NaverSupplyPayload {
-  success?: boolean;
-  data?: NaverTable | null;
+interface NaverJson {
+  data?: NaverTable;
   bizdate?: string | null;
   collected_time?: string | null;
-  message?: string;
 }
 
 export interface MarketSlice {
@@ -60,76 +58,7 @@ function emptySlice(): MarketSlice {
   };
 }
 
-/** 투자자 3컬럼 합산 점수 — 0만 있는 요약/빈 행과 실제 구간 행 구분용 */
-function investorRowScore(
-  row: string[],
-  individualIdx: number,
-  foreignIdx: number,
-  institutionIdx: number
-): number {
-  let s = 0;
-  if (individualIdx >= 0 && row[individualIdx] !== undefined) {
-    s += Math.abs(parseNum(row[individualIdx]));
-  }
-  if (foreignIdx >= 0 && row[foreignIdx] !== undefined) {
-    s += Math.abs(parseNum(row[foreignIdx]));
-  }
-  if (institutionIdx >= 0 && row[institutionIdx] !== undefined) {
-    s += Math.abs(parseNum(row[institutionIdx]));
-  }
-  return s;
-}
-
-/**
- * 네이버 시간별 표는 최신이 맨 위이거나 맨 아래일 수 있음 → 첫/마지막 행 중
- * 수치가 더 채워진 쪽을 사용 (백엔드 Gemini 파서는 rows[-1] 고정이라 여기서 보완).
- */
-function pickInvestorRow(hdrs: string[], rows: string[][]): string[] | null {
-  if (!rows.length) return null;
-  const individualIdx = findColIdx(hdrs, ["개인"], ["기타"]);
-  const foreignIdx = findColIdx(hdrs, ["외국인계", "외국인"], ["기타외국인"]);
-  const institutionIdx = findColIdx(hdrs, ["기관계", "기관"]);
-  if (rows.length === 1) return rows[0];
-  const first = rows[0];
-  const last = rows[rows.length - 1];
-  const sLast = investorRowScore(last, individualIdx, foreignIdx, institutionIdx);
-  const sFirst = investorRowScore(first, individualIdx, foreignIdx, institutionIdx);
-  return sLast >= sFirst ? last : first;
-}
-
-function programAbsSumFromRow(row: string[], hdrs: string[]): number {
-  const arbCol = hdrs.findIndex(
-    (h) => h.replace(/\s/g, "").includes("차익") && h.replace(/\s/g, "").includes("순매수") && !h.includes("비차익")
-  );
-  const nonArbCol = hdrs.findIndex(
-    (h) => h.replace(/\s/g, "").includes("비차익") && h.replace(/\s/g, "").includes("순매수")
-  );
-  let arb = 0;
-  let non = 0;
-  if (arbCol >= 0 && row[arbCol] !== undefined) {
-    arb = parseNum(row[arbCol]);
-  } else if (hdrs.length >= 4 && row[3] !== undefined) {
-    arb = parseNum(row[3]);
-  }
-  if (nonArbCol >= 0 && row[nonArbCol] !== undefined) {
-    non = parseNum(row[nonArbCol]);
-  } else if (row.length >= 7) {
-    non = parseNum(row[6]);
-  }
-  return Math.abs(arb) + Math.abs(non);
-}
-
-function pickProgramRow(hdrs: string[], rows: string[][]): string[] | null {
-  if (!rows.length) return null;
-  if (rows.length === 1) return rows[0];
-  const first = rows[0];
-  const last = rows[rows.length - 1];
-  const sLast = programAbsSumFromRow(last, hdrs);
-  const sFirst = programAbsSumFromRow(first, hdrs);
-  return sLast >= sFirst ? last : first;
-}
-
-function parseNumbersFromTables(investorData?: NaverTable | null, programData?: NaverTable | null): Omit<MarketSlice, "aiSummary"> {
+function parseNumbersFromTables(investorData?: NaverTable, programData?: NaverTable): Omit<MarketSlice, "aiSummary"> {
   const result = {
     foreign: 0,
     individual: 0,
@@ -141,20 +70,20 @@ function parseNumbersFromTables(investorData?: NaverTable | null, programData?: 
   if (investorData?.headers?.length && investorData?.rows?.length) {
     const hdrs = investorData.headers as string[];
     const rows = investorData.rows as string[][];
-    const dataRow = pickInvestorRow(hdrs, rows);
-    if (dataRow) {
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) {
       const individualIdx = findColIdx(hdrs, ["개인"], ["기타"]);
       const foreignIdx = findColIdx(hdrs, ["외국인계", "외국인"], ["기타외국인"]);
       const institutionIdx = findColIdx(hdrs, ["기관계", "기관"]);
 
-      if (individualIdx >= 0 && dataRow[individualIdx] !== undefined) {
-        result.individual = parseNum(dataRow[individualIdx]);
+      if (individualIdx >= 0 && lastRow[individualIdx] !== undefined) {
+        result.individual = parseNum(lastRow[individualIdx]);
       }
-      if (foreignIdx >= 0 && dataRow[foreignIdx] !== undefined) {
-        result.foreign = parseNum(dataRow[foreignIdx]);
+      if (foreignIdx >= 0 && lastRow[foreignIdx] !== undefined) {
+        result.foreign = parseNum(lastRow[foreignIdx]);
       }
-      if (institutionIdx >= 0 && dataRow[institutionIdx] !== undefined) {
-        result.institution = parseNum(dataRow[institutionIdx]);
+      if (institutionIdx >= 0 && lastRow[institutionIdx] !== undefined) {
+        result.institution = parseNum(lastRow[institutionIdx]);
       }
     }
   }
@@ -162,8 +91,8 @@ function parseNumbersFromTables(investorData?: NaverTable | null, programData?: 
   if (programData?.headers?.length && programData?.rows?.length) {
     const hdrs = programData.headers as string[];
     const rows = programData.rows as string[][];
-    const dataRow = pickProgramRow(hdrs, rows);
-    if (dataRow) {
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) {
       const arbCol = hdrs.findIndex(
         (h) => h.replace(/\s/g, "").includes("차익") && h.replace(/\s/g, "").includes("순매수") && !h.includes("비차익")
       );
@@ -171,61 +100,20 @@ function parseNumbersFromTables(investorData?: NaverTable | null, programData?: 
         (h) => h.replace(/\s/g, "").includes("비차익") && h.replace(/\s/g, "").includes("순매수")
       );
 
-      if (arbCol >= 0 && dataRow[arbCol] !== undefined) {
-        result.programArbitrage = parseNum(dataRow[arbCol]);
+      if (arbCol >= 0 && lastRow[arbCol] !== undefined) {
+        result.programArbitrage = parseNum(lastRow[arbCol]);
       } else if (hdrs.length >= 4) {
-        result.programArbitrage = parseNum(dataRow[3]);
+        result.programArbitrage = parseNum(lastRow[3]);
       }
-      if (nonArbCol >= 0 && dataRow[nonArbCol] !== undefined) {
-        result.programNonArbitrage = parseNum(dataRow[nonArbCol]);
-      } else if (dataRow.length >= 7) {
-        result.programNonArbitrage = parseNum(dataRow[6]);
+      if (nonArbCol >= 0 && lastRow[nonArbCol] !== undefined) {
+        result.programNonArbitrage = parseNum(lastRow[nonArbCol]);
+      } else if (hdrs.length >= 7) {
+        result.programNonArbitrage = parseNum(lastRow[6]);
       }
     }
   }
 
   return result;
-}
-
-function isUsableTablePayload(p: NaverSupplyPayload): boolean {
-  if (p.success === false) return false;
-  const t = p.data;
-  return Boolean(t?.headers?.length && t?.rows?.length);
-}
-
-async function fetchNaverSupply(
-  base: string,
-  hdrs: Record<string, string>,
-  dataType: string,
-  market: string
-): Promise<NaverSupplyPayload> {
-  const res = await fetch(
-    `${base}/api/naver-supply-data?data_type=${encodeURIComponent(dataType)}&market=${encodeURIComponent(market)}`,
-    { method: "GET", headers: hdrs, cache: "no-store" }
-  );
-  if (!res.ok) return { success: false, data: null, bizdate: null, collected_time: null };
-  try {
-    return (await res.json()) as NaverSupplyPayload;
-  } catch {
-    return { success: false, data: null, bizdate: null, collected_time: null };
-  }
-}
-
-/** 시간별 우선, 없으면 일별 (수집 스냅이 장후 일별만 있을 때 대비) */
-async function loadMarketSupply(
-  base: string,
-  hdrs: Record<string, string>,
-  market: "kospi" | "kosdaq"
-): Promise<{ inv: NaverSupplyPayload; prog: NaverSupplyPayload }> {
-  const [invT, progT] = await Promise.all([
-    fetchNaverSupply(base, hdrs, "investor_time", market),
-    fetchNaverSupply(base, hdrs, "program_time", market),
-  ]);
-  const [inv, prog] = await Promise.all([
-    isUsableTablePayload(invT) ? Promise.resolve(invT) : fetchNaverSupply(base, hdrs, "investor_day", market),
-    isUsableTablePayload(progT) ? Promise.resolve(progT) : fetchNaverSupply(base, hdrs, "program_day", market),
-  ]);
-  return { inv, prog };
 }
 
 function errorBody(): SupplySummary {
@@ -250,18 +138,39 @@ export async function GET() {
 
   try {
     const base = API_BASE_URL;
-    const [kospiPair, kosdaqPair] = await Promise.all([
-      loadMarketSupply(base, headers, "kospi"),
-      loadMarketSupply(base, headers, "kosdaq"),
+    const [invKospiRes, progKospiRes, invKosdaqRes, progKosdaqRes] = await Promise.all([
+      fetch(`${base}/api/naver-supply-data?data_type=investor_time&market=kospi`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }),
+      fetch(`${base}/api/naver-supply-data?data_type=program_time&market=kospi`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }),
+      fetch(`${base}/api/naver-supply-data?data_type=investor_time&market=kosdaq`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }),
+      fetch(`${base}/api/naver-supply-data?data_type=program_time&market=kosdaq`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }),
     ]);
-    const invKospi = kospiPair.inv;
-    const progKospi = kospiPair.prog;
-    const invKosdaq = kosdaqPair.inv;
-    const progKosdaq = kosdaqPair.prog;
 
-    if (!isUsableTablePayload(invKospi) || !isUsableTablePayload(invKosdaq)) {
+    if (!invKospiRes.ok || !progKospiRes.ok || !invKosdaqRes.ok || !progKosdaqRes.ok) {
       return NextResponse.json(errorBody());
     }
+
+    const [invKospi, progKospi, invKosdaq, progKosdaq] = await Promise.all([
+      invKospiRes.json() as Promise<NaverJson>,
+      progKospiRes.json() as Promise<NaverJson>,
+      invKosdaqRes.json() as Promise<NaverJson>,
+      progKosdaqRes.json() as Promise<NaverJson>,
+    ]);
 
     const bizdateForAi =
       invKospi.bizdate ?? progKospi.bizdate ?? invKosdaq.bizdate ?? progKosdaq.bizdate ?? null;
