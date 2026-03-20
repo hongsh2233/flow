@@ -98,6 +98,28 @@
   flex-shrink: 0;
 }
 
+/* 코스피/코스닥 섹션 */
+.marketSection {
+  margin-bottom: 0.5rem;
+}
+
+.marketSection:last-of-type {
+  margin-bottom: 0;
+}
+
+.marketLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.marketLabelText {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--app-text-muted);
+}
+
 /* 차트 영역 */
 .chartArea {
   width: 100%;
