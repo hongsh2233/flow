@@ -1913,15 +1913,22 @@ async def get_domestic_indices(
             quote = (result.get("indicators") or {}).get("quote") or [{}]
             close = (quote[0] or {}).get("close") or []
 
-            # close 배열 2개 이상이면 최신/직전 종가로 변동 계산 (chartPreviousClose는 5일 전 값일 수 있음)
-            last_close = _last_non_null(close)
-            prev_close = _prev_non_null(close)
-            if last_close is not None and prev_close is not None:
-                current_price = float(last_close)
-                previous_close = float(prev_close)
+            # regularMarketPrice / previousClose 우선 사용 (항상 정확)
+            # close 배열은 오늘 데이터 없을 때 어제 종가를 반환해 오탐 발생 가능
+            regular_price = meta.get("regularMarketPrice")
+            prev_official = meta.get("previousClose")
+            if regular_price is not None and prev_official is not None:
+                current_price = float(regular_price)
+                previous_close = float(prev_official)
             else:
-                current_price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
-                previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+                last_close = _last_non_null(close)
+                prev_close = _prev_non_null(close)
+                if last_close is not None and prev_close is not None:
+                    current_price = float(last_close)
+                    previous_close = float(prev_close)
+                else:
+                    current_price = regular_price or meta.get("chartPreviousClose")
+                    previous_close = prev_official or meta.get("chartPreviousClose")
             if current_price is None or previous_close is None:
                 return None
             current_price = float(current_price)

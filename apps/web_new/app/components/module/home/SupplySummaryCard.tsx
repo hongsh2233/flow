@@ -1,124 +1,121 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { BarChart3 } from "lucide-react";
 import styles from "./SupplySummaryCard.module.css";
 
-interface SupplySummary {
-  success: boolean;
-  mode: "intraday" | "closing";
-  timeLabel: string;
-  bizdate: string | null;
-  collectedTime: string | null;
-  foreign: number;
+interface InvestorRow {
   individual: number;
+  foreign: number;
   institution: number;
-  programArbitrage: number;
-  programNonArbitrage: number;
-  aiSummary: string | null;
+  other: number;
 }
 
-function formatNumber(n: number): string {
-  if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억`;
-  if (n >= 10000) return `${(n / 10000).toFixed(1)}만`;
-  return n.toLocaleString();
+interface MarketSummary {
+  data: InvestorRow | null;
+  timestamp: string | null;
+  loading: boolean;
 }
 
-function formatSigned(n: number): string {
-  const s = formatNumber(Math.abs(n));
-  return n >= 0 ? `+${s}` : `-${s}`;
+function formatAmount(val: number): string {
+  const abs = Math.abs(val);
+  if (abs >= 100000) return `${(val / 100000).toFixed(1)}조`;
+  if (abs >= 1000) return `${(val / 1000).toFixed(0)}억`;
+  return `${val.toLocaleString()}백만`;
 }
 
-function formatLabel(n: number): string {
-  const formatted = formatSigned(n);
-  if (n > 0) return `순매수 ${formatted}`;
-  if (n < 0) return `순매도 ${formatted}`;
-  return "0";
-}
-
-interface SupplySummaryCardProps {
-  /** true면 Link 대신 div로 렌더 (supply 페이지 등) */
-  standalone?: boolean;
-}
-
-function NumbersBlock({ data }: { data: SupplySummary }) {
+function AmountCell({ value }: { value: number }) {
+  const isPos = value > 0;
+  const isNeg = value < 0;
   return (
-    <div className={styles.numbersRow}>
-      <div className={styles.investorRow}>
-        <span className={data.foreign >= 0 ? styles.up : styles.down}>
-          외국인 {formatLabel(data.foreign)}
-        </span>
-        <span className={styles.sep}>·</span>
-        <span className={data.individual >= 0 ? styles.up : styles.down}>
-          개인 {formatLabel(data.individual)}
-        </span>
-        <span className={styles.sep}>·</span>
-        <span className={data.institution >= 0 ? styles.up : styles.down}>
-          기관 {formatLabel(data.institution)}
-        </span>
+    <span className={isPos ? styles.up : isNeg ? styles.down : styles.neutral}>
+      {value > 0 ? "+" : ""}{formatAmount(value)}
+    </span>
+  );
+}
+
+const ROWS: { key: keyof InvestorRow; label: string }[] = [
+  { key: "foreign", label: "외국인" },
+  { key: "institution", label: "기관" },
+  { key: "individual", label: "개인" },
+  { key: "other", label: "기타법인" },
+];
+
+function MarketBlock({
+  label,
+  summary,
+}: {
+  label: string;
+  summary: MarketSummary;
+}) {
+  return (
+    <div className={styles.marketBlock}>
+      <div className={styles.marketHeader}>
+        <span className={styles.marketLabel}>{label}</span>
+        {summary.timestamp && (
+          <span className={styles.timestamp}>{summary.timestamp} 기준</span>
+        )}
       </div>
-      <div className={styles.programRow}>
-        <span>프로그램매매 :</span>
-        <span className={data.programArbitrage >= 0 ? styles.up : styles.down}>
-          차익 {formatSigned(data.programArbitrage)}
-        </span>
-        <span className={styles.sep}>·</span>
-        <span className={data.programNonArbitrage >= 0 ? styles.up : styles.down}>
-          비차익 {formatSigned(data.programNonArbitrage)}
-        </span>
-      </div>
+      {summary.loading ? (
+        <p className={styles.loading}>불러오는 중...</p>
+      ) : !summary.data ? (
+        <p className={styles.empty}>데이터 없음</p>
+      ) : (
+        <div className={styles.grid}>
+          {ROWS.map(({ key, label: rowLabel }) => (
+            <div key={key} className={styles.row}>
+              <span className={styles.rowLabel}>{rowLabel}</span>
+              <AmountCell value={summary.data![key]} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps = {}) {
-  const [data, setData] = useState<SupplySummary | null>(null);
-  const [loading, setLoading] = useState(true);
+export function SupplySummaryCard() {
+  const [kospi, setKospi] = useState<MarketSummary>({ data: null, timestamp: null, loading: true });
+  const [kosdaq, setKosdaq] = useState<MarketSummary>({ data: null, timestamp: null, loading: true });
 
   useEffect(() => {
-    fetch("/api/supply-summary", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success !== false) {
-          setData(json);
-        } else {
-          setData(null);
-        }
-      })
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+    async function fetchMarket(market: "kospi" | "kosdaq") {
+      const setState = market === "kospi" ? setKospi : setKosdaq;
+      try {
+        const res = await fetch(
+          `/api/naver-investor-trend?market=${market}&data_type=investor_day&limit=1`
+        );
+        const json = await res.json();
+        const latest = json.success && Array.isArray(json.data) && json.data.length > 0
+          ? json.data[json.data.length - 1]
+          : null;
+        setState({
+          data: latest
+            ? {
+                individual: latest.individual ?? 0,
+                foreign: latest.foreign ?? 0,
+                institution: latest.institution ?? 0,
+                other: latest.other ?? 0,
+              }
+            : null,
+          timestamp: json.timestamp ?? null,
+          loading: false,
+        });
+      } catch {
+        setState({ data: null, timestamp: null, loading: false });
+      }
+    }
+
+    fetchMarket("kospi");
+    fetchMarket("kosdaq");
   }, []);
 
-  if (loading || !data) return null;
-
-  const cardContent = (
-    <>
-      <h2 className={styles.title}>{data.timeLabel}</h2>
-      {data.aiSummary && (
-        <p className={styles.excerpt}>{data.aiSummary}</p>
-      )}
-      <NumbersBlock data={data} />
-    </>
-  );
-
   return (
-    <section className={styles.section}>
-      <div className={styles.headingRow}>
-        <h3 className={styles.heading}>
-          <BarChart3 className={styles.headingIcon} aria-hidden />
-          수급 요약
-        </h3>
-      </div>
-      <div className={styles.cardList}>
-        {standalone ? (
-          <div className={styles.card}>{cardContent}</div>
-        ) : (
-          <Link href="/supply" className={styles.card}>
-            {cardContent}
-          </Link>
-        )}
-      </div>
-    </section>
+    <div className={styles.wrapper}>
+      <h3 className={styles.title}>수급 요약</h3>
+      <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>
+      <MarketBlock label="코스피" summary={kospi} />
+      <div className={styles.divider} />
+      <MarketBlock label="코스닥" summary={kosdaq} />
+    </div>
   );
 }
