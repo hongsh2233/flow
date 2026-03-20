@@ -485,38 +485,6 @@ async def get_naver_supply_data_public(
         return {"success": False, "data": None, "message": str(e)}
 
 
-@router.get("/api/supply-summary-ai")
-async def get_supply_summary_ai(
-    bizdate: Optional[str] = Query(default=None, description="YYYYMMDD, 미입력 시 최신"),
-    collected_time: Optional[str] = Query(default=None, description="HH:MM, 미입력 시 최신"),
-    db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
-):
-    """
-    수급 동향 Gemini AI 요약 조회 (공개용, API Key 인증)
-    bizdate, collected_time 미입력 시 가장 최근 1건 반환.
-    """
-    from app.engine.models import SupplySummaryAi
-
-    try:
-        q = db.query(SupplySummaryAi).filter(SupplySummaryAi.ai_summary.isnot(None))
-        if bizdate:
-            q = q.filter(SupplySummaryAi.bizdate == bizdate)
-        if collected_time:
-            q = q.filter(SupplySummaryAi.collected_time == collected_time)
-        row = q.order_by(SupplySummaryAi.created_at.desc()).first()
-        if not row:
-            return {"success": True, "ai_summary": None, "bizdate": None, "collected_time": None}
-        return {
-            "success": True,
-            "ai_summary": row.ai_summary,
-            "bizdate": row.bizdate,
-            "collected_time": row.collected_time,
-        }
-    except Exception as e:
-        return {"success": False, "ai_summary": None, "message": str(e)}
-
-
 # =========================================================
 # 게시판 API (기존 Token 인증 + API Key 인증 허용)
 # =========================================================

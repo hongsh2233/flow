@@ -518,12 +518,6 @@ def run_migrations():
         print(f"⚠️ daily_issue_summaries 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
-        from app.migrations.add_supply_summary_ai_summary import upgrade as add_supply_summary_ai_migration
-        add_supply_summary_ai_migration()
-    except Exception as e:
-        print(f"⚠️ supply_summary_ai_summaries 마이그레이션 실행 중 오류 (무시 가능): {e}")
-
-    try:
         from app.migrations.add_investment_bank_news import upgrade as add_investment_bank_news_migration
         add_investment_bank_news_migration()
     except Exception as e:

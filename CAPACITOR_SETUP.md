@@ -85,31 +85,7 @@ cp ~/Downloads/google-services.json apps/web_new/android/app/google-services.jso
 
 ---
 
-## 5단계: 딥링크 Intent Filter 설정 (필수)
-
-> **APK 빌드 전 반드시 수행해야 합니다.** 이 설정 없이 빌드하면 딥링크가 작동하지 않습니다.
-
-`npx cap add android` 실행 후, `android/app/src/main/AndroidManifest.xml`의 MainActivity에 아래 intent-filter를 추가합니다:
-
-```xml
-<activity
-    android:name=".MainActivity"
-    android:exported="true"
-    android:launchMode="singleTop">
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="com.jurini.app" />
-    </intent-filter>
-</activity>
-```
-
-이 설정으로 `com.jurini.app://...` 형식의 딥링크를 앱에서 처리할 수 있습니다.
-
----
-
-## 6단계: Capacitor 동기화 및 빌드
+## 5단계: Capacitor 동기화 및 빌드
 
 ```bash
 cd apps/web_new
@@ -126,7 +102,7 @@ npx cap open android
 
 ---
 
-## 7단계: Android Studio에서 APK 빌드
+## 6단계: Android Studio에서 APK 빌드
 
 1. Android Studio가 열리면 Gradle Sync 대기
 2. **Build → Build Bundle(s) / APK(s) → Build APK(s)**
@@ -139,7 +115,7 @@ npx cap open android
 
 ---
 
-## 8단계: 권한 설정 확인
+## 7단계: 권한 설정 확인
 
 `android/app/src/main/AndroidManifest.xml`에 다음이 자동 추가됩니다:
 

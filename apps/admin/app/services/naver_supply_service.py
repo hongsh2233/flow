@@ -130,12 +130,6 @@ SUPPLY_SOURCES = [
      "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
 ]
 
-# 30분 스케줄용: investor_time, program_time만 (all, kospi, kosdaq)
-SUPPLY_SOURCES_TIME_ONLY = [
-    s for s in SUPPLY_SOURCES
-    if s[0] in ("investor_time", "program_time")
-]
-
 _BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -386,9 +380,8 @@ async def collect_all_supply_data(
     if bizdate is None:
         bizdate = now.strftime("%Y%m%d")
     if collected_time is None:
-        # 30분 단위 기준으로 저장 (ex. 09:15 → '09:00', 09:45 → '09:30')
-        m = 30 if now.minute >= 30 else 0
-        collected_time = f"{now.hour:02d}:{m:02d}"
+        # 1시간 단위 기준으로 저장 (ex. 09:37 → '09:30', 스케줄이 매 시 30분에 실행)
+        collected_time = f"{now.hour:02d}:30"
 
     success = 0
     for (data_type, market, sub_key, url_path, url_params) in SUPPLY_SOURCES:
@@ -413,46 +406,4 @@ async def collect_all_supply_data(
 
     # 5일 초과 시 오래된 데이터 삭제
     cleanup_old_supply_data(db)
-    return success
-
-
-async def collect_investor_program_supply_data(
-    db: Session,
-    bizdate: Optional[str] = None,
-    collected_time: Optional[str] = None,
-) -> int:
-    """
-    investor_time, program_time만 수집 (30분 스케줄용).
-    - bizdate: 수집 기준 거래일 (YYYYMMDD). None 이면 오늘 날짜 사용
-    - collected_time: 저장 시각 레이블. None 이면 30분 단위로 자동 설정
-    반환값: 성공 건수
-    """
-    kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
-    if bizdate is None:
-        bizdate = now.strftime("%Y%m%d")
-    if collected_time is None:
-        collected_time = f"{now.hour:02d}:{now.minute:02d}"
-
-    success = 0
-    for (data_type, market, sub_key, url_path, url_params) in SUPPLY_SOURCES_TIME_ONLY:
-        label = f"{data_type}/{market}/{sub_key or '-'}"
-        print(f"  🔄 수급 수집: {label}")
-        try:
-            parsed = await fetch_supply_source(
-                data_type, market, sub_key, url_path, url_params, bizdate
-            )
-            if parsed and parsed.get("rows"):
-                saved = save_supply_data(
-                    db, data_type, market, sub_key,
-                    parsed, bizdate, collected_time, now
-                )
-                if saved:
-                    success += 1
-                    print(f"  ✅ 저장 완료: {label} ({len(parsed['rows'])}행)")
-            else:
-                print(f"  ⚠️ 데이터 없음: {label}")
-        except Exception as e:
-            print(f"  ❌ 수집 오류: {label} → {e}")
-
     return success

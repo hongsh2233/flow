@@ -1194,14 +1194,10 @@ exchange_rate_scheduler = ExchangeRateScheduler()
 # =========================================================
 
 async def collect_naver_supply_data():
-    """네이버 수급 동향 수집 (investor_time, program_time) → Gemini AI 요약"""
-    from app.services.naver_supply_service import collect_investor_program_supply_data
-    from app.services.supply_summary_gemini_service import generate_and_save_supply_summary
+    """네이버 수급 동향 전체 수집"""
+    from app.services.naver_supply_service import collect_all_supply_data
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
-    bizdate = now.strftime("%Y%m%d")
-    collected_time = f"{now.hour:02d}:{now.minute:02d}"
-
     print(f"\n{'='*60}")
     print(f"📊 네이버 수급 동향 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'='*60}")
@@ -1212,16 +1208,8 @@ async def collect_naver_supply_data():
 
     db = SessionLocal()
     try:
-        count = await collect_investor_program_supply_data(db)
+        count = await collect_all_supply_data(db)
         print(f"✅ 수급 동향 수집 완료: {count}건")
-
-        if count > 0:
-            try:
-                generate_and_save_supply_summary(db, bizdate, collected_time)
-            except Exception as gemini_err:
-                import traceback
-                print(f"⚠️ 수급 Gemini AI 요약 오류: {gemini_err}")
-                print(traceback.format_exc())
     except Exception as e:
         import traceback
         print(f"❌ 수급 동향 수집 오류: {e}")
@@ -1234,10 +1222,10 @@ async def collect_naver_supply_data():
 class NaverSupplyScheduler:
     """
     네이버 수급 동향 데이터 수집 스케줄러
-    - 08:40 ~ 15:40: 30분 간격 (장중)
-    - 16:40 ~ 20:40: 1시간 간격 (장마감 후)
-    실행 시각: 08:40, 09:10, 09:40, 10:10, 10:40, 11:10, 11:40, 12:10, 12:40,
-              13:10, 13:40, 14:10, 14:40, 15:10, 15:40, 16:40, 17:40, 18:40, 19:40, 20:40
+    08:30 ~ 20:30, 1시간 간격, 월~금, 공휴일 제외
+    실행 시각: 08:30, 09:30, 10:30, 11:30, 12:30,
+              13:30, 14:30, 15:30, 16:30, 17:30,
+              18:30, 19:30, 20:30
     """
     def __init__(self):
         self.scheduler = None
@@ -1250,33 +1238,12 @@ class NaverSupplyScheduler:
 
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
 
-        # 08:40 ~ 15:40: 30분 간격 (08:40 + 09:10~15:40)
+        # 매 시 30분, 08~20시 → 08:30, 09:30, ..., 20:30
         self.scheduler.add_job(
             collect_naver_supply_data,
-            trigger=CronTrigger(hour=8, minute=40, timezone=self.kst),
-            id="naver_supply_0840",
-            name="수급 동향 수집 (08:40)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.add_job(
-            collect_naver_supply_data,
-            trigger=CronTrigger(hour="9-15", minute="10,40", timezone=self.kst),
-            id="naver_supply_intraday",
-            name="수급 동향 수집 (09:10~15:40, 30분 간격)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        # 16:40 ~ 20:40: 1시간 간격
-        self.scheduler.add_job(
-            collect_naver_supply_data,
-            trigger=CronTrigger(hour="16-20", minute=40, timezone=self.kst),
-            id="naver_supply_after",
-            name="수급 동향 수집 (16:40~20:40, 1시간 간격)",
+            trigger=CronTrigger(hour="8-20", minute=30, timezone=self.kst),
+            id="naver_supply_hourly",
+            name="수급 동향 수집 (08:30~20:30, 1시간 간격)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -1284,7 +1251,7 @@ class NaverSupplyScheduler:
         )
 
         self.scheduler.start()
-        print("✅ 네이버 수급 동향 스케줄러 시작 (08:40~15:40 30분 / 16:40~20:40 1시간, 월~금)")
+        print("✅ 네이버 수급 동향 스케줄러 시작 (08:30~20:30, 1시간 간격, 월~금)")
 
     def shutdown(self):
         if self.scheduler:
