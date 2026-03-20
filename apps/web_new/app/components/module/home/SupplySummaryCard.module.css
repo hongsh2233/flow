@@ -7,7 +7,30 @@
 .headingRow {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.badgeKospi {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+.badgeKosdaq {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #fdf4ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+  white-space: nowrap;
 }
 
 .heading {

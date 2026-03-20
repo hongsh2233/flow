@@ -40,6 +40,8 @@ function formatLabel(n: number): string {
 interface SupplySummaryCardProps {
   /** true면 Link 대신 div로 렌더 (supply 페이지 등) */
   standalone?: boolean;
+  /** 시장 구분 (기본값: kospi) */
+  market?: "kospi" | "kosdaq";
 }
 
 function NumbersBlock({ data }: { data: SupplySummary }) {
@@ -72,12 +74,12 @@ function NumbersBlock({ data }: { data: SupplySummary }) {
   );
 }
 
-export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps = {}) {
+export function SupplySummaryCard({ standalone = false, market = "kospi" }: SupplySummaryCardProps = {}) {
   const [data, setData] = useState<SupplySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/supply-summary", { cache: "no-store" })
+    fetch(`/api/supply-summary?market=${market}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
         if (json.success !== false) {
@@ -109,6 +111,9 @@ export function SupplySummaryCard({ standalone = false }: SupplySummaryCardProps
           <BarChart3 className={styles.headingIcon} aria-hidden />
           수급 요약
         </h3>
+        <span className={market === "kospi" ? styles.badgeKospi : styles.badgeKosdaq}>
+          {market === "kospi" ? "코스피" : "코스닥"}
+        </span>
       </div>
       <div className={styles.cardList}>
         {standalone ? (
