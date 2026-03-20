@@ -1883,10 +1883,20 @@ async def get_domestic_indices(
                         })
                 if kr_results:
                     r0 = rows[0]
+                    # 마감(15:30) 이후인데, 최신 스냅샷 시각이 15:30보다 이르면
+                    # 스케줄 수집 누락/지연으로 인해 "마감 부호"가 뒤집혀 보일 수 있어
+                    # Yahoo 실시간 폴백을 사용한다.
+                    kst_now = datetime.now(pytz.timezone("Asia/Seoul"))
+                    latest_collected_time = r0.collected_time or "00:00"
+                    after_close_window = kst_now.hour > 15 or (kst_now.hour == 15 and kst_now.minute >= 40)
+                    use_db = True
+                    if after_close_window and latest_collected_time < "15:30":
+                        use_db = False
                     timestamp = f"{r0.collected_date.strftime('%Y-%m-%d')} {r0.collected_time or '00:00'}"
-                    result = {"success": True, "data": kr_results, "timestamp": timestamp}
-                    _set_cached("domestic-indices", result)
-                    return result
+                    if use_db:
+                        result = {"success": True, "data": kr_results, "timestamp": timestamp}
+                        _set_cached("domestic-indices", result)
+                        return result
     except Exception as e:
         print(f"⚠️ domestic-indices DB 조회 실패: {e}")
 
