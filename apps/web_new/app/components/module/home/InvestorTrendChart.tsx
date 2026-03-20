@@ -96,13 +96,6 @@ function LineChart({ data, isTimeMode }: { data: InvestorTrendItem[]; isTimeMode
   );
 }
 
-interface MarketChartState {
-  data: InvestorTrendItem[];
-  timestamp: string | null;
-  loading: boolean;
-  fetchError: boolean;
-}
-
 interface Props {
   defaultMarket?: "kospi" | "kosdaq";
   /** main: 시간별 15개 | stocks: 일자별 5일 */
@@ -110,37 +103,50 @@ interface Props {
   hideMoreLink?: boolean;
 }
 
-export function InvestorTrendChart({ variant = "main", hideMoreLink = false }: Props) {
+export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main", hideMoreLink = false }: Props) {
   const router = useRouter();
+  const [market, setMarket] = useState<"kospi" | "kosdaq">(defaultMarket);
+  const [data, setData] = useState<InvestorTrendItem[]>([]);
+  const [timestamp, setTimestamp] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
     new Set(SERIES.map((s) => s.key))
   );
-  const [kospi, setKospi] = useState<MarketChartState>({ data: [], timestamp: null, loading: true, fetchError: false });
-  const [kosdaq, setKosdaq] = useState<MarketChartState>({ data: [], timestamp: null, loading: true, fetchError: false });
 
   const isTimeMode = variant === "main";
   const dataType = isTimeMode ? "investor_time" : "investor_day";
   const limit = isTimeMode ? 15 : 5;
 
-  const fetchMarket = useCallback(async (market: "kospi" | "kosdaq") => {
-    const setState = market === "kospi" ? setKospi : setKosdaq;
-    setState((prev) => ({ ...prev, loading: true, fetchError: false }));
+  const fetchData = useCallback(async (m: "kospi" | "kosdaq") => {
+    setLoading(true);
+    setFetchError(false);
     try {
-      const res = await fetch(`/api/naver-investor-trend?market=${market}&data_type=${dataType}&limit=${limit}`);
+      const res = await fetch(`/api/naver-investor-trend?market=${m}&data_type=${dataType}&limit=${limit}`);
       const json = await res.json();
       const items = json.success && Array.isArray(json.data) && json.data.length > 0
         ? json.data
         : [];
-      setState({ data: items, timestamp: json.timestamp ?? null, loading: false, fetchError: false });
-    } catch {
-      setState({ data: [], timestamp: null, loading: false, fetchError: true });
+      setData(items);
+      setTimestamp(json.timestamp ?? null);
+      if (items.length === 0) {
+        console.debug("[InvestorTrend] 데이터 없음", {
+          success: json.success,
+          dataLen: json.data?.length,
+          timestamp: json.timestamp,
+        });
+      }
+    } catch (e) {
+      console.error("[InvestorTrend] fetch 오류:", e);
+      setData([]);
+      setTimestamp(null);
+      setFetchError(true);
+    } finally {
+      setLoading(false);
     }
   }, [dataType, limit]);
 
-  useEffect(() => {
-    fetchMarket("kospi");
-    fetchMarket("kosdaq");
-  }, [fetchMarket]);
+  useEffect(() => { fetchData(market); }, [market, fetchData]);
 
   const toggleSeries = (key: string) => {
     setVisibleSeries((prev) => {
@@ -154,50 +160,30 @@ export function InvestorTrendChart({ variant = "main", hideMoreLink = false }: P
     });
   };
 
-  const filterData = (data: InvestorTrendItem[]): InvestorTrendItem[] =>
-    data.map((d) => {
-      const copy = { ...d };
-      SERIES.forEach((s) => { if (!visibleSeries.has(s.key)) copy[s.key] = 0; });
-      return copy;
-    });
-
-  const renderChart = (market: "kospi" | "kosdaq", state: MarketChartState) => {
-    const label = market === "kospi" ? "코스피" : "코스닥";
-    return (
-      <div className={styles.marketSection} key={market}>
-        <div className={styles.marketLabel}>
-          <span className={styles.marketLabelText}>{label}</span>
-          {state.timestamp && (
-            <span className={styles.timestamp}>({state.timestamp} 기준)</span>
-          )}
-        </div>
-        <div className={styles.chartArea}>
-          {state.loading ? (
-            <div className={styles.loading}>불러오는 중...</div>
-          ) : state.data.length === 0 ? (
-            <div className={styles.empty}>
-              <span>{state.fetchError ? "데이터를 불러올 수 없습니다" : "수집된 데이터가 없습니다"}</span>
-              <button
-                type="button"
-                className={styles.retryBtn}
-                onClick={() => fetchMarket(market)}
-              >
-                다시 시도
-              </button>
-            </div>
-          ) : (
-            <LineChart data={filterData(state.data)} isTimeMode={isTimeMode} />
-          )}
-        </div>
-      </div>
-    );
-  };
+  const filteredData: InvestorTrendItem[] = data.map((d) => {
+    const copy = { ...d };
+    SERIES.forEach((s) => { if (!visibleSeries.has(s.key)) copy[s.key] = 0; });
+    return copy;
+  });
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <span className={styles.title}>투자자별 매매동향</span>
+          {timestamp && (
+            <span className={styles.timestamp}>({timestamp} 기준)</span>
+          )}
+        </div>
+        <div className={styles.marketToggle}>
+          <button
+            className={`${styles.mBtn} ${market === "kospi" ? styles.mBtnActive : ""}`}
+            onClick={() => setMarket("kospi")}
+          >코스피</button>
+          <button
+            className={`${styles.mBtn} ${market === "kosdaq" ? styles.mBtnActive : ""}`}
+            onClick={() => setMarket("kosdaq")}
+          >코스닥</button>
         </div>
       </div>
 
@@ -215,8 +201,24 @@ export function InvestorTrendChart({ variant = "main", hideMoreLink = false }: P
         ))}
       </div>
 
-      {renderChart("kospi", kospi)}
-      {renderChart("kosdaq", kosdaq)}
+      <div className={styles.chartArea}>
+        {loading ? (
+          <div className={styles.loading}>불러오는 중...</div>
+        ) : data.length === 0 ? (
+          <div className={styles.empty}>
+            <span>{fetchError ? "데이터를 불러올 수 없습니다" : "수집된 데이터가 없습니다"}</span>
+            <button
+              type="button"
+              className={styles.retryBtn}
+              onClick={() => fetchData(market)}
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : (
+          <LineChart data={filteredData} isTimeMode={isTimeMode} />
+        )}
+      </div>
 
       <div className={styles.footer}>
         <p className={styles.unit}>단위: 백만원 (순매수 기준)</p>

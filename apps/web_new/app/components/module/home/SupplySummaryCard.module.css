@@ -1,0 +1,95 @@
+.wrapper {
+  background: var(--app-card-bg);
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border-light);
+  box-shadow: var(--app-card-shadow);
+  padding: 0.875rem;
+  margin: 0 16px 1rem;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--app-text);
+  margin: 0 0 0.15rem;
+}
+
+.unit {
+  font-size: 0.65rem;
+  color: var(--app-text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.marketBlock {
+  padding: 0.5rem 0;
+}
+
+.marketHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.marketLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+.timestamp {
+  font-size: 0.62rem;
+  color: var(--app-text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.5rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--app-bg);
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.rowLabel {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.up {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--app-up);
+}
+
+.down {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--app-down);
+}
+
+.neutral {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--app-text-muted);
+}
+
+.divider {
+  height: 1px;
+  background: var(--app-border-light);
+  margin: 0.25rem 0;
+}
+
+.loading,
+.empty {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  padding: 0.5rem 0;
+}
