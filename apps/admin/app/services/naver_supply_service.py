@@ -130,7 +130,8 @@ SUPPLY_SOURCES = [
      "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "KOSDAQ"}),
 ]
 
-# 30분 스케줄용: investor_time, program_time만 (all, kospi, kosdaq)
+# 30분 스케줄용: investor_time + program_time × (all, kospi, kosdaq) = 6건/회.
+# 웹 수급 요약·Gemini는 kospi/kosdaq만 조회하지만, 여기서는 all도 같이 넣어 DB에 적재한다.
 SUPPLY_SOURCES_TIME_ONLY = [
     s for s in SUPPLY_SOURCES
     if s[0] in ("investor_time", "program_time")

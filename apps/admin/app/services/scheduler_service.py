@@ -1194,7 +1194,13 @@ exchange_rate_scheduler = ExchangeRateScheduler()
 # =========================================================
 
 async def collect_naver_supply_data():
-    """네이버 수급 동향 수집 (investor_time, program_time) → Gemini AI 요약"""
+    """
+    네이버 수급 동향 수집 (investor_time, program_time) → Gemini AI 요약.
+
+    한 슬롯마다 `SUPPLY_SOURCES_TIME_ONLY`로 **all · kospi · kosdaq** 각각 저장한다.
+    수급 요약 카드·`supply_summary_gemini_service`·차트는 **kospi / kosdaq** 행만 쓴다.
+    (`all`은 합산 시장 페이지 등 다른 용도·백워드 호환용으로 동일 스케줄에서 함께 수집.)
+    """
     from app.services.naver_supply_service import collect_investor_program_supply_data
     from app.services.supply_summary_gemini_service import generate_and_save_supply_summary
     kst = pytz.timezone("Asia/Seoul")

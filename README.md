@@ -334,6 +334,8 @@ Google/Naver OAuth는 Android WebView를 차단하므로 Chrome Custom Tab으로
 
 **수집 스케줄 (월~금, 공휴일 제외)**: 08:40, 09:10~15:40(30분 간격), 16:40~20:40(1시간 간격).
 
+**`all` vs 코스피/코스닥**: 스케줄 한 번이면 `investor_time`·`program_time` 각각에 대해 `market=all`, `kospi`, `kosdaq` **세트가 함께** 수집된다. 프론트 수급 요약은 코스피·코스닥 API만 부르므로, 장애 시 `naver_supply_data`에 `kospi`/`kosdaq` 행이 없는지(스케줄 미기동·수집 실패)를 보면 된다. `all`만 있고 시장별 행이 없는 상태는 정상 수집이면 나오지 않는다.
+
 ### 목표가 상향 뉴스 수집 시간 윈도우
 
 | 슬롯 | 수집 범위 (KST) | 대상 리포트 |

@@ -29,6 +29,10 @@ interface NaverJson {
   collected_time?: string | null;
 }
 
+function naverJsonHasRows(json: NaverJson): boolean {
+  return Boolean(json.data?.rows?.length);
+}
+
 export interface MarketSlice {
   foreign: number;
   individual: number;
@@ -197,6 +201,16 @@ export async function GET() {
       invKosdaqRes.json() as Promise<NaverJson>,
       progKosdaqRes.json() as Promise<NaverJson>,
     ]);
+
+    /* 백엔드에 행이 없으면 success:true·data:null 이 와서 숫자만 전부 0이 됨 → 카드 오해 방지 */
+    if (
+      !naverJsonHasRows(invKospi) &&
+      !naverJsonHasRows(progKospi) &&
+      !naverJsonHasRows(invKosdaq) &&
+      !naverJsonHasRows(progKosdaq)
+    ) {
+      return NextResponse.json(errorBody());
+    }
 
     const bizdateForAi =
       invKospi.bizdate ??
