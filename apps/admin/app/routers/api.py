@@ -1949,13 +1949,30 @@ async def get_domestic_indices(
             if rows:
                 kr_results = []
                 for r in rows:
-                    if r.price is not None and r.change is not None and r.change_percent is not None:
-                        kr_results.append({
-                            "name": r.name,
-                            "value": f"{r.price:,.2f}",
-                            "change": f"+{r.change:.2f}" if r.change >= 0 else f"{r.change:.2f}",
-                            "percent": f"+{r.change_percent:.2f}%" if r.change_percent >= 0 else f"{r.change_percent:.2f}%",
-                        })
+                    if r.price is None:
+                        continue
+                    # 전일 종가를 YahooIndexDaily에서 조회해 change 재계산
+                    # (스냅샷에 저장된 change 값은 수집 시점 로직에 따라 부정확할 수 있음)
+                    prev_daily = db.query(models.YahooIndexDaily).filter(
+                        models.YahooIndexDaily.symbol == r.symbol,
+                        models.YahooIndexDaily.group == "kr",
+                        models.YahooIndexDaily.date < r.collected_date,
+                    ).order_by(models.YahooIndexDaily.date.desc()).first()
+
+                    if prev_daily and prev_daily.price:
+                        change = r.price - prev_daily.price
+                        change_pct = (change / prev_daily.price * 100.0) if prev_daily.price != 0 else 0.0
+                    else:
+                        # 전일 데이터 없으면 저장된 값 그대로 사용
+                        change = r.change or 0.0
+                        change_pct = r.change_percent or 0.0
+
+                    kr_results.append({
+                        "name": r.name,
+                        "value": f"{r.price:,.2f}",
+                        "change": f"+{change:.2f}" if change >= 0 else f"{change:.2f}",
+                        "percent": f"+{change_pct:.2f}%" if change_pct >= 0 else f"{change_pct:.2f}%",
+                    })
                 if kr_results:
                     r0 = rows[0]
                     timestamp = f"{r0.collected_date.strftime('%Y-%m-%d')} {r0.collected_time or '00:00'}"
