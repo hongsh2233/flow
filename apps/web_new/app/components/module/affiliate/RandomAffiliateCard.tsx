@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { shouldShowAdZoneA } from "@/lib/affiliate/adZoneA";
 import styles from "./RandomAffiliateCard.module.css";
 
 export interface AffiliateProductRow {
@@ -21,9 +23,16 @@ interface RandomAffiliateCardProps {
 }
 
 export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardProps) {
+  const { data: session, status } = useSession();
   const [item, setItem] = useState<AffiliateProductRow | null>(null);
 
+  const eligible = shouldShowAdZoneA(session, status);
+
   useEffect(() => {
+    if (!eligible) {
+      setItem(null);
+      return;
+    }
     let cancelled = false;
     fetch("/api/affiliate-products", { cache: "no-store" })
       .then((r) => r.json())
@@ -40,9 +49,9 @@ export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardP
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [eligible]);
 
-  if (!item?.affiliate_url) return null;
+  if (!eligible || !item?.affiliate_url) return null;
 
   const title =
     (item.title && item.title.trim()) ||
@@ -51,9 +60,10 @@ export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardP
   return (
     <aside
       className={`${styles.wrap} ${compact ? styles.compact : ""} ${className ?? ""}`.trim()}
-      aria-label="제휴 추천 상품"
+      aria-label="A구역 제휴 추천"
+      data-ad-zone="A"
     >
-      <p className={styles.badge}>AD · 제휴</p>
+      <p className={styles.badge}>A구역 · 제휴</p>
       <a
         href={item.affiliate_url}
         target="_blank"
