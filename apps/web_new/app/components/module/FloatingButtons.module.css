@@ -72,6 +72,13 @@
   pointer-events: none;
 }
 
+/* 용어 시트 맨 아래 제휴 카드 (본문과 함께 스크롤) */
+.sheetAffiliate {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--app-border-light, rgba(0, 0, 0, 0.08));
+}
+
 /* 바텀시트 내부 */
 .searchWrap {
   position: relative;

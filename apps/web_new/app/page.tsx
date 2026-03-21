@@ -13,6 +13,7 @@ import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
 import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
+import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
@@ -140,6 +141,10 @@ export default function Home() {
           <AdBanner items={bannerBottom} autoSlide interval={5000} />
         </section>
       )}
+
+      <section style={{ margin: "1rem 0 1.5rem" }} aria-label="제휴 상품">
+        <RandomAffiliateCard />
+      </section>
 
       {selectedStock && (
         <LazyStockDetailModal

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { BottomSheet } from "@/app/components/ui/BottomSheet/BottomSheet";
+import { RandomAffiliateCard } from "@/app/components/module/affiliate/RandomAffiliateCard";
 import styles from "./FloatingButtons.module.css";
 
 type StockTerm = {
@@ -211,6 +212,8 @@ function StockTermSheet({ open, onClose }: { open: boolean; onClose: () => void 
           )}
         </>
       )}
+
+      <RandomAffiliateCard compact className={styles.sheetAffiliate} />
     </BottomSheet>
   );
 }

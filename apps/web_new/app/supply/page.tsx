@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Search } from "../components/module/Search";
 import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
+import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
@@ -395,6 +396,10 @@ export default function SupplyPage() {
 
       {/* 2. 수급 차트 (더보기 링크 숨김) */}
       <InvestorTrendChart variant="stocks" hideMoreLink />
+
+      <div className={styles.affiliateSlot} aria-label="제휴 상품">
+        <RandomAffiliateCard />
+      </div>
 
       {/* 3. 수급 동향 탭 */}
       <h1 className={styles.title}>수급 동향</h1>

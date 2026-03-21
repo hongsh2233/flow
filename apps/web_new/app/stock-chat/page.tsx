@@ -3,6 +3,7 @@
 import styles from "./JuTalkPage.module.css";
 import { Clock, MessageCircle, Heart, Send, ThumbsUp } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
+import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/config/api";
@@ -608,6 +609,10 @@ export default function JuTalkPage() {
           </div>
         </section>
         )}
+
+        <div className={styles.affiliateSlot} aria-label="제휴 상품">
+          <RandomAffiliateCard />
+        </div>
 
         {/* 대가들의 한마디 */}
         <section className={styles.section}>
