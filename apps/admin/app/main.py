@@ -389,6 +389,12 @@ def run_migrations():
         print(f"⚠️ 게시판 카테고리 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_board_random_view_boost import upgrade as add_board_random_view_boost_migration
+        add_board_random_view_boost_migration()
+    except Exception as e:
+        print(f"⚠️ boards.random_view_boost 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.init_faq_and_legal import run_migration as init_faq_legal_migration
         from app.database import SessionLocal
         db = SessionLocal()
