@@ -38,13 +38,14 @@ model Member {
 }
 
 model Board {
-  id         String   @id @db.VarChar(20)
-  name       String   @db.VarChar(100)
-  type       String   @db.VarChar(20)
-  auth       String   @default("all") @db.VarChar(20)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  posts      Post[]
+  id                 String   @id @db.VarChar(20)
+  name               String   @db.VarChar(100)
+  type               String   @db.VarChar(20)
+  auth               String   @default("all") @db.VarChar(20)
+  random_view_boost  String   @default("false") @db.VarChar(20)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  posts              Post[]
 }
 
 model Post {

@@ -4,6 +4,7 @@
 import os
 import json
 import re
+import random
 from fastapi import APIRouter, Form, Request, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -183,6 +184,7 @@ async def create_board(
     type: str = Form(...),
     auth: str = Form(...),
     use_categories: Optional[str] = Form("false"),
+    random_view_boost: Optional[str] = Form("false"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -194,7 +196,17 @@ async def create_board(
             cnt += 1
             new_id = f"B{cnt + 1:03d}"
         uc = "true" if use_categories == "true" else "false"
-        db.add(models.Board(id=new_id, name=name, type=type, auth=auth, use_categories=uc))
+        rvb = "true" if random_view_boost == "true" else "false"
+        db.add(
+            models.Board(
+                id=new_id,
+                name=name,
+                type=type,
+                auth=auth,
+                use_categories=uc,
+                random_view_boost=rvb,
+            )
+        )
         db.commit()
         return RedirectResponse(url="/admin/board", status_code=303)
     except Exception as e:
@@ -208,6 +220,7 @@ async def update_board(
     type: str = Form(...),
     auth: str = Form(...),
     use_categories: Optional[str] = Form("false"),
+    random_view_boost: Optional[str] = Form("false"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -218,6 +231,7 @@ async def update_board(
         board.type = type
         board.auth = auth
         board.use_categories = "true" if use_categories == "true" else "false"
+        board.random_view_boost = "true" if random_view_boost == "true" else "false"
         db.commit()
     return RedirectResponse(url="/admin/board", status_code=303)
 
@@ -952,8 +966,10 @@ async def public_post_view_page(
     if post.is_secret == "true" and not user:
         raise HTTPException(status_code=403, detail="비밀글은 작성자만 조회할 수 있습니다.")
     
-    # 3. 조회수 증가
-    post.views = (post.views or 0) + 1
+    # 3. 조회수 증가 (설정 시 1~8 랜덤)
+    boost = (getattr(board, "random_view_boost", None) or "false") == "true"
+    delta = random.randint(1, 8) if boost else 1
+    post.views = (post.views or 0) + delta
     db.commit()
     
     # 4. 첨부파일 정보 파싱 및 content 정리

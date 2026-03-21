@@ -168,6 +168,7 @@ class Board(Base):
     type = Column(String(20), nullable=False)
     auth = Column(String(20), nullable=False, default="all")
     use_categories = Column(String(20), default="false")  # 카테고리 사용 여부
+    random_view_boost = Column(String(20), default="false")  # true 시 조회 시 조회수 +1~8 랜덤
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     posts = relationship("Post", back_populates="board", cascade="all, delete-orphan")

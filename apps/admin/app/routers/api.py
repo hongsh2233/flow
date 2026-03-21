@@ -12,6 +12,7 @@ from typing import Optional
 from datetime import datetime, date
 import json
 import re
+import random
 import asyncio
 import time
 import httpx
@@ -938,8 +939,11 @@ async def get_post(
     
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
-    
-    post.views = (post.views or 0) + 1
+
+    board = post.board if post.board else db.query(models.Board).filter(models.Board.id == post.board_id).first()
+    boost = board and (getattr(board, "random_view_boost", None) or "false") == "true"
+    delta = random.randint(1, 8) if boost else 1
+    post.views = (post.views or 0) + delta
     db.commit()
     
     attachments = parse_attached_files(post.content or "")

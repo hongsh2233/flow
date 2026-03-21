@@ -111,9 +111,28 @@
   </p>
   <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0" />
 
+  <form method="get" action="/admin/members" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+    <label for="member-search-q" style="font-weight: 600; color: #2c3e50;">이메일 검색</label>
+    <input
+      type="text"
+      id="member-search-q"
+      name="q"
+      value="{{ search_q|default('') }}"
+      placeholder="이메일 일부 입력"
+      autocomplete="email"
+      style="flex: 1; min-width: 220px; max-width: 420px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;"
+    />
+    <button type="submit" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+      검색
+    </button>
+    {% if search_q %}
+    <a href="/admin/members" style="color: #7f8c8d; font-size: 14px;">전체 목록</a>
+    {% endif %}
+  </form>
+
   {% if members|length == 0 %}
   <p style="text-align: center; color: #999; padding: 40px 0;">
-    등록된 회원이 없습니다.
+    {% if search_q %}검색 결과가 없습니다.{% else %}등록된 회원이 없습니다.{% endif %}
   </p>
   {% else %}
   <table>

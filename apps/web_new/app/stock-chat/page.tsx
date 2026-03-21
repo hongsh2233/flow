@@ -167,13 +167,12 @@ export default function JuTalkPage() {
       if (!res.ok) return;
       const json = await res.json();
       if (json.success) {
-        setExperts((prev) =>
-          prev.map((e) =>
-            e.id === expert.id
-              ? { ...e, likes: json.like_count ?? e.likes, is_liked: json.liked }
-              : e,
-          ),
-        );
+        const next = (e: Expert) =>
+          e.id === expert.id
+            ? { ...e, likes: json.like_count ?? e.likes, is_liked: json.liked }
+            : e;
+        setExperts((prev) => prev.map(next));
+        setDisplayedExperts((prev) => prev.map(next));
       }
     } catch {
       // ignore

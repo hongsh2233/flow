@@ -1,11 +1,12 @@
 """
 회원 관리 라우터
 """
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from typing import Optional
 
 from app.dependencies import get_current_user
 from app.database import get_db
@@ -16,14 +17,22 @@ templates = Jinja2Templates(directory="dashboard/templates")
 
 
 @router.get("/admin/members", response_class=HTMLResponse)
-async def admin_members_page(request: Request, user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def admin_members_page(
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    q: Optional[str] = Query(None, description="이메일 부분 일치 검색"),
+):
     """회원 관리 페이지"""
     if not user:
         return RedirectResponse(url="/")
     
     try:
-        # DB에서 회원 목록 조회
-        db_members = db.query(models.Member).order_by(models.Member.created_at.desc()).all()
+        search_q = (q or "").strip()
+        member_query = db.query(models.Member)
+        if search_q:
+            member_query = member_query.filter(models.Member.email.ilike(f"%{search_q}%"))
+        db_members = member_query.order_by(models.Member.created_at.desc()).all()
         
         # 게시글/댓글 수는 추후 구현 (현재는 0으로 표시)
         members = []
@@ -60,7 +69,8 @@ async def admin_members_page(request: Request, user=Depends(get_current_user), d
             "request": request,
             "admin_email": user.email,
             "members": members,
-            "active_page": "members"
+            "active_page": "members",
+            "search_q": search_q,
         })
     except Exception as e:
         # 에러 발생 시 상세 정보 출력
@@ -75,6 +85,7 @@ async def admin_members_page(request: Request, user=Depends(get_current_user), d
             "admin_email": user.email,
             "members": [],
             "active_page": "members",
+            "search_q": (q or "").strip() if q else "",
             "error": f"데이터베이스 오류가 발생했습니다: {str(e)}"
         })
 
