@@ -50,7 +50,8 @@ export interface SearchProps {
   placeholder?: string;
 }
 
-export type SocialProvider = "kakao" | "naver" | "google";
+// 네이버 소셜 로그인 비활성화 — 기존: "kakao" | "naver" | "google"
+export type SocialProvider = "kakao" | "google";
 
 export interface AdBannerItem {
   title: string;

@@ -14,7 +14,10 @@ const config: CapacitorConfig = {
     cleartext: false,
     androidScheme: "https",
     // 소셜 로그인 OAuth 콜백을 위한 허용 도메인 (Chrome Custom Tab 쿠키 공유)
-    allowNavigation: ["accounts.google.com", "nid.naver.com"],
+    allowNavigation: [
+      "accounts.google.com",
+      // "nid.naver.com", // 네이버 로그인 비활성화
+    ],
   },
   plugins: {
     PushNotifications: {

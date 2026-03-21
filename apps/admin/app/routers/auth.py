@@ -55,7 +55,7 @@ class TokenRequest(BaseModel):
 
 # 소셜 로그인 회원 등록 요청 모델
 class SocialLoginRequest(BaseModel):
-    provider: str  # 'google', 'naver', 'kakao'
+    provider: str  # 'google' (naver/kakao 소셜 로그인 비활성화)
     email: str
     name: str
     provider_id: str  # 소셜 로그인 제공자의 사용자 고유 ID
@@ -191,6 +191,7 @@ async def login_page(request: Request):
           <meta charset="UTF-8"/>
           <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
           <title>Jurin-i BO - 오류</title>
+          <link rel="icon" href="/static/image/favicon.svg" type="image/svg+xml" />
           <style>
             @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
             *{box-sizing:border-box;margin:0;padding:0}
@@ -231,6 +232,7 @@ async def login_page(request: Request):
       <meta name="googlebot" content="noindex, nofollow" />
       <meta name="description" content="관리자 로그인 (비공개)" />
       <title>Jurin-i BO - 로그인</title>
+      <link rel="icon" href="/static/image/favicon.svg" type="image/svg+xml" />
       <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
 
@@ -795,7 +797,7 @@ async def api_social_login(
     """
     소셜 로그인 회원 등록 API 엔드포인트
     
-    구글 또는 네이버 소셜 로그인을 통해 인증된 사용자 정보를 받아
+    구글 소셜 로그인을 통해 인증된 사용자 정보를 받아
     일반 회원(Member) 테이블에 저장하거나 업데이트합니다.
     관리자 계정(AdminUser)과는 별개로 관리됩니다.
     
@@ -825,15 +827,15 @@ async def api_social_login(
     ```json
     {
         "success": false,
-        "message": "유효하지 않은 provider입니다. 'google' 또는 'naver'만 허용됩니다."
+        "message": "유효하지 않은 provider입니다. 'google'만 허용됩니다."
     }
     ```
     """
-    # Provider 검증 (카카오는 비활성화)
-    if social_request.provider not in ['google', 'naver']:
+    # Provider 검증 (카카오·네이버 소셜 로그인 비활성화 — 기존: ['google', 'naver'])
+    if social_request.provider not in ['google']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="유효하지 않은 provider입니다. 'google', 'naver'만 허용됩니다."
+            detail="유효하지 않은 provider입니다. 'google'만 허용됩니다."
         )
     
     # 이메일 또는 provider_id로 기존 회원 찾기

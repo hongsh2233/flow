@@ -13,7 +13,7 @@ import type { SocialProvider } from "@/lib/types";
 import styles from "./LoginPage.module.css";
 
 const LAST_LOGIN_KEY = "lastLoginProvider";
-type LoginMethod = "credentials" | "kakao" | "naver" | "google";
+type LoginMethod = "credentials" | "kakao" | "google"; // naver 비활성화
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(LAST_LOGIN_KEY) as LoginMethod | null;
-      if (stored && ["credentials", "naver", "google"].includes(stored)) {
+      if (stored && ["credentials", "google"].includes(stored)) {
         setLastLoginProvider(stored);
       }
     }
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   const handleSocialLogin = async (provider: SocialProvider) => {
     // Capacitor 네이티브 앱에서는 Chrome Custom Tab을 사용해 OAuth 수행
-    // Google/Naver는 WebView에서 OAuth를 차단하므로 시스템 브라우저를 통해 인증
+    // Google은 WebView에서 OAuth를 차단하므로 시스템 브라우저를 통해 인증 (Naver 비활성화)
     if (Capacitor.isNativePlatform()) {
       try {
         setSubmitting(true);
@@ -221,11 +221,13 @@ export default function LoginPage() {
               recent={lastLoginProvider === "kakao"}
             />
             */}
+            {/* 네이버 로그인 비활성화
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialLogin("naver")}
               recent={lastLoginProvider === "naver"}
             />
+            */}
             <SocialLoginButton
               provider="google"
               onClick={() => handleSocialLogin("google")}

@@ -13,7 +13,7 @@ export interface SocialLoginButtonProps {
 
 const labels: Record<SocialProvider, string> = {
   kakao: "카카오로 시작하기",
-  naver: "네이버로 시작하기",
+  // naver: "네이버로 시작하기", // 네이버 로그인 비활성화
   google: "구글로 시작하기",
 };
 
@@ -25,13 +25,14 @@ function KakaoIcon() {
   );
 }
 
-function NaverIcon() {
-  return (
-    <svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845Z" />
-    </svg>
-  );
-}
+// 네이버 로그인 비활성화
+// function NaverIcon() {
+//   return (
+//     <svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+//       <path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845Z" />
+//     </svg>
+//   );
+// }
 
 function GoogleIcon() {
   return (
@@ -58,7 +59,7 @@ function GoogleIcon() {
 
 const icons: Record<SocialProvider, React.ReactNode> = {
   kakao: <KakaoIcon />,
-  naver: <NaverIcon />,
+  // naver: <NaverIcon />,
   google: <GoogleIcon />,
 };
 

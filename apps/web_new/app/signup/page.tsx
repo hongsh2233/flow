@@ -322,10 +322,12 @@ export default function SignupPage() {
               onClick={() => handleSocialSignup("kakao")}
             />
             */}
+            {/* 네이버 가입 비활성화
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialSignup("naver")}
             />
+            */}
             <SocialLoginButton
               provider="google"
               onClick={() => handleSocialSignup("google")}

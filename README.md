@@ -122,8 +122,10 @@ NEXTAUTH_URL=http://localhost:3000
 # ── OAuth 공급자 ──────────────────────────────
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxx
-NAVER_CLIENT_ID=xxx
-NAVER_CLIENT_SECRET=xxx
+# 네이버 소셜 로그인 비활성화
+# NAVER_CLIENT_ID=xxx
+# NAVER_CLIENT_SECRET=xxx
+# (Naver OpenAPI 뉴스 검색 등은 별도로 아래 키 사용 가능)
 
 # ── 공공데이터 API (선택) ─────────────────────
 # DATA_GO_KR_API_KEY=your-key
@@ -173,8 +175,8 @@ npm run dev
 | `NEXT_PUBLIC_X_API_KEY` | ✅ | API 인증 키 (Admin과 동일) |
 | `GOOGLE_CLIENT_ID` | 소셜 | Google OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | 소셜 | Google OAuth Secret |
-| `NAVER_CLIENT_ID` | 소셜 | Naver OAuth Client ID |
-| `NAVER_CLIENT_SECRET` | 소셜 | Naver OAuth Secret |
+| `NAVER_CLIENT_ID` | 선택 | Naver OpenAPI (예: 뉴스 검색; 소셜 로그인 미사용) |
+| `NAVER_CLIENT_SECRET` | 선택 | 동일 |
 
 > **중요:** `NEXT_PUBLIC_X_API_KEY`는 Web·Admin 양쪽에서 **정확히 동일한 값** 사용
 
@@ -195,7 +197,7 @@ npm run dev
 |--------|-----------|------|
 | POST | `/api/auth/member/login` | 이메일 로그인 |
 | POST | `/api/auth/member/signup` | 회원가입 |
-| POST | `/api/auth/social-login` | 소셜 로그인 (google/naver) |
+| POST | `/api/auth/social-login` | 소셜 로그인 (google) |
 | POST | `/api/auth/member/reissue-token` | JWT 토큰 재발급 |
 | POST | `/api/auth/member/withdraw` | 회원 탈퇴 |
 | GET  | `/api/auth/member/me` | 내 정보 조회 |

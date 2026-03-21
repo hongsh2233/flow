@@ -14,7 +14,8 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const callbackUrl = searchParams.get("callbackUrl") || "/auth/mobile-callback";
 
-  if (!["google", "naver"].includes(provider)) {
+  // 네이버 OAuth 비활성화 — 기존: ["google", "naver"]
+  if (!["google"].includes(provider)) {
     return NextResponse.json({ error: "지원하지 않는 provider입니다." }, { status: 400 });
   }
 

@@ -25,7 +25,7 @@ Authorization: Bearer <JWT_TOKEN>
 |--------|------|------|
 | POST | `/api/auth/member/login` | 이메일 로그인 → JWT 반환 |
 | POST | `/api/auth/member/signup` | 회원가입 |
-| POST | `/api/auth/social-login` | 소셜 로그인 (google/naver) |
+| POST | `/api/auth/social-login` | 소셜 로그인 (google) |
 | POST | `/api/auth/member/reissue-token` | 토큰 재발급 |
 | GET  | `/api/auth/member/me` | 내 정보 조회 (Bearer 필요) |
 | PUT  | `/api/auth/member/me` | 내 정보 수정 (Bearer 필요) |

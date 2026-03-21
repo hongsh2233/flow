@@ -1,7 +1,7 @@
 import NextAuth, { type AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 // import KakaoProvider from 'next-auth/providers/kakao' // 카카오 가입 비활성화
-import NaverProvider from 'next-auth/providers/naver'
+// import NaverProvider from 'next-auth/providers/naver' // 네이버 로그인 비활성화
 import GoogleProvider from 'next-auth/providers/google'
 
 /** JWT payload에서 만료 시간 추출 (라이브러리 없이 base64 디코딩) */
@@ -75,10 +75,11 @@ export const authOptions = {
     //   clientId: process.env.KAKAO_CLIENT_ID ?? '',
     //   clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
     // }),
-    NaverProvider({
-      clientId: process.env.NAVER_CLIENT_ID ?? '',
-      clientSecret: process.env.NAVER_CLIENT_SECRET ?? '',
-    }),
+    // 네이버 로그인 비활성화
+    // NaverProvider({
+    //   clientId: process.env.NAVER_CLIENT_ID ?? '',
+    //   clientSecret: process.env.NAVER_CLIENT_SECRET ?? '',
+    // }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
@@ -100,10 +101,10 @@ export const authOptions = {
         token.grade = (user as { grade?: string }).grade ?? 'regular'
         token.backendAccessToken = (user as { backendAccessToken?: string }).backendAccessToken ?? null
 
-        // 소셜 로그인 시 BO social-login API 연동 (kakao, naver, google)
+        // 소셜 로그인 시 BO social-login API 연동 (google; naver 비활성화)
         token.lastLoginProvider = account?.provider ?? 'credentials'
 
-        if (account && ['naver', 'google'].includes(account.provider)) {
+        if (account && account.provider === 'google') {
           try {
             const providerId =
               account.providerAccountId ||
