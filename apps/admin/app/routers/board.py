@@ -521,11 +521,15 @@ async def admin_create_post(
         if post_status == "approved" and is_secret != "true":
             board_obj = db.query(models.Board).filter(models.Board.id == board_id).first()
             board_name = board_obj.name if board_obj else board_id
+            from app.utils.push_copy import fcm_new_post, noti_new_post
+
+            n_title, n_msg = noti_new_post(board_name, title.strip())
+            f_title, f_body = fcm_new_post(board_name, title.strip())
             try:
                 noti = models.Notification(
                     type="new_post",
-                    title=f"[{board_name}] {title.strip()}",
-                    message=title.strip(),
+                    title=n_title,
+                    message=n_msg,
                     link_url=f"/board/{new_post.id}?from={board_id}",
                     is_global="true",
                 )
@@ -537,8 +541,8 @@ async def admin_create_post(
                 from app.services.fcm_service import send_push_to_all
                 await send_push_to_all(
                     db,
-                    title=f"[{board_name}] 새 글이 등록됐습니다",
-                    body=title.strip(),
+                    title=f_title,
+                    body=f_body,
                     data={"link_url": f"/board/{new_post.id}?from={board_id}", "type": "new_post"},
                 )
             except Exception:
@@ -1087,12 +1091,15 @@ async def approve_post(
     if post.is_secret != "true":
         board_obj = db.query(models.Board).filter(models.Board.id == post.board_id).first()
         board_name = board_obj.name if board_obj else post.board_id
+        from app.utils.push_copy import fcm_new_post, noti_new_post
 
+        n_title, n_msg = noti_new_post(board_name, post.title or "")
+        f_title, f_body = fcm_new_post(board_name, post.title or "")
         try:
             noti = models.Notification(
                 type="new_post",
-                title=f"[{board_name}] {post.title}",
-                message=post.title,
+                title=n_title,
+                message=n_msg,
                 link_url=f"/board/{post.id}?from={post.board_id}",
                 is_global="true",
             )
@@ -1105,8 +1112,8 @@ async def approve_post(
             from app.services.fcm_service import send_push_to_all
             await send_push_to_all(
                 db,
-                title=f"[{board_name}] 새 글이 등록됐습니다",
-                body=post.title,
+                title=f_title,
+                body=f_body,
                 data={"link_url": f"/board/{post.id}?from={post.board_id}", "type": "new_post"},
             )
         except Exception:

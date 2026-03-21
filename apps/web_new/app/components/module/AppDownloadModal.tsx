@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { isJurinAppWebView } from "@/lib/hooks/useNotificationSettings";
+import { APP_DOWNLOAD_URL } from "@/lib/config/appDownload";
 import styles from "./AppDownloadModal.module.css";
 
 const STORAGE_KEY = "app_download_modal_dismissed";
-const APP_STORE_URL = "https://drive.google.com/file/d/1lbQ3K1VPbE4OV0dbunQcC6679wJW8vy8/view?usp=drive_link";
 
 function isMobileBrowser(): boolean {
   if (typeof window === "undefined") return false;
@@ -43,7 +43,7 @@ export function AppDownloadModal() {
   const handleDownload = () => {
     setDismissed();
     setVisible(false);
-    window.open(APP_STORE_URL, "_blank");
+    window.open(APP_DOWNLOAD_URL, "_blank");
   };
 
   const handleContinue = () => {

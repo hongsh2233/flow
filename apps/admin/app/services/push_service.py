@@ -2,7 +2,8 @@
 푸시 알림 서비스 (레거시)
 
 FCM 푸시 알림은 fcm_service.py로 통합되었습니다.
-- 새 게시글 알림: board.py → fcm_service.send_push_to_all()
-- 새 일정 알림: schedule.py → fcm_service.send_push_to_all()
-- 일정 알림 신청: scheduler_service.py → fcm_service.send_push_to_email()
+문구(제목/본문)는 app.utils.push_copy 에서 통일합니다.
+- 새 게시글: board.py
+- 새 일정: schedule.py
+- 일정 알림 신청: engine/services/scheduler_service.py
 """

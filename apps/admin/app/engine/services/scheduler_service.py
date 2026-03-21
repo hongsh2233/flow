@@ -678,6 +678,8 @@ class ScheduleAlarmScheduler:
     async def _check_and_fire(self):
         """알림 시간이 된 구독 처리"""
         from app.engine.models import ScheduleAlarmSubscription, Notification, Schedule
+        from app.utils.push_copy import fcm_schedule_alarm, noti_schedule_alarm
+
         db: Session = SessionLocal()
         try:
             now_kst = datetime.now(pytz.timezone("Asia/Seoul"))
@@ -711,10 +713,15 @@ class ScheduleAlarmScheduler:
                         "1min": "1분 전", "30min": "30분 전",
                         "1day": "1일 전", "2day": "2일 전",
                     }.get(sub.timing, "")
+
+                    na_title, na_msg = noti_schedule_alarm(
+                        schedule.subject or "",
+                        timing_label,
+                    )
                     noti = Notification(
                         type="schedule_alarm",
-                        title=f"[일정 알림] {schedule.subject}",
-                        message=f"{schedule.subject} {timing_label} 알림",
+                        title=na_title,
+                        message=na_msg,
                         link_url="/calendar",
                         is_global="false",
                         target_email=sub.member_email,
@@ -729,15 +736,16 @@ class ScheduleAlarmScheduler:
                     # FCM 개인 푸시
                     try:
                         from app.services.fcm_service import send_push_to_email
-                        timing_label = {
-                            "1min": "1분 전", "30min": "30분 전",
-                            "1day": "1일 전", "2day": "2일 전",
-                        }.get(sub.timing, "")
+
+                        fa_title, fa_body = fcm_schedule_alarm(
+                            schedule.subject or "",
+                            timing_label,
+                        )
                         await send_push_to_email(
                             db,
                             email=sub.member_email,
-                            title=f"[일정 알림] {schedule.subject}",
-                            body=f"{timing_label} 알림입니다.",
+                            title=fa_title,
+                            body=fa_body,
                             data={"link_url": "/calendar", "type": "schedule_alarm"},
                         )
                     except Exception as fcm_err:
