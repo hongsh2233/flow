@@ -30,7 +30,7 @@ from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_r
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup, broker
+from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup, broker, ad_settings
 try:
     from app.routers import profile
 except ImportError as e:
@@ -571,6 +571,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ naver_rising_stock 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.create_aliexpress_affiliate_products import upgrade as create_affiliate_products_migration
+        create_affiliate_products_migration()
+    except Exception as e:
+        print(f"⚠️ aliexpress_affiliate_products 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
@@ -666,3 +672,4 @@ app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리
 app.include_router(broker.router)       # 증권사 설정
+app.include_router(ad_settings.router)  # 광고설정 (어필리에이트 상품)

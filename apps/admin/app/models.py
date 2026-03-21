@@ -46,6 +46,7 @@ from app.engine.models import (
     PersonMaster,
     MarketVoice,
     InvestmentBankNews,
+    AliexpressAffiliateProduct,
 )
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "YahooIndexSnapshot", "YahooIndexDaily", "StockTerm",
     "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote", "MasterQuoteLike",
     "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice", "InvestmentBankNews",
+    "AliexpressAffiliateProduct",
 ]

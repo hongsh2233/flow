@@ -82,6 +82,7 @@ __all__ = [
   "InvestmentBankNews",
   "MarketMorningAiSummary",
   "SupplySummaryAi",
+  "AliexpressAffiliateProduct",
 ]
 
 
@@ -748,3 +749,33 @@ class SupplySummaryAi(Base):
     __table_args__ = (
         UniqueConstraint("bizdate", "collected_time", "market", name="uq_supply_summary_ai_bizdate_time_market"),
     )
+
+
+class AliexpressAffiliateProduct(Base):
+    """
+    알리익스프레스 어필리에이트 상품 메타
+    (제휴 스프레드시트를 탭 구분으로 붙여넣어 일괄 등록)
+    """
+    __tablename__ = "aliexpress_affiliate_products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    platform = Column(String(32), nullable=False, default="aliexpress", index=True)
+    external_product_id = Column(String(80), nullable=False, index=True)
+    image_url = Column(Text, nullable=True)
+    video_url = Column(Text, nullable=True)
+    title = Column(String(500), nullable=True)
+    original_price = Column(String(64), nullable=True)
+    sale_price = Column(String(64), nullable=True)
+    discount_percent = Column(String(32), nullable=True)
+    currency_code = Column(String(16), nullable=True, default="KRW")
+    stat_rating_primary = Column(String(32), nullable=True)
+    stat_commission_primary = Column(String(64), nullable=True)
+    stat_rating_secondary = Column(String(32), nullable=True)
+    stat_commission_secondary = Column(String(64), nullable=True)
+    sold_count = Column(String(32), nullable=True)
+    feedback_percent = Column(String(32), nullable=True)
+    affiliate_url = Column(Text, nullable=True)
+    is_active = Column(String(20), nullable=False, default="active")
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

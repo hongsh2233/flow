@@ -1665,6 +1665,49 @@ async def get_banners(
     }
 
 
+@router.get("/api/affiliate-products")
+async def get_affiliate_products(
+    include_inactive: bool = Query(False, description="true면 비활성 항목 포함"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    광고설정에 등록한 알리익스프레스(등) 어필리에이트 상품 목록.
+    웹 앱에서 프로모 카드 등으로 사용할 때 `X-API-KEY`로 호출.
+    """
+    q = db.query(models.AliexpressAffiliateProduct).order_by(
+        models.AliexpressAffiliateProduct.order_index,
+        models.AliexpressAffiliateProduct.id,
+    )
+    if not include_inactive:
+        q = q.filter(models.AliexpressAffiliateProduct.is_active == "active")
+    rows = q.all()
+    data = [
+        {
+            "id": r.id,
+            "platform": r.platform,
+            "external_product_id": r.external_product_id,
+            "image_url": r.image_url,
+            "video_url": r.video_url,
+            "title": r.title,
+            "original_price": r.original_price,
+            "sale_price": r.sale_price,
+            "discount_percent": r.discount_percent,
+            "currency_code": r.currency_code,
+            "stat_rating_primary": r.stat_rating_primary,
+            "stat_commission_primary": r.stat_commission_primary,
+            "stat_rating_secondary": r.stat_rating_secondary,
+            "stat_commission_secondary": r.stat_commission_secondary,
+            "sold_count": r.sold_count,
+            "feedback_percent": r.feedback_percent,
+            "affiliate_url": r.affiliate_url,
+            "order_index": r.order_index,
+        }
+        for r in rows
+    ]
+    return {"success": True, "data": data, "count": len(data)}
+
+
 @router.get("/api/banners/managed")
 async def get_managed_banners(
     page_path: str = Query(..., description="노출할 페이지 경로 (예: /, /stocks, /news)"),

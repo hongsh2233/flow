@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}광고 상품 수정 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.05); max-width: 960px; }
+  .section h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+  .add-form { display: flex; flex-direction: column; gap: 16px; }
+  .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-weight: 500; font-size: 14px; color: #2c3e50; }
+  .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+  .btn-primary { padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .btn-secondary { padding: 12px 24px; background: #ecf0f1; color: #2c3e50; border: none; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block; }
+  .back-link { display: inline-block; margin-bottom: 16px; color: #3498db; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <a href="/admin/ad-settings" class="back-link">← 광고설정으로</a>
+  <h1>광고 상품 수정</h1>
+  <div class="section">
+    <h3>필드 수정</h3>
+    <form method="POST" action="/admin/ad-settings/update/{{ p.id }}" class="add-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>상품 ID *</label>
+          <input type="text" name="external_product_id" value="{{ p.external_product_id }}" required maxlength="80" />
+        </div>
+        <div class="form-group" style="flex:2;min-width:280px;">
+          <label>제휴 링크 *</label>
+          <input type="url" name="affiliate_url" value="{{ p.affiliate_url or '' }}" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label>이미지 URL</label>
+          <input type="text" name="image_url" value="{{ p.image_url or '' }}" />
+        </div>
+        <div class="form-group">
+          <label>동영상 URL</label>
+          <input type="text" name="video_url" value="{{ p.video_url or '' }}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" name="title" value="{{ p.title or '' }}" maxlength="500" />
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>정가</label><input type="text" name="original_price" value="{{ p.original_price or '' }}" /></div>
+        <div class="form-group"><label>판매가</label><input type="text" name="sale_price" value="{{ p.sale_price or '' }}" /></div>
+        <div class="form-group"><label>할인율</label><input type="text" name="discount_percent" value="{{ p.discount_percent or '' }}" /></div>
+        <div class="form-group"><label>통화</label><input type="text" name="currency_code" value="{{ p.currency_code or 'KRW' }}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>평점(1)</label><input type="text" name="stat_rating_primary" value="{{ p.stat_rating_primary or '' }}" /></div>
+        <div class="form-group"><label>수수료(1)</label><input type="text" name="stat_commission_primary" value="{{ p.stat_commission_primary or '' }}" /></div>
+        <div class="form-group"><label>평점(2)</label><input type="text" name="stat_rating_secondary" value="{{ p.stat_rating_secondary or '' }}" /></div>
+        <div class="form-group"><label>수수료(2)</label><input type="text" name="stat_commission_secondary" value="{{ p.stat_commission_secondary or '' }}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>판매량</label><input type="text" name="sold_count" value="{{ p.sold_count or '' }}" /></div>
+        <div class="form-group"><label>긍정 피드백 %</label><input type="text" name="feedback_percent" value="{{ p.feedback_percent or '' }}" /></div>
+        <div class="form-group">
+          <label>상태</label>
+          <select name="is_active">
+            <option value="active" {% if p.is_active == 'active' %}selected{% endif %}>활성</option>
+            <option value="inactive" {% if p.is_active == 'inactive' %}selected{% endif %}>비활성</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">저장</button>
+        <a href="/admin/ad-settings" class="btn-secondary">취소</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
