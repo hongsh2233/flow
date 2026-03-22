@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import LayoutShell from "./components/layout/LayoutShell";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import { ThemeProvider } from "./components/providers/ThemeProvider";
@@ -38,6 +39,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* Google Tag Manager (noscript) */}
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-52KM4V3R" height="0" width="0" style={{ display: 'none', visibility: 'hidden' }}></iframe></noscript>
         {/* End Google Tag Manager (noscript) */}
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6042624006544756"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
         <NextAuthProvider>
           <ThemeProvider>
             <CapacitorProvider>
