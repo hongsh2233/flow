@@ -31,6 +31,53 @@ function mergeCookieHeader(existing: string, additionalPair: string): string {
 }
 
 /**
+ * 서버가 자기 자신에게 HTTP 요청할 때 사용할 베이스 URL.
+ * Railway/Render 등은 TLS가 엣지에서 종료되므로, 공개 https URL로 다시 fetch 하면
+ * ERR_SSL_PACKET_LENGTH_TOO_LONG 등 TLS 오류가 날 수 있음 → 루프백 HTTP 사용.
+ * Vercel 서버리스는 루프백이 맞지 않으므로 공개 origin 유지.
+ */
+function getServerSelfFetchBases(request: NextRequest): {
+  fetchBase: string;
+  publicOrigin: string;
+} {
+  const publicOrigin = request.nextUrl.origin;
+
+  const explicit = process.env.INTERNAL_FETCH_ORIGIN?.replace(/\/$/, "");
+  if (explicit) {
+    return { fetchBase: explicit, publicOrigin };
+  }
+
+  const onVercel = !!process.env.VERCEL;
+  const onContainer =
+    !!process.env.RAILWAY_ENVIRONMENT ||
+    !!process.env.RAILWAY_PUBLIC_DOMAIN ||
+    !!process.env.RENDER ||
+    !!process.env.FLY_APP_NAME;
+
+  if (!onVercel && onContainer) {
+    const port = process.env.PORT || "3000";
+    return { fetchBase: `http://127.0.0.1:${port}`, publicOrigin };
+  }
+
+  return { fetchBase: publicOrigin, publicOrigin };
+}
+
+/** NextAuth가 공개 호스트를 알 수 있도록 프록시 헤더 전달 */
+function selfFetchHeaders(request: NextRequest, cookieFromClient: string): HeadersInit {
+  const h: Record<string, string> = {};
+  if (cookieFromClient) h["Cookie"] = cookieFromClient;
+
+  const xfh = request.headers.get("x-forwarded-host");
+  const host = xfh || request.headers.get("host");
+  const xfp = request.headers.get("x-forwarded-proto");
+  if (host) h["x-forwarded-host"] = host;
+  if (xfp) h["x-forwarded-proto"] = xfp;
+  else if (host) h["x-forwarded-proto"] = "https";
+
+  return h;
+}
+
+/**
  * 모바일 앱(Capacitor / JurinApp WebView)에서 소셜 OAuth URL을 얻기 위한 서버 사이드 엔드포인트.
  * Chrome Custom Tab에서 열기 위해 OAuth 인증 URL을 반환한다.
  */
@@ -46,15 +93,15 @@ export async function GET(
     return NextResponse.json({ error: "지원하지 않는 provider입니다." }, { status: 400 });
   }
 
-  // 현재 요청 오리진 사용 → Railway 등에서 NEXTAUTH_URL 오설정이어도 자기 자신에게 fetch
-  const origin = request.nextUrl.origin;
+  const { fetchBase, publicOrigin } = getServerSelfFetchBases(request);
 
   try {
     const cookieFromClient = request.headers.get("cookie") || "";
+    const forwardHeaders = selfFetchHeaders(request, cookieFromClient);
 
-    const csrfRes = await fetch(`${origin}/api/auth/csrf`, {
+    const csrfRes = await fetch(`${fetchBase}/api/auth/csrf`, {
       cache: "no-store",
-      headers: cookieFromClient ? { Cookie: cookieFromClient } : {},
+      headers: forwardHeaders,
     });
 
     const { csrfToken } = (await csrfRes.json()) as { csrfToken?: string };
@@ -66,9 +113,10 @@ export async function GET(
     const csrfPair = extractNextAuthCsrfCookiePair(getSetCookieLines(csrfRes));
     const cookieForSignin = mergeCookieHeader(cookieFromClient, csrfPair);
 
-    const signinRes = await fetch(`${origin}/api/auth/signin/${provider}`, {
+    const signinRes = await fetch(`${fetchBase}/api/auth/signin/${provider}`, {
       method: "POST",
       headers: {
+        ...forwardHeaders,
         "Content-Type": "application/x-www-form-urlencoded",
         ...(cookieForSignin ? { Cookie: cookieForSignin } : {}),
       },
@@ -78,7 +126,7 @@ export async function GET(
 
     let oauthUrl = signinRes.headers.get("location");
     if (oauthUrl?.startsWith("/")) {
-      oauthUrl = `${origin}${oauthUrl}`;
+      oauthUrl = `${publicOrigin}${oauthUrl}`;
     }
 
     if (!oauthUrl || !oauthUrl.startsWith("https://accounts.google.com")) {
