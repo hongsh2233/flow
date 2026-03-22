@@ -1,6 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+/** Node/Undici: Set-Cookie는 get("set-cookie")로 읽히지 않는 경우가 많아 getSetCookie를 우선 사용 */
+function getSetCookieLines(res: Response): string[] {
+  const headers = res.headers as unknown as { getSetCookie?: () => string[] };
+  if (typeof headers.getSetCookie === "function") {
+    return headers.getSetCookie();
+  }
+  const single = res.headers.get("set-cookie");
+  return single ? [single] : [];
+}
+
+/** NextAuth CSRF 쿠키 한 쌍(name=value) 추출 */
+function extractNextAuthCsrfCookiePair(setCookieLines: string[]): string {
+  for (const line of setCookieLines) {
+    const nameValue = line.split(";")[0]?.trim();
+    if (!nameValue || !nameValue.includes("=")) continue;
+    const eq = nameValue.indexOf("=");
+    const name = nameValue.slice(0, eq).trim();
+    if (name.includes("csrf-token") && name.includes("auth")) {
+      return nameValue;
+    }
+  }
+  return "";
+}
+
+function mergeCookieHeader(existing: string, additionalPair: string): string {
+  if (!additionalPair) return existing;
+  if (!existing) return additionalPair;
+  return `${existing}; ${additionalPair}`;
+}
 
 /**
  * 모바일 앱(Capacitor / JurinApp WebView)에서 소셜 OAuth URL을 얻기 위한 서버 사이드 엔드포인트.
@@ -14,38 +42,45 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const callbackUrl = searchParams.get("callbackUrl") || "/auth/mobile-callback";
 
-  // 네이버 OAuth 비활성화 — 기존: ["google", "naver"]
   if (!["google"].includes(provider)) {
     return NextResponse.json({ error: "지원하지 않는 provider입니다." }, { status: 400 });
   }
 
+  // 현재 요청 오리진 사용 → Railway 등에서 NEXTAUTH_URL 오설정이어도 자기 자신에게 fetch
+  const origin = request.nextUrl.origin;
+
   try {
-    // 서버 사이드에서 CSRF 토큰 획득
-    const csrfRes = await fetch(`${NEXTAUTH_URL}/api/auth/csrf`, {
+    const cookieFromClient = request.headers.get("cookie") || "";
+
+    const csrfRes = await fetch(`${origin}/api/auth/csrf`, {
       cache: "no-store",
+      headers: cookieFromClient ? { Cookie: cookieFromClient } : {},
     });
-    const { csrfToken } = await csrfRes.json();
 
-    // NextAuth CSRF 검증: signin POST에 csrf-token 쿠키도 함께 전달해야 함.
-    // 쿠키 없이 csrfToken만 보내면 NextAuth가 로그인 페이지로 리다이렉트한다.
-    const setCookieHeader = csrfRes.headers.get("set-cookie") || "";
-    const csrfCookieMatch = setCookieHeader.match(/next-auth\.csrf-token=[^;]+/);
-    const csrfCookieValue = csrfCookieMatch ? csrfCookieMatch[0] : "";
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken?: string };
+    if (!csrfToken) {
+      console.error("[get-oauth-url] csrfToken 없음");
+      return NextResponse.json({ error: "OAuth URL을 가져오지 못했습니다." }, { status: 500 });
+    }
 
-    // NextAuth sign-in 엔드포인트에 POST → OAuth 리다이렉트 URL 획득
-    const signinRes = await fetch(`${NEXTAUTH_URL}/api/auth/signin/${provider}`, {
+    const csrfPair = extractNextAuthCsrfCookiePair(getSetCookieLines(csrfRes));
+    const cookieForSignin = mergeCookieHeader(cookieFromClient, csrfPair);
+
+    const signinRes = await fetch(`${origin}/api/auth/signin/${provider}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        ...(csrfCookieValue ? { Cookie: csrfCookieValue } : {}),
+        ...(cookieForSignin ? { Cookie: cookieForSignin } : {}),
       },
       body: new URLSearchParams({ csrfToken, callbackUrl }),
-      redirect: "manual", // 리다이렉트를 따라가지 않고 Location 헤더 추출
+      redirect: "manual",
     });
 
-    const oauthUrl = signinRes.headers.get("location");
+    let oauthUrl = signinRes.headers.get("location");
+    if (oauthUrl?.startsWith("/")) {
+      oauthUrl = `${origin}${oauthUrl}`;
+    }
 
-    // 반환된 URL이 실제 Google OAuth URL인지 확인 (CSRF 실패 시 로그인 페이지 URL이 올 수 있음)
     if (!oauthUrl || !oauthUrl.startsWith("https://accounts.google.com")) {
       console.error("[get-oauth-url] 유효하지 않은 OAuth URL:", oauthUrl, "status:", signinRes.status);
       return NextResponse.json({ error: "OAuth URL을 가져오지 못했습니다." }, { status: 500 });

@@ -2,7 +2,7 @@
 
 import { BarChart3, Mail, Lock, User, RefreshCw, CheckCircle, XCircle, Home } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FormField } from "../components/ui/FormField";
@@ -11,10 +11,12 @@ import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import TermsModal from "../components/ui/TermsModal";
 import type { SocialProvider } from "@/lib/types";
 import { getAuthHeaders } from "@/lib/config/api";
+import { startMobileSocialOAuth } from "@/lib/auth/startMobileSocialOAuth";
 import styles from "./SignupPage.module.css";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [nickname, setNickname] = useState("");
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -154,22 +156,37 @@ export default function SignupPage() {
     }
   };
 
-  const handleSocialSignup = (provider: SocialProvider) => {
+  const handleSocialSignup = async (provider: SocialProvider) => {
     if (termsAgreed) {
-      signIn(provider, { callbackUrl: "/" });
+      await startMobileSocialOAuth({
+        provider,
+        setSubmitting,
+        setError,
+        router,
+        updateSession,
+        webCallbackUrl: "/",
+      });
     } else {
       pendingProvider.current = provider;
       setTermsModalOpen(true);
     }
   };
 
-  const handleAgree = () => {
+  const handleAgree = async () => {
     setTermsAgreed(true);
     setTermsModalOpen(false);
 
     if (pendingProvider.current) {
-      signIn(pendingProvider.current, { callbackUrl: "/" });
+      const p = pendingProvider.current;
       pendingProvider.current = null;
+      await startMobileSocialOAuth({
+        provider: p,
+        setSubmitting,
+        setError,
+        router,
+        updateSession,
+        webCallbackUrl: "/",
+      });
     }
   };
 

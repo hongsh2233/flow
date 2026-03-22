@@ -1,15 +1,15 @@
 "use client";
 
 import { BarChart3, Mail, Lock, Home } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Capacitor } from "@capacitor/core";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { SocialLoginButton } from "../components/ui/SocialLoginButton";
 import type { SocialProvider } from "@/lib/types";
+import { startMobileSocialOAuth } from "@/lib/auth/startMobileSocialOAuth";
 import styles from "./LoginPage.module.css";
 
 const LAST_LOGIN_KEY = "lastLoginProvider";
@@ -24,7 +24,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lastLoginProvider, setLastLoginProvider] = useState<LoginMethod | null>(null);
-  const browserListenerRef = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -62,103 +61,13 @@ export default function LoginPage() {
   };
 
   const handleSocialLogin = async (provider: SocialProvider) => {
-    // Capacitor 네이티브 앱에서는 Chrome Custom Tab을 사용해 OAuth 수행
-    // Google은 WebView에서 OAuth를 차단하므로 시스템 브라우저를 통해 인증 (Naver 비활성화)
-    if (Capacitor.isNativePlatform()) {
-      try {
-        setSubmitting(true);
-        setError("");
-
-        // 서버에서 OAuth URL 획득
-        const res = await fetch(
-          `/api/auth/get-oauth-url/${provider}?callbackUrl=${encodeURIComponent("/auth/mobile-callback")}`
-        );
-        const data = await res.json();
-
-        if (!data.url) {
-          throw new Error("OAuth URL을 가져오지 못했습니다.");
-        }
-
-        const { Browser } = await import("@capacitor/browser");
-        const { App } = await import("@capacitor/app");
-
-        // Chrome Custom Tab에서 OAuth 페이지 열기
-        await Browser.open({ url: data.url, presentationStyle: "popover" });
-
-        // 로그인 완료 후 처리 (한 번만 실행되도록 플래그 사용)
-        let handled = false;
-        const finish = async () => {
-          if (handled) return;
-          handled = true;
-          urlListener?.remove();
-          finishedListener?.remove();
-          browserListenerRef.current = null;
-          // 세션 쿠키가 WebView와 공유되므로 세션 업데이트
-          await updateSession();
-          localStorage.setItem(LAST_LOGIN_KEY, provider);
-          router.push("/");
-          router.refresh();
-          setSubmitting(false);
-        };
-
-        // 딥링크(com.jurini.app://auth/callback)로 앱이 복귀할 때 처리
-        // mobile-callback 페이지가 딥링크로 리다이렉트하면 OS가 앱을 열고 이 이벤트가 발동
-        const urlListener = await App.addListener("appUrlOpen", async ({ url }) => {
-          if (url.startsWith("com.jurini.app://auth/callback")) {
-            await Browser.close().catch(() => {});
-            await finish();
-          }
-        });
-
-        // 사용자가 Custom Tab을 수동으로 닫을 경우 fallback
-        const finishedListener = await Browser.addListener("browserFinished", async () => {
-          await finish();
-        });
-
-        browserListenerRef.current = { remove: () => { urlListener.remove(); finishedListener.remove(); } };
-      } catch (err) {
-        console.error("소셜 로그인 오류:", err);
-        setError("소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
-        setSubmitting(false);
-      }
-      return;
-    }
-
-    // JurinApp WebView: Android 브릿지를 통해 Chrome Custom Tab으로 OAuth 수행
-    // Chrome Custom Tab과 WebView는 쿠키가 공유되지 않으므로,
-    // mobile-callback 페이지가 raw JWT를 deep link에 포함시키고
-    // Android가 WebView CookieManager에 토큰을 설정한 뒤 리로드한다.
-    const jurinApp = typeof window !== "undefined"
-      ? (window as unknown as { JurinApp?: { openAuthBrowser?: (url: string) => void } }).JurinApp
-      : undefined;
-    if (jurinApp?.openAuthBrowser) {
-      try {
-        setSubmitting(true);
-        setError("");
-
-        const res = await fetch(
-          `/api/auth/get-oauth-url/${provider}?callbackUrl=${encodeURIComponent("/auth/mobile-callback")}`
-        );
-        const data = await res.json();
-
-        if (!data.url) {
-          throw new Error("OAuth URL을 가져오지 못했습니다.");
-        }
-
-        // Android 브릿지를 통해 Chrome Custom Tab 열기
-        jurinApp.openAuthBrowser(data.url);
-        // Android가 deep link 수신 후 쿠키 설정 + WebView 리로드하므로
-        // 여기서는 추가 처리 불필요
-      } catch (err) {
-        console.error("소셜 로그인 오류:", err);
-        setError("소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
-        setSubmitting(false);
-      }
-      return;
-    }
-
-    // 웹 브라우저: 기존 NextAuth 방식
-    signIn(provider, { callbackUrl: "/" });
+    await startMobileSocialOAuth({
+      provider,
+      setSubmitting,
+      setError,
+      router,
+      updateSession,
+    });
   };
 
   return (
