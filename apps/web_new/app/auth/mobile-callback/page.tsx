@@ -3,20 +3,38 @@
 import { useEffect } from "react";
 
 /**
- * Capacitor 모바일 앱의 소셜 로그인 콜백 페이지.
+ * 모바일 앱(Capacitor / JurinApp WebView)의 소셜 로그인 콜백 페이지.
  * Chrome Custom Tab에서 OAuth가 완료된 후 이 페이지가 열린다.
- * 쿠키에 세션이 설정되었으므로 브라우저를 닫으면 WebView에서 로그인 상태가 반영된다.
+ *
+ * Chrome Custom Tab과 WebView는 쿠키를 공유하지 않으므로,
+ * raw JWT를 서버에서 가져와 deep link URL에 포함시킨다.
+ * Android 앱이 이 토큰을 받아 WebView의 CookieManager에 설정한다.
  */
 export default function MobileCallbackPage() {
   useEffect(() => {
-    // Chrome Custom Tab은 window.close()로 닫을 수 없음 (네이티브로 열렸기 때문).
-    // 딥링크로 앱을 호출하면 OS가 앱을 포그라운드로 전환하고 Custom Tab을 자동으로 닫는다.
-    window.location.href = "com.jurini.app://auth/callback";
+    async function redirectToApp() {
+      try {
+        // Chrome Custom Tab에는 세션 쿠키가 있으므로 이 요청은 인증됨
+        const res = await fetch("/api/auth/get-session-token");
+        if (res.ok) {
+          const { sessionToken } = await res.json();
+          if (sessionToken) {
+            window.location.href = `com.jurini.app://auth/callback?token=${encodeURIComponent(sessionToken)}`;
+            return;
+          }
+        }
+      } catch {
+        // 토큰 획득 실패 시 토큰 없이 deep link (fallback)
+      }
+      window.location.href = "com.jurini.app://auth/callback";
+    }
+
+    redirectToApp();
 
     // 딥링크 미지원 환경(일반 브라우저) 대비 fallback
     const timer = setTimeout(() => {
       try { window.close(); } catch (_) {}
-    }, 1500);
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
 
