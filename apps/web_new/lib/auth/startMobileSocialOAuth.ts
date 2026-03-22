@@ -27,22 +27,21 @@ export async function startMobileSocialOAuth(options: {
   const mobileCallback = options.mobileCallbackPath ?? "/auth/mobile-callback";
   const webCb = options.webCallbackUrl ?? "/";
 
-  const fetchOAuthUrl = async () => {
-    const res = await fetch(
-      `/api/auth/get-oauth-url/${options.provider}?callbackUrl=${encodeURIComponent(mobileCallback)}`
-    );
-    const data = (await res.json()) as { url?: string; error?: string };
-    if (!data.url) {
-      throw new Error(data.error || "OAuth URL을 가져오지 못했습니다.");
-    }
-    return data.url;
+  /** Custom Tab 안에서 열 URL — 브릿지 페이지가 폼 POST로 state 쿠키를 브라우저에 심음 */
+  const buildOauthBridgeUrl = () => {
+    const origin = window.location.origin;
+    const params = new URLSearchParams({
+      provider: options.provider,
+      callbackUrl: mobileCallback,
+    });
+    return `${origin}/auth/oauth-bridge?${params.toString()}`;
   };
 
   if (Capacitor.isNativePlatform()) {
     try {
       options.setSubmitting(true);
       options.setError("");
-      const url = await fetchOAuthUrl();
+      const url = buildOauthBridgeUrl();
       const { Browser } = await import("@capacitor/browser");
       const { App } = await import("@capacitor/app");
       await Browser.open({ url, presentationStyle: "popover" });
@@ -94,7 +93,7 @@ export async function startMobileSocialOAuth(options: {
     try {
       options.setSubmitting(true);
       options.setError("");
-      const url = await fetchOAuthUrl();
+      const url = buildOauthBridgeUrl();
       jurinApp.openAuthBrowser(url);
     } catch (err) {
       console.error("소셜 로그인 오류:", err);
