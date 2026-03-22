@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import LayoutShell from "./components/layout/LayoutShell";
+import PcMobileAccessGate from "./components/layout/PcMobileAccessGate";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import { ThemeProvider } from "./components/providers/ThemeProvider";
 import { CapacitorProvider } from "./components/providers/CapacitorProvider";
 import type { RootLayoutProps } from "@/lib/types";
+import { buildRootMetadata } from "@/lib/config/seo";
 import "../assets/css/index.css";
 
 export const viewport: Viewport = {
@@ -14,20 +16,19 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: '플로우',
-  description: '',
+  ...buildRootMetadata(),
   icons: {
     icon: [
-      { url: '/images/favicon.svg', type: 'image/svg+xml' },
-      { url: '/images/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/images/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: "/images/favicon.svg", type: "image/svg+xml" },
+      { url: "/images/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: '/images/icon-192.png',
+    apple: "/images/icon-192.png",
   },
-  manifest: '/images/manifest.json',
+  manifest: "/images/manifest.json",
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
@@ -47,7 +48,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <NextAuthProvider>
           <ThemeProvider>
             <CapacitorProvider>
-              <LayoutShell>{children}</LayoutShell>
+              <PcMobileAccessGate>
+                <LayoutShell>{children}</LayoutShell>
+              </PcMobileAccessGate>
             </CapacitorProvider>
           </ThemeProvider>
         </NextAuthProvider>

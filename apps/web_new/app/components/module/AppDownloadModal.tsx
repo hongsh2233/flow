@@ -2,27 +2,49 @@
 
 import { useEffect, useState } from "react";
 import { isJurinAppWebView } from "@/lib/hooks/useNotificationSettings";
+import { isMobileUserAgent } from "@/lib/device/platform";
 import { APP_DOWNLOAD_URL } from "@/lib/config/appDownload";
 import styles from "./AppDownloadModal.module.css";
 
-const STORAGE_KEY = "app_download_modal_dismissed";
+const STORAGE_KEY_SESSION = "app_download_modal_dismissed";
+/** 값이 오늘 날짜(로컬 YYYY-MM-DD)와 같으면 당일 숨김 */
+const STORAGE_KEY_HIDE_DAY = "app_download_modal_hide_day";
 
-function isMobileBrowser(): boolean {
-  if (typeof window === "undefined") return false;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+function localDayKey(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function isDismissed(): boolean {
+function isHiddenForToday(): boolean {
   try {
-    return sessionStorage.getItem(STORAGE_KEY) === "1";
+    return localStorage.getItem(STORAGE_KEY_HIDE_DAY) === localDayKey();
   } catch {
     return false;
   }
 }
 
-function setDismissed() {
+function setHideForToday() {
   try {
-    sessionStorage.setItem(STORAGE_KEY, "1");
+    localStorage.setItem(STORAGE_KEY_HIDE_DAY, localDayKey());
+  } catch {
+    // ignore
+  }
+}
+
+function isDismissedSession(): boolean {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY_SESSION) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setDismissedSession() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY_SESSION, "1");
   } catch {
     // ignore
   }
@@ -33,21 +55,28 @@ export function AppDownloadModal() {
 
   useEffect(() => {
     if (isJurinAppWebView()) return;
-    if (!isMobileBrowser()) return;
-    if (isDismissed()) return;
+    if (!isMobileUserAgent()) return;
+    if (isHiddenForToday()) return;
+    if (isDismissedSession()) return;
     setVisible(true);
   }, []);
 
   if (!visible) return null;
 
   const handleDownload = () => {
-    setDismissed();
+    setDismissedSession();
     setVisible(false);
     window.open(APP_DOWNLOAD_URL, "_blank");
   };
 
   const handleContinue = () => {
-    setDismissed();
+    setDismissedSession();
+    setVisible(false);
+  };
+
+  const handleHideToday = () => {
+    setHideForToday();
+    setDismissedSession();
     setVisible(false);
   };
 
@@ -58,11 +87,14 @@ export function AppDownloadModal() {
         <p className={styles.desc}>
           앱에서 더 빠르고 편리하게<br />플로우를 이용해보세요.
         </p>
-        <button className={styles.downloadBtn} onClick={handleDownload}>
+        <button type="button" className={styles.downloadBtn} onClick={handleDownload}>
           앱 다운로드 받으러 가기
         </button>
-        <button className={styles.continueBtn} onClick={handleContinue}>
+        <button type="button" className={styles.continueBtn} onClick={handleContinue}>
           모바일웹으로 계속
+        </button>
+        <button type="button" className={styles.snoozeTodayBtn} onClick={handleHideToday}>
+          오늘 하루 보지 않기
         </button>
       </div>
     </div>

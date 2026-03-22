@@ -81,3 +81,20 @@
 .continueBtn:hover {
   color: var(--app-text-secondary, #555);
 }
+
+.snoozeTodayBtn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--app-text-muted, #aaa);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.snoozeTodayBtn:hover {
+  color: var(--app-text-secondary, #777);
+}
