@@ -22,11 +22,14 @@
 /* HTML 배너 (managed) */
 .htmlBanner {
   padding: 1rem 1.25rem;
+  background: var(--app-card-bg);
+  color: var(--app-text);
 }
 
 .htmlContent {
   font-size: 0.875rem;
   line-height: 1.5;
+  color: inherit;
 }
 
 .htmlContent :global(a) {

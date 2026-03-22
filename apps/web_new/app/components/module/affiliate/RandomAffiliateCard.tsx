@@ -60,10 +60,8 @@ export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardP
   return (
     <aside
       className={`${styles.wrap} ${compact ? styles.compact : ""} ${className ?? ""}`.trim()}
-      aria-label="A구역 제휴 추천"
-      data-ad-zone="A"
+      aria-label="제휴 추천 상품"
     >
-      <p className={styles.badge}>A구역 · 제휴</p>
       <a
         href={item.affiliate_url}
         target="_blank"
