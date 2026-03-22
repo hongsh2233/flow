@@ -124,6 +124,39 @@ export default function LoginPage() {
       return;
     }
 
+    // JurinApp WebView: Android 브릿지를 통해 Chrome Custom Tab으로 OAuth 수행
+    // Chrome Custom Tab과 WebView는 쿠키가 공유되지 않으므로,
+    // mobile-callback 페이지가 raw JWT를 deep link에 포함시키고
+    // Android가 WebView CookieManager에 토큰을 설정한 뒤 리로드한다.
+    const jurinApp = typeof window !== "undefined"
+      ? (window as unknown as { JurinApp?: { openAuthBrowser?: (url: string) => void } }).JurinApp
+      : undefined;
+    if (jurinApp?.openAuthBrowser) {
+      try {
+        setSubmitting(true);
+        setError("");
+
+        const res = await fetch(
+          `/api/auth/get-oauth-url/${provider}?callbackUrl=${encodeURIComponent("/auth/mobile-callback")}`
+        );
+        const data = await res.json();
+
+        if (!data.url) {
+          throw new Error("OAuth URL을 가져오지 못했습니다.");
+        }
+
+        // Android 브릿지를 통해 Chrome Custom Tab 열기
+        jurinApp.openAuthBrowser(data.url);
+        // Android가 deep link 수신 후 쿠키 설정 + WebView 리로드하므로
+        // 여기서는 추가 처리 불필요
+      } catch (err) {
+        console.error("소셜 로그인 오류:", err);
+        setError("소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        setSubmitting(false);
+      }
+      return;
+    }
+
     // 웹 브라우저: 기존 NextAuth 방식
     signIn(provider, { callbackUrl: "/" });
   };
