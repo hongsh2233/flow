@@ -62,7 +62,8 @@ export function useNotificationSettings() {
       const s = localStorage.getItem(STORAGE_KEY_SCHEDULE_ALARM);
       const p = localStorage.getItem(STORAGE_KEY_PUSH);
       setScheduleAlarmEnabledState(s === "true");
-      setPushEnabledState(p === "true");
+      // 최초 설치(null) 시 기본값 true — 명시적으로 꺼야만 false
+      setPushEnabledState(p === null ? true : p === "true");
     } catch {
       // ignore
     }
