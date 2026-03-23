@@ -589,6 +589,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ aliexpress_affiliate_products 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_ad_zone_to_affiliate_products import upgrade as add_ad_zone_migration
+        add_ad_zone_migration()
+    except Exception as e:
+        print(f"⚠️ add_ad_zone 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """

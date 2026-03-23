@@ -71,6 +71,13 @@
             <option value="inactive" {% if p.is_active == 'inactive' %}selected{% endif %}>비활성</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>광고 구역</label>
+          <select name="ad_zone">
+            <option value="" {% if not p.ad_zone or p.ad_zone == 'A' %}selected{% endif %}>A구역 (기본)</option>
+            <option value="B" {% if p.ad_zone == 'B' %}selected{% endif %}>B구역</option>
+          </select>
+        </div>
       </div>
       <div class="btn-row">
         <button type="submit" class="btn-primary">저장</button>

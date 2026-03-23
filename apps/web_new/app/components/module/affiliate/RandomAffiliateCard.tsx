@@ -20,13 +20,16 @@ interface RandomAffiliateCardProps {
   /** 용어 바텀시트 등 좁은 영역 */
   compact?: boolean;
   className?: string;
+  /** 광고 구역: "A" (기본, A구역 상품) | "B" (B구역 상품) */
+  zone?: "A" | "B";
 }
 
-export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardProps) {
+export function RandomAffiliateCard({ compact, className, zone = "A" }: RandomAffiliateCardProps) {
   const { data: session, status } = useSession();
   const [item, setItem] = useState<AffiliateProductRow | null>(null);
 
-  const eligible = shouldShowAdZoneA(session, status);
+  // B구역은 AdZoneSlot에서 이미 노출 권한 확인 후 렌더링 — 여기선 항상 fetch
+  const eligible = zone === "B" ? true : shouldShowAdZoneA(session, status);
 
   useEffect(() => {
     if (!eligible) {
@@ -34,7 +37,7 @@ export function RandomAffiliateCard({ compact, className }: RandomAffiliateCardP
       return;
     }
     let cancelled = false;
-    fetch("/api/affiliate-products", { cache: "no-store" })
+    fetch(`/api/affiliate-products?zone=${zone}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((body: { success?: boolean; data?: AffiliateProductRow[] }) => {
         if (cancelled || !body?.success || !Array.isArray(body.data) || body.data.length === 0) {
