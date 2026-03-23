@@ -56,17 +56,19 @@ async function fetchTable(params: URLSearchParams): Promise<SupplyResponse> {
 
 // ─── 셀 색상 ─────────────────────────────────────────────────────────────────
 function parseSupplyNum(val: string): number | null {
-  const s = String(val).replace(/,/g, "").replace(/\+/g, "").trim();
-  if (!s || s === "-") return null;
-  const n = parseInt(s, 10);
+  // 콤마·+·%·▲ 제거 후 parseFloat (소수 등락률 0.67% → 0.67 처리)
+  const s = String(val).replace(/,/g, "").replace(/[+%▲]/g, "").trim();
+  if (!s || s === "-" || s === "▼") return null;
+  const n = parseFloat(s);
   return isNaN(n) ? null : n;
 }
 
 function getSupplyCellClass(cell: string, colIndex: number): string | undefined {
   if (colIndex === 0) return undefined;
   const trimmed = String(cell).trim();
-  if (trimmed.startsWith("-")) return styles.down;
-  if (trimmed.startsWith("+")) return styles.up;
+  // 네이버는 -/+ 외에 ▼/▲ 심볼도 사용
+  if (trimmed.startsWith("-") || trimmed.startsWith("▼")) return styles.down;
+  if (trimmed.startsWith("+") || trimmed.startsWith("▲")) return styles.up;
   const num = parseSupplyNum(cell);
   if (num !== null) return num > 0 ? styles.up : num < 0 ? styles.down : undefined;
   return undefined;
