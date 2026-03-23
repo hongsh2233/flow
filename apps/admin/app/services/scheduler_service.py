@@ -1297,13 +1297,45 @@ async def collect_naver_supply_data():
     print(f"{'='*60}\n")
 
 
+async def collect_naver_supply_daily():
+    """
+    네이버 수급 동향 일자별 전체 수집 (investor_day, program_day, deal_rank 포함).
+    장마감 후 16:10 1회 실행 → supply 페이지 메인 테이블 데이터 갱신.
+    """
+    from app.services.naver_supply_service import collect_all_supply_data
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+
+    if should_skip_today():
+        print("⏭️ 주말/공휴일 - 일자별 수급 수집 건너뜀")
+        return
+
+    print(f"\n{'='*60}")
+    print(f"📊 네이버 수급 일자별 전체 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}")
+
+    db = SessionLocal()
+    try:
+        bizdate = now.strftime("%Y%m%d")
+        count = await collect_all_supply_data(db, bizdate=bizdate, collected_time="16:00")
+        print(f"✅ 일자별 수급 수집 완료: {count}건")
+    except Exception as e:
+        import traceback
+        print(f"❌ 일자별 수급 수집 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+    print(f"{'='*60}\n")
+
+
 class NaverSupplyScheduler:
     """
     네이버 수급 동향 데이터 수집 스케줄러
-    - 08:40 ~ 15:40: 30분 간격 (장중)
-    - 16:40 ~ 20:40: 1시간 간격 (장마감 후)
+    - 08:40 ~ 15:40: 30분 간격 (장중) — investor_time, program_time
+    - 16:40 ~ 20:40: 1시간 간격 (장마감 후) — investor_time, program_time
+    - 16:10: 1회 — investor_day, program_day, deal_rank 전체 수집
     실행 시각: 08:40, 09:10, 09:40, 10:10, 10:40, 11:10, 11:40, 12:10, 12:40,
-              13:10, 13:40, 14:10, 14:40, 15:10, 15:40, 16:40, 17:40, 18:40, 19:40, 20:40
+              13:10, 13:40, 14:10, 14:40, 15:10, 15:40, 16:10(일자별), 16:40, 17:40, 18:40, 19:40, 20:40
     """
     def __init__(self):
         self.scheduler = None
@@ -1337,6 +1369,17 @@ class NaverSupplyScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
+        # 16:10: 장마감 후 일자별 전체 수집 (investor_day, program_day, deal_rank)
+        self.scheduler.add_job(
+            collect_naver_supply_daily,
+            trigger=CronTrigger(hour=16, minute=10, timezone=self.kst),
+            id="naver_supply_daily",
+            name="수급 일자별 전체 수집 (16:10)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
         # 16:40 ~ 20:40: 1시간 간격
         self.scheduler.add_job(
             collect_naver_supply_data,
@@ -1350,7 +1393,7 @@ class NaverSupplyScheduler:
         )
 
         self.scheduler.start()
-        print("✅ 네이버 수급 동향 스케줄러 시작 (08:40~15:40 30분 / 16:40~20:40 1시간, 월~금)")
+        print("✅ 네이버 수급 동향 스케줄러 시작 (08:40~15:40 30분 / 16:10 일자별 / 16:40~20:40 1시간, 월~금)")
 
     def shutdown(self):
         if self.scheduler:

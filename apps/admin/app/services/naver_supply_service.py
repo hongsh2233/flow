@@ -6,6 +6,7 @@
   - 수급 순위 (코스피/코스닥 외인·기관 순매수/매도)
   - 프로그램 매매 (시간별 / 일자별)
 """
+import asyncio
 import json
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -424,6 +425,7 @@ async def collect_all_supply_data(
                 print(f"  ⚠️ 데이터 없음: {label}")
         except Exception as e:
             print(f"  ❌ 수집 오류: {label} → {e}")
+        await asyncio.sleep(0.5)  # 네이버 레이트리밋 방지
 
     # 5일 초과 시 오래된 데이터 삭제
     cleanup_old_supply_data(db)
@@ -468,5 +470,6 @@ async def collect_investor_program_supply_data(
                 print(f"  ⚠️ 데이터 없음: {label}")
         except Exception as e:
             print(f"  ❌ 수집 오류: {label} → {e}")
+        await asyncio.sleep(0.5)  # 네이버 레이트리밋 방지
 
     return success
