@@ -2322,10 +2322,12 @@ async def get_market_morning_summary(
         ).first()
         if ai_row:
             ai_summary = {
-                "usMarket":     ai_row.us_market or "",
-                "krIndices":    ai_row.kr_indices or "",
-                "exchangeRate": ai_row.exchange_rate or "",
-                "krFocus":      ai_row.kr_focus or "",
+                "usMarket":        ai_row.us_market or "",
+                "overnightIssues": ai_row.overnight_issues or "",
+                "krIndices":       ai_row.kr_indices or "",
+                "exchangeRate":    ai_row.exchange_rate or "",
+                "todaySchedule":   ai_row.today_schedule or "",
+                "krFocus":         ai_row.kr_focus or "",
             }
 
         morning_collected_time = rows[0].last_collected_time if rows else None

@@ -730,10 +730,12 @@ class MarketMorningAiSummary(Base):
     __tablename__ = "market_morning_ai_summaries"
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, unique=True, index=True)
-    us_market = Column(Text, nullable=True)    # 전일 뉴욕증시 코멘트
-    kr_indices = Column(Text, nullable=True)   # 한국 관련 지수 코멘트
-    exchange_rate = Column(Text, nullable=True) # 환율 코멘트
-    kr_focus = Column(Text, nullable=True)      # 한국증시 주목할점
+    us_market = Column(Text, nullable=True)        # 전일 뉴욕증시 코멘트
+    overnight_issues = Column(Text, nullable=True) # 밤사이 미국·글로벌 주요이슈
+    kr_indices = Column(Text, nullable=True)       # 한국 관련 지수 코멘트
+    exchange_rate = Column(Text, nullable=True)    # 환율 코멘트
+    today_schedule = Column(Text, nullable=True)   # 당일 주요일정
+    kr_focus = Column(Text, nullable=True)         # 한국증시 주목할점
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

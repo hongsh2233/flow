@@ -60,6 +60,8 @@ MORNING_SUMMARY_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="morning", symbol="^SOX", name="필라델피아 반도체", market="US"),
     YahooIndexDef(group="morning", symbol="NQ=F", name="나스닥 선물", market="US"),
     YahooIndexDef(group="morning", symbol="^KS200", name="코스피 200", market="KR"),
+    YahooIndexDef(group="morning", symbol="^MSKR", name="MSCI Korea", market="KR"),
+    YahooIndexDef(group="morning", symbol="EWY", name="iShares MSCI Korea ETF", market="US"),
     YahooIndexDef(group="morning", symbol="^KS11", name="코스피", market="KR"),
     YahooIndexDef(group="morning", symbol="^KQ11", name="코스닥", market="KR"),
 ]
