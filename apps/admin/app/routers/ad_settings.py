@@ -199,12 +199,14 @@ async def ad_settings_add(
 @router.post("/admin/ad-settings/bulk")
 async def ad_settings_bulk(
     bulk_tsv: str = Form(...),
+    ad_zone: Optional[str] = Form(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if not user:
         return RedirectResponse(url="/", status_code=303)
     text = bulk_tsv or ""
+    zone = (ad_zone or "").strip() or None
     added = 0
     skipped = 0
     oi = _next_order_index(db)
@@ -217,6 +219,7 @@ async def ad_settings_bulk(
         if not data or not data.get("affiliate_url"):
             skipped += 1
             continue
+        data["ad_zone"] = zone
         db.add(_row_to_model(data, oi))
         oi += 1
         added += 1
