@@ -6,6 +6,10 @@
   background-color: var(--color-gray-50);
 }
 
+.dark .wrap {
+  background-color: var(--app-bg);
+}
+
 .content__wrap {
   width: 100%;
   padding: 1rem var(--spacing-lg) var(--content-bottom-padding);
