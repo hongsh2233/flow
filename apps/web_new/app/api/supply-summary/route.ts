@@ -235,10 +235,6 @@ export async function GET() {
         collected_time: String(collectedTimeForAi),
         market: "kosdaq",
       });
-      // collected_time 미포함: 해당 bizdate의 최신 요약 아무 슬롯이나 반환
-      const qAny = new URLSearchParams({
-        bizdate: String(bizdateForAi),
-      });
       const [aiKospiRes, aiKosdaqRes] = await Promise.all([
         fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
         fetch(`${base}/api/supply-summary-ai?${qKosdaq}`, { method: "GET", headers, cache: "no-store" }),
@@ -249,15 +245,20 @@ export async function GET() {
       if (aiKosdaqRes.ok) {
         aiKosdaqJson = await aiKosdaqRes.json();
       }
+    }
 
-      const kospiSummary = normalizeAiSummary((aiKospiJson as any).ai_summary);
-      const kosdaqSummary = normalizeAiSummary((aiKosdaqJson as any).ai_summary);
-      if (!kospiSummary || !kosdaqSummary) {
-        const aiAnyRes = await fetch(`${base}/api/supply-summary-ai?${qAny}`, { method: "GET", headers, cache: "no-store" });
-        if (aiAnyRes.ok) {
-          const aiAnyJson = await aiAnyRes.json();
-          aiAnySummary = normalizeAiSummary((aiAnyJson as any).ai_summary);
-        }
+    const kospiSummary = normalizeAiSummary(aiKospiJson.ai_summary);
+    const kosdaqSummary = normalizeAiSummary(aiKosdaqJson.ai_summary);
+
+    // 오늘 exact match 없으면 → bizdate 관계없이 최신 요약 폴백 (어제 요약이라도 표시)
+    if (!kospiSummary || !kosdaqSummary) {
+      const aiAnyRes = await fetch(
+        `${base}/api/supply-summary-ai`,
+        { method: "GET", headers, cache: "no-store" }
+      );
+      if (aiAnyRes.ok) {
+        const aiAnyJson = await aiAnyRes.json();
+        aiAnySummary = normalizeAiSummary((aiAnyJson as any).ai_summary);
       }
     }
 
@@ -272,11 +273,11 @@ export async function GET() {
       collectedTime: collectedTimeForAi,
       kospi: {
         ...numsKospi,
-        aiSummary: normalizeAiSummary(aiKospiJson.ai_summary) ?? aiAnySummary,
+        aiSummary: kospiSummary ?? aiAnySummary,
       },
       kosdaq: {
         ...numsKosdaq,
-        aiSummary: normalizeAiSummary(aiKosdaqJson.ai_summary) ?? aiAnySummary,
+        aiSummary: kosdaqSummary ?? aiAnySummary,
       },
     };
 

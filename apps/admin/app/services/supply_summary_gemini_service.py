@@ -225,14 +225,20 @@ def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: 
     Returns:
         저장에 성공한 시장 수 (0~2)
     """
+    if not GEMINI_API_KEY:
+        print("[supply-gemini] ❌ GEMINI_API_KEY 환경변수 없음 — AI 요약 건너뜀")
+        return 0
+
     time_label = _time_label_for_collected_time(collected_time)
     saved = 0
+    print(f"[supply-gemini] 시작: {bizdate} {collected_time}")
 
     for market in (MARKET_KOSPI, MARKET_KOSDAQ):
         nums = _get_supply_numbers(db, bizdate, collected_time, market)
         if nums is None:
-            print(f"[supply-gemini] {bizdate} {collected_time} {market} 수급 원본 없음, 건너뜀")
+            print(f"[supply-gemini] ⚠️ {bizdate} {collected_time} {market} — DB에서 수급 원본 못 찾음, 건너뜀")
             continue
+        print(f"[supply-gemini] {market} 수치: {nums}")
 
         prompt = _build_prompt(nums, time_label, market)
         summary = _call_gemini(prompt)
