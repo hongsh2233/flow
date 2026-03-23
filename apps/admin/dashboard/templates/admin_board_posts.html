@@ -344,9 +344,6 @@
         {% endif %}
       </form>
       <a href="/admin/board/{{ board.id }}/write" class="btn-write">✏️ 새 글 작성</a>
-      {% if board.id == 'B001' %}
-      <button type="button" id="btn-gen-closing" class="btn-write" style="background:#e67e22;" onclick="generateClosingSummary()">📰 마감시황 수동 생성</button>
-      {% endif %}
     </div>
   </div>
 
@@ -513,31 +510,7 @@
     }
   }
 
-  async function generateClosingSummary() {
-    const btn = document.getElementById('btn-gen-closing');
-    const dateStr = prompt('대상 날짜 (YYYY-MM-DD, 빈칸=오늘)', '');
-    if (dateStr === null) return; // 취소
-    btn.disabled = true;
-    btn.textContent = '⏳ 생성 중…';
-    try {
-      const url = '/api/admin/market-closing-summary/generate' + (dateStr ? `?target_date_str=${dateStr}` : '');
-      const res = await fetch(url, { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        alert(`✅ 마감시황 생성 완료\n날짜: ${data.date}`);
-        location.reload();
-      } else {
-        const diag = data.diagnostics ? JSON.stringify(data.diagnostics, null, 2) : '';
-        alert(`❌ 생성 실패\n${data.message || data.error || ''}\n\n진단:\n${diag}`);
-      }
-    } catch (e) {
-      alert('요청 중 오류: ' + e);
-    }
-    btn.disabled = false;
-    btn.textContent = '📰 마감시황 수동 생성';
-  }
-
-  async function rejectPost(postId, btn) {
+async function rejectPost(postId, btn) {
     if (!confirm('이 게시글을 거절(삭제)하시겠습니까?')) return;
     btn.disabled = true;
     try {
