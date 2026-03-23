@@ -105,6 +105,17 @@
   font-weight: 600;
 }
 
+/* .table tbody td { color: ... } 보다 명시도를 높여 덮어쓰기 방지 */
+.table tbody td.up {
+  color: var(--app-up);
+  font-weight: 600;
+}
+
+.table tbody td.down {
+  color: var(--app-down);
+  font-weight: 600;
+}
+
 .empty {
   font-size: 0.85rem;
   color: var(--app-text-placeholder);
