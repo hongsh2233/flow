@@ -24,8 +24,10 @@ interface ExchangeRateItem {
 
 interface AiSummary {
   usMarket: string;
+  overnightIssues: string;
   krIndices: string;
   exchangeRate: string;
+  todaySchedule: string;
   krFocus: string;
 }
 
@@ -145,6 +147,12 @@ export function MarketSummaryPopup() {
                   <p className={styles.aiText}>{data.aiSummary.usMarket}</p>
                 </div>
               )}
+              {data.aiSummary.overnightIssues && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>밤사이 이슈</span>
+                  <p className={styles.aiText}>{data.aiSummary.overnightIssues}</p>
+                </div>
+              )}
               {data.aiSummary.krIndices && (
                 <div className={styles.aiItem}>
                   <span className={styles.aiLabel}>한국 관련 지수</span>
@@ -155,6 +163,12 @@ export function MarketSummaryPopup() {
                 <div className={styles.aiItem}>
                   <span className={styles.aiLabel}>환율</span>
                   <p className={styles.aiText}>{data.aiSummary.exchangeRate}</p>
+                </div>
+              )}
+              {data.aiSummary.todaySchedule && (
+                <div className={styles.aiItem}>
+                  <span className={styles.aiLabel}>오늘의 일정</span>
+                  <p className={styles.aiText}>{data.aiSummary.todaySchedule}</p>
                 </div>
               )}
               {data.aiSummary.krFocus && (

@@ -823,12 +823,59 @@ async def collect_market_morning_summary():
                     for r in ex_rows
                 ]
 
+            # 밤사이 주요 뉴스 수집 (Yahoo Finance 검색)
+            overnight_news = []
+            try:
+                from app.services.investment_bank_news_service import _fetch_yahoo_search_news
+                _overnight_queries = [
+                    "US stock market overnight",
+                    "Wall Street news today",
+                    "Federal Reserve interest rate",
+                    "S&P500 Nasdaq",
+                ]
+                seen_titles: set = set()
+                for _q in _overnight_queries:
+                    _news = await _fetch_yahoo_search_news(_q, news_count=3)
+                    for _n in _news:
+                        _t = (_n.get("title") or "").strip()
+                        if _t and _t not in seen_titles:
+                            seen_titles.add(_t)
+                            overnight_news.append(_n)
+                        if len(overnight_news) >= 12:
+                            break
+                    if len(overnight_news) >= 12:
+                        break
+                print(f"[morning-gemini] 밤사이 뉴스 {len(overnight_news)}건 수집")
+            except Exception as _e:
+                print(f"[morning-gemini] 밤사이 뉴스 수집 오류 (무시): {_e}")
+
+            # 당일 주요 일정 쿼리
+            today_schedules = []
+            try:
+                from app.engine.models import Schedule as _Schedule
+                _sched_rows = db.query(_Schedule).filter(
+                    _Schedule.date == today
+                ).order_by(_Schedule.scheduled_time).all()
+                today_schedules = [
+                    {
+                        "time": r.scheduled_time or "",
+                        "subject": r.subject,
+                        "content": r.content or "",
+                    }
+                    for r in _sched_rows
+                ]
+                print(f"[morning-gemini] 당일 일정 {len(today_schedules)}건 조회")
+            except Exception as _e:
+                print(f"[morning-gemini] 당일 일정 조회 오류 (무시): {_e}")
+
             if indices_for_gemini:
                 ok = generate_and_save_ai_summary(
                     db=db,
                     indices=indices_for_gemini,
                     exchange_rates=exchange_rates_for_gemini,
                     target_date=today,
+                    overnight_news=overnight_news,
+                    today_schedules=today_schedules,
                 )
                 if ok:
                     # B001 게시판에 모닝 브리핑 등록 (upsert)
@@ -843,12 +890,22 @@ async def collect_market_morning_summary():
                                 f"<p>안녕하세요. {today.strftime('%Y-%m-%d')} 출근길 브리핑입니다.</p>"
                                 f"<p>전일자 미국증시 마감시황입니다.</p>"
                                 f"<p>{morning_row.us_market}</p>"
+                                + (
+                                    f"<br><p>밤사이 주요 이슈</p>"
+                                    f"<p>{morning_row.overnight_issues}</p>"
+                                    if morning_row.overnight_issues else ""
+                                ) +
                                 f"<br>"
-                                f"<p>이중 한국관련 지수는</p>"
+                                f"<p>한국관련 지수는</p>"
                                 f"<p>{morning_row.kr_indices}</p>"
                                 f"<br>"
                                 f"<p>환율은</p>"
                                 f"<p>{morning_row.exchange_rate}</p>"
+                                + (
+                                    f"<br><p>오늘의 주요 일정</p>"
+                                    f"<p>{morning_row.today_schedule}</p>"
+                                    if morning_row.today_schedule else ""
+                                ) +
                                 f"<br>"
                                 f"<p>오늘 한국증시 주요 포인트</p>"
                                 f"<p>{morning_row.kr_focus}</p>"
