@@ -9,10 +9,12 @@ import { MarketIndicesTab } from "../components/module/briefing/MarketIndicesTab
 import { ReportTabContent } from "../components/module/briefing/ReportTabContent";
 import { SpotlightNews } from "../components/module/briefing/SpotlightNews";
 import { StockTermBox } from "../components/module/stock-term-box";
+import { AdZoneSlot } from "../components/module/AdZoneSlot";
+import { shouldShowAdZoneB_regular } from "@/lib/affiliate/adZoneB";
 import styles from "./Briefing.module.css";
 
 function BriefingContent() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
 
   return (
@@ -33,6 +35,9 @@ function BriefingContent() {
             시황/리포트
           </TabsTrigger>
         </TabsList>
+
+        {/* [AD_ZONE B3 — 전체뉴스 탭과 리스트 사이 / 일반회원까지] */}
+        {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B3" />}
 
         <TabsContent value="all" className={styles.tabContent}>
           <AllNews />
