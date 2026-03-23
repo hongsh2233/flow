@@ -291,8 +291,11 @@ async def fetch_supply_source(
     referer = _MARKET_REFERER.get(market) or _REFERER.get(data_type, "https://finance.naver.com/")
     headers = {**_BASE_HEADERS, "Referer": referer}
 
+    import os
+    proxy = os.environ.get("NAVER_PROXY_URL")  # 예: "http://user:pass@host:port" 또는 "socks5://host:port"
     async with httpx.AsyncClient(
-        headers=headers, timeout=timeout, follow_redirects=True
+        headers=headers, timeout=timeout, follow_redirects=True,
+        **({"proxy": proxy} if proxy else {}),
     ) as client:
         try:
             response = await client.get(url, params=params)
