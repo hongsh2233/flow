@@ -65,6 +65,20 @@ def _get_supply_numbers(
             .order_by(NaverSupplyData.collected_at.desc())
             .first()
         )
+        # 시장별 URL이 차단/빈 응답이면 "all" 데이터로 폴백
+        if not row or not row.data_json:
+            row = (
+                db.query(NaverSupplyData)
+                .filter(
+                    NaverSupplyData.data_type == data_type,
+                    NaverSupplyData.market == "all",
+                    NaverSupplyData.sub_key.is_(None),
+                    NaverSupplyData.bizdate == bizdate,
+                    NaverSupplyData.collected_time == collected_time,
+                )
+                .order_by(NaverSupplyData.collected_at.desc())
+                .first()
+            )
         if not row or not row.data_json:
             continue
         found_any = True
