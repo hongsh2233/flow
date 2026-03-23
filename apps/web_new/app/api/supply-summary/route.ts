@@ -235,9 +235,9 @@ export async function GET() {
         collected_time: String(collectedTimeForAi),
         market: "kosdaq",
       });
+      // collected_time 미포함: 해당 bizdate의 최신 요약 아무 슬롯이나 반환
       const qAny = new URLSearchParams({
         bizdate: String(bizdateForAi),
-        collected_time: String(collectedTimeForAi),
       });
       const [aiKospiRes, aiKosdaqRes] = await Promise.all([
         fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
