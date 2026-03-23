@@ -77,7 +77,6 @@ function MarketSection({ title, slice }: { title: string; slice: MarketSlice }) 
   return (
     <div className={styles.marketBlock}>
       <h3 className={styles.marketTitle}>{title}</h3>
-      {slice.aiSummary ? <p className={styles.excerpt}>{slice.aiSummary}</p> : null}
       <NumbersBlock slice={slice} />
     </div>
   );
@@ -103,9 +102,13 @@ export function SupplySummaryCard() {
 
   if (loading || !data) return null;
 
+  // market=all 또는 kospi 중 있는 요약을 코스피 위에 한 번만 표시
+  const sharedSummary = data.kospi.aiSummary || data.kosdaq.aiSummary;
+
   const cardContent = (
     <>
       <h2 className={styles.title}>{data.timeLabel}</h2>
+      {sharedSummary ? <p className={styles.excerpt}>{sharedSummary}</p> : null}
       <MarketSection title="코스피" slice={data.kospi} />
       <MarketSection title="코스닥" slice={data.kosdaq} />
     </>
