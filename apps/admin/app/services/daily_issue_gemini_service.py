@@ -9,8 +9,9 @@ from typing import Optional
 from sqlalchemy.orm import Session
 import pytz
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.models import NaverStockNews
+from app.services.gemini_response_utils import extract_text_from_generate_content_response
 
 
 def _get_today_news(db: Session, target_date: date, limit: int = 50) -> list[dict]:
@@ -59,40 +60,6 @@ def _build_prompt(news_list: list[dict]) -> str:
 """
 
 
-def _extract_text_from_gemini_response(response) -> str:
-    """Gemini 응답에서 텍스트 추출. response.parts → response.text → candidates 순으로 시도.
-    gemini-2.5-flash thinking 파트(thought=True)는 제외한다."""
-    text = ""
-    parts = getattr(response, "parts", None)
-    if parts:
-        for part in parts:
-            if getattr(part, "thought", False):
-                continue
-            pt = getattr(part, "text", None)
-            if pt:
-                text += str(pt)
-    if not text:
-        try:
-            if hasattr(response, "text"):
-                text = (response.text or "").strip()
-        except (ValueError, AttributeError):
-            pass
-    if not text:
-        for candidate in getattr(response, "candidates", []) or []:
-            content = getattr(candidate, "content", None)
-            if not content:
-                continue
-            for part in getattr(content, "parts", []) or []:
-                if getattr(part, "thought", False):
-                    continue
-                pt = getattr(part, "text", None)
-                if pt:
-                    text += str(pt)
-            if text:
-                break
-    return (text or "").strip()
-
-
 def _call_gemini(prompt: str) -> Optional[str]:
     if not GEMINI_API_KEY:
         print("[daily-issue-gemini] GEMINI_API_KEY 없음, 건너뜀")
@@ -101,10 +68,12 @@ def _call_gemini(prompt: str) -> Optional[str]:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=GEMINI_MODEL,
             contents=prompt,
         )
-        text = _extract_text_from_gemini_response(response)
+        text = extract_text_from_generate_content_response(
+            response, log_prefix="daily-issue-gemini", log_if_empty=True
+        )
         return text or None
     except Exception as e:
         print(f"[daily-issue-gemini] Gemini 호출 오류: {e}")

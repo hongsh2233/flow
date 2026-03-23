@@ -10,7 +10,7 @@ FSC 데이터 자동 수집 스케줄러
 - 금융위원회 주식시세 데이터는 당일(오늘) 데이터가 장 마감 직후 바로 생성되지 않을 수 있어,
   자동 수집 시에는 '직전 거래일'(-1, 월요일이면 -3 등) 기준일자를 조회합니다.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import asyncio
@@ -1415,7 +1415,8 @@ naver_ranking_scheduler = NaverRankingScheduler()
 async def collect_naver_stock_news():
     """
     네이버 뉴스 API로 주가 직접 영향 뉴스 수집
-    평일(월~금) 08:00, 12:00, 19:00에 실행
+    평일(월~금) 08:30, 12:30, 19:30 (KST) 실행
+    수집 직후 동일 세션에서 금일 이슈 Gemini 요약·시장의 목소리 뉴스/Gemini 수집을 실행한다.
     수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자 등 키워드 기반 필터링
     최근 2일치 뉴스만 유지
     """
@@ -1440,6 +1441,34 @@ async def collect_naver_stock_news():
 
         naver_news_service.cleanup_old_news(db)
 
+        try:
+            from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
+
+            if generate_and_save_daily_issue_summary(db, now.date()):
+                print("✅ 금일 이슈 Gemini 요약 저장 (뉴스 수집 직후)")
+            else:
+                print("ℹ️ 금일 이슈 요약 스킵 (당일 뉴스 없음 또는 Gemini 실패)")
+        except Exception as issue_err:
+            import traceback
+
+            print(f"⚠️ 금일 이슈 요약 오류: {issue_err}")
+            print(traceback.format_exc())
+
+        try:
+            from app.services.market_voice_service import fetch_and_summarize_news
+
+            cleanup_old_market_voices(db, keep_days=2)
+            mv_result = await fetch_and_summarize_news(db)
+            print(
+                f"✅ 시장의 목소리 수집 (뉴스 직후): "
+                f"조회 {mv_result.get('fetched', 0)}건, 신규 {mv_result.get('saved', 0)}건"
+            )
+        except Exception as mv_err:
+            import traceback
+
+            print(f"⚠️ 시장의 목소리 수집 오류: {mv_err}")
+            print(traceback.format_exc())
+
         print(f"{'='*60}")
         print(f"네이버 주가 영향 뉴스 수집 완료")
         print(f"{'='*60}\n")
@@ -1455,7 +1484,7 @@ async def collect_naver_stock_news():
 class NaverNewsScheduler:
     """
     네이버 주가 영향 뉴스 수집 스케줄러
-    평일(월~금) 08:00, 12:00, 19:00에 수집
+    평일(월~금) 08:30, 12:30, 19:30 (KST) 수집 + 금일 이슈 Gemini + 시장의 목소리
     """
 
     def __init__(self):
@@ -1479,7 +1508,7 @@ class NaverNewsScheduler:
             misfire_grace_time=300,
         )
         self.scheduler.start()
-        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:30/12:30/19:30, 월~금)")
+        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:30/12:30/19:30 + 이슈 Gemini + 시장의 목소리, 월~금)")
 
     def shutdown(self):
         if self.scheduler:
@@ -1491,82 +1520,17 @@ class NaverNewsScheduler:
 naver_news_scheduler = NaverNewsScheduler()
 
 
-# =========================================================
-# 금일 이슈 Gemini 요약 스케줄러 (뉴스 수집 10분 후: 08:40 / 12:40 / 19:40)
-# =========================================================
-
-async def collect_daily_issue_summary():
-    """
-    오늘 수집된 naver_stock_news를 Gemini로 요약해 daily_issue_summaries에 저장
-    평일 08:40 / 12:40 / 19:40 KST 실행 (뉴스 수집 08:30 / 12:30 / 19:30 각 10분 후)
-    """
-    if should_skip_today():
-        return
-    kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
-    print(f"\n[금일 이슈] Gemini 요약 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    db = SessionLocal()
-    try:
-        from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
-        ok = generate_and_save_daily_issue_summary(db, now.date())
-        if ok:
-            print("[금일 이슈] Gemini 요약 저장 완료")
-        else:
-            print("[금일 이슈] 뉴스 없음 또는 Gemini 오류로 건너뜀")
-    except Exception as e:
-        import traceback
-        print(f"[금일 이슈] 오류: {e}")
-        print(traceback.format_exc())
-    finally:
-        db.close()
-
-
-class DailyIssueScheduler:
-    """금일 이슈 Gemini 요약 스케줄러 (뉴스 수집 10분 후: 08:40 / 12:40 / 19:40, 월~금)"""
-    def __init__(self):
-        self.scheduler = None
-        self.kst = pytz.timezone("Asia/Seoul")
-
-    def start(self):
-        if self.scheduler is not None:
-            return
-        self.scheduler = AsyncIOScheduler(timezone=self.kst)
-        for slot_hour, slot_minute, slot_id, slot_name in [
-            (8,  40, "daily_issue_summary_0840", "금일 이슈 Gemini 요약 (08:40, 월~금)"),
-            (12, 40, "daily_issue_summary_1240", "금일 이슈 Gemini 요약 (12:40, 월~금)"),
-            (19, 40, "daily_issue_summary_1940", "금일 이슈 Gemini 요약 (19:40, 월~금)"),
-        ]:
-            self.scheduler.add_job(
-                collect_daily_issue_summary,
-                trigger=CronTrigger(day_of_week="mon-fri", hour=slot_hour, minute=slot_minute, timezone=self.kst),
-                id=slot_id,
-                name=slot_name,
-                replace_existing=True,
-                max_instances=1,
-                coalesce=True,
-                misfire_grace_time=600,
-            )
-        self.scheduler.start()
-        print("✅ 금일 이슈 스케줄러 시작 (08:40 / 12:40 / 19:40, 월~금)")
-
-    def shutdown(self):
-        if self.scheduler:
-            self.scheduler.shutdown()
-            self.scheduler = None
-
-
-daily_issue_scheduler = DailyIssueScheduler()
-
+# 금일 이슈·시장의 목소리: collect_naver_stock_news() 안에서 뉴스 저장 직후 실행 (별도 스케줄 없음)
 
 # =========================================================
-# 시장의 목소리 수집 스케줄러
+# 시장의 목소리 — 오래된 행 정리 (스케줄 잡은 뉴스 수집 파이프라인에서 호출)
 # =========================================================
 
 def cleanup_old_market_voices(db: Session, keep_days: int = 2):
     """2일 이상 지난 market_voices 레코드 삭제 (pending/approved 모두)"""
     try:
         from app.models import MarketVoice
-        cutoff = datetime.utcnow() - timedelta(days=keep_days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=keep_days)
         deleted = db.query(MarketVoice).filter(MarketVoice.created_at < cutoff).delete()
         db.commit()
         if deleted:
@@ -1574,74 +1538,6 @@ def cleanup_old_market_voices(db: Session, keep_days: int = 2):
     except Exception as e:
         db.rollback()
         print(f"❌ 시장의 목소리 정리 오류: {e}")
-
-
-async def collect_market_voices():
-    """
-    person_master 인물별 뉴스 수집 → Gemini 요약 → market_voices pending 저장
-    평일(월~금) 08:30, 12:30, 19:30에 실행 (뉴스 수집 직후)
-    수집 전에 2일 초과 항목 자동 정리
-    """
-    from app.services.market_voice_service import fetch_and_summarize_news
-
-    kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
-    print(f"\n{'='*60}")
-    print(f"시장의 목소리 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'='*60}")
-
-    if should_skip_today():
-        print(f"{'='*60}\n")
-        return
-
-    db = SessionLocal()
-    try:
-        # 2일 초과 항목 정리
-        cleanup_old_market_voices(db, keep_days=2)
-
-        result = await fetch_and_summarize_news(db)
-        print(f"시장의 목소리 수집 완료: {result.get('saved', 0)}건 신규 저장 (pending)")
-        print(f"{'='*60}\n")
-    except Exception as e:
-        import traceback
-        print(f"시장의 목소리 수집 오류: {e}")
-        print(traceback.format_exc())
-        print(f"{'='*60}\n")
-    finally:
-        db.close()
-
-
-class MarketVoiceScheduler:
-    """시장의 목소리 수집 스케줄러 (평일 08:30, 12:30, 19:30)"""
-
-    def __init__(self):
-        self.scheduler = None
-        self.kst = pytz.timezone("Asia/Seoul")
-
-    def start(self):
-        if self.scheduler is not None:
-            return
-        self.scheduler = AsyncIOScheduler(timezone=self.kst)
-        self.scheduler.add_job(
-            collect_market_voices,
-            trigger=CronTrigger(day_of_week="mon-fri", hour="8,12,19", minute=30, timezone=self.kst),
-            id="market_voice_collection",
-            name="시장의 목소리 수집 (08:30/12:30/19:30, 월~금)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=300,
-        )
-        self.scheduler.start()
-        print("시장의 목소리 스케줄러 시작 (08:30/12:30/19:30, 월~금)")
-
-    def shutdown(self):
-        if self.scheduler:
-            self.scheduler.shutdown()
-            self.scheduler = None
-
-
-market_voice_scheduler = MarketVoiceScheduler()
 
 
 # =========================================================

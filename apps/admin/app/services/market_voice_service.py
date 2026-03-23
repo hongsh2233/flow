@@ -12,8 +12,9 @@ from email.utils import parsedate_to_datetime
 from sqlalchemy.orm import Session
 import pytz
 
-from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, GEMINI_API_KEY
+from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, GEMINI_API_KEY, GEMINI_MODEL
 from app.engine.models import PersonMaster, MarketVoice
+from app.services.gemini_response_utils import extract_text_from_generate_content_response
 
 NAVER_NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json"
 MAX_NEWS_PER_PERSON = 5
@@ -82,55 +83,6 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
             return []
 
 
-def _extract_text_from_gemini_response(response, debug_on_empty: bool = False) -> str:
-    """
-    Gemini 응답에서 텍스트 추출.
-    SDK별로 response.text, response.parts, response.candidates 경로가 다를 수 있으므로
-    여러 경로를 시도한다.
-    """
-    text = ""
-
-    # 1) response.parts (SDK 권장 경로 - GenerateContentResponse.parts)
-    parts = getattr(response, "parts", None)
-    if parts:
-        for part in parts:
-            pt = getattr(part, "text", None)
-            if pt:
-                text += str(pt)
-
-    # 2) response.text
-    if not text:
-        try:
-            if hasattr(response, "text"):
-                text = (response.text or "").strip()
-        except (ValueError, AttributeError) as e:
-            if debug_on_empty:
-                print(f"[시장의 목소리] response.text 접근 실패: {e}")
-
-    # 3) response.candidates[].content.parts[]
-    if not text:
-        candidates = getattr(response, "candidates", []) or []
-        for candidate in candidates:
-            content = getattr(candidate, "content", None)
-            if not content:
-                continue
-            c_parts = getattr(content, "parts", []) or []
-            for part in c_parts:
-                pt = getattr(part, "text", None)
-                if pt:
-                    text += str(pt)
-            if text:
-                break
-
-    if debug_on_empty and not text:
-        pf = getattr(response, "prompt_feedback", None)
-        block_reason = getattr(pf, "block_reason", None) if pf else None
-        print(f"[시장의 목소리] Gemini 빈 응답 - candidates={len(getattr(response, 'candidates', []) or [])}, "
-              f"parts={len(parts) if parts else 0}, block_reason={block_reason}")
-
-    return (text or "").strip()
-
-
 def _summarize_with_gemini(person_name: str, title: str, description: str) -> Optional[str]:
     """Gemini API로 '누가 어떤 핵심 발언을 했는지' 50자 이내 요약"""
     if not GEMINI_API_KEY:
@@ -149,10 +101,12 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
 
 요약 (50자 이내):"""
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=GEMINI_MODEL,
             contents=prompt,
         )
-        text = _extract_text_from_gemini_response(response, debug_on_empty=True)
+        text = extract_text_from_generate_content_response(
+            response, log_prefix="시장의 목소리", log_if_empty=True
+        )
         # (N자) 패턴 제거: "(33자)", "(50자 이내)" 등
         text = re.sub(r'\s*\(\d+자[^)]*\)', '', text).strip()
         if len(text) > STATEMENT_MAX_LEN:

@@ -9,7 +9,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.models import NaverSupplyData
 from app.engine.models import SupplySummaryAi
 
@@ -210,7 +210,7 @@ def _call_gemini(prompt: str) -> Optional[str]:
 
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.5-flash-preview-04-17",
+            model=GEMINI_MODEL,
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response)

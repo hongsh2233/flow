@@ -5,6 +5,7 @@
 """
 from typing import Optional
 from datetime import datetime
+import pytz
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -17,6 +18,15 @@ from app import models
 
 def _js_alert_back(message: str) -> HTMLResponse:
     return HTMLResponse(f"<script>alert({message!r}); history.back();</script>")
+
+
+def format_datetime_kst(dt: Optional[datetime]) -> str:
+    """DB timestamptz(대개 UTC) → 관리자 화면용 한국 시각."""
+    if not dt:
+        return "-"
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    return dt.astimezone(pytz.timezone("Asia/Seoul")).strftime("%Y-%m-%d %H:%M KST")
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -51,6 +61,7 @@ async def admin_market_voices_page(
             "request": request,
             "admin_email": user.email,
             "active_page": "market-voices",
+            "format_dt_kst": format_datetime_kst,
             "voices": voices,
             "persons": persons,
             "pending_count": pending_count,
@@ -192,7 +203,10 @@ async def manual_collect_market_voices(
     if not user:
         return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     try:
+        from app.services.scheduler_service import cleanup_old_market_voices
         from app.services.market_voice_service import fetch_and_summarize_news
+
+        cleanup_old_market_voices(db, keep_days=2)
         result = await fetch_and_summarize_news(db)
         msg = f"수집 완료: {result.get('fetched', 0)}건 조회, {result.get('saved', 0)}건 신규 저장 (pending)"
         if result.get("saved", 0) == 0 and result.get("fetched", 0) > 0:

@@ -80,8 +80,10 @@ DATA_GO_KR_API_KEY = os.environ.get("DATA_GO_KR_API_KEY")  # 공공데이터포�
 # Open DART(금융감독원 전자공시) API 설정
 OPENDART_API_KEY = os.environ.get("OPENDART")  # Open DART 인증키 (40자리)
 
-# Google Gemini API (시장의 목소리 AI 요약)
+# Google Gemini API (관리자 스케줄·요약 전반)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# google-genai generate_content 모델명 (필요 시 Railway 등에서 GEMINI_MODEL 로 덮어쓰기)
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 # 네이버 검색 API 설정 (뉴스 검색)
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID

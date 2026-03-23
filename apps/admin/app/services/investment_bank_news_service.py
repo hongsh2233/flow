@@ -9,8 +9,9 @@ from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.engine.models import InvestmentBankNews
+from app.services.gemini_response_utils import extract_text_from_generate_content_response
 
 _YAHOO_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -71,35 +72,6 @@ def _is_finance_related(title: str, summary: str) -> bool:
     return any(kw.lower() in combined for kw in FINANCE_KEYWORDS)
 
 
-def _extract_gemini_text(response) -> str:
-    """Gemini 응답에서 텍스트 추출 (다양한 응답 구조 대응)"""
-    text = ""
-    parts = getattr(response, "parts", None)
-    if parts:
-        for part in parts:
-            pt = getattr(part, "text", None)
-            if pt:
-                text += str(pt)
-    if not text and hasattr(response, "text"):
-        try:
-            text = (response.text or "").strip()
-        except Exception:
-            pass
-    if not text:
-        for c in getattr(response, "candidates", []) or []:
-            content = getattr(c, "content", None)
-            if not content:
-                continue
-            for p in getattr(content, "parts", []) or []:
-                pt = getattr(p, "text", None)
-                if pt:
-                    text += str(pt)
-                    break
-            if text:
-                break
-    return (text or "").strip()
-
-
 def _parse_translation_json(text: str) -> Optional[Tuple[str, str]]:
     """번역 JSON 파싱 (마크다운/추가 텍스트 포함 응답 대응)"""
     if not text or not text.strip():
@@ -155,10 +127,12 @@ def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]
             from google import genai
             client = genai.Client(api_key=GEMINI_API_KEY)
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model=GEMINI_MODEL,
                 contents=prompt,
             )
-            text = _extract_gemini_text(response)
+            text = extract_text_from_generate_content_response(
+                response, log_prefix="투자은행 뉴스", log_if_empty=True
+            )
             if not text:
                 continue
             result = _parse_translation_json(text)

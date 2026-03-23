@@ -16,8 +16,12 @@ from datetime import date
 from typing import Optional, Dict, List
 from sqlalchemy.orm import Session
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.engine.models import MarketMorningAiSummary
+from app.services.gemini_response_utils import (
+    extract_first_json_object,
+    extract_text_from_generate_content_response,
+)
 
 # symbol → 출력명 매핑
 _SYMBOL_NAME = {
@@ -130,40 +134,6 @@ def _build_prompt(
 }}"""
 
 
-def _extract_text_from_gemini_response(response) -> str:
-    """Gemini 응답에서 텍스트 추출. response.parts → response.text → candidates 순으로 시도.
-    gemini-2.5-flash thinking 파트(thought=True)는 제외한다."""
-    text = ""
-    parts = getattr(response, "parts", None)
-    if parts:
-        for part in parts:
-            if getattr(part, "thought", False):  # thinking 추론 파트 skip
-                continue
-            pt = getattr(part, "text", None)
-            if pt:
-                text += str(pt)
-    if not text:
-        try:
-            if hasattr(response, "text"):
-                text = (response.text or "").strip()
-        except (ValueError, AttributeError):
-            pass
-    if not text:
-        for candidate in getattr(response, "candidates", []) or []:
-            content = getattr(candidate, "content", None)
-            if not content:
-                continue
-            for part in getattr(content, "parts", []) or []:
-                if getattr(part, "thought", False):  # thinking 추론 파트 skip
-                    continue
-                pt = getattr(part, "text", None)
-                if pt:
-                    text += str(pt)
-            if text:
-                break
-    return (text or "").strip()
-
-
 def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
     if not GEMINI_API_KEY:
         print("[morning-gemini] GEMINI_API_KEY 없음, 건너뜀")
@@ -173,19 +143,21 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=GEMINI_MODEL,
             contents=prompt,
         )
-        text = _extract_text_from_gemini_response(response)
+        text = extract_text_from_generate_content_response(
+            response, log_prefix="morning-gemini", log_if_empty=True
+        )
 
         # 코드블록 제거 (위치 무관 - thinking 잔류 텍스트 뒤에 올 수 있으므로 앵커 없이)
         text = re.sub(r"```(?:json)?\s*", "", text)
         text = re.sub(r"```", "", text)
-        # JSON 객체만 추출 (앞뒤 불필요한 텍스트 제거)
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if m:
-            text = m.group(0)
-        data = json.loads(text)
+        json_blob = extract_first_json_object(text)
+        if not json_blob:
+            print(f"[morning-gemini] JSON 블록 추출 실패, 원문(첫 400자): {text[:400]!r}")
+            return None
+        data = json.loads(json_blob)
         return {
             "us_market":        str(data.get("us_market", "") or "").strip(),
             "overnight_issues": str(data.get("overnight_issues", "") or "").strip(),

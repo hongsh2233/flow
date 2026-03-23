@@ -12,8 +12,9 @@ from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from sqlalchemy.orm import Session
 
-from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, GEMINI_API_KEY
+from app.config import NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, GEMINI_API_KEY, GEMINI_MODEL
 from app.engine.models import Board, BoardCategory, Post
+from app.services.gemini_response_utils import extract_text_from_generate_content_response
 
 NAVER_NEWS_API_URL = "https://openapi.naver.com/v1/search/news.json"
 BOARD_ID = "B002"
@@ -79,34 +80,6 @@ async def _search_news(keyword: str, display: int = MAX_NEWS_PER_QUERY) -> List[
             return []
 
 
-def _extract_gemini_text(response) -> str:
-    text = ""
-    parts = getattr(response, "parts", None)
-    if parts:
-        for part in parts:
-            pt = getattr(part, "text", None)
-            if pt:
-                text += str(pt)
-    if not text and hasattr(response, "text"):
-        try:
-            text = (response.text or "").strip()
-        except Exception:
-            pass
-    if not text:
-        for c in getattr(response, "candidates", []) or []:
-            content = getattr(c, "content", None)
-            if not content:
-                continue
-            for p in getattr(content, "parts", []) or []:
-                pt = getattr(p, "text", None)
-                if pt:
-                    text += str(pt)
-                    break
-            if text:
-                break
-    return (text or "").strip()
-
-
 def _normalize_price(raw: str) -> str:
     """
     Gemini가 반환한 목표가 문자열을 'N,NNN원' 형식으로 정규화.
@@ -167,10 +140,12 @@ def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
 - 목표가 조정 뉴스가 아니면 최상위에 null 반환
 JSON만 출력하세요."""
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=GEMINI_MODEL,
             contents=prompt,
         )
-        text = _extract_gemini_text(response)
+        text = extract_text_from_generate_content_response(
+            response, log_prefix="목표가 뉴스", log_if_empty=True
+        )
         if not text or text.lower() in ("null", "none"):
             return None
         # 코드블록·불필요 텍스트 제거
