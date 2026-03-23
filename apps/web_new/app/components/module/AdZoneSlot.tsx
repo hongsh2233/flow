@@ -1,8 +1,7 @@
+"use client";
+
 /**
  * AdZoneSlot — B구역 광고 슬롯 (내부 관리 코드, UI 미노출)
- *
- * 현재는 아무것도 렌더링하지 않습니다.
- * 향후 광고 시스템 연동 시 zone 값에 따라 광고를 렌더링합니다.
  *
  * zone 규칙:
  *   B1 — 메인: 이슈체크와 주요지수 사이        (일반회원까지)
@@ -13,11 +12,25 @@
  *   B6 — 캘린더: 일정 목록 하단                 (VIP회원까지)
  *   B7 — 주톡: 공부노트와 시장의 목소리 사이     (VIP회원까지)
  */
+
+import { useSession } from "next-auth/react";
+import { shouldShowAdZoneB_regular, shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
+import { RandomAffiliateCard } from "./affiliate/RandomAffiliateCard";
+
 export interface AdZoneSlotProps {
   zone: "B1" | "B2" | "B3" | "B4" | "B5" | "B6" | "B7";
 }
 
-export function AdZoneSlot(_props: AdZoneSlotProps) {
-  // 광고 시스템 미연동 상태 — UI에 노출하지 않음
-  return null;
+/** B5·B6·B7 — VIP회원까지 노출 */
+const VIP_ZONES = ["B5", "B6", "B7"];
+
+export function AdZoneSlot({ zone }: AdZoneSlotProps) {
+  const { data: session, status } = useSession();
+  const isVipZone = VIP_ZONES.includes(zone);
+  const show = isVipZone
+    ? shouldShowAdZoneB_vip(session, status)
+    : shouldShowAdZoneB_regular(session, status);
+
+  if (!show) return null;
+  return <RandomAffiliateCard zone="B" />;
 }

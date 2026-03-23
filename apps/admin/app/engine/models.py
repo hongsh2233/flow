@@ -778,6 +778,7 @@ class AliexpressAffiliateProduct(Base):
     sold_count = Column(String(32), nullable=True)
     feedback_percent = Column(String(32), nullable=True)
     affiliate_url = Column(Text, nullable=True)
+    ad_zone = Column(String(20), nullable=True, default=None)  # None·"A" → A구역, "B" → B구역
     is_active = Column(String(20), nullable=False, default="active")
     order_index = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

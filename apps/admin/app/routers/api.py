@@ -1672,12 +1672,15 @@ async def get_banners(
 @router.get("/api/affiliate-products")
 async def get_affiliate_products(
     include_inactive: bool = Query(False, description="true면 비활성 항목 포함"),
+    zone: str = Query("A", description="광고 구역: A(기본) 또는 B"),
     db: Session = Depends(get_db),
     authorized: bool = Depends(verify_api_key),
 ):
     """
     광고설정에 등록한 알리익스프레스(등) 어필리에이트 상품 목록.
     웹 앱에서 프로모 카드 등으로 사용할 때 `X-API-KEY`로 호출.
+    zone=A (기본): ad_zone이 NULL 또는 "A"인 항목
+    zone=B: ad_zone이 "B"인 항목
     """
     q = db.query(models.AliexpressAffiliateProduct).order_by(
         models.AliexpressAffiliateProduct.order_index,
@@ -1685,6 +1688,13 @@ async def get_affiliate_products(
     )
     if not include_inactive:
         q = q.filter(models.AliexpressAffiliateProduct.is_active == "active")
+    if zone == "B":
+        q = q.filter(models.AliexpressAffiliateProduct.ad_zone == "B")
+    else:
+        q = q.filter(
+            (models.AliexpressAffiliateProduct.ad_zone == None) |
+            (models.AliexpressAffiliateProduct.ad_zone == "A")
+        )
     rows = q.all()
     data = [
         {
@@ -1705,6 +1715,7 @@ async def get_affiliate_products(
             "sold_count": r.sold_count,
             "feedback_percent": r.feedback_percent,
             "affiliate_url": r.affiliate_url,
+            "ad_zone": r.ad_zone,
             "order_index": r.order_index,
         }
         for r in rows

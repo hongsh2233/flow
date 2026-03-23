@@ -109,6 +109,7 @@ def _row_to_model(data: dict[str, Any], order_index: int) -> models.AliexpressAf
         sold_count=data.get("sold_count"),
         feedback_percent=data.get("feedback_percent"),
         affiliate_url=data.get("affiliate_url"),
+        ad_zone=data.get("ad_zone") or None,
         is_active="active",
         order_index=order_index,
     )
@@ -155,6 +156,7 @@ async def ad_settings_add(
     stat_commission_secondary: Optional[str] = Form(None),
     sold_count: Optional[str] = Form(None),
     feedback_percent: Optional[str] = Form(None),
+    ad_zone: Optional[str] = Form(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -185,6 +187,7 @@ async def ad_settings_add(
                 "stat_commission_secondary": (stat_commission_secondary or "").strip() or None,
                 "sold_count": (sold_count or "").strip() or None,
                 "feedback_percent": (feedback_percent or "").strip() or None,
+                "ad_zone": (ad_zone or "").strip() or None,
             },
             oi,
         )
@@ -266,6 +269,7 @@ async def ad_settings_update(
     sold_count: Optional[str] = Form(None),
     feedback_percent: Optional[str] = Form(None),
     is_active: str = Form("active"),
+    ad_zone: Optional[str] = Form(None),
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -296,6 +300,7 @@ async def ad_settings_update(
     row.sold_count = (sold_count or "").strip() or None
     row.feedback_percent = (feedback_percent or "").strip() or None
     row.is_active = is_active if is_active in ("active", "inactive") else "active"
+    row.ad_zone = (ad_zone or "").strip() or None
     db.commit()
     return RedirectResponse(url="/admin/ad-settings", status_code=303)
 

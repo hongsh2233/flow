@@ -133,6 +133,13 @@
       <div class="form-row">
         <div class="form-group"><label>판매량</label><input type="text" name="sold_count" /></div>
         <div class="form-group"><label>긍정 피드백 %</label><input type="text" name="feedback_percent" placeholder="94.2%" /></div>
+        <div class="form-group">
+          <label>광고 구역</label>
+          <select name="ad_zone">
+            <option value="">A구역 (기본)</option>
+            <option value="B">B구역</option>
+          </select>
+        </div>
       </div>
       <button type="submit" class="btn-add">등록</button>
     </form>
@@ -151,6 +158,7 @@
             <th>제목</th>
             <th>판매가</th>
             <th>제휴 링크</th>
+            <th>구역</th>
             <th>상태</th>
             <th></th>
           </tr>
@@ -167,6 +175,7 @@
             <td class="cell-title">{{ p.title or '—' }}</td>
             <td>{{ p.sale_price or '—' }}</td>
             <td class="cell-url">{% if p.affiliate_url %}<a href="{{ p.affiliate_url }}" target="_blank" rel="noopener">열기</a>{% else %}—{% endif %}</td>
+            <td><span style="font-size:12px;font-weight:600;color:{% if p.ad_zone == 'B' %}#7c3aed{% else %}#0284c7{% endif %};">{{ p.ad_zone or 'A' }}구역</span></td>
             <td class="{% if p.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">{{ '활성' if p.is_active == 'active' else '비활성' }}</td>
             <td>
               <a href="/admin/ad-settings/edit/{{ p.id }}" class="btn-edit">수정</a>
