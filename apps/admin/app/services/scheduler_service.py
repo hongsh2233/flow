@@ -1666,6 +1666,10 @@ investment_bank_news_scheduler = InvestmentBankNewsScheduler()
 
 async def collect_target_price_news():
     """08:30 수집: 전일 12:00 KST ~ 당일 08:30 KST 게시된 목표가 기사만 처리"""
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: 목표가 뉴스 수집 건너뜀 (08:30)")
+        return
+
     from datetime import timezone as _tz, timedelta as _td
     from app.services.target_price_news_service import fetch_and_post_target_price_news
 
@@ -1693,6 +1697,10 @@ async def collect_target_price_news():
 
 async def collect_target_price_news_noon():
     """12:00 수집: 당일 08:30 KST ~ 당일 12:00 KST 게시된 목표가 기사만 처리"""
+    if should_skip_today():
+        print("ℹ️ 주말/공휴일: 목표가 뉴스 수집 건너뜀 (12:00)")
+        return
+
     from datetime import timezone as _tz
     from app.services.target_price_news_service import fetch_and_post_target_price_news
 

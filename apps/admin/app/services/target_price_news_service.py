@@ -107,6 +107,39 @@ def _extract_gemini_text(response) -> str:
     return (text or "").strip()
 
 
+def _normalize_price(raw: str) -> str:
+    """
+    Gemini가 반환한 목표가 문자열을 'N,NNN원' 형식으로 정규화.
+    - 숫자+단위(만, 억) 처리: '5만', '5만원' → 50000원
+    - 순수 숫자: '50000', '50,000' → 50,000원
+    - 파싱 불가 시 원문 그대로 반환
+    """
+    if not raw:
+        return ""
+    s = str(raw).strip()
+    # 단위 환산
+    m = re.match(r"([0-9,]+\.?[0-9]*)[\s]*(억)(원?)", s)
+    if m:
+        try:
+            return f"{int(float(m.group(1).replace(',', '')) * 100_000_000):,}원"
+        except Exception:
+            pass
+    m = re.match(r"([0-9,]+\.?[0-9]*)[\s]*(만)(원?)", s)
+    if m:
+        try:
+            return f"{int(float(m.group(1).replace(',', '')) * 10_000):,}원"
+        except Exception:
+            pass
+    # 숫자+원 or 순수 숫자
+    digits = re.sub(r"[^\d]", "", s)
+    if digits:
+        try:
+            return f"{int(digits):,}원"
+        except Exception:
+            pass
+    return s  # 파싱 불가 → 원문
+
+
 def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
     """Gemini로 목표가 상향/조정 정보 추출"""
     if not GEMINI_API_KEY:
@@ -119,16 +152,20 @@ def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
 뉴스 제목: {title}
 뉴스 요약: {description}
 
-응답 형식 (JSON만 출력, 다른 설명 없이):
+응답 형식 (JSON만 출력, 마크다운·설명 없이):
 {{
   "종목명": "회사명 또는 종목명",
   "증권사": "증권사명",
-  "목표가": "목표가(예: 50000원)",
+  "목표가": 숫자만 (예: 50000),
   "조정": "상향" 또는 "하향" 또는 "유지",
   "요약": "한 줄 요약 (50자 이내)"
 }}
 
-목표가 조정 뉴스가 아니면 null을 반환하세요. JSON만 출력하세요."""
+규칙:
+- 목표가는 반드시 숫자만 (원 단위 정수, 단위 문자 제외)
+- 목표가 정보가 없으면 목표가 필드를 null로
+- 목표가 조정 뉴스가 아니면 최상위에 null 반환
+JSON만 출력하세요."""
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
@@ -136,16 +173,25 @@ def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
         text = _extract_gemini_text(response)
         if not text or text.lower() in ("null", "none"):
             return None
-        # JSON 파싱 시도
+        # 코드블록·불필요 텍스트 제거
         text = text.strip()
-        if text.startswith("```"):
-            text = re.sub(r"^```\w*\n?", "", text).strip()
-            text = re.sub(r"\n?```\s*$", "", text).strip()
+        text = re.sub(r"```(?:json)?\s*", "", text)
+        text = re.sub(r"```", "", text)
+        m = re.search(r"\{.*\}", text, re.DOTALL)
+        if not m:
+            return None
+        text = m.group(0)
         import json
         data = json.loads(text)
-        if isinstance(data, dict) and data.get("종목명"):
-            return data
-        return None
+        if not isinstance(data, dict) or not data.get("종목명"):
+            return None
+        # 목표가 정규화: Gemini가 숫자를 반환하지만 혹시 모를 케이스도 처리
+        raw_price = data.get("목표가")
+        if raw_price is not None:
+            data["목표가"] = _normalize_price(str(raw_price))
+        else:
+            data["목표가"] = ""
+        return data
     except Exception as e:
         print(f"[목표가 뉴스] Gemini 요약 오류: {e}")
         return None
@@ -187,31 +233,35 @@ def _get_or_create_category(db: Session) -> Optional[int]:
 def _format_single_post(items: List[Dict]) -> Tuple[str, str]:
     """
     추출된 여러 건을 하나의 게시글 형식으로 가공.
-    증권사별로 묶어서 표시:
+    증권사별로 묶어서 표시 (동일 증권사+종목 중복 제거):
       신영증권
-      삼성전자 목표가 상향 40만원
+      삼성전자 목표가 상향 40,000원
       반도체 추정실적 600조 달성 예정
       키움증권
       ...
     Returns: (title, content)
     """
-    from collections import defaultdict
-    by_broker = defaultdict(list)
+    from collections import defaultdict, OrderedDict
+    by_broker: dict = defaultdict(OrderedDict)  # broker → {종목명: item}
     for it in items:
-        broker = it.get("증권사") or "기타"
-        by_broker[broker].append(it)
+        broker = (it.get("증권사") or "기타").strip()
+        stock = (it.get("종목명") or "-").strip()
+        # 동일 증권사+종목 중복 제거 (처음 등장 항목 유지)
+        if stock not in by_broker[broker]:
+            by_broker[broker][stock] = it
 
     lines = []
     for broker in sorted(by_broker.keys()):
         lines.append(f"<p><strong>{broker}</strong></p>")
-        for it in by_broker[broker]:
-            stock = it.get("종목명", "-")
-            adj = it.get("조정", "")
-            price = it.get("목표가", "")
-            summary = it.get("요약", "")
-            line = f"{stock} 목표가 {adj} {price}".strip()
+        for stock, it in by_broker[broker].items():
+            adj = (it.get("조정") or "").strip()
+            price = (it.get("목표가") or "").strip()
+            summary = (it.get("요약") or "").strip()
+            # 공백 없는 조립: 각 파트를 filter로 연결
+            parts = [p for p in [stock, "목표가", adj, price] if p]
+            line = " ".join(parts)
             if summary:
-                line += f"<br>{summary}"
+                line += f"<br><small>{summary}</small>"
             lines.append(f"<p>{line}</p>")
         lines.append("")  # 증권사 간 간격
 
@@ -251,7 +301,8 @@ async def fetch_and_post_target_price_news(
         before_dt = now_utc
 
     total_fetched = 0
-    seen_urls = set()
+    seen_urls: set = set()
+    seen_stock_broker: set = set()  # (종목명, 증권사) 기준 중복 방지
     extracted_items: List[Dict] = []
 
     category_id = _get_or_create_category(db)
@@ -278,6 +329,15 @@ async def fetch_and_post_target_price_news(
             extracted = _process_with_gemini(title, description)
             if not extracted:
                 continue
+
+            # (종목명, 증권사) 기준 중복 제거 — 여러 검색어에서 같은 종목이 중복 추출되는 경우 방지
+            stock_key = (
+                (extracted.get("종목명") or "").strip(),
+                (extracted.get("증권사") or "").strip(),
+            )
+            if stock_key in seen_stock_broker:
+                continue
+            seen_stock_broker.add(stock_key)
 
             extracted_items.append(extracted)
 
