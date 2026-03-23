@@ -141,10 +141,16 @@ _BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
+        "Chrome/134.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
     "Referer": "https://finance.naver.com/",
 }
 
@@ -302,6 +308,13 @@ async def fetch_supply_source(
 
     soup = BeautifulSoup(content, "html.parser")
     parsed = _parse_table(soup)
+
+    # 데이터가 없을 경우 차단/구조변경 여부 진단용 로그
+    if not parsed.get("rows"):
+        title_tag = soup.find("title")
+        title = title_tag.get_text(strip=True) if title_tag else "(title 없음)"
+        print(f"  🔍 [{data_type}/{market}/{sub_key}] 빈 응답 — HTTP {response.status_code}, page title: {title}")
+
     return parsed
 
 
