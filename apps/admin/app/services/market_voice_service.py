@@ -149,7 +149,7 @@ def _summarize_with_gemini(person_name: str, title: str, description: str) -> Op
 
 요약 (50자 이내):"""
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response, debug_on_empty=True)
