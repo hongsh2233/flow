@@ -1157,3 +1157,71 @@ async def reject_post(
     except Exception as e:
         db.rollback()
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@router.post("/api/admin/market-closing-summary/generate")
+async def admin_generate_closing_summary(
+    request: Request,
+    target_date_str: Optional[str] = None,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """마감시황 수동 생성 (관리자 세션 인증)"""
+    if not user:
+        return JSONResponse({"success": False, "error": "인증이 필요합니다."}, status_code=401)
+
+    from datetime import date as dt_date
+    import pytz
+    import traceback
+    from sqlalchemy import func as _func
+
+    kst = pytz.timezone("Asia/Seoul")
+    # JSON body 또는 query param 모두 지원
+    if target_date_str is None:
+        try:
+            body = await request.json()
+            target_date_str = body.get("target_date_str")
+        except Exception:
+            pass
+
+    if target_date_str:
+        try:
+            target_date = dt_date.fromisoformat(target_date_str)
+        except ValueError:
+            return JSONResponse({"success": False, "error": f"날짜 형식 오류: {target_date_str}"})
+    else:
+        target_date = datetime.now(kst).date()
+
+    bizdate = target_date.strftime("%Y%m%d")
+    diag = {}
+    try:
+        kr_latest = (
+            db.query(_func.max(models.YahooIndexDaily.date))
+            .filter(models.YahooIndexDaily.group == "kr")
+            .scalar()
+        )
+        diag["kr_latest_date"] = str(kr_latest) if kr_latest else None
+        diag["target_date"] = str(target_date)
+        from app.config import GEMINI_API_KEY as _gkey
+        diag["gemini_key_set"] = bool(_gkey)
+    except Exception as e:
+        diag["diag_error"] = str(e)
+
+    try:
+        from app.services.market_closing_gemini_service import generate_and_post_closing_summary
+        ok = generate_and_post_closing_summary(db, target_date)
+        return JSONResponse({
+            "success": ok,
+            "generated": ok,
+            "message": "장마감 시황 게시 완료 (pending)" if ok else "생성 실패 (KR지수 없음 또는 Gemini 오류)",
+            "date": str(target_date),
+            "diagnostics": diag,
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "date": str(target_date),
+            "diagnostics": diag,
+        })
