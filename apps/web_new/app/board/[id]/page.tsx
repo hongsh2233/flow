@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import BoardDetail from "../../components/module/board/BoardDetail";
 import { StockTermBox } from "../../components/module/stock-term-box";
+import { AdZoneSlot } from "../../components/module/AdZoneSlot";
+import { shouldShowAdZoneB_regularServer } from "@/lib/affiliate/adZoneB";
 import { API_BASE_URL, getAuthHeaders } from "@/lib/config/api";
 import { postToDetail } from "@/lib/services/boardService";
 import type { PostFromApi } from "@/lib/types/board";
@@ -162,6 +164,8 @@ export default async function BoardDetailPage({ params, searchParams }: BoardDet
   return (
     <>
       <main>
+        {/* [AD_ZONE B4 — 게시판 상세보기 위 / 일반회원까지] */}
+        {shouldShowAdZoneB_regularServer(session) && <AdZoneSlot zone="B4" />}
         <BoardDetail
           post={post}
           backHref={backHref}

@@ -9,6 +9,8 @@ import { getWeeksRange, toIsoDateLocal } from "@/lib/utils/calendar";
 import { fetchSchedules } from "@/lib/services/scheduleService";
 import { useAlarmStore } from "@/lib/stores/useAlarmStore";
 import { ScheduleCard } from "./ScheduleCard";
+import { AdZoneSlot } from "../AdZoneSlot";
+import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
 import styles from "./Calendar.module.css";
 
 const MONTH_NAMES = [
@@ -314,6 +316,8 @@ export function Calendar() {
             ))}
           </div>
         )}
+        {/* [AD_ZONE B6 — 캘린더 일정 목록 하단 / VIP회원까지] */}
+        {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B6" />}
       </div>
     </div>
   );

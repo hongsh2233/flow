@@ -9,6 +9,8 @@ import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import type { StockDetail, AdBannerItem, ManagedBannerItem } from "@/lib/types";
 import { AdBanner } from "./components/module/AdBanner";
+import { AdZoneSlot } from "./components/module/AdZoneSlot";
+import { shouldShowAdZoneB_regular } from "@/lib/affiliate/adZoneB";
 import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
@@ -109,6 +111,8 @@ export default function Home() {
     <div className="content__wrap">
       <SupplySummaryCard />
       <MainCardNews />
+      {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
+      {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
       <MarketTabSection />
       <InvestorTrendChart defaultMarket="kospi" variant="main" />
 
@@ -133,6 +137,8 @@ export default function Home() {
         </div>
       )}
 
+      {/* [AD_ZONE B2 — 관심종목 아래 / 일반회원까지] */}
+      {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B2" />}
       <RealtimeSearchSection />
       <JubtiSection />
       <StockTermBox wrapperClassName="home-term-wrap" />

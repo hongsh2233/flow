@@ -14,6 +14,8 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
+import { AdZoneSlot } from "../components/module/AdZoneSlot";
+import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
 import styles from "./SupplyPage.module.css";
 
 const LazyStockDetailModal = dynamic(
@@ -190,7 +192,7 @@ function formatMeta(bizdate: string | null | undefined, collectedTime: string | 
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 export default function SupplyPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { favoriteStocks, favCodes, isLoading: favLoading } = useFavoriteStocks();
   const { addFavCode, removeFavCode } = useFavoriteStore();
 
@@ -402,6 +404,9 @@ export default function SupplyPage() {
       <div className={styles.affiliateSlot} aria-label="제휴 상품">
         <RandomAffiliateCard />
       </div>
+
+      {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
+      {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B5" />}
 
       {/* 3. 수급 동향 탭 */}
       <h1 className={styles.title}>수급 동향</h1>

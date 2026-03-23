@@ -4,6 +4,8 @@ import styles from "./JuTalkPage.module.css";
 import { Clock, MessageCircle, Heart, Send, ThumbsUp } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
+import { AdZoneSlot } from "../components/module/AdZoneSlot";
+import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/config/api";
@@ -50,7 +52,7 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 export default function JuTalkPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isLoggedIn = !!session?.user;
   const nickname =
     (session?.user as { nickname?: string | null; name?: string | null })?.nickname ||
@@ -552,6 +554,9 @@ export default function JuTalkPage() {
             </ul>
           </section>
         )}
+
+        {/* [AD_ZONE B7 — 공부노트와 시장의 목소리 사이 / VIP회원까지] */}
+        {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B7" />}
 
         {/* 시장의 목소리 - 최대 6개 랜덤, SNS 실시간 스타일 */}
         {displayedVoices.length > 0 && (
