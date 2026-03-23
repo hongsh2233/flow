@@ -126,12 +126,16 @@ def _get_supply_numbers(
 def _build_prompt(nums: dict, time_label: str, market_key: str) -> str:
     market_ko = MARKET_LABEL.get(market_key, market_key)
 
+    # 네이버 수급 데이터 단위: 백만원 (1억 = 100, 1조 = 1,000,000)
     def fmt(n):
-        if n >= 1_0000_0000:
-            return f"{n / 1_0000_0000:.1f}억"
-        if n >= 1_0000:
-            return f"{n / 1_0000:.1f}만"
-        return str(n)
+        abs_n = abs(n)
+        if abs_n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}조"
+        if abs_n >= 100:
+            return f"{round(n / 100):,}억"
+        if abs_n >= 1:
+            return f"{n}백만"
+        return "0"
 
     def signed(n):
         s = fmt(abs(n))

@@ -23,10 +23,12 @@ interface SupplySummary {
   kosdaq: MarketSlice;
 }
 
+// 네이버 수급 데이터 단위: 백만원 (1억 = 100, 1조 = 1,000,000)
 function formatNumber(n: number): string {
-  if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억`;
-  if (n >= 10000) return `${(n / 10000).toFixed(1)}만`;
-  return n.toLocaleString();
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}조`;
+  if (abs >= 100) return `${Math.round(n / 100).toLocaleString()}억`;
+  return `${n}백만`;
 }
 
 function formatSigned(n: number): string {
