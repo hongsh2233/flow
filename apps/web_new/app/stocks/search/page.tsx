@@ -12,6 +12,8 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import styles from "./StocksSearchPage.module.css";
+import { shouldShowAdZoneB_regular } from "@/lib/affiliate/adZoneB";
+import { AdZoneSlot } from "@/app/components/module/AdZoneSlot";
 
 /* ─────────────────────────────────────────────── 타입 ── */
 interface FscStockDetail {
@@ -230,7 +232,8 @@ function SearchResultsContent() {
       ) : (
         <>
           <p className={styles.searchQueryInfo}>검색어: {q}</p>
-
+          {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
+          {shouldShowAdZoneB_regular(session, "authenticated") && <AdZoneSlot zone="B5" />}
           {/* 1. 검색 결과 목록 (다수일 때만 표시) */}
           {stockLoading ? (
             <p className={styles.loadingText}>검색 중...</p>
@@ -308,7 +311,8 @@ function SearchResultsContent() {
                   </table>
                 </div>
               </section>
-
+              {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
+              {shouldShowAdZoneB_regular(session, "authenticated") && <AdZoneSlot zone="B3" />}
               {/* 3. 주식권리일정정보 */}
               <section className={styles.searchSection}>
                 <h4 className={styles.searchSectionTitle}>주식권리일정정보</h4>

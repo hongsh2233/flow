@@ -405,9 +405,6 @@ export default function SupplyPage() {
         <RandomAffiliateCard />
       </div>
 
-      {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
-      {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B5" />}
-
       {/* 3. 수급 동향 탭 */}
       <h1 className={styles.title}>수급 동향</h1>
 
@@ -498,7 +495,9 @@ export default function SupplyPage() {
           )}
         </TabsContent>
       </Tabs>
-
+      {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
+      {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B5" />}
+      
       {/* 4. 관심종목 / 시총상위 / 등락률상위 탭 */}
       <div className={styles.stockTabsSection}>
         <Tabs value={stockTab} onValueChange={(v) => setStockTab(v as StockTab)} variant="underline">
