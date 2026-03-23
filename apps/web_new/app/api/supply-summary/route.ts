@@ -235,10 +235,6 @@ export async function GET() {
         collected_time: String(collectedTimeForAi),
         market: "kosdaq",
       });
-      // collected_time 미포함: 해당 bizdate의 최신 요약 아무 슬롯이나 반환
-      const qAny = new URLSearchParams({
-        bizdate: String(bizdateForAi),
-      });
       const [aiKospiRes, aiKosdaqRes] = await Promise.all([
         fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
         fetch(`${base}/api/supply-summary-ai?${qKosdaq}`, { method: "GET", headers, cache: "no-store" }),
@@ -249,15 +245,46 @@ export async function GET() {
       if (aiKosdaqRes.ok) {
         aiKosdaqJson = await aiKosdaqRes.json();
       }
+    }
 
-      const kospiSummary = normalizeAiSummary((aiKospiJson as any).ai_summary);
-      const kosdaqSummary = normalizeAiSummary((aiKosdaqJson as any).ai_summary);
-      if (!kospiSummary || !kosdaqSummary) {
-        const aiAnyRes = await fetch(`${base}/api/supply-summary-ai?${qAny}`, { method: "GET", headers, cache: "no-store" });
-        if (aiAnyRes.ok) {
-          const aiAnyJson = await aiAnyRes.json();
-          aiAnySummary = normalizeAiSummary((aiAnyJson as any).ai_summary);
-        }
+    const kospiSummary = normalizeAiSummary(aiKospiJson.ai_summary);
+    const kosdaqSummary = normalizeAiSummary(aiKosdaqJson.ai_summary);
+
+    // Fallback 1: exact match 없으면 해당 market의 최신 요약
+    let fallbackKospiSummary: string | null = null;
+    let fallbackKosdaqSummary: string | null = null;
+    if (!kospiSummary || !kosdaqSummary) {
+      const [fbKospiRes, fbKosdaqRes] = await Promise.all([
+        !kospiSummary
+          ? fetch(`${base}/api/supply-summary-ai?market=kospi`, { method: "GET", headers, cache: "no-store" })
+          : Promise.resolve(null),
+        !kosdaqSummary
+          ? fetch(`${base}/api/supply-summary-ai?market=kosdaq`, { method: "GET", headers, cache: "no-store" })
+          : Promise.resolve(null),
+      ]);
+      if (fbKospiRes?.ok) {
+        const j = await fbKospiRes.json();
+        fallbackKospiSummary = normalizeAiSummary((j as any).ai_summary);
+      }
+      if (fbKosdaqRes?.ok) {
+        const j = await fbKosdaqRes.json();
+        fallbackKosdaqSummary = normalizeAiSummary((j as any).ai_summary);
+      }
+    }
+
+    // Fallback 2: kospi/kosdaq 요약이 아예 없으면 market=all 최신 요약 (구형 데이터 호환)
+    let fallbackAllSummary: string | null = null;
+    const needAllFallback =
+      (!kospiSummary && !fallbackKospiSummary) || (!kosdaqSummary && !fallbackKosdaqSummary);
+    if (needAllFallback) {
+      const fbAllRes = await fetch(`${base}/api/supply-summary-ai?market=all`, {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      });
+      if (fbAllRes.ok) {
+        const j = await fbAllRes.json();
+        fallbackAllSummary = normalizeAiSummary((j as any).ai_summary);
       }
     }
 
@@ -272,11 +299,11 @@ export async function GET() {
       collectedTime: collectedTimeForAi,
       kospi: {
         ...numsKospi,
-        aiSummary: normalizeAiSummary(aiKospiJson.ai_summary) ?? aiAnySummary,
+        aiSummary: kospiSummary ?? fallbackKospiSummary ?? fallbackAllSummary,
       },
       kosdaq: {
         ...numsKosdaq,
-        aiSummary: normalizeAiSummary(aiKosdaqJson.ai_summary) ?? aiAnySummary,
+        aiSummary: kosdaqSummary ?? fallbackKosdaqSummary ?? fallbackAllSummary,
       },
     };
 

@@ -429,7 +429,7 @@ export default function SupplyPage() {
                 <>
                   <p className={styles.meta}>{formatMeta(currentInvestor.bizdate, currentInvestor.collected_time)}</p>
                   {currentInvestor.success && currentInvestor.data ? (
-                    <InvestorTable data={currentInvestor.data} />
+                    <Table data={currentInvestor.data} />
                   ) : (
                     <p className={styles.empty}>데이터가 없습니다.</p>
                   )}
@@ -479,7 +479,7 @@ export default function SupplyPage() {
                 <>
                   <p className={styles.meta}>{formatMeta(currentProgram.bizdate, currentProgram.collected_time)}</p>
                   {currentProgram.success && currentProgram.data ? (
-                    <ProgramTable data={currentProgram.data} />
+                    <Table data={currentProgram.data} />
                   ) : (
                     <p className={styles.empty}>데이터가 없습니다.</p>
                   )}

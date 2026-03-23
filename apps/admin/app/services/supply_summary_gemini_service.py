@@ -65,6 +65,20 @@ def _get_supply_numbers(
             .order_by(NaverSupplyData.collected_at.desc())
             .first()
         )
+        # 시장별 URL이 차단/빈 응답이면 "all" 데이터로 폴백
+        if not row or not row.data_json:
+            row = (
+                db.query(NaverSupplyData)
+                .filter(
+                    NaverSupplyData.data_type == data_type,
+                    NaverSupplyData.market == "all",
+                    NaverSupplyData.sub_key.is_(None),
+                    NaverSupplyData.bizdate == bizdate,
+                    NaverSupplyData.collected_time == collected_time,
+                )
+                .order_by(NaverSupplyData.collected_at.desc())
+                .first()
+            )
         if not row or not row.data_json:
             continue
         found_any = True
@@ -196,7 +210,7 @@ def _call_gemini(prompt: str) -> Optional[str]:
 
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-preview-04-17",
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response)
@@ -225,14 +239,20 @@ def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: 
     Returns:
         저장에 성공한 시장 수 (0~2)
     """
+    if not GEMINI_API_KEY:
+        print("[supply-gemini] ❌ GEMINI_API_KEY 환경변수 없음 — AI 요약 건너뜀")
+        return 0
+
     time_label = _time_label_for_collected_time(collected_time)
     saved = 0
+    print(f"[supply-gemini] 시작: {bizdate} {collected_time}")
 
     for market in (MARKET_KOSPI, MARKET_KOSDAQ):
         nums = _get_supply_numbers(db, bizdate, collected_time, market)
         if nums is None:
-            print(f"[supply-gemini] {bizdate} {collected_time} {market} 수급 원본 없음, 건너뜀")
+            print(f"[supply-gemini] ⚠️ {bizdate} {collected_time} {market} — DB에서 수급 원본 못 찾음, 건너뜀")
             continue
+        print(f"[supply-gemini] {market} 수치: {nums}")
 
         prompt = _build_prompt(nums, time_label, market)
         summary = _call_gemini(prompt)
