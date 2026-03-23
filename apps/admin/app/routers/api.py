@@ -2759,6 +2759,81 @@ async def get_naver_stock_news(
         raise HTTPException(status_code=500, detail=f"주가 영향 뉴스 조회 실패: {str(e)}")
 
 
+@router.post("/api/market-closing-summary/generate")
+async def trigger_market_closing_summary(
+    target_date_str: Optional[str] = Query(None, description="대상 날짜 YYYY-MM-DD (미입력 시 오늘)"),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    장마감 시황 수동 생성 (수동 트리거 / 검증용)
+    - target_date: YYYY-MM-DD (미입력 시 오늘)
+    - pending 상태로 B001에 게시 (기존 당일 게시글 있으면 덮어씀)
+    """
+    from datetime import date as dt_date
+    import pytz
+    from sqlalchemy import func as _func
+
+    kst = pytz.timezone("Asia/Seoul")
+    if target_date_str:
+        try:
+            target_date = dt_date.fromisoformat(target_date_str)
+        except ValueError:
+            return {"success": False, "error": f"날짜 형식 오류: {target_date_str} (YYYY-MM-DD)"}
+    else:
+        target_date = datetime.now(kst).date()
+
+    bizdate = target_date.strftime("%Y%m%d")
+
+    # 진단 정보 수집
+    diag = {}
+    try:
+        kr_latest = (
+            db.query(_func.max(models.YahooIndexDaily.date))
+            .filter(models.YahooIndexDaily.group == "kr")
+            .scalar()
+        )
+        diag["kr_latest_date"] = str(kr_latest) if kr_latest else None
+        diag["target_date"] = str(target_date)
+
+        supply_count = (
+            db.query(models.NaverSupplyData)
+            .filter(
+                models.NaverSupplyData.data_type == "deal_rank",
+                models.NaverSupplyData.bizdate == bizdate,
+            )
+            .count()
+        )
+        diag["supply_deal_rank_count"] = supply_count
+
+        from app.config import GEMINI_API_KEY as _gkey
+        diag["gemini_key_set"] = bool(_gkey)
+    except Exception as e:
+        diag["diag_error"] = str(e)
+
+    # 실제 생성
+    try:
+        from app.services.market_closing_gemini_service import generate_and_post_closing_summary
+        ok = generate_and_post_closing_summary(db, target_date)
+        return {
+            "success": ok,
+            "generated": ok,
+            "message": "장마감 시황 게시 완료 (pending)" if ok else "생성 실패 (KR지수 없음 또는 Gemini 오류)",
+            "date": str(target_date),
+            "diagnostics": diag,
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "generated": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "date": str(target_date),
+            "diagnostics": diag,
+        }
+
+
 @router.post("/api/naver-stock-news/collect")
 async def trigger_naver_stock_news_collect(
     categories: Optional[list] = None,
