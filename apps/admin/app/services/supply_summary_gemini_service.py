@@ -196,7 +196,7 @@ def _call_gemini(prompt: str) -> Optional[str]:
 
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-preview-04-17",
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response)

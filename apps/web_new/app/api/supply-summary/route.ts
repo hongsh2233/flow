@@ -251,14 +251,24 @@ export async function GET() {
     const kosdaqSummary = normalizeAiSummary(aiKosdaqJson.ai_summary);
 
     // 오늘 exact match 없으면 → bizdate 관계없이 최신 요약 폴백 (어제 요약이라도 표시)
+    let fallbackKospiSummary: string | null = null;
+    let fallbackKosdaqSummary: string | null = null;
     if (!kospiSummary || !kosdaqSummary) {
-      const aiAnyRes = await fetch(
-        `${base}/api/supply-summary-ai`,
-        { method: "GET", headers, cache: "no-store" }
-      );
-      if (aiAnyRes.ok) {
-        const aiAnyJson = await aiAnyRes.json();
-        aiAnySummary = normalizeAiSummary((aiAnyJson as any).ai_summary);
+      const [fbKospiRes, fbKosdaqRes] = await Promise.all([
+        !kospiSummary
+          ? fetch(`${base}/api/supply-summary-ai?market=kospi`, { method: "GET", headers, cache: "no-store" })
+          : Promise.resolve(null),
+        !kosdaqSummary
+          ? fetch(`${base}/api/supply-summary-ai?market=kosdaq`, { method: "GET", headers, cache: "no-store" })
+          : Promise.resolve(null),
+      ]);
+      if (fbKospiRes?.ok) {
+        const j = await fbKospiRes.json();
+        fallbackKospiSummary = normalizeAiSummary((j as any).ai_summary);
+      }
+      if (fbKosdaqRes?.ok) {
+        const j = await fbKosdaqRes.json();
+        fallbackKosdaqSummary = normalizeAiSummary((j as any).ai_summary);
       }
     }
 
@@ -273,11 +283,11 @@ export async function GET() {
       collectedTime: collectedTimeForAi,
       kospi: {
         ...numsKospi,
-        aiSummary: kospiSummary ?? aiAnySummary,
+        aiSummary: kospiSummary ?? fallbackKospiSummary,
       },
       kosdaq: {
         ...numsKosdaq,
-        aiSummary: kosdaqSummary ?? aiAnySummary,
+        aiSummary: kosdaqSummary ?? fallbackKosdaqSummary,
       },
     };
 
