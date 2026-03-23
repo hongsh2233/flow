@@ -220,11 +220,11 @@ def _call_gemini(prompt: str) -> Optional[str]:
         return None
 
 
-def _time_label_for_collected_time(collected_time: str) -> str:
+def _time_label_for_collected_time(bizdate: str, collected_time: str) -> str:
     hour = int(collected_time.split(":")[0] or "0")
     minute = int(collected_time.split(":")[1] or "0")
     if hour >= 15 and (hour > 15 or minute >= 30):
-        return "금일 15:30분 정규장 마감 기준"
+        return f"{bizdate} 15:30분 정규장 마감 기준"
     prev_h = hour - 1 if hour > 0 else 23
     curr_h = hour
     prev_m = 30 if minute >= 30 else 0
@@ -243,7 +243,7 @@ def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: 
         print("[supply-gemini] ❌ GEMINI_API_KEY 환경변수 없음 — AI 요약 건너뜀")
         return 0
 
-    time_label = _time_label_for_collected_time(collected_time)
+    time_label = _time_label_for_collected_time(bizdate, collected_time)
     saved = 0
     print(f"[supply-gemini] 시작: {bizdate} {collected_time}")
 
