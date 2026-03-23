@@ -130,7 +130,7 @@ def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
 
 목표가 조정 뉴스가 아니면 null을 반환하세요. JSON만 출력하세요."""
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
         )
         text = _extract_gemini_text(response)

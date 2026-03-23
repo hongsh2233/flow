@@ -397,7 +397,7 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         from google import genai
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
         )
         text = _extract_text_from_gemini_response(response)
