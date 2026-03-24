@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { Activity, TrendingUp, TrendingDown } from "lucide-react";
 import type { MarketIndexProps } from "@/lib/types";
 import styles from "./MarketIndex.module.css";
 
@@ -29,7 +29,10 @@ export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }:
   return (
     <div className={styles.section}>
       <div className={styles.headingRow}>
-        <h3 className={styles.heading}>국내 지수</h3>
+        <h3 className={styles.heading}>
+          <Activity className={styles.headingIcon} />
+          주요 지수
+        </h3>
         {collectedDate && (
           <span className={styles.collectedDate}>
             {formatMarketCloseDate(collectedDate)}
