@@ -11,6 +11,8 @@ export function parseIndexChangeStrings(changeStr: string, percentStr: string): 
     s
       .replace(/\u2212/g, "-")
       .replace(/\uFF0B/g, "+")
+      .replace(/[▲△]/g, "+")
+      .replace(/[▼▽]/g, "-")
       .replace(/%/g, "")
       .replace(/,/g, "")
       .trim();

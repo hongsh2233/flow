@@ -9,6 +9,13 @@ function formatBaseTimestamp(ts: string | null | undefined): string {
 }
 
 export const ExchangeRates = memo(function ExchangeRates({ rates, interestRates, baseTimestamp }: ExchangeRatesProps) {
+  const getDirectionByChange = (change: string, fallbackPositive: boolean) => {
+    const s = String(change);
+    if (/[+\uFF0B▲△]/.test(s)) return true;
+    if (/[-\u2212▼▽]/.test(s)) return false;
+    return fallbackPositive;
+  };
+
   return (
     <div className={styles.section}>
       {/* 환율 */}
@@ -23,19 +30,21 @@ export const ExchangeRates = memo(function ExchangeRates({ rates, interestRates,
       </div>
 
       <div className={styles.grid}>
-        {rates.map((item) => (
+        {rates.map((item) => {
+          const isPositive = getDirectionByChange(item.change, item.isPositive);
+          return (
           <div key={item.currency} className={styles.card}>
             <p className={styles.currency}>{item.currency}</p>
             <p className={styles.rate}>{item.rate}</p>
             <p
               className={`${styles.change} ${
-                item.isPositive ? styles.changeUp : styles.changeDown
+                isPositive ? styles.changeUp : styles.changeDown
               }`}
             >
               {item.change}
             </p>
           </div>
-        ))}
+        )})}
       </div>
 
       {/* 금리 */}
@@ -48,19 +57,21 @@ export const ExchangeRates = memo(function ExchangeRates({ rates, interestRates,
             </h3>
           </div>
           <div className={styles.grid}>
-            {interestRates.map((item) => (
+            {interestRates.map((item) => {
+              const isPositive = getDirectionByChange(item.change, item.isPositive);
+              return (
               <div key={item.name} className={styles.card}>
                 <p className={styles.currency}>{item.name}</p>
                 <p className={styles.rate}>{item.rate}</p>
                 <p
                   className={`${styles.change} ${
-                    item.isPositive ? styles.changeUp : styles.changeDown
+                    isPositive ? styles.changeUp : styles.changeDown
                   }`}
                 >
                   {item.change}
                 </p>
               </div>
-            ))}
+            )})}
           </div>
         </>
       )}
