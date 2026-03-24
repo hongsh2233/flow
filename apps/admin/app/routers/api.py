@@ -1930,14 +1930,39 @@ async def get_domestic_indices(
                 models.YahooIndexSnapshot.symbol.in_(_KR_SYMBOLS),
             ).all()
             if rows:
+                prev_close_map = {}
+                current_date = rows[0].collected_date
+                if current_date:
+                    for sym in _KR_SYMBOLS:
+                        prev_row = (
+                            db.query(models.YahooIndexDaily)
+                            .filter(
+                                models.YahooIndexDaily.group == "kr",
+                                models.YahooIndexDaily.symbol == sym,
+                                models.YahooIndexDaily.date < current_date,
+                                models.YahooIndexDaily.price.isnot(None),
+                            )
+                            .order_by(models.YahooIndexDaily.date.desc())
+                            .first()
+                        )
+                        if prev_row and prev_row.price is not None:
+                            prev_close_map[sym] = float(prev_row.price)
                 kr_results = []
                 for r in rows:
-                    if r.price is not None and r.change is not None and r.change_percent is not None:
+                    if r.price is not None:
+                        price = float(r.price)
+                        prev_price = prev_close_map.get(r.symbol)
+                        if prev_price is not None and prev_price != 0:
+                            change_val = price - prev_price
+                            pct_val = (change_val / prev_price) * 100
+                        else:
+                            change_val = float(r.change or 0.0)
+                            pct_val = float(r.change_percent or 0.0)
                         kr_results.append({
                             "name": r.name,
-                            "value": f"{r.price:,.2f}",
-                            "change": f"+{r.change:.2f}" if r.change >= 0 else f"{r.change:.2f}",
-                            "percent": f"+{r.change_percent:.2f}%" if r.change_percent >= 0 else f"{r.change_percent:.2f}%",
+                            "value": f"{price:,.2f}",
+                            "change": f"+{change_val:.2f}" if change_val >= 0 else f"{change_val:.2f}",
+                            "percent": f"+{pct_val:.2f}%" if pct_val >= 0 else f"{pct_val:.2f}%",
                         })
                 if kr_results:
                     r0 = rows[0]
@@ -2089,16 +2114,42 @@ async def get_foreign_indices(
                              "^FTSE": 15, "^GDAXI": 16, "^FCHI": 17}
             rows = sorted(rows, key=lambda r: _FOREIGN_ORDER.get(r.symbol, 99))
             if rows:
+                prev_close_map = {}
+                current_date = rows[0].collected_date
+                if current_date:
+                    symbols = [r.symbol for r in rows if r.symbol]
+                    for sym in symbols:
+                        prev_row = (
+                            db.query(models.YahooIndexDaily)
+                            .filter(
+                                models.YahooIndexDaily.group == "foreign",
+                                models.YahooIndexDaily.symbol == sym,
+                                models.YahooIndexDaily.date < current_date,
+                                models.YahooIndexDaily.price.isnot(None),
+                            )
+                            .order_by(models.YahooIndexDaily.date.desc())
+                            .first()
+                        )
+                        if prev_row and prev_row.price is not None:
+                            prev_close_map[sym] = float(prev_row.price)
                 results = []
                 for r in rows:
-                    if r.price is not None and r.change is not None and r.change_percent is not None:
+                    if r.price is not None:
+                        price = float(r.price)
+                        prev_price = prev_close_map.get(r.symbol)
+                        if prev_price is not None and prev_price != 0:
+                            change_val = price - prev_price
+                            pct_val = (change_val / prev_price) * 100
+                        else:
+                            change_val = float(r.change or 0.0)
+                            pct_val = float(r.change_percent or 0.0)
                         results.append({
                             "symbol": r.symbol,
                             "name": r.name,
                             "market": r.market,
-                            "price": round(r.price, 2),
-                            "change": round(r.change, 2),
-                            "change_percent": round(r.change_percent, 2),
+                            "price": round(price, 2),
+                            "change": round(change_val, 2),
+                            "change_percent": round(pct_val, 2),
                             "currency": r.currency or "USD",
                             "exchange": "",
                             "timestamp": None,
