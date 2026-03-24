@@ -1896,11 +1896,10 @@ async def _yahoo_fetch_with_retry(
 # 국내지수 API (Yahoo Finance 프록시 - 코스피/코스닥)
 # =========================================================
 
-DOMESTIC_INDICES = [
-    {"name": "코스피", "symbol": "^KS11"},
-    {"name": "코스닥", "symbol": "^KQ11"},
+DOMESTIC_INDICES_NAVER = [
+    {"name": "코스피", "code": "KOSPI"},
+    {"name": "코스닥", "code": "KOSDAQ"},
 ]
-
 
 @router.get("/api/domestic-indices")
 async def get_domestic_indices(
@@ -1908,178 +1907,75 @@ async def get_domestic_indices(
     authorized: bool = Depends(verify_api_key)
 ):
     """
-    국내 지수(코스피, 코스닥) 데이터를 조회합니다.
-    - DB(YahooIndexSnapshot group='kr')에 저장된 최신 데이터 우선 반환
-    - DB 데이터 없으면 Yahoo Finance 실시간 조회 (fallback)
+    국내 지수(코스피, 코스닥) 데이터를 네이버 증권 API를 통해 실시간 조회합니다.
+    (Yahoo API의 KR 지수 오류 대응)
     """
     cached = _get_cached("domestic-indices")
     if cached is not None:
         return cached
 
-    # 1) DB 최신 KR 지수 조회 (스케줄러가 저장한 데이터)
-    try:
-        _KR_SYMBOLS = ["^KS11", "^KQ11"]
-        latest_at = db.query(func.max(models.YahooIndexSnapshot.collected_at)).filter(
-            models.YahooIndexSnapshot.group == "kr",
-            models.YahooIndexSnapshot.symbol.in_(_KR_SYMBOLS),
-        ).scalar()
-        if latest_at:
-            rows = db.query(models.YahooIndexSnapshot).filter(
-                models.YahooIndexSnapshot.group == "kr",
-                models.YahooIndexSnapshot.collected_at == latest_at,
-                models.YahooIndexSnapshot.symbol.in_(_KR_SYMBOLS),
-            ).all()
-            if rows:
-                prev_close_map = {}
-                current_date = rows[0].collected_date
-                if current_date:
-                    for sym in _KR_SYMBOLS:
-                        prev_row = (
-                            db.query(models.YahooIndexDaily)
-                            .filter(
-                                models.YahooIndexDaily.group == "kr",
-                                models.YahooIndexDaily.symbol == sym,
-                                models.YahooIndexDaily.date < current_date,
-                                models.YahooIndexDaily.price.isnot(None),
-                            )
-                            .order_by(models.YahooIndexDaily.date.desc())
-                            .first()
-                        )
-                        if prev_row and prev_row.price is not None:
-                            prev_close_map[sym] = float(prev_row.price)
-                kr_results = []
-                for r in rows:
-                    if r.price is not None:
-                        price = float(r.price)
-                        prev_price = prev_close_map.get(r.symbol)
-                        if prev_price is not None and prev_price != 0:
-                            change_val = price - prev_price
-                            pct_val = (change_val / prev_price) * 100
-                        else:
-                            change_val = float(r.change or 0.0)
-                            pct_val = float(r.change_percent or 0.0)
-                        kr_results.append({
-                            "name": r.name,
-                            "value": f"{price:,.2f}",
-                            "change": f"+{change_val:.2f}" if change_val >= 0 else f"{change_val:.2f}",
-                            "percent": f"+{pct_val:.2f}%" if pct_val >= 0 else f"{pct_val:.2f}%",
-                        })
-                if kr_results:
-                    r0 = rows[0]
-                    # 마감(15:30) 이후인데, 최신 스냅샷 시각이 15:30보다 이르면
-                    # 스케줄 수집 누락/지연으로 인해 "마감 부호"가 뒤집혀 보일 수 있어
-                    # Yahoo 실시간 폴백을 사용한다.
-                    kst_now = datetime.now(pytz.timezone("Asia/Seoul"))
-                    latest_collected_time = r0.collected_time or "00:00"
-                    after_close_window = kst_now.hour > 15 or (kst_now.hour == 15 and kst_now.minute >= 40)
-                    use_db = True
-                    if after_close_window and latest_collected_time < "15:30":
-                        use_db = False
-                    timestamp = f"{r0.collected_date.strftime('%Y-%m-%d')} {r0.collected_time or '00:00'}"
-                    if use_db:
-                        result = {"success": True, "data": kr_results, "timestamp": timestamp}
-                        _set_cached("domestic-indices", result)
-                        return result
-    except Exception as e:
-        print(f"⚠️ domestic-indices DB 조회 실패: {e}")
-
-    # 2) Fallback: Yahoo 실시간 조회
-
-    def _last_non_null(values):
-        if not values:
-            return None
-        for v in reversed(values):
-            if v is not None:
-                return v
-        return None
-
-    def _prev_non_null(values):
-        if not values:
-            return None
-        seen_last = False
-        for v in reversed(values):
-            if v is None:
-                continue
-            if not seen_last:
-                seen_last = True
-                continue
-            return v
-        return None
-
-    async def fetch_one(client: httpx.AsyncClient, item: dict, crumb=None, cookies=None):
+    async def fetch_naver_index(client: httpx.AsyncClient, item: dict):
         try:
-            symbol = item["symbol"]
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-            params = {"interval": "1d", "range": "5d"}
-            data = await _yahoo_fetch_with_retry(client, url, params, crumb=crumb, cookies=cookies)
-            if not data or "chart" not in data or "result" not in data["chart"] or not data["chart"]["result"]:
-                return None
-            result = data["chart"]["result"][0]
-            meta = result.get("meta", {})
-            quote = (result.get("indicators") or {}).get("quote") or [{}]
-            close = (quote[0] or {}).get("close") or []
+            url = f"https://m.stock.naver.com/api/index/{item['code']}/basic"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            res = await client.get(url, headers=headers, timeout=5.0)
+            if res.status_code == 200:
+                data = res.json()
+                close_price = data.get("closePrice", "0").replace(",", "")
+                change_val = data.get("compareToPreviousClosePrice", "0").replace(",", "")
+                pct_val = data.get("fluctuationsRatio", "0").replace(",", "")
+                
+                # code: "2" 상승, "5" 하락, "3" 보합
+                compare_code = data.get("compareToPreviousPrice", {}).get("code", "3")
+                
+                sign = ""
+                if compare_code == "2":
+                    sign = "+"
+                elif compare_code == "5":
+                    sign = "-"
 
-            # close 배열 2개 이상이면 최신/직전 종가로 변동 계산 (chartPreviousClose는 5일 전 값일 수 있음)
-            last_close = _last_non_null(close)
-            prev_close = _prev_non_null(close)
-            rm_price = meta.get("regularMarketPrice")
-            baseline = (
-                meta.get("regularMarketPreviousClose")
-                or meta.get("previousClose")
-                or meta.get("chartPreviousClose")
-            )
-            if rm_price is not None and baseline is not None:
-                current_price = float(rm_price)
-                previous_close = float(baseline)
-            elif last_close is not None and prev_close is not None:
-                current_price = float(last_close)
-                previous_close = float(prev_close)
-            else:
-                current_price = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
-                previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
-            if current_price is None or previous_close is None:
-                return None
-            current_price = float(current_price)
-            previous_close = float(previous_close)
-            change = current_price - previous_close
-            percent = (change / previous_close * 100) if previous_close != 0 else 0
-            return {
-                "name": item["name"],
-                "value": f"{current_price:,.2f}",
-                "change": f"+{change:.2f}" if change >= 0 else f"{change:.2f}",
-                "percent": f"+{percent:.2f}%" if percent >= 0 else f"{percent:.2f}%",
-                "timestamp": meta.get("regularMarketTime"),
-            }
-        except Exception:
-            return None
+                return {
+                    "name": item["name"],
+                    "value": data.get("closePrice", "0"), # 포맷된 문자열 그대로 사용
+                    "change": f"{sign}{change_val}",
+                    "percent": f"{sign}{pct_val}%",
+                    "timestamp": data.get("localTradedAt", ""),
+                }
+        except Exception as e:
+            print(f"Naver Index Fetch Error for {item['code']}: {e}")
+        return None
 
+    results = []
     async with httpx.AsyncClient(follow_redirects=True) as client:
-        crumb, cookies = await _get_yahoo_crumb(client)
-        # 순차 호출 (Yahoo rate limit 방지)
-        results = []
-        for item in DOMESTIC_INDICES:
-            results.append(await fetch_one(client, item, crumb=crumb, cookies=cookies))
-            await asyncio.sleep(0.3)
-
-    valid = [r for r in results if r is not None]
+        for item in DOMESTIC_INDICES_NAVER:
+            res = await fetch_naver_index(client, item)
+            if res:
+                results.append(res)
+    
     timestamp = ""
-    if valid:
-        ts_values = [r["timestamp"] for r in valid if r.get("timestamp")]
+    if results:
+        ts_values = [r["timestamp"] for r in results if r.get("timestamp")]
         if ts_values:
             latest_ts = max(ts_values)
-            from datetime import datetime, timezone, timedelta
-            dt = datetime.fromtimestamp(latest_ts, tz=timezone.utc)
-            kst = dt + timedelta(hours=9)
-            timestamp = kst.strftime("%Y-%m-%d %H:%M")
-        for r in valid:
+            from datetime import datetime
+            try:
+                dt = datetime.fromisoformat(latest_ts)
+                timestamp = dt.strftime("%Y-%m-%d %H:%M")
+            except:
+                timestamp = latest_ts
+                
+        for r in results:
             r.pop("timestamp", None)
-
+            
     result = {
-        "success": True,
-        "data": valid,
+        "success": True if results else False,
+        "data": results,
         "timestamp": timestamp,
     }
-    _set_cached("domestic-indices", result)
+    
+    if results:
+        _set_cached("domestic-indices", result)
+        
     return result
 
 
