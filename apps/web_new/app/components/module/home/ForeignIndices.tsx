@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Globe, TrendingUp, TrendingDown } from "lucide-react";
+import { parseIndexChangeStrings } from "@/lib/utils/indexChangeDirection";
 import styles from "./ForeignIndices.module.css";
 
 interface ForeignIndexItem {
@@ -101,9 +102,7 @@ export function ForeignIndices() {
       </div>
       <div className={styles.grid}>
         {indices.map((item, idx) => {
-          const pct = parseFloat(item.percent);
-          const isNeutral = pct === 0;
-          const isUp = !isNeutral && (item.change.startsWith("+") || parseFloat(item.change) >= 0);
+          const { isNeutral, isPositive: isUp } = parseIndexChangeStrings(item.change, item.percent);
           const cardVariant = isNeutral ? styles.cardNeutral : isUp ? styles.cardUp : styles.cardDown;
           const textVariant = isNeutral ? styles.changeNeutral : isUp ? styles.changeUp : styles.changeDown;
           return (

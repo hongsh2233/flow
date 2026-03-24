@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MarketIndex } from "./MarketIndex";
 import type { MarketIndexItem } from "@/lib/types";
+import { parseIndexChangeStrings } from "@/lib/utils/indexChangeDirection";
 
 interface DomesticIndexItem {
   name: string;
@@ -28,19 +29,13 @@ export function MarketIndexSection() {
 
         if (result.success && result.data?.length > 0) {
           const mapped: MarketIndexItem[] = result.data.map((item: DomesticIndexItem) => {
-            const pct = parseFloat(String(item.percent).replace(/%/g, "").replace(/,/g, ""));
-            const chg = parseFloat(String(item.change).replace(/,/g, ""));
-            const isZero = Number.isFinite(pct) ? Math.abs(pct) < 1e-6 : Math.abs(chg) < 1e-6;
-            const isPositive =
-              Number.isFinite(pct) && !isZero
-                ? pct > 0
-                : item.change.startsWith("+") || (Number.isFinite(chg) && chg >= 0);
+            const { isNeutral, isPositive } = parseIndexChangeStrings(item.change, item.percent);
             return {
               name: item.name,
               value: item.value,
               change: `${item.change} (${item.percent})`,
               isPositive,
-              isNeutral: isZero,
+              isNeutral,
             };
           });
           setIndices(mapped);

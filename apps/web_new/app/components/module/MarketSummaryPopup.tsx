@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * 출근길 모닝 브리핑 팝업.
+ * - 데이터: BO `collect_market_morning_summary` 가 KST 06:35 에 수집·저장 → `/api/market-morning-summary`
+ * - 자동 노출: 일요일 제외, KST 06:00~08:50. FCM 딥링크 `?show_morning=1` 이면 시각 무시.
+ */
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import styles from "./MarketSummaryPopup.module.css";

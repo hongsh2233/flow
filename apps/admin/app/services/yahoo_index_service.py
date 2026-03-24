@@ -3,7 +3,7 @@ Yahoo Finance 지수 수집/저장 서비스
 
 요구사항:
 - 미국증시 지수: 매일 06:20 / 24:00 / 02:00 / 04:00 (KST) 스케줄로 수집, 기존 데이터 덮어쓰기
-- 한국증시 지수(코스피/코스닥): 09:20 / 11:30 / 14:00 / 15:30 (KST) 수집, 날짜별 마지막 값 저장
+- 한국증시 지수(코스피/코스닥 등): 장중 30분 간격 + 15:40 장마감 등은 scheduler_service.YahooIndexScheduler 와 동일
 - 최대 7일 데이터만 유지 (8일째가 되면 1일차 삭제)
 """
 
@@ -52,7 +52,7 @@ DEFAULT_KR_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="kr", symbol="^KS200", name="코스피 200", market="KR"),
 ]
 
-# 아침 시장 요약 (06:30 KST 수집) - 뉴욕 마감, 나스닥 선물, 코스피200, 필라델피아 반도체, 환율
+# 아침 시장 요약 — collect_market_morning_summary 가 06:35 KST 에 수집 (뉴욕 마감, 선물, 코스피200 등)
 MORNING_SUMMARY_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="morning", symbol="^IXIC", name="나스닥", market="US"),
     YahooIndexDef(group="morning", symbol="^GSPC", name="S&P 500", market="US"),

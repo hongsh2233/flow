@@ -41,9 +41,10 @@ from app.engine.models import (
 # ──────────────────────────────────────────────
 
 def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
-    """YahooIndexDaily에서 KR 지수 조회 (^KS11, ^KQ11).
-    오늘 데이터가 없으면 가장 최근 수집된 날짜로 폴백."""
-    # 1차: 오늘 날짜
+    """YahooIndexDaily에서 KR 지수 조회 (^KS11, ^KQ11), target_date(거래일)만 사용.
+
+    이전에는 당일 행이 없을 때 최근 날짜로 폴백했으나, 수급·bizdate는 당일 기준이라
+    어제 지수와 오늘 수급이 섞이는 문제가 있어 폴백하지 않는다."""
     rows = db.query(YahooIndexDaily).filter(
         YahooIndexDaily.date == target_date,
         YahooIndexDaily.group == "kr",
@@ -51,22 +52,7 @@ def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
     ).all()
 
     if not rows:
-        # 폴백: 가장 최근 날짜의 KR 지수
-        latest_date = (
-            db.query(func.max(YahooIndexDaily.date))
-            .filter(
-                YahooIndexDaily.group == "kr",
-                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
-            )
-            .scalar()
-        )
-        if latest_date:
-            print(f"[closing-gemini] 오늘({target_date}) KR지수 없음 → 최근 날짜({latest_date})로 폴백")
-            rows = db.query(YahooIndexDaily).filter(
-                YahooIndexDaily.date == latest_date,
-                YahooIndexDaily.group == "kr",
-                YahooIndexDaily.symbol.in_(["^KS11", "^KQ11"]),
-            ).all()
+        print(f"[closing-gemini] {target_date} KR 지수(YahooIndexDaily) 없음 — 폴백 없이 건너뜀")
 
     return [
         {
