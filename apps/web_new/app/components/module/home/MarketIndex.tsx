@@ -31,7 +31,7 @@ export const MarketIndex = memo(function MarketIndex({ indices, collectedDate }:
       <div className={styles.headingRow}>
         <h3 className={styles.heading}>
           <Activity className={styles.headingIcon} />
-          주요 지수
+          국내 지수
         </h3>
         {collectedDate && (
           <span className={styles.collectedDate}>

@@ -61,7 +61,7 @@ export function MarketIndexSection() {
   if (loading && indices.length === 0) {
     return (
       <div style={{ padding: "1rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
-        주요 지수 불러오는 중...
+        국내 지수 불러오는 중...
       </div>
     );
   }
