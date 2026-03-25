@@ -67,6 +67,9 @@ SUPPLY_SOURCES = [
     # 투자자별 매매동향 시간별 - 코스닥
     ("investor_time", "kosdaq", None,
      "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "02"}),
+    # 투자자별 매매동향 시간별 - 선물
+    ("investor_time", "futures", None,
+     "/sise/investorDealTrendTime.naver", {"bizdate": "{bizdate}", "sosok": "03"}),
     # 투자자별 매매동향 일자별 - 전체(all)
     ("investor_day", "all", None,
      "/sise/investorDealTrendDay.naver", {"bizdate": "{bizdate}"}),
@@ -131,7 +134,7 @@ SUPPLY_SOURCES = [
      "/sise/programDealTrendDay.naver", {"bizdate": "{bizdate}", "sosok": "02"}),
 ]
 
-# 30분 스케줄용: investor_time + program_time × (all, kospi, kosdaq) = 6건/회.
+# 30분 스케줄용: investor_time × (all, kospi, kosdaq, futures) + program_time × (all, kospi, kosdaq) = 7건/회.
 # 웹 수급 요약·Gemini는 kospi/kosdaq만 조회하지만, 여기서는 all도 같이 넣어 DB에 적재한다.
 SUPPLY_SOURCES_TIME_ONLY = [
     s for s in SUPPLY_SOURCES
