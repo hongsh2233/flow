@@ -138,6 +138,18 @@ async def naver_ranking_page(request: Request, user=Depends(get_current_user)):
     })
 
 
+@router.get("/admin/stock-screening", response_class=HTMLResponse)
+async def stock_screening_page(request: Request, user=Depends(get_current_user)):
+    """조건검색 (기술적 지표 기반 종목 스크리닝) 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("stock_screening.html", {
+        "request": request,
+        "admin_email": user.email,
+        "active_page": "stock-screening"
+    })
+
+
 @router.get("/admin/stock-news", response_class=HTMLResponse)
 async def stock_news_page(request: Request, user=Depends(get_current_user)):
     """재료(주가 영향 뉴스) 관리 페이지"""

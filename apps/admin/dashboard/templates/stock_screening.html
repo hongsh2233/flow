@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}조건검색 (익일 매수 후보) - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .screening-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .screening-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #2c3e50;
+  }
+
+  .screening-header .meta {
+    font-size: 13px;
+    color: #6c757d;
+  }
+
+  .btn-run {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .btn-run:hover { background: #2980b9; }
+  .btn-run:disabled { background: #95a5a6; cursor: not-allowed; }
+
+  .sub-tab-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .sub-tab-button {
+    padding: 7px 14px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #495057;
+    transition: all 0.2s;
+  }
+
+  .sub-tab-button:hover { background: #e9ecef; }
+
+  .sub-tab-button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+
+  .info-box {
+    background: #e8f4f8;
+    border-left: 4px solid #3498db;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #2c3e50;
+  }
+
+  .data-table-container {
+    margin-top: 12px;
+    background: white;
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    background: #f8f9fa;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid #e9ecef;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .data-table td:first-child { text-align: center; }
+  .data-table tr:hover { background: #f8f9fa; }
+
+  .data-table .rank { text-align: center; font-weight: 600; color: #3498db; }
+  .data-table .stock-name { text-align: left; font-weight: 500; color: #2c3e50; }
+  .data-table .stock-code { text-align: center; color: #6c757d; font-size: 12px; }
+
+  .up   { color: #e74c3c; font-weight: 600; }
+  .down { color: #3498db; font-weight: 600; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-cloud { background: #d4edda; color: #155724; }
+  .badge-high  { background: #fff3cd; color: #856404; }
+  .badge-cond  { background: #e2e3e5; color: #383d41; font-size: 10px; }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state-icon { font-size: 42px; margin-bottom: 12px; }
+
+  .condition-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #495057;
+  }
+
+  .condition-legend span {
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="screening-header">
+  <div>
+    <h2>조건검색 (익일 매수 후보)</h2>
+    <div class="meta" id="screening-meta">데이터 로딩 중...</div>
+  </div>
+  <button class="btn-run" id="btn-run-screening" onclick="runScreening()">수동 실행</button>
+</div>
+
+<div class="info-box">
+  일목균형표 기반 기술적 조건검색 결과입니다. 시총 상위 500종목을 대상으로 매일 20:30에 자동 스캔합니다.
+</div>
+
+<div class="condition-legend">
+  <span><b>A</b> 2봉전 종가 > 전환선</span>
+  <span><b>B</b> 현재가/저가 전환선 1% 이내</span>
+  <span><b>E</b> 구름대 위</span>
+  <span><b>G</b> 양봉</span>
+  <span><b>J</b> 20봉내 120봉 신고가</span>
+</div>
+
+<div class="sub-tab-buttons">
+  <button class="sub-tab-button active" onclick="switchMarket('kospi', this)">코스피</button>
+  <button class="sub-tab-button" onclick="switchMarket('kosdaq', this)">코스닥</button>
+</div>
+
+<div id="screening-content">
+  <div class="loading">데이터를 불러오는 중...</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentMarket = 'kospi';
+
+function formatNumber(val) {
+  if (!val) return '-';
+  const n = parseInt(val.replace(/,/g, ''), 10);
+  return isNaN(n) ? val : n.toLocaleString();
+}
+
+function getChangeClass(pct) {
+  if (!pct) return '';
+  return pct.startsWith('+') ? 'up' : pct.startsWith('-') ? 'down' : '';
+}
+
+function switchMarket(market, btn) {
+  currentMarket = market;
+  document.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadData(market);
+}
+
+async function loadData(market) {
+  const container = document.getElementById('screening-content');
+  container.innerHTML = '<div class="loading">데이터를 불러오는 중...</div>';
+
+  try {
+    const resp = await fetch(`/api/stock-screening?market_type=${market}&limit=100`);
+    const json = await resp.json();
+
+    if (!json.success || !json.data || json.data.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>조건에 부합하는 종목이 없거나 아직 스크리닝이 실행되지 않았습니다.</p>
+          <p style="font-size:12px; color:#adb5bd;">수동 실행 버튼을 눌러 스크리닝을 시작하세요.</p>
+        </div>`;
+      document.getElementById('screening-meta').textContent = '데이터 없음';
+      return;
+    }
+
+    const date = json.screening_date || '-';
+    document.getElementById('screening-meta').textContent =
+      `스크리닝 기준일: ${date} | ${market.toUpperCase()} | ${json.count}건`;
+
+    let html = `
+      <div class="data-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th style="text-align:left">종목명</th>
+              <th>종목코드</th>
+              <th>현재가</th>
+              <th>등락률</th>
+              <th>거래량</th>
+              <th>전환선</th>
+              <th>기준선</th>
+              <th>구름대</th>
+              <th>120봉 신고가</th>
+              <th>충족 조건</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+    for (const item of json.data) {
+      const chgClass = getChangeClass(item.change_percent);
+      html += `
+        <tr>
+          <td class="rank">${item.rank}</td>
+          <td class="stock-name">${item.stock_name}</td>
+          <td class="stock-code">${item.stock_code}</td>
+          <td>${formatNumber(item.current_price)}</td>
+          <td class="${chgClass}">${item.change_percent || '-'}</td>
+          <td>${formatNumber(item.volume)}</td>
+          <td>${formatNumber(item.tenkan_sen)}</td>
+          <td>${formatNumber(item.kijun_sen)}</td>
+          <td><span class="badge badge-cloud">${item.cloud_position === 'above' ? '구름 위' : '-'}</span></td>
+          <td>${item.is_new_high_120 ? '<span class="badge badge-high">신고가</span>' : '-'}</td>
+          <td><span class="badge badge-cond">${item.matched_conditions}</span></td>
+        </tr>`;
+    }
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <p>데이터 로딩 실패: ${err.message}</p>
+      </div>`;
+  }
+}
+
+async function runScreening() {
+  const btn = document.getElementById('btn-run-screening');
+  btn.disabled = true;
+  btn.textContent = '실행 중...';
+
+  try {
+    const resp = await fetch('/api/stock-screening/run', { method: 'POST' });
+    const json = await resp.json();
+    alert(json.message || '스크리닝이 백그라운드에서 시작되었습니다.\n완료까지 약 5~10분 소요됩니다.');
+  } catch (err) {
+    alert('실행 오류: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '수동 실행';
+  }
+}
+
+// 초기 로드
+document.addEventListener('DOMContentLoaded', () => loadData(currentMarket));
+</script>
+{% endblock %}

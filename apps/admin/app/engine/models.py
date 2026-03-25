@@ -487,6 +487,35 @@ class NaverRisingStock(Base):
     __table_args__ = (UniqueConstraint('market_type', 'rank', 'collected_at', name='uq_naver_rising_stock'),)
 
 
+class StockScreeningResult(Base):
+    """
+    기술적 지표 기반 조건검색 결과 (익일 매수 후보)
+    - 일목균형표 (전환선/기준선/선행스팬)
+    - 이동평균선, 신고가
+    - 평일 20:30 KST 1회 수집, 시총 상위 500종목 대상
+    """
+    __tablename__ = "stock_screening_results"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)   # 'kospi' | 'kosdaq'
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))                  # 현재가(종가)
+    change_percent = Column(String(20))                 # 등락률
+    volume = Column(String(30))                         # 거래량
+    tenkan_sen = Column(String(20))                     # 전환선 값
+    kijun_sen = Column(String(20))                      # 기준선 값
+    cloud_position = Column(String(10))                 # 'above' (구름대 위)
+    is_new_high_120 = Column(Boolean, default=False)    # 120봉 신고가 여부
+    matched_conditions = Column(String(50))             # 충족 조건 (A,B,E,F,G,J)
+    screening_date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('market_type', 'rank', 'screening_date', name='uq_stock_screening'),
+    )
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터

@@ -32,3 +32,7 @@ google-genai>=1.0.0
 anthropic>=0.50.0
 slowapi>=0.1.9
 resend>=2.0.0
+# 조건검색 (기술적 지표 기반 종목 스크리닝)
+finance-datareader>=0.9.0
+pandas>=2.0.0
+pandas_ta>=0.3.0

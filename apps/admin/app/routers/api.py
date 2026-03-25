@@ -406,6 +406,47 @@ async def get_naver_rising_stocks(
     return {"success": True, **result}
 
 
+@router.get("/api/stock-screening")
+async def get_stock_screening(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    조건검색 결과 조회 (익일 매수 후보, 기술적 지표 기반)
+    """
+    from app.services.stock_screening_service import get_latest_screening_results
+    result = get_latest_screening_results(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, **result}
+
+
+@router.post("/api/stock-screening/run")
+async def run_stock_screening_manual(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    조건검색 수동 실행 (테스트용, 백그라운드 실행)
+    """
+    import asyncio
+    from app.services.stock_screening_service import collect_and_save
+
+    async def _run():
+        from app.database import SessionLocal
+        bg_db = SessionLocal()
+        try:
+            result = await collect_and_save(bg_db)
+            print(f"[조건검색] 수동 실행 완료: {result}")
+        except Exception as e:
+            print(f"[조건검색] 수동 실행 오류: {e}")
+        finally:
+            bg_db.close()
+
+    asyncio.create_task(_run())
+    return {"success": True, "message": "조건검색 스크리닝이 백그라운드에서 시작되었습니다."}
+
+
 @router.get("/api/fsc-stock-price/dates")
 async def get_fsc_stock_price_dates(
     db: Session = Depends(get_db),
