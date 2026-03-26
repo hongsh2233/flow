@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}관심종목 현황 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .fav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .fav-header h2 { margin: 0; font-size: 18px; color: #2c3e50; }
+
+  .stat-cards {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px 24px;
+    border: 1px solid #e9ecef;
+    min-width: 160px;
+  }
+
+  .stat-card .label { font-size: 12px; color: #6c757d; margin-bottom: 4px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; color: #2c3e50; }
+
+  .sub-tab-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .sub-tab-button {
+    padding: 7px 14px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #495057;
+    transition: all 0.2s;
+  }
+
+  .sub-tab-button:hover { background: #e9ecef; }
+
+  .sub-tab-button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+
+  .data-table-container {
+    margin-top: 12px;
+    background: white;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    background: #f8f9fa;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e9ecef;
+    white-space: nowrap;
+  }
+
+  .data-table td:first-child { text-align: center; }
+  .data-table tr:hover { background: #f8f9fa; }
+
+  .rank-badge {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .rank-1 { background: #ffd700; color: #856404; }
+  .rank-2 { background: #c0c0c0; color: #495057; }
+  .rank-3 { background: #cd7f32; color: white; }
+  .rank-default { background: #e9ecef; color: #495057; }
+
+  .stock-code { color: #3498db; font-weight: 600; font-family: monospace; }
+  .member-email { color: #6c757d; font-size: 12px; }
+
+  .stock-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .stock-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e8f4f8;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #2c3e50;
+    font-family: monospace;
+  }
+
+  .loading { text-align: center; padding: 40px; color: #6c757d; }
+
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state-icon { font-size: 42px; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fav-header">
+  <h2>관심종목 현황</h2>
+</div>
+
+<div class="stat-cards">
+  <div class="stat-card">
+    <div class="label">관심종목 등록 회원</div>
+    <div class="value" id="stat-members">-</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">고유 종목 수</div>
+    <div class="value" id="stat-stocks">-</div>
+  </div>
+</div>
+
+<div class="sub-tab-buttons">
+  <button class="sub-tab-button active" onclick="switchTab('popular', this)">인기 종목 TOP</button>
+  <button class="sub-tab-button" onclick="switchTab('members', this)">회원별 현황</button>
+</div>
+
+<div id="content-area">
+  <div class="loading">데이터를 불러오는 중...</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let cachedData = null;
+let currentTab = 'popular';
+
+function getRankClass(rank) {
+  if (rank === 1) return 'rank-1';
+  if (rank === 2) return 'rank-2';
+  if (rank === 3) return 'rank-3';
+  return 'rank-default';
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (cachedData) renderTab(cachedData);
+}
+
+function renderPopular(data) {
+  const stocks = data.popular_stocks || [];
+  if (!stocks.length) {
+    return `<div class="empty-state"><div class="empty-state-icon">📭</div><p>관심종목 데이터가 없습니다.</p></div>`;
+  }
+
+  let html = `<div class="data-table-container"><table class="data-table">
+    <thead><tr>
+      <th style="width:50px">순위</th>
+      <th>종목코드</th>
+      <th>등록 회원 수</th>
+    </tr></thead><tbody>`;
+
+  stocks.forEach((s, i) => {
+    const rank = i + 1;
+    html += `<tr>
+      <td><span class="rank-badge ${getRankClass(rank)}">${rank}</span></td>
+      <td class="stock-code">${s.stock_code}</td>
+      <td style="text-align:center">${s.count}명</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderMembers(data) {
+  const members = data.members || [];
+  if (!members.length) {
+    return `<div class="empty-state"><div class="empty-state-icon">📭</div><p>관심종목을 등록한 회원이 없습니다.</p></div>`;
+  }
+
+  let html = `<div class="data-table-container"><table class="data-table">
+    <thead><tr>
+      <th style="width:50px">#</th>
+      <th style="text-align:left">회원</th>
+      <th>종목 수</th>
+      <th style="text-align:left">관심종목</th>
+    </tr></thead><tbody>`;
+
+  members.sort((a, b) => b.stock_count - a.stock_count);
+  members.forEach((m, i) => {
+    const tags = m.stocks.map(c => `<span class="stock-tag">${c}</span>`).join('');
+    html += `<tr>
+      <td style="text-align:center">${i + 1}</td>
+      <td style="text-align:left">
+        <div>${m.nickname || '-'}</div>
+        <div class="member-email">${m.email}</div>
+      </td>
+      <td style="text-align:center">${m.stock_count}</td>
+      <td style="text-align:left"><div class="stock-tags">${tags}</div></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderTab(data) {
+  const container = document.getElementById('content-area');
+  if (currentTab === 'popular') {
+    container.innerHTML = renderPopular(data);
+  } else {
+    container.innerHTML = renderMembers(data);
+  }
+}
+
+async function loadData() {
+  const container = document.getElementById('content-area');
+  try {
+    const resp = await fetch('/api/admin/favorite-stocks-stats');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (!json.success) throw new Error('API error');
+
+    cachedData = json;
+    document.getElementById('stat-members').textContent = json.total_members_with_favorites || 0;
+    document.getElementById('stat-stocks').textContent = json.total_unique_stocks || 0;
+    renderTab(json);
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>데이터 로딩 실패: ${err.message}</p></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+{% endblock %}

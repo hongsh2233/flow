@@ -507,7 +507,7 @@ class StockScreeningResult(Base):
     kijun_sen = Column(String(20))                      # 기준선 값
     cloud_position = Column(String(10))                 # 'above' (구름대 위)
     is_new_high_120 = Column(Boolean, default=False)    # 120봉 신고가 여부
-    matched_conditions = Column(String(50))             # 충족 조건 (A,B,E,F,G,J)
+    matched_conditions = Column(String(50))             # 충족 조건 (A,B,E,G,J)
     screening_date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
     collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

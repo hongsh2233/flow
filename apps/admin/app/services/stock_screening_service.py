@@ -79,6 +79,7 @@ def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
 
     # NaN 행 제거 후 데이터 충분한지 확인
     df = df.dropna(subset=["tenkan_sen", "kijun_sen", "span1", "span2", "high_120"])
+    df = df.reset_index(drop=True)  # iloc 안전성 보장
     if len(df) < 3:
         return None
 
@@ -105,10 +106,11 @@ def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
     if curr["Close"] > curr["Open"]:
         matched.append("G")
 
-    # [조건 J] 최근 20봉 내 120봉 신고가
+    # [조건 J] 최근 20봉 내 120봉 신고가 갱신 여부
+    # 현재 120봉 최고가와 최근 20봉 최고가를 비교
+    current_high_120 = df["high_120"].iloc[-1]
     recent_highs = df["High"].iloc[-20:]
-    high_120_ref = df["high_120"].iloc[-21] if len(df) >= 21 else df["high_120"].iloc[0]
-    if recent_highs.max() >= high_120_ref:
+    if current_high_120 > 0 and recent_highs.max() >= current_high_120:
         matched.append("J")
 
     # 모든 조건 충족 확인 (A, B, E, G, J)
@@ -151,6 +153,8 @@ def _scan_market(market: str, top_n: int = 500) -> List[Dict]:
     # 시총 기준 정렬 → 상위 top_n
     if "MarketCap" in listing.columns:
         listing = listing.sort_values("MarketCap", ascending=False)
+    else:
+        print(f"[조건검색] 경고: {listing_name} MarketCap 컬럼 없음 - 시총 정렬 불가. 컬럼: {listing.columns.tolist()}")
     listing = listing.head(top_n)
 
     # Code/Symbol 컬럼 찾기
@@ -182,14 +186,11 @@ def _scan_market(market: str, top_n: int = 500) -> List[Dict]:
             result = _analyze_stock(symbol, name)
             if result:
                 results.append(result)
-        except Exception as e:
-            # 개별 종목 오류는 skip
-            if idx % 100 == 0:
-                print(f"[조건검색] {market.upper()} {idx}/{total} 진행중... (현재까지 {len(results)}건 발견)")
-            continue
+        except Exception:
+            pass  # 개별 종목 오류는 skip
 
         if idx % 100 == 0:
-            print(f"[조건검색] {market.upper()} {idx}/{total} 진행중... (현재까지 {len(results)}건 발견)")
+            print(f"[조건검색] {market.upper()} {idx}/{total} 진행중... ({len(results)}건 발견)")
 
     print(f"[조건검색] {market.upper()} 스캔 완료: {total}종목 → {len(results)}건 조건 충족")
     return results

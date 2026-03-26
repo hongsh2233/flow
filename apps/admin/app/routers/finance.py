@@ -138,6 +138,18 @@ async def naver_ranking_page(request: Request, user=Depends(get_current_user)):
     })
 
 
+@router.get("/admin/favorite-stocks", response_class=HTMLResponse)
+async def favorite_stocks_page(request: Request, user=Depends(get_current_user)):
+    """관심종목 현황 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("favorite_stocks.html", {
+        "request": request,
+        "admin_email": user.email,
+        "active_page": "favorite-stocks"
+    })
+
+
 @router.get("/admin/stock-screening", response_class=HTMLResponse)
 async def stock_screening_page(request: Request, user=Depends(get_current_user)):
     """조건검색 (기술적 지표 기반 종목 스크리닝) 페이지"""

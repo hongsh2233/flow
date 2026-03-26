@@ -406,6 +406,52 @@ async def get_naver_rising_stocks(
     return {"success": True, **result}
 
 
+@router.get("/api/admin/favorite-stocks-stats")
+async def get_favorite_stocks_stats(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    관심종목 통계 - 종목별 등록 회원 수, 인기 순위
+    """
+    members = db.query(models.Member).filter(
+        models.Member.favorite_stocks.isnot(None),
+        models.Member.favorite_stocks != "",
+        models.Member.favorite_stocks != "[]",
+    ).all()
+
+    stock_counts: dict = {}
+    member_details: list = []
+
+    for m in members:
+        try:
+            stocks = json.loads(m.favorite_stocks) if m.favorite_stocks else []
+        except (json.JSONDecodeError, TypeError):
+            stocks = []
+        if not stocks:
+            continue
+        member_details.append({
+            "email": m.email,
+            "nickname": getattr(m, "nickname", None) or m.email,
+            "stock_count": len(stocks),
+            "stocks": stocks,
+        })
+        for code in stocks:
+            stock_counts[code] = stock_counts.get(code, 0) + 1
+
+    # 인기 종목 TOP (등록 회원 수 기준 내림차순)
+    popular = sorted(stock_counts.items(), key=lambda x: x[1], reverse=True)
+    popular_list = [{"stock_code": code, "count": cnt} for code, cnt in popular]
+
+    return {
+        "success": True,
+        "total_members_with_favorites": len(member_details),
+        "total_unique_stocks": len(stock_counts),
+        "popular_stocks": popular_list,
+        "members": member_details,
+    }
+
+
 @router.get("/api/stock-screening")
 async def get_stock_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
