@@ -1,7 +1,8 @@
 """
 기술적 지표 기반 조건검색 서비스 (익일 매수 후보 스크리닝)
 
-FinanceDataReader + pandas_ta를 사용하여 시총 상위 500종목을 분석합니다.
+FinanceDataReader를 사용하여 시총 상위 500종목을 분석합니다.
+일목균형표는 pandas로 직접 계산 (외부 TA 라이브러리 불필요).
 평일 20:30 KST 1회 실행.
 
 스크리닝 조건:
@@ -12,7 +13,6 @@ FinanceDataReader + pandas_ta를 사용하여 시총 상위 500종목을 분석�
   J: 최근 20봉 내 120봉 신고가 존재 (강한 추세)
 """
 import asyncio
-import traceback
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -26,13 +26,28 @@ from app.engine.models import StockScreeningResult
 KST = pytz.timezone("Asia/Seoul")
 
 
+def _ichimoku(high, low, close, tenkan=9, kijun=26, senkou_b=52):
+    """
+    일목균형표를 pandas만으로 직접 계산한다.
+    Returns: (tenkan_sen, kijun_sen, senkou_span_a, senkou_span_b)
+    """
+    # 전환선 (Tenkan-sen): (9일 최고 + 9일 최저) / 2
+    tenkan_sen = (high.rolling(window=tenkan).max() + low.rolling(window=tenkan).min()) / 2
+    # 기준선 (Kijun-sen): (26일 최고 + 26일 최저) / 2
+    kijun_sen = (high.rolling(window=kijun).max() + low.rolling(window=kijun).min()) / 2
+    # 선행스팬 A (Senkou Span A): (전환선 + 기준선) / 2, 26일 앞으로 이동
+    senkou_span_a = ((tenkan_sen + kijun_sen) / 2).shift(kijun)
+    # 선행스팬 B (Senkou Span B): (52일 최고 + 52일 최저) / 2, 26일 앞으로 이동
+    senkou_span_b = ((high.rolling(window=senkou_b).max() + low.rolling(window=senkou_b).min()) / 2).shift(kijun)
+    return tenkan_sen, kijun_sen, senkou_span_a, senkou_span_b
+
+
 def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
     """
     개별 종목에 대해 기술적 조건을 판정한다.
     모든 조건 충족 시 결과 dict 반환, 미충족 시 None.
     """
     import FinanceDataReader as fdr
-    import pandas_ta as ta
 
     try:
         df = fdr.DataReader(symbol)
@@ -43,36 +58,11 @@ def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
         return None
 
     # --- 일목균형표 계산 (9, 26, 52) ---
-    try:
-        ichimoku_result = ta.ichimoku(df["High"], df["Low"], df["Close"])
-        if ichimoku_result is None or ichimoku_result[0] is None:
-            return None
-        ichimoku = ichimoku_result[0]
-    except Exception:
-        return None
-
-    # pandas_ta 일목균형표 컬럼명
-    tenkan_col = None
-    kijun_col = None
-    span_a_col = None
-    span_b_col = None
-    for col in ichimoku.columns:
-        if col.startswith("ITS_"):
-            tenkan_col = col
-        elif col.startswith("IKS_"):
-            kijun_col = col
-        elif col.startswith("ISA_"):
-            span_a_col = col
-        elif col.startswith("ISB_"):
-            span_b_col = col
-
-    if not all([tenkan_col, kijun_col, span_a_col, span_b_col]):
-        return None
-
-    df["tenkan_sen"] = ichimoku[tenkan_col]
-    df["kijun_sen"] = ichimoku[kijun_col]
-    df["span1"] = ichimoku[span_a_col]
-    df["span2"] = ichimoku[span_b_col]
+    tenkan_sen, kijun_sen, span_a, span_b = _ichimoku(df["High"], df["Low"], df["Close"])
+    df["tenkan_sen"] = tenkan_sen
+    df["kijun_sen"] = kijun_sen
+    df["span1"] = span_a
+    df["span2"] = span_b
 
     # --- 120봉 신고가 ---
     df["high_120"] = df["High"].rolling(window=120).max()
