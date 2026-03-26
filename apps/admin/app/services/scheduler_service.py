@@ -1822,3 +1822,59 @@ class StockScreeningScheduler:
 
 
 stock_screening_scheduler = StockScreeningScheduler()
+
+
+# =========================================================
+# 종베 검색식 (종가 베팅 스크리닝)
+# 평일 15:00 KST, 동시호가(15:20) 전 결과 확보
+# =========================================================
+
+async def collect_jongbe_screening():
+    """종베 검색식 실행 (스케줄러에서 호출)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.jongbe_screening_service import collect_and_save_jongbe
+    db = SessionLocal()
+    try:
+        result = await collect_and_save_jongbe(db)
+        print(f"[종베] 수집 완료: 코스피 {result.get('kospi', 0)}건, 코스닥 {result.get('kosdaq', 0)}건")
+    except Exception as e:
+        print(f"[종베] 수집 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class JongbeScreeningScheduler:
+    """종베 검색식 스케줄러 (평일 15:00 KST, 동시호가 전 결과 확보)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_jongbe_screening,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=15, minute=0, timezone=self.kst),
+            id="jongbe_screening_1500",
+            name="종베 검색식 (15:00, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 종베 검색식 스케줄러 시작 (15:00 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+jongbe_screening_scheduler = JongbeScreeningScheduler()

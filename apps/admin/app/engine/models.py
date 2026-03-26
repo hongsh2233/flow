@@ -516,6 +516,37 @@ class StockScreeningResult(Base):
     )
 
 
+class JongbeScreeningResult(Base):
+    """
+    종가 베팅(종베) 검색식 결과 (당일 종가매수 후보)
+    거래대금 주도주 + 고가권 유지 + 기술적 필터
+    평일 15:00 KST 1회 실행 (동시호가 15:20 전 결과 확보)
+    """
+    __tablename__ = "jongbe_screening_results"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)   # 'kospi' | 'kosdaq'
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))          # 현재가(종가)
+    change_percent = Column(String(20))         # 등락률
+    volume = Column(String(30))                 # 거래량
+    trading_value = Column(String(30))          # 거래대금 (억원)
+    trading_value_rank = Column(Integer)        # 거래대금 순위
+    market_cap = Column(String(30))             # 시가총액 (억원)
+    high_ratio = Column(String(10))             # 고가 대비 비율 (예: 98.5%)
+    ma5 = Column(String(20))                    # 5일 이평선
+    rsi14 = Column(String(10))                  # RSI(14) 값
+    volume_ratio = Column(String(10))           # 전일 대비 거래량 비율 (예: 350%)
+    matched_conditions = Column(String(50))     # 충족 조건 (A,B,C,D,E,F,G,H)
+    screening_date = Column(String(10), nullable=False, index=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('market_type', 'rank', 'screening_date', name='uq_jongbe_screening'),
+    )
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터
