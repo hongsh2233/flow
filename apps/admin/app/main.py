@@ -26,7 +26,7 @@ from app import models
 from app.database import engine, get_db
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler
 from app.engine.services.scheduler_service import schedule_alarm_scheduler
 
 # 라우터 import
@@ -90,6 +90,7 @@ async def lifespan(app: FastAPI):
     target_price_news_scheduler.start()
     naver_rising_scheduler.start()
     stock_screening_scheduler.start()
+    jongbe_screening_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -105,6 +106,7 @@ async def lifespan(app: FastAPI):
     target_price_news_scheduler.shutdown()
     naver_rising_scheduler.shutdown()
     stock_screening_scheduler.shutdown()
+    jongbe_screening_scheduler.shutdown()
 
 
 # Rate Limiter (IP 기반)
