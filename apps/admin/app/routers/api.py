@@ -406,6 +406,93 @@ async def get_naver_rising_stocks(
     return {"success": True, **result}
 
 
+@router.get("/api/admin/favorite-stocks-stats")
+async def get_favorite_stocks_stats(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    관심종목 통계 - 종목별 등록 회원 수, 인기 순위
+    """
+    members = db.query(models.Member).filter(
+        models.Member.favorite_stocks.isnot(None),
+        models.Member.favorite_stocks != "",
+        models.Member.favorite_stocks != "[]",
+    ).all()
+
+    stock_counts: dict = {}
+    member_details: list = []
+
+    for m in members:
+        try:
+            stocks = json.loads(m.favorite_stocks) if m.favorite_stocks else []
+        except (json.JSONDecodeError, TypeError):
+            stocks = []
+        if not stocks:
+            continue
+        member_details.append({
+            "email": m.email,
+            "nickname": getattr(m, "nickname", None) or m.email,
+            "stock_count": len(stocks),
+            "stocks": stocks,
+        })
+        for code in stocks:
+            stock_counts[code] = stock_counts.get(code, 0) + 1
+
+    # 인기 종목 TOP (등록 회원 수 기준 내림차순)
+    popular = sorted(stock_counts.items(), key=lambda x: x[1], reverse=True)
+    popular_list = [{"stock_code": code, "count": cnt} for code, cnt in popular]
+
+    return {
+        "success": True,
+        "total_members_with_favorites": len(member_details),
+        "total_unique_stocks": len(stock_counts),
+        "popular_stocks": popular_list,
+        "members": member_details,
+    }
+
+
+@router.get("/api/stock-screening")
+async def get_stock_screening(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    조건검색 결과 조회 (익일 매수 후보, 기술적 지표 기반)
+    """
+    from app.services.stock_screening_service import get_latest_screening_results
+    result = get_latest_screening_results(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, **result}
+
+
+@router.post("/api/stock-screening/run")
+async def run_stock_screening_manual(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    조건검색 수동 실행 (테스트용, 백그라운드 실행)
+    """
+    import asyncio
+    from app.services.stock_screening_service import collect_and_save
+
+    async def _run():
+        from app.database import SessionLocal
+        bg_db = SessionLocal()
+        try:
+            result = await collect_and_save(bg_db)
+            print(f"[조건검색] 수동 실행 완료: {result}")
+        except Exception as e:
+            print(f"[조건검색] 수동 실행 오류: {e}")
+        finally:
+            bg_db.close()
+
+    asyncio.create_task(_run())
+    return {"success": True, "message": "조건검색 스크리닝이 백그라운드에서 시작되었습니다."}
+
+
 @router.get("/api/fsc-stock-price/dates")
 async def get_fsc_stock_price_dates(
     db: Session = Depends(get_db),

@@ -1766,3 +1766,59 @@ class NaverRisingScheduler:
 
 
 naver_rising_scheduler = NaverRisingScheduler()
+
+
+# =========================================================
+# 조건검색 (기술적 지표 기반 종목 스크리닝)
+# 평일 20:30 KST, 시총 상위 500종목 대상
+# =========================================================
+
+async def collect_stock_screening():
+    """조건검색 실행 (스케줄러에서 호출)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.stock_screening_service import collect_and_save
+    db = SessionLocal()
+    try:
+        result = await collect_and_save(db)
+        print(f"[조건검색] 수집 완료: 코스피 {result.get('kospi', 0)}건, 코스닥 {result.get('kosdaq', 0)}건")
+    except Exception as e:
+        print(f"[조건검색] 수집 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class StockScreeningScheduler:
+    """조건검색 스케줄러 (평일 20:30 KST, 시총 상위 500종목)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_stock_screening,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=20, minute=30, timezone=self.kst),
+            id="stock_screening_2030",
+            name="조건검색 스크리닝 (20:30, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 조건검색 스케줄러 시작 (20:30 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+stock_screening_scheduler = StockScreeningScheduler()
