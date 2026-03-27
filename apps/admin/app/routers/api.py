@@ -96,7 +96,7 @@ def serialize_date(d: Optional[date]) -> Optional[str]:
 
 def _is_within_period(post) -> bool:
     """제한 기간 내인지 (start/end가 없으면 True)"""
-    today = date.today()
+    today = datetime.now(pytz.timezone("Asia/Seoul")).date()
     start = getattr(post, "member_only_start_date", None)
     end = getattr(post, "member_only_end_date", None)
     if start and today < start:
@@ -942,7 +942,7 @@ async def get_active_poll(
     """
     from app.models import Poll
     from datetime import date
-    today = date.today()
+    today = datetime.now(pytz.timezone("Asia/Seoul")).date()
     poll = (
         db.query(Poll)
         .filter(Poll.start_date <= today, Poll.end_date >= today)
@@ -1546,7 +1546,7 @@ async def get_today_popup_schedules(
     auth=Depends(get_current_user_or_api_key)
 ):
     """당일 메인 팝업 표시 대상 일정 조회 (show_main_popup=true, 오늘 날짜 포함)"""
-    today = date.today()
+    today = datetime.now(pytz.timezone("Asia/Seoul")).date()
     schedules = db.query(models.Schedule).filter(
         models.Schedule.show_main_popup == True,
         models.Schedule.date <= today,
@@ -2769,9 +2769,8 @@ async def get_daily_issue_summary(
     금일 이슈 Gemini 요약 조회 (briefing 이슈 탭 상단용)
     08:40 / 12:40 / 19:40 스케줄러가 naver_stock_news 기반으로 생성 (뉴스 수집 10분 후)
     """
-    from datetime import date as dt_date
     try:
-        today = dt_date.today()
+        today = datetime.now(pytz.timezone("Asia/Seoul")).date()
         rows = db.execute(text("""
             SELECT collected_time, summary FROM daily_issue_summaries
             WHERE date = :d ORDER BY collected_time
@@ -2798,10 +2797,9 @@ async def trigger_daily_issue_summary(
     금일 이슈 Gemini 요약 수동 생성 (수동 트리거 / 검증용)
     naver_stock_news 기반으로 즉시 생성·저장
     """
-    from datetime import date as dt_date
     from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
     try:
-        today = dt_date.today()
+        today = datetime.now(pytz.timezone("Asia/Seoul")).date()
         saved = generate_and_save_daily_issue_summary(db, today)
         if saved:
             row = db.execute(text("""

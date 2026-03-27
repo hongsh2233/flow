@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
 from datetime import datetime, timedelta
+import pytz
 
 from app.dependencies import get_current_user
 from app.database import get_db
@@ -37,18 +38,20 @@ async def admin_dashboard(request: Request, user=Depends(get_current_user), db: 
     
     # 일정 통계
     stats['total_schedules'] = db.query(models.Schedule).count()
-    today = datetime.now().date()
+    _kst = pytz.timezone("Asia/Seoul")
+    _now_kst = datetime.now(_kst)
+    today = _now_kst.date()
     stats['upcoming_schedules'] = db.query(models.Schedule).filter(models.Schedule.date >= today).count()
-    
+
     # 관리자 통계
     stats['total_admins'] = db.query(models.AdminUser).count()
-    
+
     # 금융 데이터 통계
     stats['krx_data_count'] = db.query(models.KrxData).count()
     stats['fsc_data_count'] = db.query(models.FscStockPrice).count()
-    
+
     # 최근 7일간 게시글 작성 통계 (그래프용)
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    seven_days_ago = _now_kst - timedelta(days=7)
     recent_posts = db.query(
         func.date(models.Post.created_at).label('date'),
         func.count(models.Post.id).label('count')
@@ -58,7 +61,7 @@ async def admin_dashboard(request: Request, user=Depends(get_current_user), db: 
     
     post_stats = []
     for i in range(7):
-        date = (datetime.now() - timedelta(days=6-i)).date()
+        date = (_now_kst - timedelta(days=6-i)).date()
         count = next((p.count for p in recent_posts if p.date == date), 0)
         post_stats.append({
             'date': date.strftime('%m/%d'),
@@ -75,7 +78,7 @@ async def admin_dashboard(request: Request, user=Depends(get_current_user), db: 
     
     view_stats = []
     for i in range(7):
-        date = (datetime.now() - timedelta(days=6-i)).date()
+        date = (_now_kst - timedelta(days=6-i)).date()
         views_result = next((v.total_views for v in recent_views if v.date == date), None)
         views = int(views_result) if views_result else 0
         view_stats.append({

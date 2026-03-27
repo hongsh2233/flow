@@ -1,6 +1,7 @@
 import httpx
 import json
 import os
+import pytz
 from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -105,7 +106,7 @@ class KrxApiService:
         print(f"🔍 API 호출 시작: {url} (data_type: {data_type}, bas_dd: {bas_dd})")
 
         if bas_dd is None:
-            current_date = datetime.now()
+            current_date = datetime.now(pytz.timezone("Asia/Seoul"))
             bas_dd_str = current_date.strftime("%Y%m%d")
         else:
             current_date = datetime.strptime(bas_dd, "%Y%m%d")
@@ -389,7 +390,7 @@ class FscApiService:
         
         # 날짜가 없으면 오늘 날짜부터 시작
         if bas_dt is None:
-            current_date = datetime.now()
+            current_date = datetime.now(pytz.timezone("Asia/Seoul"))
         else:
             current_date = datetime.strptime(bas_dt, "%Y%m%d")
         
@@ -510,7 +511,7 @@ class FscApiService:
         
         # 날짜가 없으면 오늘 날짜부터 시작 (시가총액 상위 종목과 동일)
         if bas_dt is None:
-            current_date = datetime.now()
+            current_date = datetime.now(pytz.timezone("Asia/Seoul"))
         else:
             current_date = datetime.strptime(bas_dt, "%Y%m%d")
         
@@ -652,7 +653,7 @@ class FscApiService:
         
         # 날짜가 없으면 오늘 날짜부터 시작
         if bas_dt is None:
-            current_date = datetime.now()
+            current_date = datetime.now(pytz.timezone("Asia/Seoul"))
         else:
             current_date = datetime.strptime(bas_dt, "%Y%m%d")
         

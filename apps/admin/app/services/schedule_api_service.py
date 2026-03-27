@@ -3,6 +3,7 @@
 공공데이터포털 특일 정보제공 서비스를 사용하여 공휴일 정보를 가져옵니다.
 """
 import httpx
+import pytz
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 from typing import List, Dict
@@ -39,7 +40,7 @@ class ScheduleApiService:
         print(f"공공데이터포털 API 호출 시작 (API 키 길이: {len(api_key)}자)")
         
         if year is None:
-            current_year = datetime.now().year
+            current_year = datetime.now(pytz.timezone("Asia/Seoul")).year
             years = [current_year, current_year + 1]
         else:
             years = [year]
