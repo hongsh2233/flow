@@ -133,6 +133,13 @@ export function StockDetailModal({
     loadNews();
   }, [loadNews]);
 
+  useEffect(() => {
+    if (stock) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [stock]);
+
   if (!stock) return null;
 
   const price = detail ? parseFloat(String(detail.clpr ?? 0).replace(/,/g, "")) || stock.price : stock.price;

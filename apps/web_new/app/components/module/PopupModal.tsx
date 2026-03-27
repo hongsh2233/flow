@@ -112,6 +112,13 @@ export function PopupModal() {
     return () => window.removeEventListener("keydown", onKey);
   }, [popups, handleClose]);
 
+  useEffect(() => {
+    if (popups.length > 0) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [popups.length]);
+
   if (popups.length === 0 || !current) return null;
 
   return (

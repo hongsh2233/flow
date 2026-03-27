@@ -89,6 +89,13 @@ export function SchedulePopup() {
     return () => window.removeEventListener("keydown", onKey);
   }, [visible, handleClose]);
 
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [visible]);
+
   if (!visible || schedules.length === 0) return null;
 
   return (

@@ -61,6 +61,13 @@ export function AppDownloadModal() {
     setVisible(true);
   }, []);
 
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [visible]);
+
   if (!visible) return null;
 
   const handleDownload = () => {
