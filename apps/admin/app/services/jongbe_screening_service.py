@@ -182,13 +182,18 @@ def _scan_market_jongbe(market: str) -> List[Dict]:
         return []
 
     # [조건 A] 시총 500억 이상 필터
-    if "MarketCap" not in listing.columns:
-        print(f"[종베] 경고: {listing_name} MarketCap 컬럼 없음 - 시총 필터 불가")
+    marcap_col = None
+    for candidate in ["Marcap", "MarketCap", "marcap", "marketcap"]:
+        if candidate in listing.columns:
+            marcap_col = candidate
+            break
+    if not marcap_col:
+        print(f"[종베] 경고: {listing_name} 시총 컬럼 없음 - 시총 필터 불가. 컬럼: {listing.columns.tolist()}")
         return []
 
-    # MarketCap 단위: 원 → 억원 변환
-    listing = listing[listing["MarketCap"] >= 500 * 1_0000_0000].copy()
-    listing["market_cap_억"] = listing["MarketCap"] / 1_0000_0000
+    # 시총 단위: 원 → 억원 변환
+    listing = listing[listing[marcap_col] >= 500 * 1_0000_0000].copy()
+    listing["market_cap_억"] = listing[marcap_col] / 1_0000_0000
 
     # 유효 종목코드 필터
     symbols_info = []
