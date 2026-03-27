@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.engine.models import JongbeScreeningResult
+from app.services.screening_progress import update_progress, reset_progress
 
 KST = pytz.timezone("Asia/Seoul")
 MAX_WORKERS = 8
@@ -200,6 +201,8 @@ def _scan_market_jongbe(market: str) -> List[Dict]:
 
     total = len(symbols_info)
     print(f"[종베] {market.upper()} 시총 500억+ 종목: {total}개 → 병렬 OHLCV 조회 시작")
+    update_progress("jongbe", phase=f"OHLCV 조회 ({market.upper()})", current=0, total=total,
+                    message=f"{market.upper()} {total}개 종목 OHLCV 조회 시작")
 
     # 1st pass: 병렬로 OHLCV 조회
     ohlcv_data = {}  # symbol -> df
@@ -215,10 +218,17 @@ def _scan_market_jongbe(market: str) -> List[Dict]:
             if result:
                 sym, df = result
                 ohlcv_data[sym] = df
-            if done_count % 100 == 0:
-                print(f"[종베] {market.upper()} OHLCV 조회 {done_count}/{total}...")
+            if done_count % 50 == 0 or done_count == total:
+                update_progress("jongbe", phase=f"OHLCV 조회 ({market.upper()})",
+                                current=done_count, total=total,
+                                message=f"{market.upper()} OHLCV 조회 {done_count}/{total}")
+                if done_count % 100 == 0:
+                    print(f"[종베] {market.upper()} OHLCV 조회 {done_count}/{total}...")
 
     print(f"[종베] {market.upper()} OHLCV 조회 완료: {len(ohlcv_data)}/{total}개 성공")
+    update_progress("jongbe", phase=f"거래대금 순위 계산 ({market.upper()})",
+                    current=total, total=total,
+                    message=f"{market.upper()} 거래대금 순위 계산 중...")
 
     # 거래대금 계산 및 순위 부여
     trading_values = []
@@ -247,6 +257,9 @@ def _scan_market_jongbe(market: str) -> List[Dict]:
             pass
 
     print(f"[종베] {market.upper()} 스캔 완료: {total}종목 → 거래대금 TOP100 → {len(results)}건 조건 충족")
+    update_progress("jongbe", phase=f"조건 판정 완료 ({market.upper()})",
+                    current=total, total=total,
+                    message=f"{market.upper()} {len(results)}건 조건 충족")
     return results
 
 
@@ -271,6 +284,7 @@ async def collect_and_save_jongbe(db: Session) -> Dict[str, int]:
     collected_at = now_kst.replace(second=0, microsecond=0)
 
     print(f"[종베] 스크리닝 시작 ({screening_date})")
+    reset_progress("jongbe")
 
     all_results = await scan_all_stocks_jongbe()
     totals: Dict[str, int] = {}
@@ -314,9 +328,12 @@ async def collect_and_save_jongbe(db: Session) -> Dict[str, int]:
     except Exception as e:
         db.rollback()
         print(f"[종베] DB 저장 오류: {e}")
+        update_progress("jongbe", status="error", phase="오류", message=f"DB 저장 오류: {e}")
         raise
 
-    print(f"[종베] 스크리닝 완료: 코스피 {totals.get('kospi', 0)}건, 코스닥 {totals.get('kosdaq', 0)}건")
+    msg = f"완료: 코스피 {totals.get('kospi', 0)}건, 코스닥 {totals.get('kosdaq', 0)}건"
+    print(f"[종베] 스크리닝 {msg}")
+    update_progress("jongbe", status="completed", phase="완료", current=1, total=1, message=msg)
     return totals
 
 
