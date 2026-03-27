@@ -5,6 +5,7 @@ Open DART(금융감독원 전자공시) API로 공모청약 일정 수집
 참고: https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS006&apiId=2020054
 """
 import re
+import pytz
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Optional, Any
 
@@ -166,7 +167,7 @@ async def fetch_ipo_schedules_opendart(
     if not api_key or len(api_key) < 10:
         return []
 
-    end = date.today()
+    end = datetime.now(pytz.timezone("Asia/Seoul")).date()
     start = end - timedelta(days=min(months_back * 31, 90))
     bgn_de = start.strftime("%Y%m%d")
     end_de = end.strftime("%Y%m%d")

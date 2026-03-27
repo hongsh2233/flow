@@ -725,7 +725,8 @@ async def collect_past_days(
         failed_dates = []
         
         # 오늘부터 역순으로 과거 데이터 수집
-        today = datetime.now()
+        import pytz
+        today = datetime.now(pytz.timezone("Asia/Seoul"))
         
         for day_offset in range(1, days + 1):
             target_date = today - timedelta(days=day_offset)
