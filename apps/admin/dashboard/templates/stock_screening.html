@@ -187,6 +187,53 @@
     border-radius: 3px;
     border: 1px solid #dee2e6;
   }
+
+  .progress-container {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 16px;
+  }
+
+  .progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .progress-bar-bg {
+    flex: 1;
+    background: #e9ecef;
+    border-radius: 4px;
+    height: 22px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: #3498db;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .progress-bar-fill.completed { background: #27ae60; }
+  .progress-bar-fill.error { background: #e74c3c; }
+
+  .progress-percent {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  .progress-message {
+    font-size: 12px;
+    color: #6c757d;
+  }
 </style>
 {% endblock %}
 
@@ -197,6 +244,17 @@
     <div class="meta" id="screening-meta">데이터 로딩 중...</div>
   </div>
   <button class="btn-run" id="btn-run-screening" onclick="runScreening()">수동 실행</button>
+</div>
+
+<!-- 진행상태 프로그레스 바 -->
+<div id="screening-progress" class="progress-container" style="display:none;">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-bg">
+      <div id="progress-bar" class="progress-bar-fill"></div>
+    </div>
+    <span id="progress-percent" class="progress-percent">0%</span>
+  </div>
+  <div id="progress-message" class="progress-message"></div>
 </div>
 
 <!-- 전략 탭 -->
@@ -260,6 +318,16 @@ function getChangeClass(pct) {
 }
 
 function switchStrategy(strategy, btn) {
+  // 탭 전환 시 폴링 중지 + 프로그레스 숨김
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    progressInterval = null;
+  }
+  document.getElementById('screening-progress').style.display = 'none';
+  const runBtn = document.getElementById('btn-run-screening');
+  runBtn.disabled = false;
+  runBtn.textContent = '수동 실행';
+
   currentStrategy = strategy;
   document.querySelectorAll('.strategy-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -417,6 +485,8 @@ async function loadData(market) {
   }
 }
 
+let progressInterval = null;
+
 async function runScreening() {
   const btn = document.getElementById('btn-run-screening');
   btn.disabled = true;
@@ -429,13 +499,93 @@ async function runScreening() {
   try {
     const resp = await fetch(runUrl, { method: 'POST' });
     const json = await resp.json();
-    alert(json.message || '스크리닝이 백그라운드에서 시작되었습니다.');
+
+    if (json.success) {
+      // 프로그레스 바 표시 + 폴링 시작
+      const progressEl = document.getElementById('screening-progress');
+      progressEl.style.display = '';
+      const bar = document.getElementById('progress-bar');
+      bar.style.width = '0%';
+      bar.className = 'progress-bar-fill';
+      document.getElementById('progress-percent').textContent = '0%';
+      document.getElementById('progress-message').textContent = '스크리닝을 시작합니다...';
+      startProgressPolling();
+    } else {
+      alert(json.message || '실행 실패');
+      btn.disabled = false;
+      btn.textContent = '수동 실행';
+    }
   } catch (err) {
     alert('실행 오류: ' + err.message);
-  } finally {
     btn.disabled = false;
     btn.textContent = '수동 실행';
   }
+}
+
+function startProgressPolling() {
+  if (progressInterval) clearInterval(progressInterval);
+
+  progressInterval = setInterval(async () => {
+    try {
+      const type = currentStrategy;
+      const resp = await fetch(`/api/screening-progress?screening_type=${type}`);
+      const data = await resp.json();
+
+      const bar = document.getElementById('progress-bar');
+      const pct = document.getElementById('progress-percent');
+      const msg = document.getElementById('progress-message');
+
+      if (data.status === 'idle') return;
+
+      let percent = 0;
+      if (data.total > 0) {
+        percent = Math.min(Math.round((data.current / data.total) * 100), 99);
+      }
+
+      if (data.status === 'running') {
+        bar.style.width = percent + '%';
+        bar.className = 'progress-bar-fill';
+        pct.textContent = percent + '%';
+        msg.textContent = data.message || data.phase || '';
+      }
+
+      if (data.status === 'completed') {
+        clearInterval(progressInterval);
+        progressInterval = null;
+        bar.style.width = '100%';
+        bar.className = 'progress-bar-fill completed';
+        pct.textContent = '100%';
+        msg.textContent = data.message || '완료';
+
+        const btn = document.getElementById('btn-run-screening');
+        btn.disabled = false;
+        btn.textContent = '수동 실행';
+
+        // 1.5초 후 데이터 자동 리로드
+        setTimeout(() => {
+          loadData(currentMarket);
+          setTimeout(() => {
+            document.getElementById('screening-progress').style.display = 'none';
+          }, 3000);
+        }, 1500);
+      }
+
+      if (data.status === 'error') {
+        clearInterval(progressInterval);
+        progressInterval = null;
+        bar.style.width = '100%';
+        bar.className = 'progress-bar-fill error';
+        pct.textContent = '오류';
+        msg.textContent = data.message || '오류 발생';
+
+        const btn = document.getElementById('btn-run-screening');
+        btn.disabled = false;
+        btn.textContent = '수동 실행';
+      }
+    } catch (e) {
+      console.warn('Progress poll error:', e);
+    }
+  }, 3000);
 }
 
 // 초기 로드

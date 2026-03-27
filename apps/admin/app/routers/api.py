@@ -480,11 +480,13 @@ async def run_stock_screening_manual(
 
     async def _run():
         from app.database import SessionLocal
+        from app.services.screening_progress import update_progress
         bg_db = SessionLocal()
         try:
             result = await collect_and_save(bg_db)
             print(f"[조건검색] 수동 실행 완료: {result}")
         except Exception as e:
+            update_progress("ichimoku", status="error", phase="오류", message=f"실행 오류: {e}")
             print(f"[조건검색] 수동 실행 오류: {e}")
         finally:
             bg_db.close()
@@ -521,17 +523,31 @@ async def run_jongbe_screening_manual(
 
     async def _run():
         from app.database import SessionLocal
+        from app.services.screening_progress import update_progress
         bg_db = SessionLocal()
         try:
             result = await collect_and_save_jongbe(bg_db)
             print(f"[종베] 수동 실행 완료: {result}")
         except Exception as e:
+            update_progress("jongbe", status="error", phase="오류", message=f"실행 오류: {e}")
             print(f"[종베] 수동 실행 오류: {e}")
         finally:
             bg_db.close()
 
     asyncio.create_task(_run())
     return {"success": True, "message": "종베 검색식이 백그라운드에서 시작되었습니다. (병렬처리 약 3~5분 소요)"}
+
+
+@router.get("/api/screening-progress")
+async def get_screening_progress(
+    screening_type: str = Query(..., description="스크리닝 타입 (ichimoku | jongbe)"),
+    authorized: bool = Depends(verify_api_key),
+):
+    """
+    스크리닝 진행 상황 조회 (프론트엔드 폴링용)
+    """
+    from app.services.screening_progress import get_progress
+    return get_progress(screening_type)
 
 
 @router.get("/api/fsc-stock-price/dates")
