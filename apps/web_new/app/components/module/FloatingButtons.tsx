@@ -45,7 +45,6 @@ export default function FloatingButtons() {
         </button>
 
         <div style={{ position: "relative" }}>
-          <span className={styles.dictLabel}>주식용어</span>
           <button
             className={`${styles.fab} ${styles.dictBtn}`}
             onClick={() => setSheetOpen(true)}

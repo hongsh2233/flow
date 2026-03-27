@@ -69,6 +69,13 @@ export default function TermsModal({
 
   const allRead = privacyRead && termsRead;
 
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (

@@ -132,6 +132,13 @@ export function MarketSummaryPopup() {
     return () => window.removeEventListener("keydown", onKey);
   }, [visible, handleClose]);
 
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [visible]);
+
   if (!visible || !data) return null;
 
   return (
