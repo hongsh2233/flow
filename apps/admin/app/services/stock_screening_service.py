@@ -142,10 +142,15 @@ def _scan_market(market: str, top_n: int = 500) -> List[Dict]:
         return []
 
     # 시총 기준 정렬 → 상위 top_n
-    if "MarketCap" in listing.columns:
-        listing = listing.sort_values("MarketCap", ascending=False)
+    marcap_col = None
+    for candidate in ["Marcap", "MarketCap", "marcap", "marketcap"]:
+        if candidate in listing.columns:
+            marcap_col = candidate
+            break
+    if marcap_col:
+        listing = listing.sort_values(marcap_col, ascending=False)
     else:
-        print(f"[조건검색] 경고: {listing_name} MarketCap 컬럼 없음 - 시총 정렬 불가. 컬럼: {listing.columns.tolist()}")
+        print(f"[조건검색] 경고: {listing_name} 시총 컬럼 없음 - 시총 정렬 불가. 컬럼: {listing.columns.tolist()}")
     listing = listing.head(top_n)
 
     # Code/Symbol 컬럼 찾기
