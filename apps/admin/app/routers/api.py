@@ -6,6 +6,7 @@ REST API 라우터 - 프론트엔드용
 게시판 및 일정 관리 등은 JWT 토큰 또는 API Key를 통해 인증합니다.
 """
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_, text
 from typing import Optional
@@ -23,6 +24,7 @@ from app import models
 from app.routers.board import parse_attached_files, clean_content
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.dependencies import (
+    get_current_user,
     get_current_user_from_token,
     get_current_user_from_token_optional,
     verify_api_key,
@@ -409,11 +411,13 @@ async def get_naver_rising_stocks(
 @router.get("/api/admin/favorite-stocks-stats")
 async def get_favorite_stocks_stats(
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     관심종목 통계 - 종목별 등록 회원 수, 인기 순위
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     members = db.query(models.Member).filter(
         models.Member.favorite_stocks.isnot(None),
         models.Member.favorite_stocks != "",
@@ -457,11 +461,13 @@ async def get_stock_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     조건검색 결과 조회 (익일 매수 후보, 기술적 지표 기반)
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.services.stock_screening_service import get_latest_screening_results
     result = get_latest_screening_results(db, market_type=market_type.lower(), limit=limit)
     return {"success": True, **result}
@@ -470,11 +476,13 @@ async def get_stock_screening(
 @router.post("/api/stock-screening/run")
 async def run_stock_screening_manual(
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     조건검색 수동 실행 (테스트용, 백그라운드 실행)
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     import asyncio
     from app.services.stock_screening_service import collect_and_save
 
@@ -500,11 +508,13 @@ async def get_jongbe_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     종베 검색식 결과 조회 (당일 종가매수 후보)
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.services.jongbe_screening_service import get_latest_jongbe_results
     result = get_latest_jongbe_results(db, market_type=market_type.lower(), limit=limit)
     return {"success": True, **result}
@@ -513,11 +523,13 @@ async def get_jongbe_screening(
 @router.post("/api/jongbe-screening/run")
 async def run_jongbe_screening_manual(
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     종베 검색식 수동 실행 (테스트용, 백그라운드 실행)
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     import asyncio
     from app.services.jongbe_screening_service import collect_and_save_jongbe
 
@@ -541,11 +553,13 @@ async def run_jongbe_screening_manual(
 @router.get("/api/screening-progress")
 async def get_screening_progress(
     screening_type: str = Query(..., description="스크리닝 타입 (ichimoku | jongbe)"),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """
     스크리닝 진행 상황 조회 (프론트엔드 폴링용)
     """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.services.screening_progress import get_progress
     return get_progress(screening_type)
 
