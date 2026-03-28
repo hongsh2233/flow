@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./JuTalkPage.module.css";
-import { Clock, MessageCircle, Heart, Send, ThumbsUp } from "lucide-react";
+import { Clock, MessageCircle, Heart, Send, ThumbsUp, User } from "lucide-react";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
@@ -25,6 +25,33 @@ const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
 function stripHtml(html: string): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+}
+
+function ExpertAvatar({ imageUrl, name }: { imageUrl: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const url = imageUrl?.trim() ?? "";
+  const usePlaceholder = !url || failed;
+
+  if (usePlaceholder) {
+    return (
+      <div
+        className={styles.expertAvatarPlaceholder}
+        aria-label={`${name} 프로필 (미등록)`}
+        role="img"
+      >
+        <User className={styles.expertAvatarPlaceholderIcon} strokeWidth={1.75} aria-hidden />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={`${name} 프로필`}
+      className={styles.expertAvatar}
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 const jubtiIcons: Record<JuBTI, { icon: string; className: string; label: string }> = {
@@ -299,9 +326,7 @@ export default function JuTalkPage() {
           id: item.id ?? index,
           name: item.name,
           title: item.title || "투자 대가",
-          image:
-            item.image_url ||
-            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
+          image: item.image_url?.trim() ? item.image_url.trim() : "",
           quote: item.quote,
           likes: item.likes ?? 0,
           is_liked: item.is_liked ?? false,
@@ -633,11 +658,7 @@ export default function JuTalkPage() {
                   className={`${styles.expertCard} ${idx === 0 ? styles.expertCardNew : ""}`}
                 >
                   <div className={styles.expertHeader}>
-                    <img
-                      src={expert.image}
-                      alt={expert.name}
-                      className={styles.expertAvatar}
-                    />
+                    <ExpertAvatar imageUrl={expert.image} name={expert.name} />
                     <div className={styles.expertInfo}>
                       <h3 className={styles.expertName}>{expert.name}</h3>
                       <p className={styles.expertTitle}>{expert.title}</p>

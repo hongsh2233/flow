@@ -357,6 +357,24 @@
   border: 2px solid #fed7aa;
 }
 
+.expertAvatarPlaceholder {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--app-text-muted, #6b7280) 22%, var(--app-card-bg, #f3f4f6));
+  border: 2px solid color-mix(in srgb, var(--app-text-muted, #9ca3af) 35%, transparent);
+  color: color-mix(in srgb, var(--app-text-muted, #6b7280) 85%, transparent);
+}
+
+.expertAvatarPlaceholderIcon {
+  width: 22px;
+  height: 22px;
+}
+
 .expertInfo {
   min-width: 0;
 }
