@@ -10,6 +10,10 @@ export type BrokerItem = {
   mobile_web?: string;
   deep_link?: string;
   android_store?: string;
+  /** App Store — iOS 앱 유도 시 (백엔드 BROKERS와 동일 키) */
+  ios_store?: string;
+  /** Play 패키지명 — Android intent:// 구성용 */
+  android_package?: string;
 };
 
 type Props = {

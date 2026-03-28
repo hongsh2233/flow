@@ -8,7 +8,7 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import { DEFAULT_BROKERS } from "@/lib/picks/defaultBrokers";
-import { BROKER_STORAGE_KEY, openBrokerApp } from "@/lib/picks/openBroker";
+import { BROKER_STORAGE_KEY, mergeBrokerWithCatalog, openBrokerApp } from "@/lib/picks/openBroker";
 import { BrokerSelectSheet, type BrokerItem } from "@/app/components/module/picks/BrokerSelectSheet";
 import { readSavedPickPositions, recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
 import type { StockDetail } from "@/lib/types";
@@ -170,9 +170,9 @@ export default function MyStocksPage() {
     try {
       const raw = localStorage.getItem(BROKER_STORAGE_KEY);
       if (raw) {
-        const b = JSON.parse(raw) as BrokerItem;
-        if (b?.id) {
-          void openBrokerApp(b);
+        const parsed = JSON.parse(raw) as BrokerItem;
+        if (parsed?.id) {
+          void openBrokerApp(mergeBrokerWithCatalog(parsed, brokers));
           return;
         }
       }
@@ -181,7 +181,7 @@ export default function MyStocksPage() {
     }
     sheetIntentRef.current = "go";
     setSheetOpen(true);
-  }, []);
+  }, [brokers]);
 
   const handleBrokerSelect = useCallback((b: BrokerItem) => {
     try {

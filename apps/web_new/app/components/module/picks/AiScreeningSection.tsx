@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
 import { DEFAULT_BROKERS } from "@/lib/picks/defaultBrokers";
-import { BROKER_STORAGE_KEY, openBrokerApp } from "@/lib/picks/openBroker";
+import { BROKER_STORAGE_KEY, mergeBrokerWithCatalog, openBrokerApp } from "@/lib/picks/openBroker";
 import { BrokerSelectSheet, type BrokerItem } from "./BrokerSelectSheet";
 import { ScreeningResultTable, type ScreeningRow } from "./ScreeningResultTable";
 import styles from "./Picks.module.css";
@@ -43,9 +43,9 @@ export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: P
     try {
       const raw = localStorage.getItem(BROKER_STORAGE_KEY);
       if (raw) {
-        const b = JSON.parse(raw) as BrokerItem;
-        if (b?.id) {
-          void openBrokerApp(b);
+        const parsed = JSON.parse(raw) as BrokerItem;
+        if (parsed?.id) {
+          void openBrokerApp(mergeBrokerWithCatalog(parsed, brokers));
           return;
         }
       }
@@ -53,7 +53,7 @@ export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: P
       /* invalid */
     }
     setSheetOpen(true);
-  }, []);
+  }, [brokers]);
 
   const handleBrokerSelect = useCallback((b: BrokerItem) => {
     try {

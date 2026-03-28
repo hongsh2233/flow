@@ -1,8 +1,9 @@
 "use client";
 
-import { ShoppingCart, Smartphone } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
+import { MtsAppIcon } from "./MtsAppIcon";
 import styles from "./Picks.module.css";
 
 export type ScreeningRow = Record<string, unknown>;
@@ -172,7 +173,7 @@ export function ScreeningResultTable({
                           onMtsClick();
                         }}
                       >
-                        <Smartphone size={18} strokeWidth={2} aria-hidden />
+                        <MtsAppIcon size={18} />
                       </button>
                     )}
                   </td>
