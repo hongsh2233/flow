@@ -27,37 +27,38 @@ function formatRecommendDateDisplay(ymd: string): string {
   return `${m[1].slice(2)}/${m[2]}/${m[3]}`;
 }
 
-type FscPriceRow = { clpr?: string; bas_dt?: string };
+type BatchQuoteEntry = { price: number; asOf: string | null; source: string } | null;
 
-/**
- * 현재금액: BO FSC 주식시세 `clpr`(최신 영업일 종가).
- * `limit`으로 여러 일이 오면 `bas_dt`(YYYYMMDD) 최신 행을 택함. 관심종목·마켓과 동일 데이터 소스.
- */
-async function fetchCurrentPrice(code: string): Promise<number | null> {
+async function fetchBatchQuotes(codes: string[]): Promise<{
+  prices: Record<string, number | null>;
+  quoteHint: string | null;
+}> {
+  const unique = [...new Set(codes)].filter(Boolean);
+  if (unique.length === 0) return { prices: {}, quoteHint: null };
   try {
-    const res = await fetch(`/api/fsc-stock-price?srtn_cd=${encodeURIComponent(code)}&limit=5`, {
-      cache: "no-store",
-    });
+    const qs = new URLSearchParams({ codes: unique.join(",") });
+    const res = await fetch(`/api/stock-quotes-batch?${qs.toString()}`, { cache: "no-store" });
     const j = await res.json();
-    const rows: FscPriceRow[] = Array.isArray(j.data) ? j.data : [];
-    if (rows.length === 0) return null;
-
-    let best = rows[0];
-    let bestDt = 0;
-    for (const row of rows) {
-      const raw = row.bas_dt != null ? String(row.bas_dt) : "";
-      const dt = parseInt(raw.replace(/\D/g, "") || "0", 10);
-      if (dt >= bestDt) {
-        bestDt = dt;
-        best = row;
-      }
+    if (!j.success || !j.quotes || typeof j.quotes !== "object") {
+      return { prices: Object.fromEntries(unique.map((c) => [c, null])), quoteHint: null };
     }
-
-    if (best?.clpr == null) return null;
-    const n = parseFloat(String(best.clpr).replace(/,/g, ""));
-    return Number.isNaN(n) ? null : n;
+    const quotes = j.quotes as Record<string, BatchQuoteEntry>;
+    const prices: Record<string, number | null> = {};
+    let naver = 0;
+    let fsc = 0;
+    for (const c of unique) {
+      const row = quotes[c];
+      prices[c] = row?.price ?? null;
+      if (row?.source === "naver_delayed") naver += 1;
+      else if (row?.source === "fsc_clpr") fsc += 1;
+    }
+    const ttl = typeof j.cacheTtlSeconds === "number" ? j.cacheTtlSeconds : 90;
+    let quoteHint: string | null = `현재 기준가: 참고 시세(약 ${ttl}초 캐시). 네이버 금융 지연 시세 우선, 실패 시 FSC 종가로 표시됩니다.`;
+    if (naver > 0 && fsc === 0) quoteHint = `현재 기준가: 네이버 금융 지연 시세(서버 캐시 약 ${ttl}초).`;
+    else if (fsc > 0 && naver === 0) quoteHint = `현재 기준가: FSC 종가(네이버 조회 불가 시, 캐시 약 ${ttl}초).`;
+    return { prices, quoteHint };
   } catch {
-    return null;
+    return { prices: Object.fromEntries(unique.map((c) => [c, null])), quoteHint: null };
   }
 }
 
@@ -69,6 +70,7 @@ export default function MyStocksPage() {
   const { addFavCode, removeFavCode } = useFavoriteStore();
   const [picksTick, setPicksTick] = useState(0);
   const [prices, setPrices] = useState<Record<string, number | null>>({});
+  const [quoteHint, setQuoteHint] = useState<string | null>(null);
   const [brokers, setBrokers] = useState<BrokerItem[]>(DEFAULT_BROKERS);
   const [sheetOpen, setSheetOpen] = useState(false);
   const sheetIntentRef = useRef<SheetIntent>(null);
@@ -144,17 +146,15 @@ export default function MyStocksPage() {
     const list = readSavedPickPositions();
     if (list.length === 0) {
       setPrices({});
+      setQuoteHint(null);
       return;
     }
     (async () => {
-      const entries = await Promise.all(
-        list.map(async (p) => {
-          const cur = await fetchCurrentPrice(p.code);
-          return [p.code, cur] as const;
-        })
-      );
+      const codes = list.map((p) => p.code);
+      const { prices: next, quoteHint: hint } = await fetchBatchQuotes(codes);
       if (cancelled) return;
-      setPrices(Object.fromEntries(entries));
+      setPrices(next);
+      setQuoteHint(hint);
     })();
     return () => {
       cancelled = true;
@@ -235,6 +235,7 @@ export default function MyStocksPage() {
 
         <h2 className={styles.sectionTitle}>담은 종목</h2>
         <p className={styles.subHint}>마켓 관심 종목에서 담기에 성공한 종목이 표시됩니다. 추천금액은 담기 시점 가격입니다.</p>
+        {quoteHint ? <p className={styles.subHint}>{quoteHint}</p> : null}
 
         {savedPicks.length === 0 ? (
           <div className={styles.emptyBox}>아직 담은 종목이 없습니다. 마켓에서 관심 담기를 해 보세요.</div>
@@ -246,7 +247,7 @@ export default function MyStocksPage() {
                   <th scope="col">종목</th>
                   <th scope="col">추천일</th>
                   <th scope="col">추천금액</th>
-                  <th scope="col">현재금액</th>
+                  <th scope="col">현재 기준가</th>
                   <th scope="col">수익</th>
                   <th scope="col">수익률</th>
                 </tr>
@@ -280,6 +281,9 @@ export default function MyStocksPage() {
                 })}
               </tbody>
             </table>
+            <p className={styles.subHint}>
+              수익·수익률은 지연 시세를 기준으로 한 참고용입니다. 실제 판단은 증권사 MTS 등 실시간 시세를 참고해 주세요.
+            </p>
           </div>
         )}
 
