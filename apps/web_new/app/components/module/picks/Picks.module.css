@@ -409,7 +409,7 @@
   font-weight: 700;
   font-size: 0.8rem;
   line-height: 1.35;
-  color: var(--app-accent);
+  color: inherit;
   cursor: pointer;
   text-align: left;
   width: 100%;
