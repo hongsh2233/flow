@@ -13,6 +13,7 @@ import { BrokerSelectSheet, type BrokerItem } from "@/app/components/module/pick
 import { readSavedPickPositions, recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
 import type { StockDetail } from "@/lib/types";
 import { StockTermBox } from "@/app/components/module/stock-term-box";
+import { Briefcase, Star, ArrowRightLeft, ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import styles from "./MyStocks.module.css";
 
 const LazyStockDetailModal = dynamic(
@@ -220,98 +221,116 @@ export default function MyStocksPage() {
       <div className={styles.screen}>
         <div className={styles.brokerRow}>
           <button type="button" className={styles.brokerBtn} onClick={handleBrokerChangeClick}>
+            <ArrowRightLeft size={14} style={{ marginRight: "0.3rem", display: "inline-block", verticalAlign: "middle" }} />
             증권사 변경
           </button>
           <button type="button" className={styles.brokerBtnPrimary} onClick={handleBrokerGoClick}>
+            <ExternalLink size={14} style={{ marginRight: "0.3rem", display: "inline-block", verticalAlign: "middle" }} />
             증권사 이동
           </button>
         </div>
 
-        <h2 className={styles.sectionTitle}>담은 종목</h2>
-        <p className={styles.subHint}>마켓 관심 종목에서 담기에 성공한 종목이 표시됩니다. 추천금액은 담기 시점 가격입니다.</p>
-        {quoteHint ? <p className={styles.subHint}>{quoteHint}</p> : null}
-
-        {savedPicks.length === 0 ? (
-          <div className={styles.emptyBox}>아직 담은 종목이 없습니다. 마켓에서 관심 담기를 해 보세요.</div>
-        ) : (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">종목</th>
-                  <th scope="col">추천일</th>
-                  <th scope="col">추천금액</th>
-                  <th scope="col">현재 기준가</th>
-                  <th scope="col">수익</th>
-                  <th scope="col">수익률</th>
-                </tr>
-              </thead>
-              <tbody>
-                {savedPicks.map((p) => {
-                  const cur = prices[p.code];
-                  const entry = p.entryPrice;
-                  const profit = cur != null ? cur - entry : null;
-                  const rate = cur != null && entry > 0 ? ((cur - entry) / entry) * 100 : null;
-                  const up = profit != null && profit > 0;
-                  const down = profit != null && profit < 0;
-
-                  return (
-                    <tr key={`${p.code}-${p.savedAt}`}>
-                      <td className={styles.left}>
-                        <span className={styles.nameStrong}>{p.name}</span>
-                        <span className={styles.codeMuted}>({p.code})</span>
-                      </td>
-                      <td>{formatRecommendDateDisplay(p.recommendDate)}</td>
-                      <td>{entry.toLocaleString()}</td>
-                      <td>{cur != null ? cur.toLocaleString() : "—"}</td>
-                      <td className={up ? styles.up : down ? styles.down : undefined}>
-                        {profit != null ? profit.toLocaleString() : "—"}
-                      </td>
-                      <td className={up ? styles.up : down ? styles.down : undefined}>
-                        {rate != null ? `${rate >= 0 ? "+" : ""}${rate.toFixed(2)}%` : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className={styles.group}>
+          <div className={styles.groupTitleWrap}>
+            <Briefcase className={styles.groupIcon} />
+            <h2 className={styles.groupTitle}>담은 종목</h2>
           </div>
-        )}
+          <p className={styles.subHint}>마켓 관심 종목에서 담기에 성공한 종목이 표시됩니다. 추천금액은 담기 시점 가격입니다.</p>
+          {quoteHint ? <p className={styles.subHint}>{quoteHint}</p> : null}
 
-        <h2 className={styles.sectionTitle}>관심종목</h2>
-        {favLoading && favoriteStocks.length === 0 ? (
-          <div className={styles.emptyBox}>관심종목을 불러오는 중...</div>
-        ) : favoriteStocks.length === 0 ? (
-          <div className={styles.emptyBox}>등록된 관심종목이 없습니다.</div>
-        ) : (
-          <div className={styles.favGrid}>
-            {favoriteStocks.map((stock) => {
-              const isUp = stock.change >= 0;
-              return (
-                <button
-                  key={stock.id}
-                  type="button"
-                  className={styles.favCard}
-                  onClick={() =>
-                    setSelectedStock({
-                      name: stock.name,
-                      code: stock.code,
-                      price: stock.price,
-                      change: stock.change,
-                    })
-                  }
-                >
-                  <p className={styles.favName}>{stock.name}</p>
-                  <p className={styles.favCode}>{stock.code}</p>
-                  <div className={`${styles.favPrice} ${isUp ? styles.up : styles.down}`}>
-                    {stock.price.toLocaleString()} · {isUp ? "+" : ""}
-                    {stock.change}%
+          {savedPicks.length === 0 ? (
+            <div className={styles.emptyBox}>아직 담은 종목이 없습니다. 마켓에서 관심 담기를 해 보세요.</div>
+          ) : (
+            <div className={styles.groupCard}>
+              {savedPicks.map((p, pIdx) => {
+                const cur = prices[p.code];
+                const entry = p.entryPrice;
+                const profit = cur != null ? cur - entry : null;
+                const rate = cur != null && entry > 0 ? ((cur - entry) / entry) * 100 : null;
+                const up = profit != null && profit > 0;
+                const down = profit != null && profit < 0;
+
+                return (
+                  <div key={`${p.code}-${p.savedAt}`} className={`${styles.stockRow} ${pIdx !== savedPicks.length - 1 ? styles.stockRowBordered : ""}`}>
+                    <div className={styles.stockInfo}>
+                      <div className={styles.stockName}>
+                        {p.name}
+                      </div>
+                      <span className={styles.stockCode}>{p.code}</span>
+                      <span className={styles.stockRecommendDate}>{formatRecommendDateDisplay(p.recommendDate)} 추천</span>
+                    </div>
+                    <div className={styles.priceInfo}>
+                      <span className={styles.currentPrice}>{cur != null ? cur.toLocaleString() + "원" : "—"}</span>
+                      <span className={styles.entryPrice}>기준 {entry.toLocaleString()}원</span>
+                      <div className={styles.profitBadgeWrap}>
+                        {profit != null && rate != null ? (
+                          <span className={`${styles.profitBadge} ${up ? styles.up : down ? styles.down : ""}`}>
+                            {up ? <TrendingUp size={12} /> : down ? <TrendingDown size={12} /> : <Minus size={12} />}
+                            {rate > 0 ? "+" : ""}{rate.toFixed(2)}%
+                          </span>
+                        ) : (
+                          <span className={styles.profitBadge}>—</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.group}>
+          <div className={styles.groupTitleWrap}>
+            <Star className={styles.groupIcon} style={{ fill: "currentColor" }} />
+            <h2 className={styles.groupTitle}>관심종목</h2>
           </div>
-        )}
+          {favLoading && favoriteStocks.length === 0 ? (
+            <div className={styles.emptyBox}>관심종목을 불러오는 중...</div>
+          ) : favoriteStocks.length === 0 ? (
+            <div className={styles.emptyBox}>등록된 관심종목이 없습니다.</div>
+          ) : (
+            <div className={styles.favGrid}>
+              {favoriteStocks.map((stock) => {
+                const isUp = stock.change > 0;
+                const isDown = stock.change < 0;
+                return (
+                  <button
+                    key={stock.id}
+                    type="button"
+                    className={styles.favCard}
+                    onClick={() =>
+                      setSelectedStock({
+                        name: stock.name,
+                        code: stock.code,
+                        price: stock.price,
+                        change: stock.change,
+                      })
+                    }
+                  >
+                    <div className={styles.favCardHeader}>
+                      <div className={styles.favNameWrap}>
+                        <h3 className={styles.favName}>{stock.name}</h3>
+                        <p className={styles.favCode}>{stock.code}</p>
+                      </div>
+                      <div className={styles.favIconWrap}>
+                        <Star size={16} style={{ fill: "currentColor" }} />
+                      </div>
+                    </div>
+                    <div className={styles.favPriceWrap}>
+                      <span className={styles.favPrice}>{stock.price.toLocaleString()}</span>
+                      <span className={`${styles.favChange} ${isUp ? styles.up : isDown ? styles.down : ""}`}>
+                        {isUp ? <TrendingUp size={12} style={{ marginRight: '2px', verticalAlign: 'middle', display: 'inline-block' }} /> : 
+                         isDown ? <TrendingDown size={12} style={{ marginRight: '2px', verticalAlign: 'middle', display: 'inline-block' }} /> : null}
+                        {isUp ? "+" : ""}{stock.change}%
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <BrokerSelectSheet
