@@ -1,9 +1,9 @@
 "use client";
 
-import { ShoppingCart } from "lucide-react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
 import { MtsAppIcon } from "./MtsAppIcon";
+import { AddPicksIcon } from "./AddPicksIcon";
 import styles from "./Picks.module.css";
 
 export type ScreeningRow = Record<string, unknown>;
@@ -140,7 +140,7 @@ export function ScreeningResultTable({
                       </span>
                     ) : added ? (
                       <span className={styles.iconBtnDone} title="담김" aria-label="종목 담김">
-                        <ShoppingCart size={18} strokeWidth={2} fill="currentColor" aria-hidden />
+                        <AddPicksIcon size={20} isAdded={true} aria-hidden />
                       </span>
                     ) : (
                       <button
@@ -153,7 +153,7 @@ export function ScreeningResultTable({
                           onAddFavorite(detail);
                         }}
                       >
-                        <ShoppingCart size={18} strokeWidth={2} aria-hidden />
+                        <AddPicksIcon size={20} isAdded={false} aria-hidden />
                       </button>
                     )}
                   </td>

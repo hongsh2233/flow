@@ -18,37 +18,42 @@ export function MtsAppIcon({ size = 18, className }: Props) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <rect
-        x="5.1"
-        y="2.85"
-        width="13.8"
-        height="18.3"
-        rx="2.85"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinejoin="round"
-      />
       <path
-        d="M8.15 5.35h7.7"
+        d="M17 2H7C5.89543 2 5 2.89543 5 4V20C5 21.1046 5.89543 22 7 22H17C18.1046 22 19 21.1046 19 20V4C19 2.89543 18.1046 2 17 2Z"
+        fill="currentColor"
+        fillOpacity="0.1"
         stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        opacity={0.32}
-      />
-      <path
-        d="M8.35 15.9 L10.55 11.35 L12.25 12.95 L14.85 8.15 L16.55 9.75"
-        stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="16.55" cy="9.75" r="1.1" fill="currentColor" />
       <path
-        d="M9.35 18.65h5.3"
+        d="M11 19H13"
         stroke="currentColor"
-        strokeWidth="1.05"
+        strokeWidth="2"
         strokeLinecap="round"
-        opacity={0.38}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 14L10.5 11.5L12 13L15.5 9.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.5 9.5V12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.5 9.5H13"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
