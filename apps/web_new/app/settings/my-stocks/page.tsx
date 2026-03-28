@@ -44,18 +44,12 @@ async function fetchBatchQuotes(codes: string[]): Promise<{
     }
     const quotes = j.quotes as Record<string, BatchQuoteEntry>;
     const prices: Record<string, number | null> = {};
-    let naver = 0;
-    let fsc = 0;
     for (const c of unique) {
       const row = quotes[c];
       prices[c] = row?.price ?? null;
-      if (row?.source === "naver_delayed") naver += 1;
-      else if (row?.source === "fsc_clpr") fsc += 1;
     }
-    const ttl = typeof j.cacheTtlSeconds === "number" ? j.cacheTtlSeconds : 90;
-    let quoteHint: string | null = `현재 기준가: 참고 시세(약 ${ttl}초 캐시). 네이버 금융 지연 시세 우선, 실패 시 FSC 종가로 표시됩니다.`;
-    if (naver > 0 && fsc === 0) quoteHint = `현재 기준가: 네이버 금융 지연 시세(서버 캐시 약 ${ttl}초).`;
-    else if (fsc > 0 && naver === 0) quoteHint = `현재 기준가: FSC 종가(네이버 조회 불가 시, 캐시 약 ${ttl}초).`;
+    const quoteHint: string | null =
+      "현재 기준가는 장중에는 지연 시세이며 참고해 주시기 바라며, 정확한 시세는 증권사 시세를 보시기 바랍니다.";
     return { prices, quoteHint };
   } catch {
     return { prices: Object.fromEntries(unique.map((c) => [c, null])), quoteHint: null };
