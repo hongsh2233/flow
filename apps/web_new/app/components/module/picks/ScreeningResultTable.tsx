@@ -41,31 +41,28 @@ function rowToDetail(row: ScreeningRow): StockDetail | null {
 type Props = {
   rows: ScreeningRow[];
   tier: PicksGradeTier;
-  screeningType: "ichimoku" | "jongbe";
   onSelectStock?: (s: StockDetail) => void;
+  onAddFavorite?: (s: StockDetail) => void;
+  favCodes?: Set<string>;
 };
 
-export function ScreeningResultTable({ rows, tier, screeningType, onSelectStock }: Props) {
-  const jongbeExtra = screeningType === "jongbe";
-
+export function ScreeningResultTable({ rows, tier, onSelectStock, onAddFavorite, favCodes }: Props) {
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>순위</th>
             <th>종목명</th>
             <th>코드</th>
-            <th>현재가</th>
+            <th>가격</th>
             <th>등락률</th>
-            {jongbeExtra && <th>거래대금</th>}
-            <th>조건</th>
+            <th>담기</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={jongbeExtra ? 7 : 6} className={styles.empty}>
+              <td colSpan={5} className={styles.empty}>
                 데이터가 없습니다.
               </td>
             </tr>
@@ -73,28 +70,46 @@ export function ScreeningResultTable({ rows, tier, screeningType, onSelectStock 
             rows.map((row, idx) => {
               const blinded = row.stock_name === "***";
               const detail = rowToDetail(row);
-              const clickable = Boolean(detail && onSelectStock);
+              const code = detail?.code ?? "";
+              const added = Boolean(code && favCodes?.has(code));
 
               return (
-                <tr
-                  key={`${row.rank}-${idx}`}
-                  onClick={() => clickable && onSelectStock!(detail!)}
-                  style={clickable ? { cursor: "pointer" } : undefined}
-                >
-                  <td>{String(row.rank ?? idx + 1)}</td>
-                  <td className={blinded ? styles.blur : undefined}>{String(row.stock_name ?? "-")}</td>
+                <tr key={`${row.rank}-${idx}`}>
+                  <td className={blinded ? styles.blur : undefined}>
+                    {detail && onSelectStock ? (
+                      <button
+                        type="button"
+                        className={styles.nameLink}
+                        onClick={() => onSelectStock(detail)}
+                      >
+                        {String(row.stock_name ?? "-")}
+                      </button>
+                    ) : (
+                      String(row.stock_name ?? "-")
+                    )}
+                  </td>
                   <td className={blinded ? styles.blur : undefined}>{String(row.stock_code ?? "-")}</td>
                   <td className={blinded ? styles.blur : undefined}>{formatPrice(row.current_price)}</td>
                   <td className={blinded ? styles.blur : undefined}>
                     {row.change_percent != null ? String(row.change_percent) : "-"}
                   </td>
-                  {jongbeExtra && (
-                    <td className={blinded ? styles.blur : undefined}>
-                      {row.trading_value != null ? String(row.trading_value) : "-"}
-                    </td>
-                  )}
-                  <td className={blinded ? styles.blur : undefined}>
-                    {row.matched_conditions != null ? String(row.matched_conditions) : "-"}
+                  <td>
+                    {blinded || !detail || !onAddFavorite ? (
+                      <span className={styles.addMuted}>—</span>
+                    ) : added ? (
+                      <span className={styles.addDone}>담김</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.addBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddFavorite(detail);
+                        }}
+                      >
+                        담기
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

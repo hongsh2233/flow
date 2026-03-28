@@ -67,31 +67,15 @@ export function BrokerConnectButton() {
 
   return (
     <>
-      <div className={styles.brokerBar}>
-        <div className={styles.brokerLeft}>
-          {selected ? (
-            <>
-              <span
-                className={styles.brokerDot}
-                style={{ background: selected.logo_color || "#888" }}
-                aria-hidden
-              />
-              <span className={styles.brokerName}>{selected.name}</span>
-            </>
-          ) : (
-            <span className={styles.brokerName}>증권사를 선택하세요</span>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: "0.35rem", flexShrink: 0 }}>
-          <button type="button" className={styles.btnSm} onClick={() => setSheetOpen(true)}>
-            {selected ? "변경" : "선택"}
+      <div className={styles.brokerActions}>
+        <button type="button" className={styles.btnSm} onClick={() => setSheetOpen(true)}>
+          {selected ? "변경" : "증권사 선택"}
+        </button>
+        {selected && (
+          <button type="button" className={styles.btnGo} onClick={() => goBroker(selected)}>
+            바로가기
           </button>
-          {selected && (
-            <button type="button" className={styles.btnSmPrimary} onClick={() => goBroker(selected)}>
-              바로가기
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       <BrokerSelectSheet

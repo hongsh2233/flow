@@ -32,5 +32,9 @@ export function AdZoneSlot({ zone }: AdZoneSlotProps) {
     : shouldShowAdZoneB_regular(session, status);
 
   if (!show) return null;
-  return <RandomAffiliateCard zone="B" />;
+  return (
+    <div style={{ marginBottom: "1.25rem" }}>
+      <RandomAffiliateCard zone="B" />
+    </div>
+  );
 }

@@ -15,6 +15,7 @@ import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
 import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
+import { HomeMarketCta } from "./components/module/home/HomeMarketCta";
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
@@ -111,38 +112,10 @@ export default function Home() {
     <div className="content__wrap">
       <SupplySummaryCard />
       {/*
-        홈→마켓 진입: 고정 CTA. 운영에서 BO 관리 배너만 쓰려면 이 섹션을 제거하고
-        ManagedBannerSection 파이프라인으로 page_path=/, position=top 또는 bottom,
-        link_url=/market 항목을 추가하면 됩니다.
+        홈→마켓: AI 추천 CTA. BO 배너만 쓰려면 제거하고 ManagedBannerSection에
+        page_path=/, link_url=/market 로 등록 가능.
       */}
-      <section
-        style={{
-          margin: "0.75rem 0 0",
-          padding: "0.65rem 1rem",
-          borderRadius: "0.75rem",
-          border: "1px solid var(--app-table-border)",
-          background: "var(--app-table-surface)",
-        }}
-        aria-label="마켓 바로가기"
-      >
-        <a
-          href="/market"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            textDecoration: "none",
-            color: "var(--app-text)",
-            fontSize: "0.9rem",
-            fontWeight: 600,
-          }}
-        >
-          <span>AI 추천 · 마켓 바로가기</span>
-          <span style={{ color: "var(--app-accent)" }} aria-hidden>
-            →
-          </span>
-        </a>
-      </section>
+      <HomeMarketCta />
       <MainCardNews />
       {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}

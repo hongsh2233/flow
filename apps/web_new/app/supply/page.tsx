@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Search } from "../components/module/Search";
-import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { MarketPicksSection } from "../components/module/picks/MarketPicksSection";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
@@ -386,10 +385,11 @@ export default function SupplyPage() {
   return (
     <div className={styles.page}>
       {/* 마켓 허브: AI 추천·증권사·작가 픽 (상단) */}
-      <MarketPicksSection onSelectStock={setSelectedStock} />
-
-      {/* 수급 요약 카드 — 숫자는 최신 수집분, 문구는 DB의 Gemini 요약 */}
-      <SupplySummaryCard />
+      <MarketPicksSection
+        onSelectStock={setSelectedStock}
+        onAddFavorite={handleAddFavorite}
+        favCodes={favCodes}
+      />
 
       {/* 검색 */}
       <div className={styles.searchArea}>

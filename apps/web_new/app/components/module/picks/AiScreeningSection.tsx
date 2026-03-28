@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
-import { ScreeningConditionLegend } from "./ScreeningConditionLegend";
 import { ScreeningResultTable, type ScreeningRow } from "./ScreeningResultTable";
 import styles from "./Picks.module.css";
 
 type Props = {
   onSelectStock?: (s: StockDetail) => void;
+  onAddFavorite?: (s: StockDetail) => void;
+  favCodes?: Set<string>;
 };
 
-export function AiScreeningSection({ onSelectStock }: Props) {
+export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: Props) {
   const [strategy, setStrategy] = useState<"ichimoku" | "jongbe">("ichimoku");
   const [market, setMarket] = useState<"kospi" | "kosdaq">("kospi");
   const [rows, setRows] = useState<ScreeningRow[]>([]);
@@ -44,12 +45,13 @@ export function AiScreeningSection({ onSelectStock }: Props) {
     load();
   }, [load]);
 
+  const titleDate = screeningDate ?? "—";
+
   return (
     <section aria-labelledby="ai-screening-heading">
       <h2 id="ai-screening-heading" className={styles.sectionTitle}>
-        AI 추천 종목
+        {titleDate} 관심 종목
       </h2>
-      <ScreeningConditionLegend screeningType={strategy} />
       <div className={styles.tabsRow}>
         <button
           type="button"
@@ -82,15 +84,15 @@ export function AiScreeningSection({ onSelectStock }: Props) {
           코스닥
         </button>
       </div>
-      {screeningDate && <p className={styles.meta}>검출일(기준): {screeningDate}</p>}
       {loading ? (
         <p className={styles.meta}>불러오는 중...</p>
       ) : (
         <ScreeningResultTable
           rows={rows}
           tier={tier}
-          screeningType={strategy}
           onSelectStock={onSelectStock}
+          onAddFavorite={onAddFavorite}
+          favCodes={favCodes}
         />
       )}
     </section>

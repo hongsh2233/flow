@@ -15,44 +15,13 @@
   color: var(--app-text-secondary, #444);
 }
 
-.banner strong {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: var(--app-text, #111);
-}
-
-.brokerBar {
+.brokerActions {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--app-table-border, #e5e8eb);
-  background: var(--app-card-bg, #fff);
-}
-
-.brokerLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.brokerDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.brokerName {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--app-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
 }
 
 .btnSm {
@@ -65,14 +34,19 @@
   cursor: pointer;
 }
 
-.btnSmPrimary {
+.btnGo {
   font-size: 0.75rem;
-  padding: 0.35rem 0.65rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 0.5rem;
-  border: none;
-  background: var(--app-accent, #2563eb);
+  border: 1px solid color-mix(in srgb, #0f766e 35%, var(--app-table-border));
+  background: #0d9488;
   color: #fff;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.btnGo:active {
+  opacity: 0.92;
 }
 
 .sectionTitle {
@@ -283,4 +257,38 @@
   font-size: 0.8rem;
   color: var(--app-text-muted);
   padding: 0.75rem 0;
+}
+
+.nameLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--app-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.addBtn {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+  color: var(--app-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addDone {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.addMuted {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
 }
