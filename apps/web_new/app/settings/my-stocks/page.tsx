@@ -49,7 +49,7 @@ async function fetchBatchQuotes(codes: string[]): Promise<{
       prices[c] = row?.price ?? null;
     }
     const quoteHint: string | null =
-      "현재 기준가는 장중에는 지연 시세이며 참고해 주시기 바라며, 정확한 시세는 증권사 시세를 보시기 바랍니다.";
+      "수익·수익률은 지연 시세를 기준으로 한 참고용입니다. 실제 판단은 증권사 MTS 등 실시간 시세를 참고해 주세요.";
     return { prices, quoteHint };
   } catch {
     return { prices: Object.fromEntries(unique.map((c) => [c, null])), quoteHint: null };
@@ -275,9 +275,6 @@ export default function MyStocksPage() {
                 })}
               </tbody>
             </table>
-            <p className={styles.subHint}>
-              수익·수익률은 지연 시세를 기준으로 한 참고용입니다. 실제 판단은 증권사 MTS 등 실시간 시세를 참고해 주세요.
-            </p>
           </div>
         )}
 
