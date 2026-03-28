@@ -189,9 +189,14 @@ export function ScreeningResultTable({
           </a>
         </p>
       )}
-      {tier === "member_limited" && (
+      {tier === "member" && (
         <p className={styles.footerHint}>
-          일반·VIP는 상위 1종목만 공개됩니다. Family는 전체 종목을 열람할 수 있습니다.
+          일반 회원은 상위 2종목만 공개됩니다. VIP 5종목, Family는 전체를 열람할 수 있습니다.
+        </p>
+      )}
+      {tier === "vip" && (
+        <p className={styles.footerHint}>
+          VIP는 상위 5종목까지 공개됩니다. Family는 전체 종목을 열람할 수 있습니다.
         </p>
       )}
     </div>

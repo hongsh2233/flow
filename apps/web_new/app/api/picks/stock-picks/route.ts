@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
-import { sessionToPicksTier } from "@/lib/picks/gradeTier";
+import { sessionToPicksTier, stockPickVisibleRankCount } from "@/lib/picks/gradeTier";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +27,8 @@ function maskPick(p: PickRow, tier: ReturnType<typeof sessionToPicksTier>, index
       note: null,
     };
   }
-  /* regular / vip: 1건 의미 공개 */
-  if (index === 0) return { ...p };
+  const cap = stockPickVisibleRankCount(tier);
+  if (cap != null && index < cap) return { ...p };
   return {
     ...p,
     stock_code: "***",

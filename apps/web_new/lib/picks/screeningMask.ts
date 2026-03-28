@@ -1,4 +1,4 @@
-import type { PicksGradeTier } from "./gradeTier";
+import { screeningVisibleRankCount, type PicksGradeTier } from "./gradeTier";
 
 export type ScreeningRow = Record<string, unknown>;
 
@@ -35,9 +35,10 @@ function maskRow(row: ScreeningRow): ScreeningRow {
 }
 
 /**
- * family: 전체 공개 / guest·regular·vip: 1순위만 공개 (기획서 비회원·회원 정책)
+ * Family 전체 공개 / 비회원 1행·일반 2행·VIP 5행까지 공개, 나머지 마스킹
  */
 export function applyScreeningMask(rows: ScreeningRow[], tier: PicksGradeTier): ScreeningRow[] {
-  if (tier === "family") return rows.map((r) => ({ ...r }));
-  return rows.map((row, i) => (i === 0 ? { ...row } : maskRow(row)));
+  const cap = screeningVisibleRankCount(tier);
+  if (cap === null) return rows.map((r) => ({ ...r }));
+  return rows.map((row, i) => (i < cap ? { ...row } : maskRow(row)));
 }

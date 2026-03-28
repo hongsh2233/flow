@@ -76,7 +76,12 @@ export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: P
       const json = await res.json();
       setRows(Array.isArray(json.data) ? json.data : []);
       setScreeningDate(json.screening_date ?? null);
-      if (json.tier === "family" || json.tier === "member_limited" || json.tier === "guest") {
+      if (
+        json.tier === "family" ||
+        json.tier === "member" ||
+        json.tier === "vip" ||
+        json.tier === "guest"
+      ) {
         setTier(json.tier);
       }
     } catch {
