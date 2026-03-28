@@ -1,0 +1,190 @@
+.screen {
+  padding: 0 1rem 5rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.brokerRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.brokerBtn {
+  font-size: 0.78rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-card-bg);
+  color: var(--app-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.brokerBtnPrimary {
+  font-size: 0.78rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, #0f766e 35%, var(--app-table-border));
+  background: #0d9488;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 0.65rem;
+  color: var(--app-text);
+}
+
+.subHint {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin: -0.35rem 0 0.75rem;
+  line-height: 1.45;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-table-surface);
+  margin-bottom: 1.75rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem 0.35rem;
+  text-align: center;
+  border-bottom: 1px solid var(--app-table-cell-border, #eee);
+  white-space: nowrap;
+}
+
+.table th {
+  background: var(--app-table-header-bg);
+  font-weight: 700;
+  color: var(--app-text-secondary);
+}
+
+.table td.left {
+  text-align: left;
+  padding-left: 0.5rem;
+  white-space: normal;
+  max-width: 6.5rem;
+}
+
+.nameStrong {
+  font-weight: 700;
+  color: var(--app-text);
+  display: block;
+}
+
+.codeMuted {
+  font-size: 0.68rem;
+  color: var(--app-text-muted);
+  margin-top: 0.1rem;
+}
+
+.up {
+  color: #e53935;
+  font-weight: 600;
+}
+
+.down {
+  color: #1e88e5;
+  font-weight: 600;
+}
+
+.emptyBox {
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+  border: 1px dashed var(--app-table-border);
+  border-radius: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.favGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem;
+}
+
+.favCard {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-card-bg);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.favName {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--app-text);
+  margin: 0 0 0.15rem;
+}
+
+.favCode {
+  font-size: 0.7rem;
+  color: var(--app-text-muted);
+  margin: 0;
+}
+
+.favPrice {
+  font-size: 0.78rem;
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
+
+.loginGate {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--app-text-muted);
+  font-size: 0.875rem;
+}
+
+.loginGate a {
+  color: var(--app-accent);
+  font-weight: 600;
+}
+
+.toastSuccess,
+.toastError {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 100;
+}
+
+.toastSuccess {
+  background: var(--app-accent, #f97316);
+  color: #fff;
+}
+
+.toastError {
+  background: #ef4444;
+  color: #fff;
+}

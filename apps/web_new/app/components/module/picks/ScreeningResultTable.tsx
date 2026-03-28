@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Smartphone } from "lucide-react";
+import { ShoppingCart, Smartphone } from "lucide-react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
 import styles from "./Picks.module.css";
@@ -80,7 +80,7 @@ export function ScreeningResultTable({
             <th scope="col">가격</th>
             <th scope="col">등락률</th>
             <th scope="col" className={styles.thIcon}>
-              <span className={styles.srOnly}>관심 담기</span>
+              <span className={styles.srOnly}>종목 담기</span>
             </th>
             <th scope="col" className={styles.thIcon}>
               <span className={styles.srOnly}>MTS</span>
@@ -138,21 +138,21 @@ export function ScreeningResultTable({
                         —
                       </span>
                     ) : added ? (
-                      <span className={styles.iconBtnDone} title="담김" aria-label="관심 담김">
-                        <Heart size={18} strokeWidth={2} fill="currentColor" aria-hidden />
+                      <span className={styles.iconBtnDone} title="담김" aria-label="종목 담김">
+                        <ShoppingCart size={18} strokeWidth={2} fill="currentColor" aria-hidden />
                       </span>
                     ) : (
                       <button
                         type="button"
                         className={styles.iconBtn}
                         title="담기"
-                        aria-label="관심 담기"
+                        aria-label="종목 담기"
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddFavorite(detail);
                         }}
                       >
-                        <Heart size={18} strokeWidth={2} aria-hidden />
+                        <ShoppingCart size={18} strokeWidth={2} aria-hidden />
                       </button>
                     )}
                   </td>

@@ -44,6 +44,7 @@ export default function Header() {
         "/about": "플로우 앱 소개",
         "/settings/profile": "정보 수정",
         "/settings/pin": "간편 비밀번호",
+        "/settings/my-stocks": "내 종목 시세",
     };
 
     const defaultItem = navItems.find((item) => item.id === "home") ?? navItems[0];

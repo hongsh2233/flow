@@ -25,6 +25,7 @@ import {
   FileText,
   LogIn,
   Info,
+  Wallet,
 } from "lucide-react";
 import { Switch } from "../components/ui/switch";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -45,6 +46,7 @@ const settingsGroups: SettingsGroup[] = [
     title: "내 정보",
     items: [
       { icon: User, label: "프로필 관리", hasArrow: true, href: "/settings/profile" },
+      { icon: Wallet, label: "내 종목 시세", hasArrow: true, href: "/settings/my-stocks" },
       { icon: UserX, label: "회원 탈퇴", hasArrow: true, action: "withdraw" },
     ],
   },

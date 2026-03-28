@@ -12,6 +12,7 @@ import { MarketPicksSection } from "../components/module/picks/MarketPicksSectio
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
+import { recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
 import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
 import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
@@ -214,8 +215,9 @@ export default function SupplyPage() {
     addFavCode(stock.code); // optimistic
     const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
     if (res.success) {
+      recordSavedPickFromMarket(stock);
       refreshFavorites();
-      setToast({ message: res.message || "관심종목에 추가되었습니다.", type: "success" });
+      setToast({ message: "종목을 담았습니다. 수익 관찰하실 수 있습니다.", type: "success" });
     } else {
       removeFavCode(stock.code); // rollback
       setToast({ message: res.message || "추가에 실패했습니다.", type: "error" });
