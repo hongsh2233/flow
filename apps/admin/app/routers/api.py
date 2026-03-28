@@ -27,6 +27,7 @@ from app.dependencies import (
     get_current_user,
     get_current_user_from_token,
     get_current_user_from_token_optional,
+    get_admin_session_or_api_key,
     verify_api_key,
     API_SECRET_KEY,
 )
@@ -461,13 +462,11 @@ async def get_stock_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    _auth=Depends(get_admin_session_or_api_key),
 ):
     """
     조건검색 결과 조회 (익일 매수 후보, 기술적 지표 기반)
     """
-    if not user:
-        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.services.stock_screening_service import get_latest_screening_results
     result = get_latest_screening_results(db, market_type=market_type.lower(), limit=limit)
     return {"success": True, **result}
@@ -508,13 +507,11 @@ async def get_jongbe_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    _auth=Depends(get_admin_session_or_api_key),
 ):
     """
     종베 검색식 결과 조회 (당일 종가매수 후보)
     """
-    if not user:
-        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.services.jongbe_screening_service import get_latest_jongbe_results
     result = get_latest_jongbe_results(db, market_type=market_type.lower(), limit=limit)
     return {"success": True, **result}

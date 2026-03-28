@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { Search } from "../components/module/Search";
 import { SupplySummaryCard } from "../components/module/home/SupplySummaryCard";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
-import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
+import { MarketPicksSection } from "../components/module/picks/MarketPicksSection";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
@@ -385,10 +385,13 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
-      {/* 0. 수급 요약 카드 (최상단) — 숫자는 최신 수집분, 문구는 DB의 Gemini 요약 */}
+      {/* 마켓 허브: AI 추천·증권사·작가 픽 (상단) */}
+      <MarketPicksSection onSelectStock={setSelectedStock} />
+
+      {/* 수급 요약 카드 — 숫자는 최신 수집분, 문구는 DB의 Gemini 요약 */}
       <SupplySummaryCard />
 
-      {/* 1. 검색 */}
+      {/* 검색 */}
       <div className={styles.searchArea}>
         <Search
           value={searchTerm}
@@ -398,14 +401,11 @@ export default function SupplyPage() {
         />
       </div>
 
-      {/* 2. 수급 차트 (더보기 링크 숨김) */}
-      <InvestorTrendChart variant="stocks" hideMoreLink />
-
       <div className={styles.affiliateSlot} aria-label="제휴 상품">
         <RandomAffiliateCard />
       </div>
 
-      {/* 3. 수급 동향 탭 */}
+      {/* 수급 동향 탭 (차트는 홈 메인에서 제공) */}
       <h1 className={styles.title}>수급 동향</h1>
 
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">

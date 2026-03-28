@@ -110,6 +110,39 @@ export default function Home() {
   return (
     <div className="content__wrap">
       <SupplySummaryCard />
+      {/*
+        홈→마켓 진입: 고정 CTA. 운영에서 BO 관리 배너만 쓰려면 이 섹션을 제거하고
+        ManagedBannerSection 파이프라인으로 page_path=/, position=top 또는 bottom,
+        link_url=/market 항목을 추가하면 됩니다.
+      */}
+      <section
+        style={{
+          margin: "0.75rem 0 0",
+          padding: "0.65rem 1rem",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--app-table-border)",
+          background: "var(--app-table-surface)",
+        }}
+        aria-label="마켓 바로가기"
+      >
+        <a
+          href="/market"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            textDecoration: "none",
+            color: "var(--app-text)",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+          }}
+        >
+          <span>AI 추천 · 마켓 바로가기</span>
+          <span style={{ color: "var(--app-accent)" }} aria-hidden>
+            →
+          </span>
+        </a>
+      </section>
       <MainCardNews />
       {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}

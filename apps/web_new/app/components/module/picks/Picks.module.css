@@ -1,0 +1,286 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.banner {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  background: var(--app-table-surface, #f4f6f8);
+  border: 1px solid var(--app-table-border, #e5e8eb);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--app-text-secondary, #444);
+}
+
+.banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--app-text, #111);
+}
+
+.brokerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-table-border, #e5e8eb);
+  background: var(--app-card-bg, #fff);
+}
+
+.brokerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.brokerDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.brokerName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btnSm {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-surface, #fff);
+  color: var(--app-text);
+  cursor: pointer;
+}
+
+.btnSmPrimary {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--app-accent, #2563eb);
+  color: #fff;
+  cursor: pointer;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+  color: var(--app-text);
+}
+
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 70vh;
+  overflow: auto;
+  background: var(--app-card-bg, #fff);
+  border-radius: 1rem 1rem 0 0;
+  padding: 1rem 1rem 1.5rem;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.sheetTitle {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.brokerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.brokerChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-surface, #fafafa);
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.tabsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0;
+}
+
+.tab {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--app-table-border);
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+
+.tabActive {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--app-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.meta {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-table-border);
+  background: var(--app-table-surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.table th,
+.table td {
+  padding: 0.45rem 0.35rem;
+  text-align: center;
+  border-bottom: 1px solid var(--app-table-cell-border, #eee);
+}
+
+.table th {
+  background: var(--app-table-header-bg, #f0f2f4);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rowBtn {
+  cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+}
+
+.blur {
+  filter: blur(5px);
+  user-select: none;
+}
+
+.footerHint {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.loginLink {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: var(--app-accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.legendToggle {
+  font-size: 0.75rem;
+  color: var(--app-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
+}
+
+.legendBox {
+  font-size: 0.72rem;
+  color: var(--app-text-secondary);
+  line-height: 1.4;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  background: var(--app-surface, #f8f9fa);
+  margin-bottom: 0.5rem;
+}
+
+.pickCard {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--app-table-border);
+  margin-bottom: 0.45rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pickName {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.pickSub {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
+}
+
+.pickRt {
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.up {
+  color: #e53935;
+}
+
+.down {
+  color: #1e88e5;
+}
+
+.empty {
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+  padding: 0.75rem 0;
+}

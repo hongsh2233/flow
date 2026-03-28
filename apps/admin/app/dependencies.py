@@ -211,3 +211,31 @@ async def get_current_user_from_token_optional(
     except:
         return None
 
+
+async def get_admin_session_or_api_key(
+    request: Request,
+    x_api_key: Optional[str] = Header(None, alias="X-API-KEY"),
+    token_user=Depends(get_current_user_from_token_optional),
+    db: Session = Depends(get_db),
+):
+    """
+    BO 대시보드(쿠키)·관리자 Bearer·X-API-KEY(BFF/서버) 중 하나로 인증.
+    스크리닝 조회 등 프론트 BFF가 API 키로 호출할 때 사용.
+    """
+    if x_api_key is not None and x_api_key.strip():
+        if x_api_key.strip() == API_SECRET_KEY:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    if token_user:
+        return token_user
+    session_user = await get_current_user(request, db)
+    if session_user:
+        return session_user
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+    )
+

@@ -226,7 +226,7 @@ export function InvestorTrendChart({ defaultMarket = "kospi", variant = "main", 
           <button
             type="button"
             className={styles.moreBtn}
-            onClick={() => router.push("/supply")}
+            onClick={() => router.push("/market")}
           >
             수급동향 더보기 →
           </button>

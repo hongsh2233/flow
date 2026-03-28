@@ -22,18 +22,25 @@
 
 ## 2. IA (Information Architecture)
 
+**마켓 단일 허브** — 하단 탭「마켓」→ **`/market`** (구 `/supply`·`/picks`는 `/market`으로 리다이렉트)
+
 ```
 / (홈)
-└── [AI 추천 미리보기 섹션] ← NEW (2종목, 비회원 ***)
-    └── "전체 보기" →
+├── [마켓 바로가기 CTA] 또는 BO 관리 배너 (page_path=/, link_url=/market)
+└── [AI 추천 미리보기 섹션] ← NEW (2종목, 비회원 ***) — 기획 유지 시
+    └── "전체 보기" → /market#market-picks (앵커)
 
-/picks                        ← NEW 메인 페이지
+/market                       ← 마켓 허브 (AI 추천 + 수급·검색·종목 탭)
 ├── [상단 고지 배너]           - 회원전용 / 투자권유 아님
 ├── [증권사 연결 버튼]         - localStorage 저장, 미선택 시 선택 레이어 오픈
 ├── [AI 추천 종목 탭]
-│   ├── 탭: 일목 (코스피/코스닥)
-│   └── 탭: 종베 (코스피/코스닥)
-└── [작가 픽 / 모의 매매 수익률] - 관리자가 등록한 픽
+│   ├── 탭: 일목균형표 / 종가베팅
+│   └── 탭: 코스피 / 코스닥
+├── [작가 픽 / 모의 매매 수익률]
+├── [수급 요약 카드] · [검색] · [수급 동향 탭] · [관심·시총·등락] … (기존 마켓 본문)
+└── id=market-picks (픽 블록 앵커)
+
+/picks                        → 301/308 리다이렉트 → /market (북마크·외부 링크 호환)
 ```
 
 ---
@@ -63,7 +70,7 @@
 
 ---
 
-### 3-2. 추천종목 전체 페이지 (`/picks`)
+### 3-2. 추천종목 전체 영역 (`/market` 상단 픽 블록, 구 `/picks`는 `/market`으로 통합)
 
 #### [A] 상단 고지 배너
 ```
@@ -151,10 +158,14 @@
 - 종목명, 코드, 현재가, 등락률, 조건 모두 블라인드
 - 하단 로그인 CTA 고정
 
-**회원 처리:**
+**regular / VIP 회원 처리:**
+- AI 스크리닝 **상위 1종목만** 종목명·가격·조건 공개, 2위 이후는 `***`·블러 (API·UI 동시 마스킹)
+- 종목명 클릭 → `StockDetailModal` (공개 행만)
+- 조건 코드는 범례 토글로 안내
+
+**Family 회원 처리:**
 - 전체 목록 노출
-- 종목명 클릭 → `StockDetailModal` (기존 컴포넌트 재사용)
-- 조건 아이콘(A,B,E…) hover 시 조건 설명 툴팁
+- 종목명 클릭 → `StockDetailModal`
 
 **스크리닝 조건 범례 (토글로 펼치기):**
 
@@ -279,46 +290,55 @@ class StockPick(Base):
 
 ```
 apps/web_new/app/
-├── picks/
-│   └── page.tsx                        # 추천종목 메인 페이지
+├── market/
+│   └── page.tsx                        # 마켓 허브 (supply/page 재export)
+├── supply/
+│   └── page.tsx                        # 마켓 본문 구현 (수급·검색 + 상단 MarketPicksSection)
 │
 └── components/module/picks/
-    ├── PicksDisclaimerBanner.tsx        # 고지 배너 (회원전용 · 투자권유 아님)
-    ├── BrokerConnectButton.tsx          # 증권사 연결 버튼
-    ├── BrokerSelectSheet.tsx            # 증권사 선택 바텀시트
-    ├── AiScreeningSection.tsx           # AI 추천 종목 탭+테이블
-    ├── ScreeningResultTable.tsx         # 종목 테이블 (블라인드 처리 포함)
-    ├── ScreeningConditionLegend.tsx     # 조건 범례 토글
-    ├── AuthorPickSection.tsx            # 작가 픽 섹션
-    ├── AuthorPickCard.tsx               # 픽 카드 (수익률 표시)
-    └── AiPicksPreview.tsx              # 홈 미리보기 (2종목)
+    ├── MarketPicksSection.tsx           # 마켓 상단 픽 슬롯 (고지·증권사·AI·작가)
+    ├── PicksDisclaimerBanner.tsx
+    ├── BrokerConnectButton.tsx
+    ├── BrokerSelectSheet.tsx
+    ├── AiScreeningSection.tsx
+    ├── ScreeningResultTable.tsx
+    ├── ScreeningConditionLegend.tsx
+    ├── AuthorPickSection.tsx
+    ├── AuthorPickCard.tsx               # (선택) 카드 분리 시
+    └── AiPicksPreview.tsx               # 홈 미리보기 (2종목)
+
+apps/web_new/app/api/picks/
+├── ai-screening/route.ts                # BO 스크리닝 프록시 + 등급별 마스킹
+├── brokers/route.ts
+└── stock-picks/route.ts
 ```
 
 ---
 
 ## 7. 회원/비회원 차별화 매트릭스
 
-| 요소 | 비회원 | 회원 |
-|------|--------|------|
-| 홈 미리보기 종목명 | `***` | 정상 표시 |
-| 홈 미리보기 현재가/등락률 | blur | 정상 표시 |
-| AI 추천 종목 1위 | 정상 표시 | 정상 표시 |
-| AI 추천 종목 2위↑ | `***` + blur | 정상 표시 |
-| 증권사 선택/연결 | 가능 | 가능 |
-| 작가 픽 종목명 | `***` | 정상 표시 |
-| 작가 픽 수익률 | 공개 (참여 유도) | 공개 |
-| 작가 픽 메모/근거 | 비공개 | 공개 |
+| 요소 | 비회원 | regular / VIP | Family |
+|------|--------|---------------|--------|
+| 홈 미리보기 종목명 | `***` (기획 유지 시) | 정상 표시 | 정상 표시 |
+| 홈 미리보기 현재가/등락률 | blur (기획 유지 시) | 정상 표시 | 정상 표시 |
+| AI 추천 스크리닝 1위 | 정상 표시 | 정상 표시 | 정상 표시 |
+| AI 추천 스크리닝 2위↑ | `***` + blur | `***` + blur (1종목만 공개) | 전체 공개 |
+| 증권사 선택/연결 | 가능 | 가능 | 가능 |
+| 작가 픽 종목명 | 전체 `***` | **1건**만 정상, 나머지 `***` | 전체 정상 |
+| 작가 픽 수익률·현재가 | 공개 (참여 유도) | 공개 | 공개 |
+| 작가 픽 메모/근거 | 비공개 | 비공개(2건↑) | 공개 |
+
+- **보안**: 브라우저 조작 우회 방지를 위해 `/api/picks/ai-screening`, `/api/picks/stock-picks`에서 등급별 마스킹 후 응답. UI는 동일 정책으로 이중 표시.
 
 ---
 
 ## 8. 하단 네비게이션 검토
 
-현재 BottomNavigation 탭: 홈 / 브리핑 / 캘린더 / 마켓 / 주톡
+BottomNavigation 탭: 홈 / 브리핑 / 캘린더 / **마켓** (`/market`) / 주톡
 
-`/picks`는 별도 탭 추가 OR 홈에서 진입하는 구조로 결정 필요.
-
-**권장**: 홈 미리보기 카드에서 진입 (탭 추가 없이 기존 구조 유지)
-- 추후 사용률 높으면 탭에 "픽" 추가 검토
+- **픽·AI 추천**은 별도 탭 없이 **마켓 허브 상단**에 배치.
+- 홈에서는 고정 CTA 또는 BO 관리 배너(`page_path=/`, `link_url=/market`)로 마켓 진입.
+- 구 URL `/picks`는 `/market`으로 리다이렉트.
 
 ---
 
@@ -330,7 +350,7 @@ apps/web_new/app/
 3. BO 관리자 픽 관리 페이지 (`/admin/stock-picks`)
 
 ### Phase 2 — 프론트엔드 핵심
-4. `/picks` 페이지 기본 구조
+4. `/market` 상단에 픽 블록 조립 (구 `/picks`는 리다이렉트)
 5. `PicksDisclaimerBanner` 컴포넌트
 6. `AiScreeningSection` — 스크리닝 결과 탭 + 블라인드
 7. `AuthorPickSection` — 픽 목록 + 수익률 계산
