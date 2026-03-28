@@ -941,8 +941,9 @@ async def collect_market_morning_summary():
 
 async def collect_market_closing_summary():
     """
-    장마감 시황 생성 및 board/B001 게시 (15:45 KST)
-    - 15:40 수집된 KR지수·수급동향·뉴스 데이터 + 이슈 AI요약을 Gemini로 요약
+    장마감 시황 생성 및 board/B001 게시 (16:25 KST)
+    - 네이버 일자별 수급(investor_day, deal_rank 등)은 16:10 KST 수집 → 그 이후에 실행해야 DB에 데이터가 있음
+    - 실행 시 네이버 국내지수를 domestic_index_snapshots에 한 번 더 갱신 후, 마감 시황은 해당 DB(및 Yahoo 폴백) 사용
     - 주말/공휴일은 건너뜀
     """
     if should_skip_today():
@@ -959,14 +960,18 @@ async def collect_market_closing_summary():
     try:
         from app.engine import models as _m
         from sqlalchemy import func as _func
+        from app.services.domestic_index_service import fetch_and_persist_domestic_indices_sync
 
-        # 진단: KR 지수 데이터 현황 확인
+        naver_saved = fetch_and_persist_domestic_indices_sync(db)
+        print(f"  네이버 국내지수 DB 갱신: {'성공' if naver_saved and naver_saved.get('success') else '실패'}")
+
+        # 진단: Yahoo KR 일별 (폴백용)
         kr_latest = (
             db.query(_func.max(_m.YahooIndexDaily.date))
             .filter(_m.YahooIndexDaily.group == "kr")
             .scalar()
         )
-        print(f"  KR 지수 최근 날짜: {kr_latest} (오늘: {now.date()})")
+        print(f"  Yahoo KR 일별 최근 날짜: {kr_latest} (오늘: {now.date()})")
 
         # 진단: 수급 데이터 현황 확인
         bizdate_today = now.strftime("%Y%m%d")
@@ -1162,12 +1167,12 @@ class YahooIndexScheduler:
                 coalesce=True,
                 misfire_grace_time=300,
             )
-        # 장마감 시황 생성: 15:45 (15:40 KR지수 수집 완료 후)
+        # 장마감 시황 생성: 16:25 (16:10 네이버 일자별 수급 수집 후 + 15:40 KR 지수 반영)
         self.scheduler.add_job(
             collect_market_closing_summary,
-            CronTrigger(hour=15, minute=45, timezone=self.kst),
+            CronTrigger(hour=16, minute=25, timezone=self.kst),
             id="market_closing_summary",
-            name="장마감 시황 생성 (15:45)",
+            name="장마감 시황 생성 (16:25)",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
@@ -1179,7 +1184,7 @@ class YahooIndexScheduler:
         print("   - 해외(메인): 00:00 / 05:00 / 06:30 (KST)")
         print("   - US: 06:20 / 00:00 / 02:00 / 04:00 (KST)")
         print("   - KR: 09:10 ~ 15:10 (30분 간격) / 15:40 장마감 (KST)")
-        print("   - 장마감 시황: 15:45 (KST, 주말/공휴일 제외)")
+        print("   - 장마감 시황: 16:25 (KST, 주말/공휴일 제외, 16:10 수급 수집 이후)")
         print("   - 최근 7일치만 유지\n")
 
     def shutdown(self):

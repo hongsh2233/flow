@@ -1,7 +1,7 @@
 """
 장마감 시황 Gemini AI 처리 서비스
 
-15:40 수집된 KR지수·수급동향·뉴스 데이터 + 이슈 AI요약을 Gemini에 전달하고
+KR 지수(domestic_index_snapshots 네이버 우선, Yahoo 폴백)·환율·네이버 수급(16:10 일자별 수집 이후)·뉴스·이슈 AI요약을 Gemini에 전달하고
 구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다(pending 상태).
 
 Gemini 응답 JSON 필드:
@@ -27,6 +27,7 @@ from app.services.gemini_response_utils import (
 )
 from app.engine.models import (
     YahooIndexDaily,
+    YahooIndexSnapshot,
     ExchangeRateSnapshot,
     NaverSupplyData,
     FscRisingStock,
@@ -40,11 +41,55 @@ from app.engine.models import (
 # 데이터 수집 헬퍼
 # ──────────────────────────────────────────────
 
-def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
-    """YahooIndexDaily에서 KR 지수 조회 (^KS11, ^KQ11), target_date(거래일)만 사용.
+def _get_kr_indices_from_domestic(db: Session, target_date: date) -> List[dict]:
+    """당일(KST) domestic_index_snapshots(네이버) 최신 배치. 메인 웹·마감 시황과 동일 소스."""
+    from app.services.domestic_index_service import get_kr_indices_dicts_from_domestic_db
 
-    이전에는 당일 행이 없을 때 최근 날짜로 폴백했으나, 수급·bizdate는 당일 기준이라
-    어제 지수와 오늘 수급이 섞이는 문제가 있어 폴백하지 않는다."""
+    return get_kr_indices_dicts_from_domestic_db(db, target_date)
+
+
+def _get_kr_indices_from_snapshots(db: Session, target_date: date) -> List[dict]:
+    """국내 지수: 당일(KST) YahooIndexSnapshot 최신 배치 (^KS11, ^KQ11). 네이버 스냅 없을 때 폴백."""
+    symbols = ["^KS11", "^KQ11"]
+    latest_at = (
+        db.query(func.max(YahooIndexSnapshot.collected_at))
+        .filter(
+            YahooIndexSnapshot.group == "kr",
+            YahooIndexSnapshot.collected_date == target_date,
+            YahooIndexSnapshot.symbol.in_(symbols),
+        )
+        .scalar()
+    )
+    if not latest_at:
+        return []
+    rows = (
+        db.query(YahooIndexSnapshot)
+        .filter(
+            YahooIndexSnapshot.group == "kr",
+            YahooIndexSnapshot.collected_date == target_date,
+            YahooIndexSnapshot.collected_at == latest_at,
+            YahooIndexSnapshot.symbol.in_(symbols),
+        )
+        .all()
+    )
+    out = []
+    for r in rows:
+        if r.price is None or r.change is None or r.change_percent is None:
+            continue
+        out.append(
+            {
+                "name": r.name,
+                "symbol": r.symbol,
+                "price": round(r.price or 0, 2),
+                "change": round(r.change or 0, 2),
+                "change_percent": round(r.change_percent or 0, 2),
+            }
+        )
+    return out
+
+
+def _get_kr_indices_from_daily(db: Session, target_date: date) -> List[dict]:
+    """YahooIndexDaily 당일 행만 (스냅샷 없을 때)."""
     rows = db.query(YahooIndexDaily).filter(
         YahooIndexDaily.date == target_date,
         YahooIndexDaily.group == "kr",
@@ -52,7 +97,7 @@ def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
     ).all()
 
     if not rows:
-        print(f"[closing-gemini] {target_date} KR 지수(YahooIndexDaily) 없음 — 폴백 없이 건너뜀")
+        print(f"[closing-gemini] {target_date} KR 지수(YahooIndexDaily) 없음")
 
     return [
         {
@@ -64,6 +109,72 @@ def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
         }
         for r in rows if r.price is not None
     ]
+
+
+def _get_kr_indices(db: Session, target_date: date) -> List[dict]:
+    """DB: 심볼별로 domestic_index_snapshots(네이버) → Yahoo 스냅 → Yahoo 일별."""
+    syms = ["^KS11", "^KQ11"]
+    domestic = _get_kr_indices_from_domestic(db, target_date)
+    dom_by = {d["symbol"]: d for d in domestic}
+    if len(domestic) >= 2:
+        return sorted(domestic, key=lambda x: (0 if x["symbol"] == "^KS11" else 1))
+
+    snap = _get_kr_indices_from_snapshots(db, target_date)
+    snap_by = {d["symbol"]: d for d in snap}
+    merged: List[dict] = []
+    for sym in syms:
+        row = dom_by.get(sym) or snap_by.get(sym)
+        if row:
+            merged.append(row)
+    if len(merged) >= 2:
+        return sorted(merged, key=lambda x: (0 if x["symbol"] == "^KS11" else 1))
+
+    daily = _get_kr_indices_from_daily(db, target_date)
+    daily_by = {d["symbol"]: d for d in daily}
+    merged = []
+    for sym in syms:
+        row = dom_by.get(sym) or snap_by.get(sym) or daily_by.get(sym)
+        if row:
+            merged.append(row)
+
+    if len(merged) < 2:
+        if len(domestic) == 1:
+            print("[closing-gemini] 네이버 국내지수 일부만 있음(1건) → Yahoo로 보완")
+        elif snap and len(snap) < 2:
+            print(f"[closing-gemini] KR 스냅샷 일부만 있음({len(snap)}건) → Daily와 병합 시도")
+
+    return sorted(merged, key=lambda x: (0 if x["symbol"] == "^KS11" else 1))
+
+
+def _resolve_naver_bizdate(db: Session, target_date: date) -> str:
+    """
+    네이버 수급 investor_day 기준으로 유효 bizdate 선택.
+    당일 행이 없으면(수집 전·휴장 등) target 이하 최신 bizdate 사용.
+    """
+    primary = target_date.strftime("%Y%m%d")
+    hit = (
+        db.query(NaverSupplyData.id)
+        .filter(
+            NaverSupplyData.data_type == "investor_day",
+            NaverSupplyData.market == "kospi",
+            NaverSupplyData.bizdate == primary,
+        )
+        .first()
+    )
+    if hit:
+        return primary
+    latest = (
+        db.query(func.max(NaverSupplyData.bizdate))
+        .filter(
+            NaverSupplyData.data_type == "investor_day",
+            NaverSupplyData.market == "kospi",
+            NaverSupplyData.bizdate <= primary,
+        )
+        .scalar()
+    )
+    if latest and latest != primary:
+        print(f"[closing-gemini] investor_day 없음 bizdate={primary} → {latest} 사용")
+    return latest or primary
 
 
 def _get_exchange_rate(db: Session) -> List[dict]:
@@ -195,10 +306,13 @@ def _get_investor_summary(db: Session, bizdate: str) -> Dict[str, dict]:
             continue
         try:
             data = json.loads(row.data_json)
-            headers = data.get("headers", [])
+            headers = [str(h).replace("\xa0", " ").strip() for h in data.get("headers", [])]
             rows = data.get("rows", [])
-            # 첫 번째 행 = 오늘(가장 최근) 날짜 데이터
-            result[market] = dict(zip(headers, rows[0])) if rows else {}
+            if not rows:
+                result[market] = {}
+                continue
+            row0 = [str(c).replace("\xa0", " ").strip() for c in rows[0]]
+            result[market] = dict(zip(headers, row0))
         except Exception:
             result[market] = {}
     return result
@@ -547,7 +661,7 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     Returns:
         True if saved, False on failure
     """
-    bizdate = target_date.strftime("%Y%m%d")
+    bizdate = _resolve_naver_bizdate(db, target_date)
 
     # 데이터 수집
     kr_indices       = _get_kr_indices(db, target_date)
@@ -602,20 +716,28 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
         .filter(Post.board_id == "B001", Post.title.like(f"%{date_keyword}%"))
         .first()
     )
+    kst = pytz.timezone("Asia/Seoul")
+    now_kst = datetime.now(kst)
     if existing:
         existing.title = title
         existing.content = content
         if category_id is not None:
             existing.category_id = category_id
+        existing.updated_at = now_kst
+        existing.created_at = now_kst
     else:
-        db.add(Post(
-            board_id="B001",
-            title=title,
-            content=content,
-            author="플로우Ai",
-            status="pending",
-            category_id=category_id,
-        ))
+        db.add(
+            Post(
+                board_id="B001",
+                title=title,
+                content=content,
+                author="플로우Ai",
+                status="pending",
+                category_id=category_id,
+                created_at=now_kst,
+                updated_at=now_kst,
+            )
+        )
     db.commit()
     print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date}, category_id={category_id})")
     return True

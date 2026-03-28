@@ -2051,13 +2051,8 @@ async def _yahoo_fetch_with_retry(
 
 
 # =========================================================
-# 국내지수 API (Yahoo Finance 프록시 - 코스피/코스닥)
+# 국내지수 API (네이버 모바일 + domestic_index_snapshots)
 # =========================================================
-
-DOMESTIC_INDICES_NAVER = [
-    {"name": "코스피", "code": "KOSPI"},
-    {"name": "코스닥", "code": "KOSDAQ"},
-]
 
 @router.get("/api/domestic-indices")
 async def get_domestic_indices(
@@ -2065,76 +2060,31 @@ async def get_domestic_indices(
     authorized: bool = Depends(verify_api_key)
 ):
     """
-    국내 지수(코스피, 코스닥) 데이터를 네이버 증권 API를 통해 실시간 조회합니다.
-    (Yahoo API의 KR 지수 오류 대응)
+    국내 지수(코스피, 코스닥): 네이버 모바일 API 조회 결과를 domestic_index_snapshots에 저장하고,
+    당일 최신 배치가 5분 이내면 DB에서 응답(네이버 호출 생략).
     """
     cached = _get_cached("domestic-indices")
     if cached is not None:
         return cached
 
-    async def fetch_naver_index(client: httpx.AsyncClient, item: dict):
-        try:
-            url = f"https://m.stock.naver.com/api/index/{item['code']}/basic"
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            res = await client.get(url, headers=headers, timeout=5.0)
-            if res.status_code == 200:
-                data = res.json()
-                close_price = data.get("closePrice", "0").replace(",", "")
-                change_val = data.get("compareToPreviousClosePrice", "0").replace(",", "")
-                pct_val = data.get("fluctuationsRatio", "0").replace(",", "")
-                
-                # code: "2" 상승, "5" 하락, "3" 보합
-                compare_code = data.get("compareToPreviousPrice", {}).get("code", "3")
-                
-                sign = ""
-                if compare_code == "2":
-                    sign = "+"
-                elif compare_code == "5":
-                    sign = "-"
+    from app.services.domestic_index_service import (
+        fetch_and_persist_domestic_indices_async,
+        load_latest_domestic_api_payload_from_db,
+    )
 
-                return {
-                    "name": item["name"],
-                    "value": data.get("closePrice", "0"), # 포맷된 문자열 그대로 사용
-                    "change": f"{sign}{change_val}",
-                    "percent": f"{sign}{pct_val}%",
-                    "timestamp": data.get("localTradedAt", ""),
-                }
-        except Exception as e:
-            print(f"Naver Index Fetch Error for {item['code']}: {e}")
-        return None
+    kst = pytz.timezone("Asia/Seoul")
+    today_kst = datetime.now(kst).date()
+    from_db = load_latest_domestic_api_payload_from_db(db, today_kst)
+    if from_db:
+        _set_cached("domestic-indices", from_db)
+        return from_db
 
-    results = []
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        for item in DOMESTIC_INDICES_NAVER:
-            res = await fetch_naver_index(client, item)
-            if res:
-                results.append(res)
-    
-    timestamp = ""
-    if results:
-        ts_values = [r["timestamp"] for r in results if r.get("timestamp")]
-        if ts_values:
-            latest_ts = max(ts_values)
-            from datetime import datetime
-            try:
-                dt = datetime.fromisoformat(latest_ts)
-                timestamp = dt.strftime("%Y-%m-%d %H:%M")
-            except:
-                timestamp = latest_ts
-                
-        for r in results:
-            r.pop("timestamp", None)
-            
-    result = {
-        "success": True if results else False,
-        "data": results,
-        "timestamp": timestamp,
-    }
-    
-    if results:
+    result = await fetch_and_persist_domestic_indices_async(db)
+    if result and result.get("success"):
         _set_cached("domestic-indices", result)
-        
-    return result
+        return result
+
+    return {"success": False, "data": [], "timestamp": ""}
 
 
 # =========================================================

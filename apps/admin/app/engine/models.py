@@ -69,6 +69,7 @@ __all__ = [
     "NaverStockRanking",
     "YahooIndexSnapshot",
     "YahooIndexDaily",
+    "DomesticIndexSnapshot",
     "StockTerm",
     "FaqCategory",
   "FaqItem",
@@ -623,6 +624,25 @@ class YahooIndexDaily(Base):
     last_collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     last_collected_time = Column(String(5), nullable=False)  # 'HH:MM' (KST)
     __table_args__ = (UniqueConstraint('date', 'group', 'symbol', name='uq_yahoo_index_daily'),)
+
+
+class DomesticIndexSnapshot(Base):
+    """
+    네이버 모바일 증권 API로 조회한 국내 지수(코스피/코스닥) 스냅샷.
+    `/api/domestic-indices` 저장·조회와 장마감 시황(Gemini) 입력의 단일 소스로 사용.
+    domestic_index_service에서 collected_date 기준 약 5일 초과 행을 정리한다.
+    """
+    __tablename__ = "domestic_index_snapshots"
+    id = Column(Integer, primary_key=True, index=True)
+    index_code = Column(String(20), nullable=False, index=True)  # KOSPI | KOSDAQ
+    name = Column(String(50), nullable=False)
+    price = Column(Float, nullable=True)
+    change = Column(Float, nullable=True)
+    change_percent = Column(Float, nullable=True)
+    local_traded_at = Column(String(50), nullable=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    collected_date = Column(Date, nullable=False, index=True)
+    collected_time = Column(String(5), nullable=False)
 
 
 class ExchangeRateSnapshot(Base):

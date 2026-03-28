@@ -595,6 +595,12 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ add_ad_zone 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_domestic_index_snapshots import run_migration as add_domestic_index_snapshots_migration
+        add_domestic_index_snapshots_migration()
+    except Exception as e:
+        print(f"⚠️ domestic_index_snapshots 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
