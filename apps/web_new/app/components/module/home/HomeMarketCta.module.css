@@ -1,8 +1,4 @@
 .card {
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-  padding: 1.1rem 1.15rem 1.15rem;
-  border-radius: 1rem;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--app-accent, #2563eb) 12%, var(--app-card-bg, #fff)) 0%,
@@ -11,6 +7,9 @@
   );
   border: 1px solid color-mix(in srgb, var(--app-accent, #2563eb) 22%, var(--app-table-border, #e5e8eb));
   box-shadow: 0 4px 20px color-mix(in srgb, var(--app-text, #000) 6%, transparent);
+  border-radius: 1rem;
+  margin: 1.25rem;
+  padding: 1.1rem 1.15rem 1.15rem;
 }
 
 .title {

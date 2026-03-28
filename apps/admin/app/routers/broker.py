@@ -13,6 +13,7 @@ templates = Jinja2Templates(directory="dashboard/templates")
 
 
 # 대한민국 주요 증권사 데이터
+# 프론트 폴백: apps/web_new/lib/picks/defaultBrokers.ts 와 동일 목록을 유지할 것.
 # android_intent: 앱이 설치된 경우 바로 실행 (intent:// scheme)
 # android_store: Play Store URL (설치 유도 또는 실행)
 # ios_store: App Store URL

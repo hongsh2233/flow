@@ -1,5 +1,6 @@
 "use client";
 
+import { Heart, Smartphone } from "lucide-react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
 import styles from "./Picks.module.css";
@@ -14,6 +15,19 @@ function formatPrice(v: unknown): string {
   const n = parseFloat(s.replace(/,/g, ""));
   if (!isNaN(n)) return n.toLocaleString();
   return s;
+}
+
+function changeDirection(raw: unknown): "up" | "down" | "flat" {
+  if (raw == null) return "flat";
+  const s = String(raw).trim();
+  if (s === "" || s === "-" || s === "***") return "flat";
+  if (s.startsWith("-") || s.startsWith("▼")) return "down";
+  if (s.startsWith("+") || s.startsWith("▲")) return "up";
+  const n = parseFloat(s.replace(/[%,+▲▼]/g, "").replace(/,/g, ""));
+  if (Number.isNaN(n)) return "flat";
+  if (n > 0) return "up";
+  if (n < 0) return "down";
+  return "flat";
 }
 
 function rowToDetail(row: ScreeningRow): StockDetail | null {
@@ -44,19 +58,33 @@ type Props = {
   onSelectStock?: (s: StockDetail) => void;
   onAddFavorite?: (s: StockDetail) => void;
   favCodes?: Set<string>;
+  onMtsClick?: () => void;
 };
 
-export function ScreeningResultTable({ rows, tier, onSelectStock, onAddFavorite, favCodes }: Props) {
+export function ScreeningResultTable({
+  rows,
+  tier,
+  onSelectStock,
+  onAddFavorite,
+  favCodes,
+  onMtsClick,
+}: Props) {
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>종목명</th>
-            <th>코드</th>
-            <th>가격</th>
-            <th>등락률</th>
-            <th>담기</th>
+            <th scope="col" className={styles.thName}>
+              종목명
+            </th>
+            <th scope="col">가격</th>
+            <th scope="col">등락률</th>
+            <th scope="col" className={styles.thIcon}>
+              <span className={styles.srOnly}>관심 담기</span>
+            </th>
+            <th scope="col" className={styles.thIcon}>
+              <span className={styles.srOnly}>MTS</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -72,42 +100,79 @@ export function ScreeningResultTable({ rows, tier, onSelectStock, onAddFavorite,
               const detail = rowToDetail(row);
               const code = detail?.code ?? "";
               const added = Boolean(code && favCodes?.has(code));
+              const chg = changeDirection(row.change_percent);
+              const chgClass =
+                chg === "up" ? styles.chgUp : chg === "down" ? styles.chgDown : styles.chgFlat;
+
+              const nameStr = String(row.stock_name ?? "-");
+              const codeStr = String(row.stock_code ?? "-");
 
               return (
                 <tr key={`${row.rank}-${idx}`}>
-                  <td className={blinded ? styles.blur : undefined}>
+                  <td className={`${styles.tdName} ${blinded ? styles.blur : ""}`}>
                     {detail && onSelectStock ? (
                       <button
                         type="button"
                         className={styles.nameLink}
                         onClick={() => onSelectStock(detail)}
                       >
-                        {String(row.stock_name ?? "-")}
+                        {nameStr}
+                        <br />
+                        <span className={styles.codeInName}>({codeStr})</span>
                       </button>
                     ) : (
-                      String(row.stock_name ?? "-")
+                      <>
+                        {nameStr}
+                        <br />
+                        <span className={styles.codeInName}>({codeStr})</span>
+                      </>
                     )}
                   </td>
-                  <td className={blinded ? styles.blur : undefined}>{String(row.stock_code ?? "-")}</td>
                   <td className={blinded ? styles.blur : undefined}>{formatPrice(row.current_price)}</td>
-                  <td className={blinded ? styles.blur : undefined}>
+                  <td className={blinded ? styles.blur : chgClass}>
                     {row.change_percent != null ? String(row.change_percent) : "-"}
                   </td>
-                  <td>
+                  <td className={styles.tdIcon}>
                     {blinded || !detail || !onAddFavorite ? (
-                      <span className={styles.addMuted}>—</span>
+                      <span className={styles.addMuted} aria-hidden>
+                        —
+                      </span>
                     ) : added ? (
-                      <span className={styles.addDone}>담김</span>
+                      <span className={styles.iconBtnDone} title="담김" aria-label="관심 담김">
+                        <Heart size={18} strokeWidth={2} fill="currentColor" aria-hidden />
+                      </span>
                     ) : (
                       <button
                         type="button"
-                        className={styles.addBtn}
+                        className={styles.iconBtn}
+                        title="담기"
+                        aria-label="관심 담기"
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddFavorite(detail);
                         }}
                       >
-                        담기
+                        <Heart size={18} strokeWidth={2} aria-hidden />
+                      </button>
+                    )}
+                  </td>
+                  <td className={styles.tdIcon}>
+                    {blinded || !onMtsClick ? (
+                      <span className={styles.addMuted} aria-hidden>
+                        —
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.iconBtn}
+                        title="MTS"
+                        aria-label="증권사 MTS"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMtsClick();
+                        }}
+                      >
+                        <Smartphone size={18} strokeWidth={2} aria-hidden />
                       </button>
                     )}
                   </td>
