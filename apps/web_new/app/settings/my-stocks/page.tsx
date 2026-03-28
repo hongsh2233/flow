@@ -20,15 +20,41 @@ const LazyStockDetailModal = dynamic(
   { ssr: false }
 );
 
+/** 저장값 YYYY-MM-DD → 표시 YY/MM/DD (예: 26/03/28) */
+function formatRecommendDateDisplay(ymd: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!m) return ymd;
+  return `${m[1].slice(2)}/${m[2]}/${m[3]}`;
+}
+
+type FscPriceRow = { clpr?: string; bas_dt?: string };
+
+/**
+ * 현재금액: BO FSC 주식시세 `clpr`(최신 영업일 종가).
+ * `limit`으로 여러 일이 오면 `bas_dt`(YYYYMMDD) 최신 행을 택함. 관심종목·마켓과 동일 데이터 소스.
+ */
 async function fetchCurrentPrice(code: string): Promise<number | null> {
   try {
     const res = await fetch(`/api/fsc-stock-price?srtn_cd=${encodeURIComponent(code)}&limit=5`, {
       cache: "no-store",
     });
     const j = await res.json();
-    const row = Array.isArray(j.data) ? j.data[0] : null;
-    if (!row?.clpr) return null;
-    const n = parseFloat(String(row.clpr).replace(/,/g, ""));
+    const rows: FscPriceRow[] = Array.isArray(j.data) ? j.data : [];
+    if (rows.length === 0) return null;
+
+    let best = rows[0];
+    let bestDt = 0;
+    for (const row of rows) {
+      const raw = row.bas_dt != null ? String(row.bas_dt) : "";
+      const dt = parseInt(raw.replace(/\D/g, "") || "0", 10);
+      if (dt >= bestDt) {
+        bestDt = dt;
+        best = row;
+      }
+    }
+
+    if (best?.clpr == null) return null;
+    const n = parseFloat(String(best.clpr).replace(/,/g, ""));
     return Number.isNaN(n) ? null : n;
   } catch {
     return null;
@@ -240,7 +266,7 @@ export default function MyStocksPage() {
                         <span className={styles.nameStrong}>{p.name}</span>
                         <span className={styles.codeMuted}>({p.code})</span>
                       </td>
-                      <td>{p.recommendDate}</td>
+                      <td>{formatRecommendDateDisplay(p.recommendDate)}</td>
                       <td>{entry.toLocaleString()}</td>
                       <td>{cur != null ? cur.toLocaleString() : "—"}</td>
                       <td className={up ? styles.up : down ? styles.down : undefined}>
