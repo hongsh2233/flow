@@ -1,0 +1,22 @@
+.next/dev/types/validator.ts(143,39): error TS2307: Cannot find module '../../../app/market/supply/page.js' or its corresponding type declarations.
+app/components/module/home/TradeRanking.tsx(68,38): error TS2339: Property 'change_percent' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(71,30): error TS2339: Property 'stock_code' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(75,57): error TS2339: Property 'stock_name' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(76,55): error TS2339: Property 'stock_code' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(80,33): error TS2339: Property 'current_price' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(83,26): error TS2339: Property 'change_percent' does not exist on type 'RisingStock'.
+app/components/module/home/TradeRanking.tsx(148,23): error TS2322: Type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/home").RisingStock[]' is not assignable to type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/stock").RisingStock[]'.
+  Type 'RisingStock' is missing the following properties from type 'RisingStock': name, code, price, change
+app/components/module/home/TradeRanking.tsx(155,23): error TS2322: Type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/home").RisingStock[]' is not assignable to type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/stock").RisingStock[]'.
+  Type 'RisingStock' is missing the following properties from type 'RisingStock': name, code, price, change
+app/components/module/home/TradeRankingSection.tsx(111,7): error TS2322: Type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/stock").RisingStock[]' is not assignable to type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/home").RisingStock[]'.
+  Type 'RisingStock' is missing the following properties from type 'RisingStock': stock_code, stock_name, current_price, change_percent, volume
+app/components/module/home/TradeRankingSection.tsx(112,7): error TS2322: Type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/stock").RisingStock[]' is not assignable to type 'import("/Users/hongsungho/Jurin-i/apps/web_new/lib/types/home").RisingStock[]'.
+  Type 'RisingStock' is missing the following properties from type 'RisingStock': stock_code, stock_name, current_price, change_percent, volume
+app/supply/page.tsx(673,48): error TS2339: Property 'change_percent' does not exist on type 'RisingStock'.
+app/supply/page.tsx(676,40): error TS2339: Property 'stock_code' does not exist on type 'RisingStock'.
+app/supply/page.tsx(682,38): error TS2339: Property 'stock_name' does not exist on type 'RisingStock'.
+app/supply/page.tsx(683,37): error TS2339: Property 'stock_code' does not exist on type 'RisingStock'.
+app/supply/page.tsx(686,44): error TS2339: Property 'current_price' does not exist on type 'RisingStock'.
+app/supply/page.tsx(688,36): error TS2339: Property 'change_percent' does not exist on type 'RisingStock'.
+lib/types/index.ts(8,1): error TS2308: Module "./stock" has already exported a member named 'RisingStock'. Consider explicitly re-exporting to resolve the ambiguity.

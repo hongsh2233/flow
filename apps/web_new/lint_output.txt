@@ -1,0 +1,489 @@
+
+> my-app@0.1.0 lint
+> eslint
+
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/affiliate-products/route.ts
+  6:10  warning  'shouldShowAdZoneB_regularServer' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/boards/route.ts
+  4:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/domestic-indices/route.ts
+  8:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/exchange-rate/route.ts
+  7:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/foreign-indices/route.ts
+  23:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/interest-rate/route.ts
+  7:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/market-morning-summary/route.ts
+  8:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/market-voices/route.ts
+  31:7  warning  'DEFAULT_AVATAR' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/notifications/route.ts
+  6:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/polls/active/route.ts
+  4:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/schedule-alarms/route.ts
+  13:27  warning  '_request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/api/supply-summary/route.ts
+  246:9   error    'aiAnySummary' is never reassigned. Use 'const' instead  prefer-const
+  246:9   warning  'aiAnySummary' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  288:57  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  292:58  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  308:55  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/auth/mobile-callback/page.tsx
+  36:38  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/briefing/page.tsx
+  8:10  warning  'MarketIndicesTab' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/layout/Header.tsx
+  85:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/layout/Header.tsx:85:9
+  83 |     useEffect(() => {
+  84 |         if (status !== "authenticated") return;
+> 85 |         fetchNotifications();
+     |         ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  86 |         const interval = setInterval(fetchNotifications, 60_000);
+  87 |         return () => clearInterval(interval);
+  88 |     }, [fetchNotifications, status]);  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/layout/LayoutShell.tsx
+  29:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/layout/LayoutShell.tsx:29:7
+  27 |     // 클라이언트에서만 localStorage 확인
+  28 |     if (!isAuthPage && isPinSet()) {
+> 29 |       setPinLocked(true);
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |     }
+  31 |     setReady(true);
+  32 |   }, [isAuthPage]);  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/AdBanner.tsx
+  72:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/AppDownloadModal.tsx
+  61:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/AppDownloadModal.tsx:61:5
+  59 |     if (isHiddenForToday()) return;
+  60 |     if (isDismissedSession()) return;
+> 61 |     setVisible(true);
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  62 |   }, []);
+  63 |
+  64 |   useEffect(() => {  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/PopupModal.tsx
+  141:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/SingleBanner.tsx
+  32:7  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/StockDetailModal.tsx
+  10:9  warning  'y' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/affiliate/RandomAffiliateCard.tsx
+  36:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/affiliate/RandomAffiliateCard.tsx:36:7
+  34 |   useEffect(() => {
+  35 |     if (!eligible) {
+> 36 |       setItem(null);
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  37 |       return;
+  38 |     }
+  39 |     let cancelled = false;  react-hooks/set-state-in-effect
+  55:6   warning  React Hook useEffect has a missing dependency: 'zone'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+  75:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/calendar/Calendar.tsx
+   53:9   warning  'email' is assigned a value but never used                                                                                                @typescript-eslint/no-unused-vars
+   56:11  warning  'alarmMap' is assigned a value but never used                                                                                             @typescript-eslint/no-unused-vars
+   79:6   warning  React Hook useEffect has missing dependencies: 'fetchAlarms' and 'reset'. Either include them or remove the dependency array              react-hooks/exhaustive-deps
+  115:6   warning  React Hook useEffect has missing dependencies: 'endDate' and 'startDate'. Either include them or remove the dependency array              react-hooks/exhaustive-deps
+  115:7   warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+  115:33  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/calendar/ScheduleCard.tsx
+  259:63  warning  'isLoggedIn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/module/news/News.tsx
+  3:20  warning  'useCallback' is defined but never used  @typescript-eslint/no-unused-vars
+  3:33  warning  'useEffect' is defined but never used    @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/providers/CapacitorProvider.tsx
+  96:6  warning  React Hook useEffect has a missing dependency: 'pushEnabled'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/ui/PinLockScreen.tsx
+  12:3  warning  'getAttempts' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  29:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/ui/PinLockScreen.tsx:29:7
+  27 |     const remaining = getLockRemaining();
+  28 |     if (remaining > 0) {
+> 29 |       setLockRemaining(remaining);
+     |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |     }
+  31 |   }, []);
+  32 |  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/ui/TermsModal.tsx
+  53:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/components/ui/TermsModal.tsx:53:7
+  51 |   useEffect(() => {
+  52 |     if (open) {
+> 53 |       setActiveTab(initialTab);
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  54 |       if (viewOnly) return;
+  55 |       setPrivacyRead(false);
+  56 |       setTermsRead(false);  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/layout.tsx
+  36:9  warning  Prefer `next/script` component when using the inline script for Google Analytics. See: https://nextjs.org/docs/messages/next-script-for-ga  @next/next/next-script-for-ga
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/page.tsx
+  67:5  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `session`, but the source dependencies were [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]. Inferred less specific property than source.
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/page.tsx:67:5
+  65 |
+  66 |   const handleAddFavorite = useCallback(
+> 67 |     async (stock: StockDetail) => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 68 |       if (!session?.user?.email) return;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 69 |       addFavCode(stock.code);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 70 |       const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 71 |       if (res.success) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 72 |         refreshFavorites();
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 73 |       } else {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 74 |         removeFavCode(stock.code);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 75 |       }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |     },
+     | ^^^^^^ Could not preserve existing manual memoization
+  77 |     [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  78 |   );
+  79 |        react-hooks/preserve-manual-memoization
+  81:5  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `session`, but the source dependencies were [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]. Inferred less specific property than source.
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/page.tsx:81:5
+  79 |
+  80 |   const handleRemoveFavorite = useCallback(
+> 81 |     async (stock: StockDetail) => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 82 |       if (!session?.user?.email) return;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 83 |       removeFavCode(stock.code);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 84 |       const res = await removeFavoriteStock({ email: session.user.email, stock_code: stock.code });
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 85 |       if (res.success) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 86 |         refreshFavorites();
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 87 |       } else {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 88 |         addFavCode(stock.code);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 89 |       }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 90 |     },
+     | ^^^^^^ Could not preserve existing manual memoization
+  91 |     [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  92 |   );
+  93 |  react-hooks/preserve-manual-memoization
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/my-stocks/page.tsx
+  111:62  warning  React Hook useMemo has an unnecessary dependency: 'picksTick'. Either exclude it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+  112:63  warning  React Hook useMemo has an unnecessary dependency: 'picksTick'. Either exclude it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+  125:5   error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `session`, but the source dependencies were [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]. Inferred less specific property than source.
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/my-stocks/page.tsx:125:5
+  123 |
+  124 |   const handleAddFavorite = useCallback(
+> 125 |     async (stock: StockDetail) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 126 |       if (!session?.user?.email) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 127 |         setToast({ message: "로그인 후 이용해 주세요.", type: "error" });
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 139 |       }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 140 |     },
+      | ^^^^^^ Could not preserve existing manual memoization
+  141 |     [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  142 |   );
+  143 |  react-hooks/preserve-manual-memoization
+  145:5   error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `session`, but the source dependencies were [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]. Inferred less specific property than source.
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/my-stocks/page.tsx:145:5
+  143 |
+  144 |   const handleRemoveFavorite = useCallback(
+> 145 |     async (code: string) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 146 |       if (!session?.user?.email) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 147 |       removeFavCode(code);
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 155 |       }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 156 |     },
+      | ^^^^^^ Could not preserve existing manual memoization
+  157 |     [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]
+  158 |   );
+  159 |                        react-hooks/preserve-manual-memoization
+  180:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/my-stocks/page.tsx:180:7
+  178 |     const list = readSavedPickPositions();
+  179 |     if (list.length === 0) {
+> 180 |       setPrices({});
+      |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  181 |       setQuoteHint(null);
+  182 |       return;
+  183 |     }                                                                                                                                                                    react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/page.tsx
+  176:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/pin/page.tsx
+  29:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/pin/page.tsx:29:5
+  27 |
+  28 |   useEffect(() => {
+> 29 |     setPinEnabled(isPinSet());
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |   }, []);
+  31 |
+  32 |   const resetState = () => {  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/settings/profile/page.tsx
+   18:9   warning  'router' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  149:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  200:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stock-chat/page.tsx
+    4:39  warning  'Send' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    4:45  warning  'ThumbsUp' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   48:5   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   57:7   warning  'jubtiIcons' is assigned a value but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   95:10  warning  'messages' is assigned a value but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  211:9   warning  'handleLike' is assigned a value but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  221:9   warning  'handleSendMessage' is assigned a value but never used                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  605:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stocks/search/page.tsx
+  123:44  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `session`, but the source dependencies were [session?.user?.email, selectedStock, favCodes, addFavCode, removeFavCode]. Inferred less specific property than source.
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stocks/search/page.tsx:123:44
+  121 |   }, [favToast]);
+  122 |
+> 123 |   const handleToggleFavorite = useCallback(async () => {
+      |                                            ^^^^^^^^^^^^^
+> 124 |     if (!session?.user?.email) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 125 |       setFavToast("로그인 후 이용해 주세요.");
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 150 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 151 |   }, [session?.user?.email, selectedStock, favCodes, addFavCode, removeFavCode]);
+      | ^^^^ Could not preserve existing manual memoization
+  152 |
+  153 |   const handleSearch = useCallback(
+  154 |     (query: string) => {  react-hooks/preserve-manual-memoization
+  165:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stocks/search/page.tsx:165:5
+  163 |
+  164 |   useEffect(() => {
+> 165 |     setSearchTerm(q);
+      |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  166 |     setSelectedStock(null);
+  167 |   }, [q]);
+  168 |                                                                                                                                                                                                                                                                           react-hooks/set-state-in-effect
+  173:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stocks/search/page.tsx:173:5
+  171 |     if (!q.trim()) return;
+  172 |     const query = q.trim();
+> 173 |     setStockLoading(true);
+      |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  174 |     setStockList([]);
+  175 |     fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=20`)
+  176 |       .then((r) => r.json())                                                                                                                                     react-hooks/set-state-in-effect
+  197:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/app/stocks/search/page.tsx:197:5
+  195 |     if (!name) return;
+  196 |
+> 197 |     setRightLoading(true);
+      |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  198 |     fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(name)}&page_no=1&num_of_rows=1000`)
+  199 |       .then((r) => r.json())
+  200 |       .then((j) => setRightSchedule(Array.isArray(j.data) ? j.data : []))                                                                                       react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/jest.config.js
+  1:18  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/hooks/useNotificationSettings.ts
+  60:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/hooks/useNotificationSettings.ts:60:5
+  58 |
+  59 |   useEffect(() => {
+> 60 |     setMounted(true);
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  61 |     try {
+  62 |       const s = localStorage.getItem(STORAGE_KEY_SCHEDULE_ALARM);
+  63 |       const p = localStorage.getItem(STORAGE_KEY_PUSH);  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/hooks/useTheme.ts
+  16:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/hooks/useTheme.ts:16:5
+  14 |     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+  15 |     const initial = stored ?? "light";
+> 16 |     setThemeState(initial);
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  17 |     applyTheme(initial);
+  18 |     setReady(true);
+  19 |   }, []);  react-hooks/set-state-in-effect
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/services/authService.ts
+  13:3  warning  '_email' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/stubs/capacitor-core-stub.ts
+  13:32  warning  '_name' is defined but never used             @typescript-eslint/no-unused-vars
+  13:47  warning  '_implementations' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/hongsungho/Jurin-i/apps/web_new/lib/stubs/capacitor-push-stub.ts
+  13:17  warning  '_event' is defined but never used                              @typescript-eslint/no-unused-vars
+  13:33  warning  '_callback' is defined but never used                           @typescript-eslint/no-unused-vars
+  20:1   warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/Users/hongsungho/Jurin-i/apps/web_new/next.config.ts
+   9:18  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  34:10  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+
+✖ 77 problems (24 errors, 53 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.12.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+npm notice To update run: npm install -g npm@11.12.1
+npm notice

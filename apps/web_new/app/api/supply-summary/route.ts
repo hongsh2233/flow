@@ -154,13 +154,34 @@ function errorBody(): SupplySummary {
   };
 }
 
+/** bizdate(20260329 등) → YYYY-MM-DD (마감 기준 제목용) */
+function normalizeBizdateToYmd(bizdate: string | null | undefined): string | null {
+  if (bizdate == null || String(bizdate).trim() === "") return null;
+  const compact = String(bizdate).replace(/-/g, "").trim();
+  if (/^\d{8}$/.test(compact)) {
+    return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`;
+  }
+  const raw = String(bizdate).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return null;
+}
+
 /** supply_summary_gemini_service._time_label_for_collected_time 와 동일 (Gemini 프롬프트·UI 라벨 정합) */
-function timeLabelFromCollectedTime(collectedTime: string): Pick<SupplySummary, "mode" | "timeLabel"> {
+function timeLabelFromCollectedTime(
+  collectedTime: string,
+  bizdate: string | null
+): Pick<SupplySummary, "mode" | "timeLabel"> {
   const [hStr, mStr] = collectedTime.split(":");
   const hour = parseInt(hStr || "0", 10);
   const minute = parseInt(mStr || "0", 10);
   if (hour >= 15 && (hour > 15 || minute >= 30)) {
-    return { mode: "closing", timeLabel: "금일 15:30분 정규장 마감 기준" };
+    const ymd = normalizeBizdateToYmd(bizdate);
+    return {
+      mode: "closing",
+      timeLabel: ymd
+        ? `${ymd} 15:30분 정규장 마감 기준`
+        : "금일 15:30분 정규장 마감 기준",
+    };
   }
   const prevH = hour > 0 ? hour - 1 : 23;
   const slotM = minute >= 30 ? 30 : 0;
@@ -309,7 +330,7 @@ export async function GET() {
 
     const ct = result.collectedTime ?? "";
     if (ct) {
-      const { mode, timeLabel } = timeLabelFromCollectedTime(ct);
+      const { mode, timeLabel } = timeLabelFromCollectedTime(ct, result.bizdate);
       result.mode = mode;
       result.timeLabel = timeLabel;
     }

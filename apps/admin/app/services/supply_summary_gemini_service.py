@@ -220,11 +220,23 @@ def _call_gemini(prompt: str) -> Optional[str]:
         return None
 
 
+def _bizdate_to_ymd(bizdate: str) -> str:
+    """영업일자를 제목·프롬프트용 YYYY-MM-DD로 통일 (예: 20260329 → 2026-03-29)."""
+    s = (bizdate or "").replace("-", "").strip()
+    if len(s) == 8 and s.isdigit():
+        return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    raw = (bizdate or "").strip()
+    if len(raw) == 10 and raw[4] == "-" and raw[7] == "-":
+        return raw
+    return bizdate or ""
+
+
 def _time_label_for_collected_time(bizdate: str, collected_time: str) -> str:
     hour = int(collected_time.split(":")[0] or "0")
     minute = int(collected_time.split(":")[1] or "0")
     if hour >= 15 and (hour > 15 or minute >= 30):
-        return f"{bizdate} 15:30분 정규장 마감 기준"
+        ymd = _bizdate_to_ymd(bizdate)
+        return f"{ymd} 15:30분 정규장 마감 기준" if ymd else "금일 15:30분 정규장 마감 기준"
     prev_h = hour - 1 if hour > 0 else 23
     curr_h = hour
     prev_m = 30 if minute >= 30 else 0
