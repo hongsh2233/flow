@@ -9,7 +9,6 @@ import Footer from "./Footer";
 import { ManagedBannerSection } from "../module/home/ManagedBannerSection";
 import { PageBottomBanner } from "../module/home/PageBottomBanner";
 import FloatingButtons from "../module/FloatingButtons";
-import { Footer } from "./Footer";
 import PinLockScreen from "../ui/PinLockScreen";
 import { isPinSet } from "@/lib/utils/pin";
 import { AppDownloadModal } from "../module/AppDownloadModal";

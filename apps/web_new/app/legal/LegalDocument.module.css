@@ -1,0 +1,89 @@
+.screen {
+  padding: 0 0 var(--content-bottom-padding);
+}
+
+.body {
+  padding: 1.5rem 1rem 0;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--app-text);
+  margin: 0 0 1rem;
+}
+
+.contentCard {
+  background: var(--app-card-bg);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: var(--app-text-placeholder);
+  font-size: 0.875rem;
+}
+
+.contentText {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--app-text-secondary);
+  white-space: pre-wrap;
+  word-break: keep-all;
+  margin: 0;
+}
+
+.htmlContent {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--app-text-secondary);
+  word-break: keep-all;
+}
+
+.htmlContent h1,
+.htmlContent h2,
+.htmlContent h3 {
+  color: var(--app-text);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.htmlContent h1 {
+  font-size: 1.375rem;
+}
+
+.htmlContent h2 {
+  font-size: 1.125rem;
+}
+
+.htmlContent h3 {
+  font-size: 1rem;
+}
+
+.htmlContent p {
+  margin: 0.5rem 0;
+}
+
+.htmlContent ul,
+.htmlContent ol {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.htmlContent li {
+  margin-bottom: 0.25rem;
+}
+
+.htmlContent a {
+  color: var(--app-accent);
+  text-decoration: underline;
+}
+
+.htmlContent strong {
+  font-weight: 700;
+  color: var(--app-text);
+}

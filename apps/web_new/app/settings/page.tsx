@@ -30,8 +30,6 @@ import {
 import { Switch } from "../components/ui/switch";
 import { StockTermBox } from "../components/module/stock-term-box";
 import { useThemeContext } from "../components/providers/ThemeProvider";
-import TermsModal from "../components/ui/TermsModal";
-import type { TermsTab } from "../components/ui/TermsModal";
 import type { SettingsGroup } from "@/lib/types";
 
 const JUBTI_LABELS: Record<string, string> = {
@@ -64,8 +62,8 @@ const settingsGroups: SettingsGroup[] = [
     items: [
       { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
       { icon: BellRing, label: "플로우 알림", hasArrow: true, href: "/board?board=B003" },
-      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
-      { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
+      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, href: "/legal/privacy" },
+      { icon: FileText, label: "이용약관", hasArrow: true, href: "/legal/terms" },
       { icon: Info, label: "플로우 앱 소개", hasArrow: true, href: "/about" },
     ],
   },
@@ -86,8 +84,8 @@ const guestSettingsGroups: SettingsGroup[] = [
     items: [
       { icon: MessageCircleQuestion, label: "자주하는 질문", hasArrow: true, href: "/faq" },
       { icon: BellRing, label: "플로우 알림", hasArrow: true, href: "/board?board=B003" },
-      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, action: "privacy" },
-      { icon: FileText, label: "이용약관", hasArrow: true, action: "terms" },
+      { icon: Shield, label: "개인정보 처리방침", hasArrow: true, href: "/legal/privacy" },
+      { icon: FileText, label: "이용약관", hasArrow: true, href: "/legal/terms" },
       { icon: Info, label: "플로우 앱 소개", hasArrow: true, href: "/about" },
     ],
   },
@@ -104,8 +102,6 @@ function SettingsScreen() {
     setScheduleAlarmEnabled,
     setPushEnabled,
   } = useNotificationSettings();
-  const [termsOpen, setTermsOpen] = useState(false);
-  const [termsTab, setTermsTab] = useState<TermsTab>("privacy");
   const [jubtiType, setJubtiType] = useState<string | null>(null);
 
   useEffect(() => {
@@ -123,11 +119,6 @@ function SettingsScreen() {
   const handleItemClick = async (href?: string, action?: string) => {
     if (href) {
       router.push(href);
-      return;
-    }
-    if (action === "privacy" || action === "terms") {
-      setTermsTab(action);
-      setTermsOpen(true);
       return;
     }
     if (action === "withdraw") {
@@ -336,13 +327,6 @@ function SettingsScreen() {
         )}
       </div>
 
-      {/* 약관 팝업 */}
-      <TermsModal
-        open={termsOpen}
-        onClose={() => setTermsOpen(false)}
-        viewOnly
-        initialTab={termsTab}
-      />
     </div>
   );
 }

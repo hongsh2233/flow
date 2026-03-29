@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { sanitizeHtml } from "@/lib/sanitize";
-import styles from "./About.module.css";
+import { PRIVACY_POLICY, TERMS_OF_SERVICE } from "@/lib/data/terms";
+import styles from "../LegalDocument.module.css";
 
-const FALLBACK_HTML = `<p>플로우는 주식 투자를 처음 시작하는 분들을 위한 쉽고 친절한 주식 정보 앱입니다.</p>`;
+const TITLES: Record<"privacy" | "terms", string> = {
+  privacy: "개인정보처리방침",
+  terms: "이용약관",
+};
+
+const FALLBACK_TEXT: Record<"privacy" | "terms", string> = {
+  privacy: PRIVACY_POLICY,
+  terms: TERMS_OF_SERVICE,
+};
 
 function rewriteUploadUrls(html: string, apiBaseUrl: string): string {
   if (!html || !apiBaseUrl) return html;
@@ -12,26 +21,35 @@ function rewriteUploadUrls(html: string, apiBaseUrl: string): string {
   return html.replace(/(src|href)=(["'])(\/uploads\/)/g, `$1=$2${base}$3`);
 }
 
-export default function AboutPage() {
+export function LegalDocumentClient({ docType }: { docType: "privacy" | "terms" }) {
   const [html, setHtml] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/legal-documents/about")
+    let cancelled = false;
+    fetch(`/api/legal-documents/${docType}`)
       .then((res) => res.json())
       .then((json) => {
+        if (cancelled) return;
         if (json.success && json.content) {
           const processed = json.api_base_url
             ? rewriteUploadUrls(json.content, json.api_base_url)
             : json.content;
           setHtml(processed);
         } else {
-          setHtml(FALLBACK_HTML);
+          setHtml(FALLBACK_TEXT[docType]);
         }
       })
-      .catch(() => setHtml(FALLBACK_HTML))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (!cancelled) setHtml(FALLBACK_TEXT[docType]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [docType]);
 
   const isHtmlContent = html.includes("<");
 
@@ -39,7 +57,7 @@ export default function AboutPage() {
     <div className="content__wrap">
       <div className={styles.screen}>
         <div className={styles.body}>
-
+          <h1 className={styles.title}>{TITLES[docType]}</h1>
           {loading ? (
             <div className={styles.loadingWrap}>불러오는 중...</div>
           ) : (
