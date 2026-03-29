@@ -1,6 +1,8 @@
 # Jurin-i (주린이) 프로젝트 개요
 
+**서비스명**: 플로우 (Pflow)
 주식 초보 투자자를 위한 종합 주식정보 플랫폼. 모바일(APK) + 웹 지원.
+문의: support@jurini.co.kr
 
 ---
 
@@ -213,6 +215,91 @@ Jinja2 기반 관리자 페이지: 회원관리, 게시판관리, 배너/팝업�
 6. **배너/팝업 관리**: HTML/이미지/텍스트 배너, 팝업 등록/수정
 7. **게시판/FAQ/약관 관리**: CRUD + 카테고리
 8. **FCM 푸시 알림**: 일정 알림, 아침 브리핑 알림
+
+---
+
+## 외부 서비스 연동 현황
+
+| 서비스 | 제공사 | 용도 | 활성 여부 |
+|--------|--------|------|----------|
+| Google OAuth | Google LLC (미국) | 소셜 로그인 | ✅ 활성 |
+| Naver OAuth | Naver Corp (한국) | 소셜 로그인 | ❌ 비활성 |
+| Kakao OAuth | Kakao Corp (한국) | 소셜 로그인 | ❌ 비활성 |
+| Firebase FCM | Google LLC (미국) | 푸시 알림 | ✅ 활성 |
+| Google Gemini 2.5 Flash | Google LLC (미국) | AI 요약·분석 | ✅ 활성 |
+| Google AdSense | Google LLC (미국) | 광고 수익 (ca-pub-6042624006544756) | ✅ 활성 |
+| Google Tag Manager | Google LLC (미국) | 이용 분석 (GTM-52KM4V3R) | ✅ 활성 |
+| Yahoo Finance | Yahoo Inc (미국) | 국내외 지수, 환율 | ✅ 활성 |
+| Naver Search API | Naver Corp (한국) | 뉴스, 수급 데이터 | ✅ 활성 |
+| FSC (금융감독원) | 금융위원회 (한국) | 주가 데이터 | ✅ 활성 |
+| KRX (한국거래소) | KRX (한국) | 시장 데이터 | ✅ 활성 |
+| OpenDART | 금융감독원 (한국) | IPO·공시 정보 | ✅ 활성 |
+| data.go.kr | 공공데이터포털 (한국) | 공휴일 데이터 | ✅ 활성 |
+| Railway | Railway Inc (미국) | 서버·DB 호스팅 | ✅ 활성 |
+| Resend | Resend Inc (미국) | 이메일 발송 | ✅ 활성 |
+| AliExpress 제휴 | Alibaba Group (중국) | 제휴 광고 상품 | ✅ 활성 |
+
+## 수집·처리 개인정보 항목
+
+| 항목 | 수집 시점 | 저장 위치 |
+|------|----------|----------|
+| 이메일 | 회원가입 | `members.email` |
+| 비밀번호 (Bcrypt 암호화) | 회원가입 | `members.hashed_password` |
+| 닉네임 | 회원가입 (자동 생성 가능) | `members.nickname` |
+| 프로필 이미지 URL | 소셜 로그인 또는 직접 설정 | `members.profile_image` |
+| Google provider_id | 소셜 로그인 | `members.provider_id` |
+| FCM 기기 토큰 | 앱 설치 시 | `member_fcm_tokens.token` |
+| 관심종목 목록 | 사용자 추가 시 | `members.favorite_stocks` (JSON) |
+| 주BTI 성향 (A/D/N/I) | 테스트 완료 시 | `members.jubti_type` |
+| 접속 IP | 로그인 시 | 로그인 실패 기록 (15분 보관) |
+| 서비스 이용 행태 | 페이지 방문 시 | Google Tag Manager (GTM-52KM4V3R) |
+
+## 보안 설정
+
+| 항목 | 방식 |
+|------|------|
+| 비밀번호 암호화 | Bcrypt (salt 자동 생성) |
+| Access Token | JWT HS256, 만료 1시간 |
+| Refresh Token | JWT HS256, 만료 30일 |
+| API 인증 | X-API-KEY 헤더 |
+| 로그인 실패 제한 | 5회 실패 → 15분 잠금 (IP 기반) |
+| 관리자 세션 | 쿠키 기반, 비활성 10분 / 최대 30분 |
+| HTTPS | Railway 배포 환경 강제 적용 |
+
+## 회원 등급 체계
+
+| 등급 | 코드 | 설명 |
+|------|------|------|
+| 일반 | `regular` | 기본 등급 (기본값) |
+| VIP | `vip` | 프리미엄 회원 (기간 설정 가능) |
+| 패밀리 | `family` | 그룹 회원 (기간 설정 가능) |
+
+등급 만료 시 자동으로 `regular`로 복귀 (`get_effective_grade()` 함수).
+
+## 데이터 자동 수집 스케줄 (평일 기준, KST)
+
+| 데이터 | 수집 시각 | 소스 |
+|--------|----------|------|
+| 아침 AI 브리핑 | 06:35 | Gemini + Yahoo/Naver |
+| 목표가 상향 뉴스 | 08:30, 12:00 | Naver + Gemini |
+| 수급 동향 | 08:40~15:40 (30분 간격), 16:40~20:40 (1시간 간격) | Naver 증권 |
+| 일간 이슈 AI 요약 | 08:40, 12:40, 19:40 | Gemini |
+| 주식 영향 뉴스 | 08:30, 12:30, 19:30 | Naver 뉴스 |
+| 종가베팅 스크리닝 | 15:00 | 자체 엔진 |
+| 마감 AI 요약 | 15:50 | Gemini |
+| 일목균형표 스크리닝 | 20:30 | 자체 엔진 |
+| 코스피/코스닥 지수 | 09:10~15:10 (30분), 15:40 | Yahoo Finance |
+| 해외 지수 | 장전·장중 수회 | Yahoo Finance |
+| 환율 | 30분마다 | Yahoo Finance |
+
+## 법률 문서 현황
+
+| 문서 | 관리 경로 | 참조 파일 |
+|------|----------|----------|
+| 개인정보처리방침 | `/admin/terms/privacy` | `docs/개인정보처리방침.md` |
+| 이용약관 | `/admin/terms/service` | `docs/이용약관.md` |
+| 앱 소개 | `/admin/terms/about` | - |
+| API 제공 경로 | `/api/legal-documents/{privacy\|terms\|about}` | - |
 
 ---
 
