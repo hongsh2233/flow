@@ -1,0 +1,14 @@
+.root {
+  padding: 0 1rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.disclaimer {
+  color: var(--app-text-muted);
+  word-break: keep-all;
+  margin: 0 0 0.625rem;
+  font-size: 0.6875rem;
+  line-height: 1.65;
+  padding-bottom: 32px;
+}

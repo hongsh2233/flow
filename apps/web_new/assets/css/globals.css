@@ -179,7 +179,7 @@ input[type='number'] {
   --color-gray-200: oklch(92.8% 0.006 264.531);
   --color-gray-50: oklch(98.5% 0.002 247.839);
   --color-gray-900: oklch(21% 0.034 264.665);
-  --content-bottom-padding: calc(100px + var(--spacing-lg));
+  --content-bottom-padding: calc(0px + var(--spacing-lg));
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;

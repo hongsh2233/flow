@@ -8,6 +8,7 @@ import BottomNavigation from "./BottomNavigation";
 import { ManagedBannerSection } from "../module/home/ManagedBannerSection";
 import { PageBottomBanner } from "../module/home/PageBottomBanner";
 import FloatingButtons from "../module/FloatingButtons";
+import { Footer } from "./Footer";
 import PinLockScreen from "../ui/PinLockScreen";
 import { isPinSet } from "@/lib/utils/pin";
 import { AppDownloadModal } from "../module/AppDownloadModal";
@@ -54,6 +55,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       {!isAuthPage && <ManagedBannerSection />}
       {children}
       {!isAuthPage && <PageBottomBanner />}
+      {!isAuthPage && <Footer />}
       {!isAuthPage && <FloatingButtons />}
       {!isAuthPage && <BottomNavigation />}
       <AppDownloadModal />
