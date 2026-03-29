@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "./Header";
 import BottomNavigation from "./BottomNavigation";
+import Footer from "./Footer";
 import { ManagedBannerSection } from "../module/home/ManagedBannerSection";
 import { PageBottomBanner } from "../module/home/PageBottomBanner";
 import FloatingButtons from "../module/FloatingButtons";
