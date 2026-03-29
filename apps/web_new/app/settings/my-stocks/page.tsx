@@ -26,7 +26,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Trash2,
+  MinusCircle,
   History,
 } from "lucide-react";
 import styles from "./MyStocks.module.css";
@@ -237,7 +237,7 @@ export default function MyStocksPage() {
   const handleClearSavedPick = useCallback((code: string) => {
     const snap = prices[code];
     removeSavedPickWithHistory(code, snap ?? null);
-    setToast({ message: "담은 목록에서 제거했습니다.", type: "success" });
+    setToast({ message: "담은 종목을 비웠습니다.", type: "success" });
   }, [prices]);
 
   if (status === "loading") {
@@ -321,10 +321,11 @@ export default function MyStocksPage() {
                     <button
                       type="button"
                       className={styles.clearPickBtn}
-                      aria-label={`${p.name} 담은 목록에서 제거`}
+                      aria-label={`${p.name} 담은 종목 비우기`}
+                      title="담은 종목 비우기"
                       onClick={() => handleClearSavedPick(p.code)}
                     >
-                      <Trash2 size={18} strokeWidth={2} />
+                      <MinusCircle size={20} strokeWidth={2} aria-hidden />
                     </button>
                   </div>
                 );
