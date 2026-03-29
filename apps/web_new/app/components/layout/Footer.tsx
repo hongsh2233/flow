@@ -19,7 +19,7 @@ export default function Footer() {
           개인정보처리방침
         </Link>
       </div>
-      <p className={styles.copyright}>© 2024 플로우. All rights reserved.</p>
+      <p className={styles.copyright}>© 2026 플로우. All rights reserved.</p>
     </footer>
   );
 }
