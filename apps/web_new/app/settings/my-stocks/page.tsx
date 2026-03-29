@@ -340,7 +340,7 @@ export default function MyStocksPage() {
             <h2 className={styles.groupTitle}>담기 이력</h2>
           </div>
           <p className={styles.subHint}>
-            비우기 시점의 시세를 기준가로 저장합니다. 수익률은 담기 추천금 대비 비움 시점가 기준입니다.
+            비우기 시점의 시세를 기준가로 저장합니다. 수익률은 담기 추천금 대비 비움 시점가 기준입니다. 이력은 비운 날로부터 15일이 지난 항목은 자동으로 사라집니다.
           </p>
           {pickHistory.length === 0 ? (
             <div className={styles.emptyBox}>아직 이력이 없습니다. 담은 종목에서 비우기를 하면 여기에 표시됩니다.</div>

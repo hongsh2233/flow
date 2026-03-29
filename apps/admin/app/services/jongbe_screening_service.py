@@ -17,7 +17,7 @@ ThreadPoolExecutor 병렬처리로 3~5분 내 완료.
 """
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 import pytz
@@ -30,6 +30,7 @@ from app.services.screening_progress import update_progress, reset_progress
 
 KST = pytz.timezone("Asia/Seoul")
 MAX_WORKERS = 8
+SCREENING_DB_RETENTION_DAYS = 30
 
 
 def _rsi(close, period=14):
@@ -282,7 +283,7 @@ async def scan_all_stocks_jongbe() -> Dict[str, List[Dict]]:
 async def collect_and_save_jongbe(db: Session) -> Dict[str, int]:
     """
     종베 스크리닝 실행 후 DB에 저장.
-    기존 결과를 삭제하고 최신 결과만 보관.
+    동일 기준일·시장 행만 덮어쓰고 과거 일자 스냅샷은 유지한다.
     """
     now_kst = datetime.now(KST)
     screening_date = now_kst.strftime("%Y-%m-%d")
@@ -294,12 +295,26 @@ async def collect_and_save_jongbe(db: Session) -> Dict[str, int]:
     all_results = await scan_all_stocks_jongbe()
     totals: Dict[str, int] = {}
 
+    try:
+        cutoff_str = (now_kst.date() - timedelta(days=SCREENING_DB_RETENTION_DAYS)).strftime("%Y-%m-%d")
+        deleted_old = (
+            db.query(JongbeScreeningResult)
+            .filter(JongbeScreeningResult.screening_date < cutoff_str)
+            .delete(synchronize_session=False)
+        )
+        if deleted_old:
+            print(
+                f"[종베] 기준일 {cutoff_str} 미만(보관 {SCREENING_DB_RETENTION_DAYS}일) {deleted_old}건 삭제 예정"
+            )
+    except Exception as e:
+        print(f"[종베] 오래된 스크리닝 행 정리 실패(이번 저장은 계속): {e}")
+
     for market_type in ("kospi", "kosdaq"):
         items = all_results.get(market_type, [])
 
-        # 기존 데이터 삭제
         db.query(JongbeScreeningResult).filter(
             JongbeScreeningResult.market_type == market_type,
+            JongbeScreeningResult.screening_date == screening_date,
         ).delete(synchronize_session=False)
 
         # 새 결과 저장 (순번 부여)
@@ -342,29 +357,60 @@ async def collect_and_save_jongbe(db: Session) -> Dict[str, int]:
     return totals
 
 
-def get_latest_jongbe_results(db: Session, market_type: str, limit: int = 50) -> Dict:
-    """
-    최신 종베 결과 조회.
-    Returns: {"data": [...], "screening_date": "YYYY-MM-DD", "count": N}
-    """
-    latest_at = (
-        db.query(func.max(JongbeScreeningResult.collected_at))
-        .filter(JongbeScreeningResult.market_type == market_type)
-        .scalar()
-    )
-    if not latest_at:
-        return {"data": [], "screening_date": None, "count": 0}
-
+def list_jongbe_screening_dates(db: Session, market_type: str, limit: int = 120) -> List[str]:
     rows = (
-        db.query(JongbeScreeningResult)
-        .filter(
-            JongbeScreeningResult.market_type == market_type,
-            JongbeScreeningResult.collected_at == latest_at,
-        )
-        .order_by(JongbeScreeningResult.rank)
+        db.query(JongbeScreeningResult.screening_date)
+        .filter(JongbeScreeningResult.market_type == market_type)
+        .distinct()
+        .order_by(JongbeScreeningResult.screening_date.desc())
         .limit(limit)
         .all()
     )
+    return [r[0] for r in rows if r[0]]
+
+
+def get_latest_jongbe_results(
+    db: Session,
+    market_type: str,
+    limit: int = 50,
+    screening_date: Optional[str] = None,
+) -> Dict:
+    """
+    screening_date가 None이면 최신 수집분 1회분(앱 사용자용).
+    지정 시 해당 기준일 스냅샷(BO 이력).
+    """
+    if screening_date:
+        rows = (
+            db.query(JongbeScreeningResult)
+            .filter(
+                JongbeScreeningResult.market_type == market_type,
+                JongbeScreeningResult.screening_date == screening_date,
+            )
+            .order_by(JongbeScreeningResult.rank)
+            .limit(limit)
+            .all()
+        )
+        if not rows:
+            return {"data": [], "screening_date": screening_date, "count": 0}
+    else:
+        latest_at = (
+            db.query(func.max(JongbeScreeningResult.collected_at))
+            .filter(JongbeScreeningResult.market_type == market_type)
+            .scalar()
+        )
+        if not latest_at:
+            return {"data": [], "screening_date": None, "count": 0}
+
+        rows = (
+            db.query(JongbeScreeningResult)
+            .filter(
+                JongbeScreeningResult.market_type == market_type,
+                JongbeScreeningResult.collected_at == latest_at,
+            )
+            .order_by(JongbeScreeningResult.rank)
+            .limit(limit)
+            .all()
+        )
 
     data = [
         {

@@ -5,7 +5,9 @@
 
 const STORAGE_KEY = "jurin_saved_pick_positions_v1";
 const HISTORY_KEY = "jurin_saved_pick_history_v1";
-const MAX_HISTORY = 80;
+/** 담기 이력은 비운 시각 기준 이 기간만 유지 (밀리초) */
+const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+const MAX_HISTORY = 200;
 
 export type SavedPickPosition = {
   code: string;
@@ -37,6 +39,14 @@ function kstYmd(): string {
   }).format(new Date());
 }
 
+function pruneHistoryByAge(list: ClearedPickHistory[]): ClearedPickHistory[] {
+  const cutoff = Date.now() - HISTORY_RETENTION_MS;
+  return list.filter((h) => {
+    const t = new Date(h.clearedAt).getTime();
+    return !Number.isNaN(t) && t >= cutoff;
+  });
+}
+
 export function readSavedPickPositions(): SavedPickPosition[] {
   if (typeof window === "undefined") return [];
   try {
@@ -55,7 +65,13 @@ export function readClearedPickHistory(): ClearedPickHistory[] {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as ClearedPickHistory[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const rows = parsed as ClearedPickHistory[];
+    const pruned = pruneHistoryByAge(rows).slice(0, MAX_HISTORY);
+    if (pruned.length !== rows.length) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(pruned));
+    }
+    return pruned;
   } catch {
     return [];
   }
@@ -99,7 +115,7 @@ export function removeSavedPickWithHistory(code: string, clearPrice: number | nu
     clearedAt: new Date().toISOString(),
   };
   const prevHist = readClearedPickHistory();
-  const nextHist = [hist, ...prevHist].slice(0, MAX_HISTORY);
+  const nextHist = pruneHistoryByAge([hist, ...prevHist]).slice(0, MAX_HISTORY);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHist));
 
   window.dispatchEvent(new Event("savedPicksUpdated"));

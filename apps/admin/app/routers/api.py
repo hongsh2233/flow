@@ -457,9 +457,26 @@ async def get_favorite_stocks_stats(
     }
 
 
+@router.get("/api/stock-screening/dates")
+async def get_stock_screening_dates(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(120, ge=1, le=400),
+    db: Session = Depends(get_db),
+    _auth=Depends(get_admin_session_or_api_key),
+):
+    """저장된 일목 스크리닝 기준일 목록 (최신순, BO 전용)."""
+    from app.services.stock_screening_service import list_stock_screening_dates
+    dates = list_stock_screening_dates(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, "dates": dates}
+
+
 @router.get("/api/stock-screening")
 async def get_stock_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    screening_date: Optional[str] = Query(
+        None,
+        description="YYYY-MM-DD. 생략 시 최신 수집분 1회만 (앱·일반 조회와 동일)",
+    ),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     _auth=Depends(get_admin_session_or_api_key),
@@ -468,7 +485,12 @@ async def get_stock_screening(
     조건검색 결과 조회 (익일 매수 후보, 기술적 지표 기반)
     """
     from app.services.stock_screening_service import get_latest_screening_results
-    result = get_latest_screening_results(db, market_type=market_type.lower(), limit=limit)
+    result = get_latest_screening_results(
+        db,
+        market_type=market_type.lower(),
+        limit=limit,
+        screening_date=screening_date,
+    )
     return {"success": True, **result}
 
 
@@ -502,9 +524,26 @@ async def run_stock_screening_manual(
     return {"success": True, "message": "조건검색 스크리닝이 백그라운드에서 시작되었습니다."}
 
 
+@router.get("/api/jongbe-screening/dates")
+async def get_jongbe_screening_dates(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(120, ge=1, le=400),
+    db: Session = Depends(get_db),
+    _auth=Depends(get_admin_session_or_api_key),
+):
+    """저장된 종베 스크리닝 기준일 목록 (최신순, BO 전용)."""
+    from app.services.jongbe_screening_service import list_jongbe_screening_dates
+    dates = list_jongbe_screening_dates(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, "dates": dates}
+
+
 @router.get("/api/jongbe-screening")
 async def get_jongbe_screening(
     market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    screening_date: Optional[str] = Query(
+        None,
+        description="YYYY-MM-DD. 생략 시 최신 수집분 1회만",
+    ),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     _auth=Depends(get_admin_session_or_api_key),
@@ -513,7 +552,12 @@ async def get_jongbe_screening(
     종베 검색식 결과 조회 (당일 종가매수 후보)
     """
     from app.services.jongbe_screening_service import get_latest_jongbe_results
-    result = get_latest_jongbe_results(db, market_type=market_type.lower(), limit=limit)
+    result = get_latest_jongbe_results(
+        db,
+        market_type=market_type.lower(),
+        limit=limit,
+        screening_date=screening_date,
+    )
     return {"success": True, **result}
 
 

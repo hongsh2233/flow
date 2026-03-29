@@ -13,7 +13,7 @@ FinanceDataReader를 사용하여 시총 상위 500종목을 분석합니다.
   J: 최근 20봉 내 120봉 신고가 존재 (강한 추세)
 """
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 import pytz
@@ -25,6 +25,8 @@ from app.engine.models import StockScreeningResult
 from app.services.screening_progress import update_progress, reset_progress
 
 KST = pytz.timezone("Asia/Seoul")
+# screening_date(YYYY-MM-DD) 기준 이 일수보다 오래된 행은 저장 시 삭제
+SCREENING_DB_RETENTION_DAYS = 30
 
 
 def _ichimoku(high, low, close, tenkan=9, kijun=26, senkou_b=52):
@@ -216,7 +218,7 @@ async def scan_all_stocks(top_n: int = 500) -> Dict[str, List[Dict]]:
 async def collect_and_save(db: Session, top_n: int = 500) -> Dict[str, int]:
     """
     전체 스크리닝 실행 후 DB에 저장.
-    기존 결과를 삭제하고 최신 결과만 보관한다 (NaverRisingStock 패턴).
+    동일 기준일(screening_date)·시장에 대한 행만 덮어쓰고, 과거 일자 스냅샷은 유지한다.
     """
     now_kst = datetime.now(KST)
     screening_date = now_kst.strftime("%Y-%m-%d")
@@ -228,12 +230,27 @@ async def collect_and_save(db: Session, top_n: int = 500) -> Dict[str, int]:
     all_results = await scan_all_stocks(top_n=top_n)
     totals: Dict[str, int] = {}
 
+    try:
+        cutoff_str = (now_kst.date() - timedelta(days=SCREENING_DB_RETENTION_DAYS)).strftime("%Y-%m-%d")
+        deleted_old = (
+            db.query(StockScreeningResult)
+            .filter(StockScreeningResult.screening_date < cutoff_str)
+            .delete(synchronize_session=False)
+        )
+        if deleted_old:
+            print(
+                f"[조건검색] 기준일 {cutoff_str} 미만(보관 {SCREENING_DB_RETENTION_DAYS}일) {deleted_old}건 삭제 예정"
+            )
+    except Exception as e:
+        print(f"[조건검색] 오래된 스크리닝 행 정리 실패(이번 저장은 계속): {e}")
+
     for market_type in ("kospi", "kosdaq"):
         items = all_results.get(market_type, [])
 
-        # 기존 데이터 삭제
+        # 해당 시장·기준일만 삭제 (과거 일자 이력 유지)
         db.query(StockScreeningResult).filter(
             StockScreeningResult.market_type == market_type,
+            StockScreeningResult.screening_date == screening_date,
         ).delete(synchronize_session=False)
 
         # 새 결과 저장 (순번 부여)
@@ -273,30 +290,63 @@ async def collect_and_save(db: Session, top_n: int = 500) -> Dict[str, int]:
     return totals
 
 
-def get_latest_screening_results(db: Session, market_type: str, limit: int = 50) -> Dict:
-    """
-    최신 스크리닝 결과 조회.
-    Returns: {"data": [...], "screening_date": "YYYY-MM-DD", "count": N}
-    """
-    # 최신 collected_at 조회
-    latest_at = (
-        db.query(func.max(StockScreeningResult.collected_at))
-        .filter(StockScreeningResult.market_type == market_type)
-        .scalar()
-    )
-    if not latest_at:
-        return {"data": [], "screening_date": None, "count": 0}
-
+def list_stock_screening_dates(db: Session, market_type: str, limit: int = 120) -> List[str]:
+    """저장된 기준일 목록 (최신순). BO에서 일자 선택용."""
     rows = (
-        db.query(StockScreeningResult)
-        .filter(
-            StockScreeningResult.market_type == market_type,
-            StockScreeningResult.collected_at == latest_at,
-        )
-        .order_by(StockScreeningResult.rank)
+        db.query(StockScreeningResult.screening_date)
+        .filter(StockScreeningResult.market_type == market_type)
+        .distinct()
+        .order_by(StockScreeningResult.screening_date.desc())
         .limit(limit)
         .all()
     )
+    return [r[0] for r in rows if r[0]]
+
+
+def get_latest_screening_results(
+    db: Session,
+    market_type: str,
+    limit: int = 50,
+    screening_date: Optional[str] = None,
+) -> Dict:
+    """
+    스크리닝 결과 조회.
+    screening_date가 None이면 최신 수집분(collected_at 기준) 1회분만 반환 (앱 사용자용).
+    screening_date가 지정되면 해당 기준일 스냅샷만 반환 (BO 이력 조회용).
+    Returns: {"data": [...], "screening_date": "YYYY-MM-DD", "count": N}
+    """
+    if screening_date:
+        rows = (
+            db.query(StockScreeningResult)
+            .filter(
+                StockScreeningResult.market_type == market_type,
+                StockScreeningResult.screening_date == screening_date,
+            )
+            .order_by(StockScreeningResult.rank)
+            .limit(limit)
+            .all()
+        )
+        if not rows:
+            return {"data": [], "screening_date": screening_date, "count": 0}
+    else:
+        latest_at = (
+            db.query(func.max(StockScreeningResult.collected_at))
+            .filter(StockScreeningResult.market_type == market_type)
+            .scalar()
+        )
+        if not latest_at:
+            return {"data": [], "screening_date": None, "count": 0}
+
+        rows = (
+            db.query(StockScreeningResult)
+            .filter(
+                StockScreeningResult.market_type == market_type,
+                StockScreeningResult.collected_at == latest_at,
+            )
+            .order_by(StockScreeningResult.rank)
+            .limit(limit)
+            .all()
+        )
 
     data = [
         {
