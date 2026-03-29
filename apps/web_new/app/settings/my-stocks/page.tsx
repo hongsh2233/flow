@@ -10,10 +10,25 @@ import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authServic
 import { DEFAULT_BROKERS } from "@/lib/picks/defaultBrokers";
 import { BROKER_STORAGE_KEY, mergeBrokerWithCatalog, openBrokerApp } from "@/lib/picks/openBroker";
 import { BrokerSelectSheet, type BrokerItem } from "@/app/components/module/picks/BrokerSelectSheet";
-import { readSavedPickPositions, recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
+import {
+  readSavedPickPositions,
+  readClearedPickHistory,
+  recordSavedPickFromMarket,
+  removeSavedPickWithHistory,
+} from "@/lib/stocks/savedPicksStorage";
 import type { StockDetail } from "@/lib/types";
 import { StockTermBox } from "@/app/components/module/stock-term-box";
-import { Briefcase, Star, ArrowRightLeft, ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  Briefcase,
+  Star,
+  ArrowRightLeft,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Trash2,
+  History,
+} from "lucide-react";
 import styles from "./MyStocks.module.css";
 
 const LazyStockDetailModal = dynamic(
@@ -26,6 +41,27 @@ function formatRecommendDateDisplay(ymd: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
   if (!m) return ymd;
   return `${m[1].slice(2)}/${m[2]}/${m[3]}`;
+}
+
+/** ISO 시각 → KST 기준 YY/MM/DD */
+function formatClearedAtDisplay(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === "year")?.value ?? "";
+    const mo = parts.find((p) => p.type === "month")?.value ?? "";
+    const da = parts.find((p) => p.type === "day")?.value ?? "";
+    if (y && mo && da) return `${y}/${mo}/${da}`;
+    return iso.slice(0, 10);
+  } catch {
+    return iso.slice(0, 10);
+  }
 }
 
 type BatchQuoteEntry = { price: number; asOf: string | null; source: string } | null;
@@ -73,6 +109,7 @@ export default function MyStocksPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const savedPicks = useMemo(() => readSavedPickPositions(), [picksTick]);
+  const pickHistory = useMemo(() => readClearedPickHistory(), [picksTick]);
 
   useEffect(() => {
     if (!toast) return;
@@ -197,6 +234,12 @@ export default function MyStocksPage() {
     sheetIntentRef.current = null;
   }, []);
 
+  const handleClearSavedPick = useCallback((code: string) => {
+    const snap = prices[code];
+    removeSavedPickWithHistory(code, snap ?? null);
+    setToast({ message: "담은 목록에서 제거했습니다.", type: "success" });
+  }, [prices]);
+
   if (status === "loading") {
     return (
       <div className="content__wrap">
@@ -252,21 +295,86 @@ export default function MyStocksPage() {
 
                 return (
                   <div key={`${p.code}-${p.savedAt}`} className={`${styles.stockRow} ${pIdx !== savedPicks.length - 1 ? styles.stockRowBordered : ""}`}>
-                    <div className={styles.stockInfo}>
-                      <div className={styles.stockName}>
-                        {p.name}
+                    <div className={styles.stockRowMain}>
+                      <div className={styles.stockInfo}>
+                        <div className={styles.stockName}>
+                          {p.name}
+                        </div>
+                        <span className={styles.stockCode}>{p.code}</span>
+                        <span className={styles.stockRecommendDate}>{formatRecommendDateDisplay(p.recommendDate)} 추천</span>
                       </div>
-                      <span className={styles.stockCode}>{p.code}</span>
-                      <span className={styles.stockRecommendDate}>{formatRecommendDateDisplay(p.recommendDate)} 추천</span>
+                      <div className={styles.priceInfo}>
+                        <span className={styles.currentPrice}>{cur != null ? cur.toLocaleString() + "원" : "—"}</span>
+                        <span className={styles.entryPrice}>기준 {entry.toLocaleString()}원</span>
+                        <div className={styles.profitBadgeWrap}>
+                          {profit != null && rate != null ? (
+                            <span className={`${styles.profitBadge} ${up ? styles.up : down ? styles.down : ""}`}>
+                              {up ? <TrendingUp size={12} /> : down ? <TrendingDown size={12} /> : <Minus size={12} />}
+                              {rate > 0 ? "+" : ""}{rate.toFixed(2)}%
+                            </span>
+                          ) : (
+                            <span className={styles.profitBadge}>—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.clearPickBtn}
+                      aria-label={`${p.name} 담은 목록에서 제거`}
+                      onClick={() => handleClearSavedPick(p.code)}
+                    >
+                      <Trash2 size={18} strokeWidth={2} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.group}>
+          <div className={styles.groupTitleWrap}>
+            <History className={styles.groupIcon} />
+            <h2 className={styles.groupTitle}>담기 이력</h2>
+          </div>
+          <p className={styles.subHint}>
+            비우기 시점의 시세를 기준가로 저장합니다. 수익률은 담기 추천금 대비 비움 시점가 기준입니다.
+          </p>
+          {pickHistory.length === 0 ? (
+            <div className={styles.emptyBox}>아직 이력이 없습니다. 담은 종목에서 비우기를 하면 여기에 표시됩니다.</div>
+          ) : (
+            <div className={styles.groupCard}>
+              {pickHistory.map((h, hIdx) => {
+                const entry = h.entryPrice;
+                const clearP = h.clearPrice;
+                const histRate =
+                  clearP != null && entry > 0 ? ((clearP - entry) / entry) * 100 : null;
+                const histUp = histRate != null && histRate > 0;
+                const histDown = histRate != null && histRate < 0;
+
+                return (
+                  <div
+                    key={`${h.code}-${h.clearedAt}`}
+                    className={`${styles.stockRow} ${hIdx !== pickHistory.length - 1 ? styles.stockRowBordered : ""}`}
+                  >
+                    <div className={styles.stockInfo}>
+                      <div className={styles.stockName}>{h.name}</div>
+                      <span className={styles.stockCode}>{h.code}</span>
+                      <span className={styles.stockRecommendDate}>{formatRecommendDateDisplay(h.recommendDate)} 추천</span>
+                      <span className={styles.historyClearedMeta}>{formatClearedAtDisplay(h.clearedAt)} 비움</span>
                     </div>
                     <div className={styles.priceInfo}>
-                      <span className={styles.currentPrice}>{cur != null ? cur.toLocaleString() + "원" : "—"}</span>
-                      <span className={styles.entryPrice}>기준 {entry.toLocaleString()}원</span>
+                      <span className={styles.entryPrice}>담기 {entry.toLocaleString()}원</span>
+                      <span className={styles.historyClearPrice}>
+                        비움 기준 {clearP != null ? `${clearP.toLocaleString()}원` : "—"}
+                      </span>
                       <div className={styles.profitBadgeWrap}>
-                        {profit != null && rate != null ? (
-                          <span className={`${styles.profitBadge} ${up ? styles.up : down ? styles.down : ""}`}>
-                            {up ? <TrendingUp size={12} /> : down ? <TrendingDown size={12} /> : <Minus size={12} />}
-                            {rate > 0 ? "+" : ""}{rate.toFixed(2)}%
+                        {histRate != null ? (
+                          <span className={`${styles.profitBadge} ${histUp ? styles.up : histDown ? styles.down : ""}`}>
+                            {histUp ? <TrendingUp size={12} /> : histDown ? <TrendingDown size={12} /> : <Minus size={12} />}
+                            {histRate > 0 ? "+" : ""}
+                            {histRate.toFixed(2)}%
                           </span>
                         ) : (
                           <span className={styles.profitBadge}>—</span>

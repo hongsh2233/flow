@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { Search } from "../components/module/Search";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { MarketPicksSection } from "../components/module/picks/MarketPicksSection";
+import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
@@ -393,6 +394,8 @@ export default function SupplyPage() {
         favCodes={favCodes}
       />
 
+      <InvestorTrendChart defaultMarket="kospi" variant="main" />
+
       {/* 검색 */}
       <div className={styles.searchArea}>
         <Search
@@ -407,7 +410,7 @@ export default function SupplyPage() {
         <RandomAffiliateCard />
       </div>
 
-      {/* 수급 동향 탭 (차트는 홈 메인에서 제공) */}
+      {/* 수급 동향 탭 */}
       <h1 className={styles.title}>수급 동향</h1>
 
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">

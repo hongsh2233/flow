@@ -79,6 +79,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 1rem 1.15rem;
 }
 
@@ -110,6 +111,38 @@
 .stockRecommendDate {
   font-size: 0.7rem;
   color: var(--app-text-placeholder, #aaa);
+}
+
+.stockRowMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.clearPickBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--app-border-light);
+  background: var(--app-bg-secondary);
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+
+.clearPickBtn:hover {
+  color: var(--app-text);
+  border-color: var(--app-table-border);
+}
+
+.clearPickBtn:active {
+  opacity: 0.9;
 }
 
 .priceInfo {
@@ -168,6 +201,17 @@
 .down {
   color: #1e88e5;
   font-weight: 600;
+}
+
+.historyClearedMeta {
+  font-size: 0.68rem;
+  color: var(--app-text-placeholder, #aaa);
+  margin-top: 0.15rem;
+}
+
+.historyClearPrice {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
 }
 
 .emptyBox {

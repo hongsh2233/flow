@@ -142,6 +142,11 @@ export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: P
           코스닥
         </button>
       </div>
+      {strategy === "ichimoku" ? (
+        <p className={styles.scheduleNotice}>추천종목은 20:40분 공개됩니다.</p>
+      ) : (
+        <p className={styles.scheduleNotice}>종가종목은 15:15분 전후 공개 됩니다.</p>
+      )}
       {loading ? (
         <p className={styles.meta}>불러오는 중...</p>
       ) : (

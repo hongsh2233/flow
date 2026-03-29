@@ -1,8 +1,11 @@
 /**
  * 마켓 관심 담기 성공 시 기록 → 설정「내 종목 시세」의 담은 종목 표에 사용.
+ * 비우기 시 이력에 비우기 당시 기준가(clearPrice)를 저장해 수익률 표시.
  */
 
 const STORAGE_KEY = "jurin_saved_pick_positions_v1";
+const HISTORY_KEY = "jurin_saved_pick_history_v1";
+const MAX_HISTORY = 80;
 
 export type SavedPickPosition = {
   code: string;
@@ -12,6 +15,17 @@ export type SavedPickPosition = {
   /** 담기 시점 화면에 표시된 가격(추천금액) */
   entryPrice: number;
   savedAt: string;
+};
+
+export type ClearedPickHistory = {
+  code: string;
+  name: string;
+  recommendDate: string;
+  entryPrice: number;
+  savedAt: string;
+  /** 비우기 클릭 시점의 현재 기준가(지연 시세 스냅) */
+  clearPrice: number | null;
+  clearedAt: string;
 };
 
 function kstYmd(): string {
@@ -35,6 +49,18 @@ export function readSavedPickPositions(): SavedPickPosition[] {
   }
 }
 
+export function readClearedPickHistory(): ClearedPickHistory[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as ClearedPickHistory[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** 관심 담기 API 성공 직후 호출. 동일 코드는 최신 담기로 갱신. */
 export function recordSavedPickFromMarket(stock: { code: string; name: string; price: number }): void {
   if (typeof window === "undefined") return;
@@ -48,5 +74,33 @@ export function recordSavedPickFromMarket(stock: { code: string; name: string; p
   const prev = readSavedPickPositions();
   const next = [row, ...prev.filter((p) => p.code !== row.code)];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent(new Event("savedPicksUpdated"));
+}
+
+/**
+ * 담은 목록에서 제거하고 이력에 남김. clearPrice는 비우기 시점 기준가(없으면 null).
+ */
+export function removeSavedPickWithHistory(code: string, clearPrice: number | null): void {
+  if (typeof window === "undefined") return;
+  const list = readSavedPickPositions();
+  const row = list.find((p) => p.code === code);
+  if (!row) return;
+
+  const nextList = list.filter((p) => p.code !== code);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(nextList));
+
+  const hist: ClearedPickHistory = {
+    code: row.code,
+    name: row.name,
+    recommendDate: row.recommendDate,
+    entryPrice: row.entryPrice,
+    savedAt: row.savedAt,
+    clearPrice: clearPrice != null ? Math.round(clearPrice) : null,
+    clearedAt: new Date().toISOString(),
+  };
+  const prevHist = readClearedPickHistory();
+  const nextHist = [hist, ...prevHist].slice(0, MAX_HISTORY);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHist));
+
   window.dispatchEvent(new Event("savedPicksUpdated"));
 }
