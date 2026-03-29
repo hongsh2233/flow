@@ -197,10 +197,15 @@ export default function SupplyPage() {
   const { favoriteStocks, favCodes, isLoading: favLoading } = useFavoriteStocks();
   const { addFavCode, removeFavCode } = useFavoriteStore();
 
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+    center?: boolean;
+  } | null>(null);
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2500);
+    const ms = toast.center ? 3200 : 2500;
+    const t = setTimeout(() => setToast(null), ms);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -218,7 +223,11 @@ export default function SupplyPage() {
     if (res.success) {
       recordSavedPickFromMarket(stock);
       refreshFavorites();
-      setToast({ message: "종목을 담았습니다. 수익 관찰하실 수 있습니다.", type: "success" });
+      setToast({
+        message: "종목을 담았습니다.\n설정 > 내 종목 시세에서 보실 수 있습니다.",
+        type: "success",
+        center: true,
+      });
     } else {
       removeFavCode(stock.code); // rollback
       setToast({ message: res.message || "추가에 실패했습니다.", type: "error" });
@@ -702,7 +711,12 @@ export default function SupplyPage() {
 
       {toast && (
         <div
-          className={toast.type === "success" ? styles.toastSuccess : styles.toastError}
+          className={[
+            toast.type === "success" ? styles.toastSuccess : styles.toastError,
+            toast.center ? styles.toastCenter : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           role="alert"
         >
           {toast.message}

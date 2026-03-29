@@ -435,3 +435,11 @@
   background: #ef4444;
   color: #fff;
 }
+
+/* 마켓 담기 성공 등 여러 줄 안내 */
+.toastCenter {
+  text-align: center;
+  white-space: pre-line;
+  max-width: min(92vw, 20rem);
+  line-height: 1.45;
+}
