@@ -692,6 +692,11 @@ if investment_bank_news:
     app.include_router(investment_bank_news.router)  # 투자은행 뉴스 (GS/MS/JPM)
 if target_price_news:
     app.include_router(target_price_news.router)  # 증권사 목표가 상향 뉴스
+try:
+    from app.routers import ai_logic
+    app.include_router(ai_logic.router)  # AI 로직 (모닝 브리핑 등)
+except ImportError as e:
+    print(f"⚠️ ai_logic 라우터 import 실패 (무시 가능): {e}")
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리

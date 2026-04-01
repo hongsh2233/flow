@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}모닝 브리핑 - AI 로직 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .ai-page-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .ai-page-header h2 { margin: 0; color: #2c3e50; font-size: 20px; }
+  .ai-badge { background: linear-gradient(135deg, #6366f1, #3b82f6); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px; letter-spacing: .5px; }
+  .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; margin-bottom: 24px; border-radius: 4px; font-size: 13px; color: #1e40af; line-height: 1.7; }
+  .info-box strong { color: #1d4ed8; }
+  .form-label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.7;
+    resize: vertical;
+    min-height: 170px;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: #111827;
+  }
+  .form-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+  .sample-box {
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.75;
+  }
+  .sample-box .sample-label {
+    display: inline-block;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: .4px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .btn-generate {
+    margin-top: 18px;
+    padding: 11px 28px;
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .18s;
+    letter-spacing: .3px;
+  }
+  .btn-generate:hover { opacity: .88; }
+  .btn-generate:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* 상태 영역 */
+  .status-area { margin-top: 22px; }
+  .status-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1d4ed8;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid #bfdbfe;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin .75s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-success {
+    padding: 14px 16px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #15803d;
+    line-height: 1.6;
+  }
+  .status-error {
+    padding: 14px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #dc2626;
+  }
+
+  /* 미리보기 */
+  .result-preview { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .result-preview-header {
+    background: #f3f4f6;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+  .result-preview-body {
+    padding: 18px 20px;
+    font-size: 13px;
+    line-height: 1.8;
+    max-height: 400px;
+    overflow-y: auto;
+    color: #111827;
+  }
+  .result-preview-body h3 { font-size: 14px; color: #1e3a5f; margin: 16px 0 6px; }
+  .result-preview-body p { margin: 4px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="ai-page-header">
+    <h2>🌅 모닝 브리핑</h2>
+    <span class="ai-badge">AI 로직</span>
+  </div>
+
+  <div class="info-box">
+    브리핑에 담을 핵심 내용을 자유롭게 입력하세요.<br>
+    Gemini AI가 투자자 친화적인 문장으로 변환하여
+    <strong>B001 게시판 › 시황 카테고리</strong>에
+    <strong>승인 대기(pending)</strong> 상태로 등록합니다.<br>
+    등록 후 <a href="/admin/board" style="color:#2563eb;font-weight:600;">게시판 관리</a>에서 검토·승인하면 앱에 게재됩니다.
+  </div>
+
+  <form id="briefingForm">
+    <label class="form-label" for="userInput">📝 브리핑 핵심 내용 입력</label>
+    <textarea
+      id="userInput"
+      name="user_input"
+      class="form-textarea"
+      placeholder="예: 미국 나스닥 +1.2% 상승, 반도체 섹터 강세. 환율 1,380원대. 삼성전자 실적 발표 예정. 오전 장 관망세 예상..."
+    ></textarea>
+
+    <div class="sample-box">
+      <span class="sample-label">샘플 입력 예시</span><br>
+      미국 S&amp;P500 +0.8%, 나스닥 +1.1% 상승 마감. 달러/원 1,375원 (-5원). 반도체·AI 관련주 강세, 에너지 약세.<br>
+      오늘 국내 시장 주목 포인트: 삼성전자 잠정실적 발표(오전 8시), 외국인 수급 집중 여부, 코스피 2,600선 지지 여부.<br>
+      투자자 유의사항: 미 연준 의사록 발표(한국 시간 새벽 3시) 영향 주목.
+    </div>
+
+    <button type="submit" class="btn-generate" id="submitBtn">
+      ✨ Gemini로 브리핑 생성 및 게시판 등록
+    </button>
+  </form>
+
+  <div class="status-area" id="statusArea">
+    <div class="status-loading" id="statusLoading" style="display:none;">
+      <div class="spinner"></div>
+      <span>Gemini가 브리핑을 작성 중입니다... 잠시만 기다려 주세요.</span>
+    </div>
+
+    <div class="status-success" id="statusSuccess" style="display:none;">
+      ✅ <strong id="successTitle"></strong> — 게시판 등록 완료 (승인 대기 중)<br>
+      <span style="font-size:12px;color:#6b7280;margin-top:4px;display:block;">
+        게시판 관리 › B001에서 승인하면 앱에 게재됩니다.
+      </span>
+    </div>
+
+    <div class="status-error" id="statusError" style="display:none;">
+      ❌ <span id="errorMsg"></span>
+    </div>
+
+    <div class="result-preview" id="resultPreview" style="display:none;">
+      <div class="result-preview-header">생성된 본문 미리보기</div>
+      <div class="result-preview-body" id="previewBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('briefingForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const input = document.getElementById('userInput').value.trim();
+  if (!input) { alert('내용을 입력해 주세요.'); return; }
+
+  const btn      = document.getElementById('submitBtn');
+  const loading  = document.getElementById('statusLoading');
+  const success  = document.getElementById('statusSuccess');
+  const errBox   = document.getElementById('statusError');
+  const preview  = document.getElementById('resultPreview');
+
+  btn.disabled = true;
+  loading.style.display  = 'flex';
+  success.style.display  = 'none';
+  errBox.style.display   = 'none';
+  preview.style.display  = 'none';
+
+  try {
+    const fd = new FormData();
+    fd.append('user_input', input);
+
+    const res  = await fetch('/admin/ai-logic/morning-briefing/generate', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    loading.style.display = 'none';
+
+    if (data.success) {
+      document.getElementById('successTitle').textContent = data.title;
+      success.style.display = 'block';
+      if (data.content) {
+        document.getElementById('previewBody').innerHTML = data.content;
+        preview.style.display = 'block';
+      }
+    } else {
+      document.getElementById('errorMsg').textContent = data.error || '알 수 없는 오류가 발생했습니다.';
+      errBox.style.display = 'block';
+    }
+  } catch (err) {
+    loading.style.display = 'none';
+    document.getElementById('errorMsg').textContent = '네트워크 오류가 발생했습니다.';
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}
