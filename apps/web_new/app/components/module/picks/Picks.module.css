@@ -8,8 +8,9 @@
 .banner {
   padding: 0.75rem 0.85rem;
   border-radius: 0.75rem;
-  background: var(--app-table-surface, #f4f6f8);
-  border: 1px solid var(--app-table-border, #e5e8eb);
+  background: color-mix(in srgb, var(--app-accent, #ea580c) 10%, var(--app-table-surface, #f4f6f8));
+  border: 1px solid color-mix(in srgb, var(--app-accent, #ea580c) 40%, var(--app-table-border, #e5e8eb));
+  border-left: 3px solid var(--app-accent, #ea580c);
   font-size: 0.78rem;
   line-height: 1.45;
   color: var(--app-text-secondary, #444);
@@ -23,8 +24,8 @@
   margin: 0.65rem 0 0;
   padding: 0.55rem 0.65rem;
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--app-accent, #ea580c) 12%, var(--app-table-surface, #f4f6f8));
-  border: 1px solid color-mix(in srgb, var(--app-accent, #ea580c) 35%, var(--app-table-border, #e5e8eb));
+  background: color-mix(in srgb, var(--app-accent, #ea580c) 18%, var(--app-table-surface, #f4f6f8));
+  border: 1px solid color-mix(in srgb, var(--app-accent, #ea580c) 48%, var(--app-table-border, #e5e8eb));
   line-height: 1.4;
 }
 
@@ -33,7 +34,7 @@
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: var(--app-text, #1a1a1a);
+  color: var(--app-accent, #ea580c);
 }
 
 .brokerActions {
@@ -208,8 +209,9 @@
   background: var(--app-table-surface);
   border-radius: 0.75rem;
   width: 100%;
-  overflow-x: auto;
   position: relative;
+  overflow-x: auto;
+  min-height: 150px;
 }
 
 .table {

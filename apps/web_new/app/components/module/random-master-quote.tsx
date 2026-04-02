@@ -24,12 +24,27 @@ function getJuGuestId(): string {
   return g;
 }
 
+function itemKey(it: QuoteItem): string {
+  if (it.id != null) return `id:${it.id}`;
+  return `q:${(it.quote ?? "").slice(0, 40)}`;
+}
+
+function pickAnother(items: QuoteItem[], current: QuoteItem | null): QuoteItem {
+  if (items.length === 0) return current!;
+  if (items.length === 1) return items[0];
+  const cur = current ? itemKey(current) : "";
+  const others = items.filter((x) => itemKey(x) !== cur);
+  const pool = others.length > 0 ? others : items;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function RandomMasterQuote() {
   const { data: session } = useSession();
+  const [pool, setPool] = useState<QuoteItem[]>([]);
   const [item, setItem] = useState<QuoteItem | null>(null);
   const [imgFailed, setImgFailed] = useState(false);
 
-  const pickRandom = useCallback(async () => {
+  const loadPool = useCallback(async () => {
     try {
       const email = (session?.user as { email?: string })?.email;
       const params = new URLSearchParams();
@@ -44,21 +59,37 @@ export function RandomMasterQuote() {
       if (!res.ok) return;
       const data = await res.json();
       const items = (data?.items as QuoteItem[]) ?? [];
-      if (!items.length) {
+      const withQuote = items.filter((x) => x.quote?.trim());
+      if (!withQuote.length) {
+        setPool([]);
         setItem(null);
         return;
       }
-      const pick = items[Math.floor(Math.random() * items.length)];
-      setItem(pick);
+      setPool(withQuote);
+      setItem(withQuote[Math.floor(Math.random() * withQuote.length)]);
       setImgFailed(false);
     } catch {
+      setPool([]);
       setItem(null);
     }
   }, [session?.user]);
 
   useEffect(() => {
-    void pickRandom();
-  }, [pickRandom]);
+    void loadPool();
+  }, [loadPool]);
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [item]);
+
+  /* 주톡과 동일: 10초마다 다른 명언 1개로 교체 */
+  useEffect(() => {
+    if (pool.length < 2) return;
+    const id = window.setInterval(() => {
+      setItem((prev) => pickAnother(pool, prev));
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [pool]);
 
   if (!item?.quote?.trim()) return null;
 
@@ -69,7 +100,7 @@ export function RandomMasterQuote() {
   return (
     <section className={styles.wrap} aria-label="대가들의 명언">
       <h2 className={styles.header}>대가들의 명언</h2>
-      <div className={styles.card}>
+      <div className={styles.card} key={itemKey(item)}>
         {url && !imgFailed ? (
           <img
             src={url}
