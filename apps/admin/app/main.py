@@ -110,6 +110,13 @@ async def lifespan(app: FastAPI):
     stock_screening_scheduler.shutdown()
     jongbe_screening_scheduler.shutdown()
 
+    # 풀에 남은 DB 연결을 정리해 재배포/스케일 다운 시
+    # "Connection reset by peer" / "unexpected EOF ... open transaction" 로그를 줄임 (SIGKILL 시에는 불가)
+    try:
+        engine.dispose()
+    except Exception as e:
+        print(f"⚠️ engine.dispose() 중 오류 (무시): {e}")
+
 
 
 # Rate Limiter (IP 기반)
