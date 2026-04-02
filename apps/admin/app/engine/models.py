@@ -125,8 +125,24 @@ class Member(Base):
     grade_expires_at = Column(DateTime(timezone=True), nullable=True)  # NULL = 무기한
     favorite_stocks = Column(Text, nullable=True)
     jubti_type = Column(String(10), nullable=True)  # 주BTI 성향: A | D | N | I
+    point_balance = Column(Integer, nullable=False, default=0, server_default="0")
+    last_daily_login_bonus_date = Column(Date, nullable=True)  # KST 기준 일일 로그인 보너스 지급일
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class MemberPointLedger(Base):
+    """회원 포인트 증감 원장"""
+    __tablename__ = "member_point_ledgers"
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
+    delta = Column(Integer, nullable=False)
+    balance_after = Column(Integer, nullable=False)
+    reason = Column(String(64), nullable=False, index=True)
+    ref_type = Column(String(32), nullable=True)
+    ref_id = Column(String(64), nullable=True)
+    idempotency_key = Column(String(128), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class BoEvent(Base):

@@ -14,6 +14,7 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import { readSavedPickPositions, recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
+import type { ScreeningPickMeta } from "@/lib/picks/screeningPick";
 import type { StockDetail, MarketCapStock } from "@/lib/types";
 import type { NaverRisingStock } from "@/lib/types/home";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
@@ -229,16 +230,65 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
     return () => window.removeEventListener("savedPicksUpdated", sync);
   }, [variant]);
 
-  /** 추천종목 표의 담기: 관심종목 API와 무관, 내 종목 시세(로컬)에만 기록 */
-  const handlePickFromRecommend = useCallback((stock: StockDetail) => {
-    recordSavedPickFromMarket(stock);
-    setPickedCodes((prev) => new Set(prev).add(stock.code));
-    setToast({
-      message: "종목을 담았습니다.\n설정 > 내 종목 시세에서 보실 수 있습니다.",
-      type: "success",
-      center: true,
-    });
-  }, []);
+  /** 추천종목 표 담기: 무료 순위 초과 시 포인트 차감 후 로컬 내 종목 시세에 기록 */
+  const handlePickFromRecommend = useCallback(
+    async (stock: StockDetail, meta: ScreeningPickMeta) => {
+      if (!session?.user?.email) {
+        setToast({ message: "로그인 후 이용해 주세요.", type: "error" });
+        return;
+      }
+      if (!meta.screeningDate) {
+        setToast({
+          message: "스크리닝 날짜를 불러온 뒤 다시 시도해 주세요.",
+          type: "error",
+          center: true,
+        });
+        return;
+      }
+      const res = await fetch("/api/auth/member/screening-pick/charge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stock_code: stock.code,
+          rank: meta.rank,
+          screening_date: meta.screeningDate,
+          screening_type: meta.screeningType,
+        }),
+        cache: "no-store",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        detail?: unknown;
+        point_balance?: number;
+      };
+      if (!res.ok) {
+        const d = data.detail;
+        const msg =
+          typeof d === "string"
+            ? d
+            : Array.isArray(d)
+              ? d
+                  .map((x: { msg?: string }) => x?.msg)
+                  .filter(Boolean)
+                  .join(", ")
+              : "포인트 차감에 실패했습니다.";
+        setToast({ message: msg, type: "error", center: true });
+        return;
+      }
+      recordSavedPickFromMarket(stock);
+      setPickedCodes((prev) => new Set(prev).add(stock.code));
+      setToast({
+        message: "종목을 담았습니다.\n설정 > 내 종목 시세에서 보실 수 있습니다.",
+        type: "success",
+        center: true,
+      });
+      if (typeof data.point_balance === "number") {
+        window.dispatchEvent(
+          new CustomEvent("memberPointsUpdated", { detail: { balance: data.point_balance } })
+        );
+      }
+    },
+    [session]
+  );
 
   const handleAddFavorite = useCallback(async (stock: StockDetail) => {
     if (!session?.user?.email) {

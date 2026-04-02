@@ -37,6 +37,7 @@ export default function Header() {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [panelOpen, setPanelOpen] = useState(false);
+    const [pointBalance, setPointBalance] = useState<number | null>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
     const PAGE_HEADER_TITLES: Record<string, string> = {
@@ -86,6 +87,33 @@ export default function Header() {
         const interval = setInterval(fetchNotifications, 60_000);
         return () => clearInterval(interval);
     }, [fetchNotifications, status]);
+
+    useEffect(() => {
+        if (status !== "authenticated") {
+            setPointBalance(null);
+            return;
+        }
+        let cancelled = false;
+        fetch("/api/auth/member/info", { cache: "no-store" })
+            .then((r) => r.json())
+            .then((j) => {
+                if (cancelled || typeof j.point_balance !== "number") return;
+                setPointBalance(j.point_balance);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [status, session?.user?.email]);
+
+    useEffect(() => {
+        const onPoints = (e: Event) => {
+            const ce = e as CustomEvent<{ balance?: number }>;
+            if (typeof ce.detail?.balance === "number") setPointBalance(ce.detail.balance);
+        };
+        window.addEventListener("memberPointsUpdated", onPoints);
+        return () => window.removeEventListener("memberPointsUpdated", onPoints);
+    }, []);
 
     // Capacitor FCM 포그라운드 알림 수신 시 즉시 갱신
     useEffect(() => {
@@ -171,6 +199,12 @@ export default function Header() {
                         <span className={styles.centerTitleText}>{currentItem.headerTitle}</span>
                     </div>
 
+                    <div className={styles.rightHeaderCluster}>
+                    {status === "authenticated" && pointBalance !== null && (
+                        <span className={styles.pointBadge} aria-label="보유 포인트">
+                            {pointBalance.toLocaleString()} P
+                        </span>
+                    )}
                     <div className={styles.bellWrap} ref={panelRef}>
                         <button
                             className={styles.bellBtn}
@@ -219,6 +253,7 @@ export default function Header() {
                             </div>
                         )}
                     </div>
+                    </div>
                 </div>
             </div>
         );
@@ -239,6 +274,11 @@ export default function Header() {
                 {/* 제목 (알림벨 앞) */}
                 <div className={styles.titleRow}>
                     <h2 className={styles.title}>{greetingTitle}</h2>
+                    {status === "authenticated" && pointBalance !== null && (
+                        <span className={styles.pointBadge} aria-label="보유 포인트">
+                            {pointBalance.toLocaleString()} P
+                        </span>
+                    )}
                 </div>
 
                 {/* 알림 아이콘 */}

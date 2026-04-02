@@ -1,6 +1,7 @@
 "use client";
 
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
+import type { ScreeningPickMeta } from "@/lib/picks/screeningPick";
 import type { StockDetail } from "@/lib/types";
 import { MtsAppIcon } from "./MtsAppIcon";
 import { AddPicksIcon } from "./AddPicksIcon";
@@ -57,7 +58,9 @@ type Props = {
   rows: ScreeningRow[];
   tier: PicksGradeTier;
   onSelectStock?: (s: StockDetail) => void;
-  onPickStock?: (s: StockDetail) => void;
+  onPickStock?: (s: StockDetail, meta: ScreeningPickMeta) => void;
+  screeningDate: string | null;
+  screeningType: "ichimoku" | "jongbe";
   pickedCodes?: Set<string>;
   onMtsClick?: () => void;
 };
@@ -67,6 +70,8 @@ export function ScreeningResultTable({
   tier,
   onSelectStock,
   onPickStock,
+  screeningDate,
+  screeningType,
   pickedCodes,
   onMtsClick,
 }: Props) {
@@ -99,6 +104,10 @@ export function ScreeningResultTable({
             rows.map((row, idx) => {
               const blinded = row.stock_name === "***";
               const detail = rowToDetail(row);
+              const rankNum =
+                typeof row.rank === "number"
+                  ? row.rank
+                  : parseInt(String(row.rank ?? ""), 10) || idx + 1;
               const code = detail?.code ?? "";
               const added = Boolean(code && pickedCodes?.has(code));
               const chg = changeDirection(row.change_percent);
@@ -150,7 +159,11 @@ export function ScreeningResultTable({
                         aria-label="종목 담기"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onPickStock(detail);
+                          onPickStock(detail, {
+                            rank: rankNum,
+                            screeningDate,
+                            screeningType,
+                          });
                         }}
                       >
                         <AddPicksIcon size={20} isAdded={false} aria-hidden />

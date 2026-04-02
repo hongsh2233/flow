@@ -442,6 +442,12 @@ def run_migrations():
         print(f"⚠️ post_likes 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_member_points import upgrade as add_member_points_migration
+        add_member_points_migration()
+    except Exception as e:
+        print(f"⚠️ member_points 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.init_faq_and_legal import run_migration as init_faq_legal_migration
         from app.database import SessionLocal
         db = SessionLocal()

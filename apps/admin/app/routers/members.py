@@ -121,6 +121,7 @@ async def set_member_grade(
 
     member = db.query(models.Member).filter(models.Member.id == member_id).first()
     if member:
+        grade_before = (member.grade or "regular").lower()
         member.grade = grade
         if grade == "regular" or not grade_expires_at or grade_expires_at.strip() == "":
             member.grade_expires_at = None
@@ -131,6 +132,11 @@ async def set_member_grade(
             except ValueError:
                 member.grade_expires_at = None
         db.commit()
+        db.refresh(member)
+        if grade == "vip" and grade_before != "vip":
+            from app.services.member_point_service import maybe_grant_vip_welcome_points
+
+            maybe_grant_vip_welcome_points(db, member, grade_before)
 
     return RedirectResponse(url="/admin/members", status_code=303)
 

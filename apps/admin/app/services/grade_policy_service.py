@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any, List, Optional, Tuple
 
 import pytz
 from sqlalchemy import func
@@ -124,11 +124,16 @@ def _already_applied(db: Session, policy_id: int, member_id: int) -> bool:
     )
 
 
-def _apply_policy_to_member(db: Session, policy: models.GradePolicy, member: models.Member) -> bool:
+def _apply_policy_to_member(
+    db: Session, policy: models.GradePolicy, member: models.Member
+) -> Optional[str]:
+    """
+    등급을 올리면 이전 등급 문자열을 반환, 변경 없으면 None.
+    """
     before = member.grade
     target = policy.target_grade
     if _member_rank(member.grade) >= _member_rank(target):
-        return False
+        return None
 
     now = _now_kst()
     member.grade = target
@@ -148,7 +153,7 @@ def _apply_policy_to_member(db: Session, policy: models.GradePolicy, member: mod
             trigger_source="auto",
         )
     )
-    return True
+    return before
 
 
 def run_auto_grade_policies_sync(db: Session) -> int:
@@ -167,6 +172,7 @@ def run_auto_grade_policies_sync(db: Session) -> int:
 
     members = db.query(models.Member).filter(models.Member.status == "active").all()
     applied = 0
+    vip_welcome_queue: List[Tuple[int, str]] = []
     try:
         for policy in policies:
             conds = _parse_conditions(policy)
@@ -175,12 +181,23 @@ def run_auto_grade_policies_sync(db: Session) -> int:
                     continue
                 if not member_matches_condition(db, member, policy.condition_type, conds):
                     continue
-                if _apply_policy_to_member(db, policy, member):
+                prev = _apply_policy_to_member(db, policy, member)
+                if prev is not None:
                     applied += 1
+                    if (policy.target_grade or "").lower() == "vip":
+                        vip_welcome_queue.append((member.id, prev))
         db.commit()
     except Exception:
         db.rollback()
         raise
+
+    if vip_welcome_queue:
+        from app.services.member_point_service import maybe_grant_vip_welcome_points
+
+        for mid, prev_grade in vip_welcome_queue:
+            m = db.query(models.Member).filter(models.Member.id == mid).first()
+            if m:
+                maybe_grant_vip_welcome_points(db, m, prev_grade)
 
     print(f"✅ 등급 정책 배치 완료: 정책 {len(policies)}건, 신규 승급 {applied}건")
     return applied

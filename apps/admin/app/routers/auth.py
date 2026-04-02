@@ -28,6 +28,12 @@ from app.dependencies import API_SECRET_KEY
 from app.utils.profile_generator import generate_profile
 from app.utils.login_attempts import check_locked, record_failure, clear_attempts
 from app.utils.safe_logger import safe_log_error
+from app.services.member_point_service import (
+    grant_signup_bonus,
+    grant_daily_login_bonus,
+    grant_jubti_first_bonus,
+    charge_screening_pick_if_needed,
+)
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -106,6 +112,7 @@ class MemberLoginResponse(BaseModel):
     profile_image: str = None
     grade: str = "regular"
     access_token: str = None
+    point_balance: int = 0
 
 
 class TokenResponse(BaseModel):
@@ -125,6 +132,7 @@ class SocialLoginResponse(BaseModel):
     profile_image: str = None  # 프로필 이미지
     grade: str = "regular"  # 'regular' | 'vip' | 'family'
     access_token: str = None
+    point_balance: int = 0
 
 
 # 회원 정보 업데이트 요청 모델
@@ -132,6 +140,15 @@ class UpdateMemberRequest(BaseModel):
     email: str
     nickname: str
     profile_image: str = None
+
+
+class ScreeningPickChargeRequest(BaseModel):
+    """스크리닝 표 담기 시 순위가 무료 구간을 넘으면 포인트 차감"""
+    email: str
+    stock_code: str
+    rank: int
+    screening_date: str
+    screening_type: str  # ichimoku | jongbe
 
 
 # 주BTI 성향 저장 요청 모델
@@ -860,6 +877,8 @@ async def api_social_login(
             existing_member.email = social_request.email
         db.commit()
         db.refresh(existing_member)
+        grant_daily_login_bonus(db, existing_member)
+        db.refresh(existing_member)
         return SocialLoginResponse(
             success=True,
             message="회원 정보가 업데이트되었습니다.",
@@ -869,6 +888,7 @@ async def api_social_login(
             profile_image=existing_member.profile_image,
             grade=get_effective_grade(existing_member),
             access_token=utils.create_access_token(data={"sub": existing_member.email, "type": "member"}),
+            point_balance=int(existing_member.point_balance or 0),
         )
     else:
         # 신규 회원: 자동 프로필 생성 (데이터베이스 기반)
@@ -886,6 +906,9 @@ async def api_social_login(
         db.add(new_member)
         db.commit()
         db.refresh(new_member)
+        grant_signup_bonus(db, new_member)
+        grant_daily_login_bonus(db, new_member)
+        db.refresh(new_member)
         return SocialLoginResponse(
             success=True,
             message="회원 정보가 저장되었습니다.",
@@ -895,6 +918,7 @@ async def api_social_login(
             profile_image=new_member.profile_image,
             grade=get_effective_grade(new_member),
             access_token=utils.create_access_token(data={"sub": new_member.email, "type": "member"}),
+            point_balance=int(new_member.point_balance or 0),
         )
 
 
@@ -944,7 +968,7 @@ async def api_update_member(
         member.profile_image = update_request.profile_image
     db.commit()
     db.refresh(member)
-    
+
     return SocialLoginResponse(
         success=True,
         message="회원 정보가 업데이트되었습니다.",
@@ -952,7 +976,8 @@ async def api_update_member(
         has_nickname=bool(member.nickname),
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        point_balance=int(member.point_balance or 0),
     )
 
 
@@ -970,10 +995,19 @@ async def api_update_member_jubti(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="회원을 찾을 수 없습니다."
         )
+    had_jubti = bool(member.jubti_type)
     member.jubti_type = request.jubti_type
     db.commit()
     db.refresh(member)
-    return {"success": True, "message": "주BTI 성향이 저장되었습니다.", "jubti_type": member.jubti_type}
+    if not had_jubti:
+        grant_jubti_first_bonus(db, member)
+        db.refresh(member)
+    return {
+        "success": True,
+        "message": "주BTI 성향이 저장되었습니다.",
+        "jubti_type": member.jubti_type,
+        "point_balance": int(member.point_balance or 0),
+    }
 
 
 @router.get("/api/auth/member/jubti")
@@ -1034,8 +1068,48 @@ async def api_get_member_info(
         has_nickname=bool(member.nickname),
         nickname=member.nickname,
         profile_image=member.profile_image,
-        grade=get_effective_grade(member)
+        grade=get_effective_grade(member),
+        point_balance=int(member.point_balance or 0),
     )
+
+
+@router.post("/api/auth/member/screening-pick/charge")
+async def api_screening_pick_charge(
+    body: ScreeningPickChargeRequest,
+    db: Session = Depends(get_db),
+):
+    """스크리닝 표 담기: 무료 순위 초과 시 20P 차감(Family·무료 구간 제외)"""
+    st = (body.screening_type or "").strip().lower()
+    if st not in ("ichimoku", "jongbe"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="screening_type은 ichimoku 또는 jongbe 여야 합니다.",
+        )
+    email = (body.email or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이메일이 필요합니다.")
+    member = db.query(models.Member).filter(models.Member.email == email).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
+    ok, did_charge, err = charge_screening_pick_if_needed(
+        db,
+        member,
+        rank=int(body.rank),
+        stock_code=(body.stock_code or "").strip(),
+        screening_date=(body.screening_date or "").strip(),
+        screening_type=st,
+    )
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err or "포인트가 부족합니다.",
+        )
+    db.refresh(member)
+    return {
+        "success": True,
+        "charged": did_charge,
+        "point_balance": int(member.point_balance or 0),
+    }
 
 
 @router.get("/api/auth/member/favorites", response_model=FavoriteStockResponse)
@@ -1477,6 +1551,8 @@ async def api_member_signup(
         db.add(new_member)
         db.commit()
         db.refresh(new_member)
+        grant_signup_bonus(db, new_member)
+        db.refresh(new_member)
     except HTTPException:
         raise
     except Exception as e:
@@ -1494,7 +1570,8 @@ async def api_member_signup(
         email=new_member.email,
         nickname=new_member.nickname,
         profile_image=new_member.profile_image,
-        grade=get_effective_grade(new_member)
+        grade=get_effective_grade(new_member),
+        point_balance=int(new_member.point_balance or 0),
     )
 
 
@@ -1541,6 +1618,8 @@ async def api_member_login(
 
     clear_attempts(db, login_request.email, ip)
 
+    grant_daily_login_bonus(db, member)
+    db.refresh(member)
     access_token = utils.create_access_token(data={"sub": member.email, "type": "member"})
     return MemberLoginResponse(
         success=True,
@@ -1551,6 +1630,7 @@ async def api_member_login(
         profile_image=member.profile_image,
         grade=get_effective_grade(member),
         access_token=access_token,
+        point_balance=int(member.point_balance or 0),
     )
 
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
+import type { PickStockHandler } from "@/lib/picks/screeningPick";
 import type { StockDetail } from "@/lib/types";
 import { DEFAULT_BROKERS } from "@/lib/picks/defaultBrokers";
 import { BROKER_STORAGE_KEY, mergeBrokerWithCatalog, openBrokerApp } from "@/lib/picks/openBroker";
@@ -12,7 +13,7 @@ import styles from "./Picks.module.css";
 
 type Props = {
   onSelectStock?: (s: StockDetail) => void;
-  onPickStock?: (s: StockDetail) => void;
+  onPickStock?: PickStockHandler;
   pickedCodes?: Set<string>;
 };
 
@@ -160,6 +161,8 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
           tier={tier}
           onSelectStock={onSelectStock}
           onPickStock={onPickStock}
+          screeningDate={screeningDate}
+          screeningType={strategy}
           pickedCodes={pickedCodes}
           onMtsClick={handleMtsClick}
         />

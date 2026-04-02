@@ -1,5 +1,6 @@
 "use client";
 
+import type { PickStockHandler } from "@/lib/picks/screeningPick";
 import type { StockDetail } from "@/lib/types";
 import { AiScreeningSection } from "./AiScreeningSection";
 import { PicksDisclaimerBanner } from "./PicksDisclaimerBanner";
@@ -8,7 +9,7 @@ import styles from "./Picks.module.css";
 type Props = {
   onSelectStock?: (s: StockDetail) => void;
   /** 추천 표 담기(로컬 내 종목 시세); 관심종목과 별도 */
-  onPickStock?: (s: StockDetail) => void;
+  onPickStock?: PickStockHandler;
   pickedCodes?: Set<string>;
 };
 

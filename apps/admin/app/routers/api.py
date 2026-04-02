@@ -35,6 +35,7 @@ from app.dependencies import (
 )
 from app.utils import verify_token
 from app.services.api_service import krx_api_service  # 시장현황 데이터 처리를 위한 서비스 임포트
+from app.services.member_point_service import grant_post_like_bonus
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -1255,6 +1256,7 @@ async def post_toggle_like(
 
     db.add(models.PostLike(post_id=post_id, member_id=member.id))
     db.commit()
+    grant_post_like_bonus(db, member.id, post_id)
     like_count = (
         db.query(func.count(models.PostLike.id))
         .filter(models.PostLike.post_id == post_id)
