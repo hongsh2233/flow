@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}보고서 작성 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .mr-wrap { max-width: 720px; }
+  .mr-hint { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding: 14px 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; }
+  .mr-label { display: block; font-weight: 600; color: #2c3e50; margin-bottom: 8px; font-size: 14px; }
+  .mr-textarea {
+    width: 100%; min-height: 160px; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;
+  }
+  .mr-textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15); }
+  .mr-actions { margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .mr-submit {
+    padding: 12px 28px; background: #c0392b; color: #fff; border: none; border-radius: 6px;
+    font-weight: 600; font-size: 15px; cursor: pointer;
+  }
+  .mr-submit:hover { background: #a93226; }
+  .mr-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .mr-result { padding: 16px 18px; border-radius: 8px; margin-bottom: 24px; font-size: 15px; line-height: 1.5; }
+  .mr-result.ok { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+  .mr-result.fail { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+  .mr-note { font-size: 13px; color: #888; margin-top: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card mr-wrap">
+  <h2 style="color: #2c3e50; margin-top: 0;">📝 보고서 작성</h2>
+  <p style="color: #666; margin-bottom: 8px;">시장 데이터 기반 보고서를 생성합니다.</p>
+
+  {% if result %}
+  <div class="mr-result {% if result.ok %}ok{% else %}fail{% endif %}" role="status">
+    {% if result.ok %}
+    <strong>성공</strong><br/>{{ result.message }}
+    {% else %}
+    <strong>실패</strong><br/>{{ result.message }}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <h3 style="color: #34495e; font-size: 1.05rem; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #ecf0f1;">☀️ 모닝 브리핑</h3>
+  <div class="mr-hint">
+    야후 지수·환율·일정·뉴스를 반영해 Gemini로 본문을 만든 뒤, <strong>시황 게시판(B001)</strong>에 <strong>대기(pending)</strong> 상태로 등록합니다.
+    관리자 승인 후 앱에 노출됩니다. 수 분 걸릴 수 있습니다.
+  </div>
+
+  <form method="post" action="/admin/market-report/morning-briefing" id="morning-briefing-form">
+    <label class="mr-label" for="reference_notes">참조문구</label>
+    <textarea
+      id="reference_notes"
+      name="reference_notes"
+      class="mr-textarea"
+      placeholder="브리핑에 반영할 운영자 메모·강조 포인트·출처 요약 등을 입력하세요. (선택)"
+      maxlength="8000"
+    ></textarea>
+    <p class="mr-note">비워 두면 기존과 동일하게 자동 데이터만으로 생성합니다.</p>
+    <div class="mr-actions">
+      <button type="submit" class="mr-submit" id="morning-submit">전송 · 생성하기</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var f = document.getElementById("morning-briefing-form");
+  var btn = document.getElementById("morning-submit");
+  if (f && btn) {
+    f.addEventListener("submit", function () {
+      btn.disabled = true;
+      var ov = document.getElementById("loadingOverlay");
+      if (ov) ov.classList.add("active");
+    });
+  }
+})();
+</script>
+{% endblock %}

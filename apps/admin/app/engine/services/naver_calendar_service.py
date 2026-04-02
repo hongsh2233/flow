@@ -2,6 +2,9 @@
 네이버 증권 증시 캘린더 스크래핑 서비스
 
 실적발표, 경제지표, 주주총회, 테마성 이벤트 등을 수집합니다.
+
+※ 모바일 JSON(scheduleMonthly.nhn)·PC HTML(sise_market_cal)은 네이버 정책에 따라 404·차단될 수 있습니다.
+  이 경우 파싱 0건이 되어도 DB에 과거 수집분이 남아 있으면 앱 일정은 유지됩니다. 서버 로그의 HTTP 상태를 확인하세요.
 """
 import httpx
 from bs4 import BeautifulSoup
@@ -116,12 +119,23 @@ class NaverCalendarService:
             async with httpx.AsyncClient(headers=self.headers, timeout=self.timeout) as client:
                 jr = await client.get(json_url, headers=json_headers)
                 ct = (jr.headers.get("content-type") or "").lower()
-                looks_json = "json" in ct or (jr.text and jr.text.lstrip()[:1] == "{")
-                if jr.is_success and looks_json:
+                txt0 = (jr.text or "").lstrip()[:1]
+                looks_json = "json" in ct or txt0 == "{"
+                if not jr.is_success:
+                    print(
+                        f"⚠️ 네이버 캘린더 JSON HTTP {jr.status_code} ({ym}) — "
+                        f"URL 폐기·차단 가능, PC HTML 폴백 시도"
+                    )
+                elif jr.is_success and looks_json:
                     try:
                         results = _parse_naver_schedule_monthly_json(year, month, jr.json())
                     except Exception:
                         results = []
+                    if not results:
+                        print(f"⚠️ 네이버 캘린더 JSON 성공({ym})이나 파싱 결과 0건 — 응답 스키마 변경 가능")
+                elif jr.is_success and not looks_json:
+                    print(f"⚠️ 네이버 캘린더 JSON({ym}) 비 JSON 응답(content-type={ct!r}) — HTML 폴백 시도")
+
                 if results:
                     print(f"✅ 네이버 증권 캘린더(JSON, {ym}) 파싱 완료: {len(results)}건")
                     return results
@@ -130,8 +144,8 @@ class NaverCalendarService:
                 response = await client.get(html_url)
                 if not response.is_success:
                     print(
-                        f"⚠️ 네이버 캘린더 HTML 응답 비정상 ({ym}): HTTP {response.status_code} "
-                        f"(JSON도 비어 있음 — 일부 지역/차단 환경에서는 모두 실패할 수 있음)"
+                        f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
+                        f"— JSON·PC 달력 모두 실패 시 이번 달 수집 0건"
                     )
                     return results
 
@@ -140,6 +154,7 @@ class NaverCalendarService:
                 )
                 cal_table = soup.find("table", class_="type_cal")
                 if not cal_table:
+                    print(f"⚠️ 네이버 PC 달력 페이지({ym})에 table.type_cal 없음 — 마크업 변경 가능")
                     return results
 
                 tds = cal_table.find_all("td")
@@ -180,7 +195,8 @@ class NaverCalendarService:
             print(f"❌ 네이버 캘린더 파싱 오류 ({ym}): {e}")
             return []
 
-    def save_schedules_to_db(self, db_session, schedules: List[Dict]):
+    def save_schedules_to_db(self, db_session, schedules: List[Dict]) -> int:
+        """신규 삽입 건수만 반환 (기존 date+subject+type 중복은 스킵)."""
         try:
             saved_count = 0
             for item in schedules:
@@ -210,9 +226,11 @@ class NaverCalendarService:
             
             db_session.commit()
             print(f"✅ 네이버 캘린더 DB 적재 완료 (신규추가: {saved_count}건)")
+            return saved_count
         except Exception as e:
             db_session.rollback()
             print(f"❌ 네이버 캘린더 DB 적재 중 오류: {e}")
+            return 0
 
 
 naver_calendar_service = NaverCalendarService()

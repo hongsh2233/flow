@@ -52,6 +52,7 @@ from app.routers import (
     ad_settings,
     bo_events,
     grade_policies,
+    market_report,
 )
 try:
     from app.routers import profile
@@ -719,6 +720,7 @@ app.include_router(board.router)     # 게시판 관리
 app.include_router(polls.router)     # 투표 관리
 app.include_router(schedule.router)  # 일정 관리
 app.include_router(finance.router)   # 한국거래소 데이터
+app.include_router(market_report.router)  # 시장 데이터 — 보고서 작성
 app.include_router(fsc.router)       # 금융위원회 데이터
 app.include_router(api.router)       # REST API (외부 호출용)
 if profile:

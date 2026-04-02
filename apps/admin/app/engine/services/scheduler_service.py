@@ -811,6 +811,8 @@ async def collect_calendar_data():
 
         # 2. 이번 달 및 다음 달 네이버 캘린더 파싱
         print("🔄 [네이버 증시 캘린더] 이벤트/지표 데이터 수집 중...")
+        naver_fetched_total = 0
+        naver_saved_total = 0
         for month_offset in [0, 1]:
             target_date = now.replace(day=1)
             # 수동 달 증가 로직
@@ -822,10 +824,12 @@ async def collect_calendar_data():
 
             try:
                 naver_schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
+                naver_fetched_total += len(naver_schedules)
                 if naver_schedules:
-                    naver_calendar_service.save_schedules_to_db(db, naver_schedules)
+                    naver_saved_total += naver_calendar_service.save_schedules_to_db(db, naver_schedules)
             except Exception as e:
                 print(f"⚠️ 네이버 캘린더 수집 오류 ({target_year}/{target_month}): {e}")
+        print(f"📊 [네이버 증시 캘린더] 수집(파싱) {naver_fetched_total}건 · 신규 저장 {naver_saved_total}건")
 
         print(f"{'='*60}")
         print(f"✅ 증시 캘린더 일괄 자동 수집 완료")

@@ -101,12 +101,15 @@
       </div>
     </div>
 
-    <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news'] %}is-open{% endif %}">
-      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news'] %}true{% else %}false{% endif %}">
+    <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report'] %}true{% else %}false{% endif %}">
         시장 데이터
         <span class="menu-group-chevron" aria-hidden="true"></span>
       </button>
       <div class="menu-group-body">
+        <a href="/admin/market-report" class="menu-item menu-sub {% if active_page == 'market-report' %}active{% endif %}">
+          <span class="menu-icon">📋</span> 보고서 작성
+        </a>
         <a href="/admin/finance-data" class="menu-item menu-sub {% if active_page == 'finance-data' %}active{% endif %}">
           <span class="menu-icon">📈</span> 한국거래소
         </a>

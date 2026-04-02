@@ -229,16 +229,30 @@
     <form action="/admin/schedule/sync-krx-ipo" method="post" style="margin: 0;">
       <button type="submit" class="btn-sync" style="background:#8e44ad;">🏛️ KRX 공모·상장</button>
     </form>
-    <form action="/admin/schedule/run-morning-briefing" method="post" style="margin: 0;" onsubmit="return confirm('모닝 브리핑을 지금 생성합니다. 수 분 걸릴 수 있습니다. 계속할까요?');">
-      <button type="submit" class="btn-sync" style="background:#c0392b;">☀️ 모닝 브리핑 수동 생성</button>
-    </form>
   </div>
 </div>
 
 {% if request.query_params.get('naver_cal') == 'ok' %}
+{% set _nf = request.query_params.get('naver_fetched') if 'naver_fetched' in request.query_params else request.query_params.get('naver_count', '0') %}
+{% set _ns = request.query_params.get('naver_saved') if 'naver_saved' in request.query_params else none %}
 <div class="card" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
-  <strong style="color: #0c5460;">✅ 네이버 증시 캘린더 반영</strong>
-  <p style="color: #0c5460; margin: 5px 0 0 0;">처리 행 수(수집): {{ request.query_params.get('naver_count', '0') }}</p>
+  <strong style="color: #0c5460;">✅ 네이버 증시 캘린더 동기화 완료</strong>
+  <p style="color: #0c5460; margin: 8px 0 0 0;">
+    수집(파싱) <strong>{{ _nf }}</strong>건
+    {% if _ns is not none %}
+    · 신규 DB 저장 <strong>{{ _ns }}</strong>건
+    {% endif %}
+  </p>
+  {% if _nf == '0' %}
+  <p style="color: #0c5460; margin: 8px 0 0 0; font-size: 13px; line-height: 1.5;">
+    이번 실행에서 네이버에서 가져온 일정이 없습니다. DB에 예전에 넣어 둔 일정은 그대로입니다.
+    JSON·PC 달력 URL이 404이거나 차단이면 서버 로그(네이버 캘린더 관련 줄)를 확인하세요.
+  </p>
+  {% elif _ns is not none and _ns == '0' %}
+  <p style="color: #0c5460; margin: 8px 0 0 0; font-size: 13px;">
+    파싱된 건은 있으나 모두 기존과 동일해 신규 행이 추가되지 않았습니다.
+  </p>
+  {% endif %}
 </div>
 {% endif %}
 {% if request.query_params.get('naver_cal') == 'err' %}
@@ -256,18 +270,6 @@
 {% if request.query_params.get('krx') == 'err' %}
 <div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
   <strong style="color: #721c24;">⚠️ KRX 동기화 실패</strong>
-  <p style="color: #721c24; margin: 5px 0 0 0;">{{ request.query_params.get('msg', '') }}</p>
-</div>
-{% endif %}
-{% if request.query_params.get('morning') == 'ok' %}
-<div class="card" style="background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
-  <strong style="color: #856404;">☀️ 모닝 브리핑 수동 생성 완료</strong>
-  <p style="color: #856404; margin: 5px 0 0 0;">서버 로그에서 상세를 확인하세요.</p>
-</div>
-{% endif %}
-{% if request.query_params.get('morning') == 'err' %}
-<div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
-  <strong style="color: #721c24;">⚠️ 모닝 브리핑 실행 실패</strong>
   <p style="color: #721c24; margin: 5px 0 0 0;">{{ request.query_params.get('msg', '') }}</p>
 </div>
 {% endif %}

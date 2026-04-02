@@ -337,7 +337,8 @@ async def sync_naver_calendar_schedule(
 
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
-    total_items = 0
+    total_fetched = 0
+    total_saved = 0
     try:
         for month_offset in (0, 1):
             target_month = now.month + month_offset
@@ -346,11 +347,14 @@ async def sync_naver_calendar_schedule(
                 target_month -= 12
                 target_year += 1
             schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
+            total_fetched += len(schedules)
             if schedules:
-                naver_calendar_service.save_schedules_to_db(db, schedules)
-                total_items += len(schedules)
+                total_saved += naver_calendar_service.save_schedules_to_db(db, schedules)
         return RedirectResponse(
-            url=f"/admin/schedule?naver_cal=ok&naver_count={total_items}",
+            url=(
+                f"/admin/schedule?naver_cal=ok"
+                f"&naver_fetched={total_fetched}&naver_saved={total_saved}"
+            ),
             status_code=303,
         )
     except Exception as e:
@@ -385,24 +389,3 @@ async def sync_krx_ipo_schedule(
             url=f"/admin/schedule?krx=err&msg={quote(str(e)[:200], safe='')}",
             status_code=303,
         )
-
-
-@router.post("/admin/schedule/run-morning-briefing")
-async def run_morning_briefing_manual(
-    user=Depends(get_current_user),
-):
-    """모닝 브리핑(야후·Gemini·B001 게시) 수동 1회 실행 — 스케줄러 자동 실행은 비활성화됨"""
-    if not user:
-        return RedirectResponse(url="/", status_code=303)
-    try:
-        from app.services.scheduler_service import collect_market_morning_summary
-
-        await collect_market_morning_summary()
-        return RedirectResponse(url="/admin/schedule?morning=ok", status_code=303)
-    except Exception as e:
-        return RedirectResponse(
-            url=f"/admin/schedule?morning=err&msg={quote(str(e)[:200], safe='')}",
-            status_code=303,
-        )
-
-

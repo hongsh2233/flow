@@ -47,6 +47,7 @@ def _build_prompt(
     exchange_rates: list[dict],
     overnight_news: List[dict] = [],
     today_schedules: List[dict] = [],
+    reference_notes: Optional[str] = None,
 ) -> str:
     us_lines = []
     kr_lines = []
@@ -95,6 +96,17 @@ def _build_prompt(
             sched_lines.append(entry)
     sched_section = "\n".join(sched_lines) if sched_lines else "- 없음"
 
+    ref_block = ""
+    ref = (reference_notes or "").strip()
+    if ref:
+        ref_block = f"""
+
+[편집자·운영자 참조문구]
+{ref}
+
+위 참조문구의 관점·강조점이 있으면 각 JSON 필드(특히 overnight_issues, kr_focus, today_schedule)에 사실에 부합할 때만 반영하고, 검증되지 않은 사실은 넣지 말 것.
+"""
+
     return f"""다음은 오늘 아침 수집된 전일 뉴욕증시 마감 데이터, 관련 지수, 환율, 밤사이 주요 뉴스, 당일 주요 일정입니다.
 한국 개인 주식 투자자를 위해 아래 JSON 형식으로 간결한 시황 코멘트를 작성해주세요.
 
@@ -112,7 +124,7 @@ def _build_prompt(
 
 [당일 주요 일정]
 {sched_section}
-
+{ref_block}
 작성 규칙:
 - us_market: 전일 미국증시 주요 내용 3가지를 각각 1~2문장으로 작성 (나스닥·S&P500·다우 수치 포함). ① ② ③ 형식
 - overnight_issues: 밤사이 미국·글로벌 핵심이슈 3~5개를 불릿(•) 형식으로, 각 1~2문장
@@ -179,6 +191,7 @@ def generate_and_save_ai_summary(
     target_date: date,
     overnight_news: List[dict] = [],
     today_schedules: List[dict] = [],
+    reference_notes: Optional[str] = None,
 ) -> bool:
     """
     지수·환율·뉴스·일정 데이터를 Gemini로 전달해 AI 요약을 생성하고 DB에 저장(upsert)한다.
@@ -186,7 +199,9 @@ def generate_and_save_ai_summary(
     Returns:
         True if saved, False on failure
     """
-    prompt = _build_prompt(indices, exchange_rates, overnight_news, today_schedules)
+    prompt = _build_prompt(
+        indices, exchange_rates, overnight_news, today_schedules, reference_notes=reference_notes
+    )
     result = _call_gemini(prompt)
     if not result:
         return False
