@@ -22,7 +22,10 @@ from sqlalchemy import func
 from app.database import SessionLocal
 from app.services.api_service import fsc_api_service, krx_api_service
 from app.services.naver_finance_service import naver_finance_service
+from app.engine.services.krx_kind_service import krx_kind_service
+from app.engine.services.naver_calendar_service import naver_calendar_service
 from app.models import FscStockPrice, FscRisingStock, KrxData
+
 
 
 def is_weekend(date: datetime) -> bool:
@@ -778,3 +781,92 @@ class ScheduleAlarmScheduler:
 
 
 schedule_alarm_scheduler = ScheduleAlarmScheduler()
+
+
+# =========================================================
+# 캘린더 데이터 자동 수집 스케줄러 (네이버 및 KRX)
+# =========================================================
+
+async def collect_calendar_data():
+    """
+    네이버 증권 증시 캘린더 및 KRX KIND 공시 데이터 수집
+    매일 새벽 01:00에 실행되어 당월/익월 이벤트 및 IPO 정보를 수집합니다.
+    """
+    kst = pytz.timezone('Asia/Seoul')
+    now = datetime.now(kst)
+    print(f"\n{'='*60}")
+    print(f"🗓️ 증시 캘린더 자동 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}")
+
+    db = SessionLocal()
+    try:
+        # 1. KRX KIND IPO 정보 수집
+        print("🔄 [KRX KIND] 공모주/상장일정 데이터 수집 중...")
+        try:
+            krx_schedules = await krx_kind_service.fetch_ipo_schedules()
+            if krx_schedules:
+                krx_kind_service.save_schedules_to_db(db, krx_schedules)
+        except Exception as e:
+            print(f"⚠️ KRX 스케줄 수집 오류: {e}")
+
+        # 2. 이번 달 및 다음 달 네이버 캘린더 파싱
+        print("🔄 [네이버 증시 캘린더] 이벤트/지표 데이터 수집 중...")
+        for month_offset in [0, 1]:
+            target_date = now.replace(day=1)
+            # 수동 달 증가 로직
+            target_month = target_date.month + month_offset
+            target_year = target_date.year
+            if target_month > 12:
+                target_month -= 12
+                target_year += 1
+
+            try:
+                naver_schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
+                if naver_schedules:
+                    naver_calendar_service.save_schedules_to_db(db, naver_schedules)
+            except Exception as e:
+                print(f"⚠️ 네이버 캘린더 수집 오류 ({target_year}/{target_month}): {e}")
+
+        print(f"{'='*60}")
+        print(f"✅ 증시 캘린더 일괄 자동 수집 완료")
+        print(f"{'='*60}\n")
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"❌ 캘린더 데이터 수집 치명적 오류: {e}")
+        print(f"❌ 상세 오류:\n{error_detail}")
+        print(f"{'='*60}\n")
+    finally:
+        db.close()
+
+class CalendarScheduler:
+    """
+    증시 캘린더 수집 스케줄러
+    매일 새벽 1:00 실행
+    """
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone('Asia/Seoul')
+    
+    def start(self):
+        if self.scheduler is not None:
+            return
+        
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_calendar_data,
+            trigger=CronTrigger(hour=1, minute=0, timezone=self.kst),
+            id='calendar_data_collection',
+            name='네이버 및 KRX 캘린더 데이터 일일 수집',
+            replace_existing=True
+        )
+        self.scheduler.start()
+        print("✅ 캘린더 데이터 수집 스케줄러 시작 (매일 01:00)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 캘린더 데이터 수집 스케줄러 종료")
+
+calendar_scheduler = CalendarScheduler()

@@ -23,11 +23,11 @@ from slowapi.errors import RateLimitExceeded
 import os
 
 from app import models
-from app.database import engine, get_db
+from app.database import engine, get_db, SessionLocal
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
 from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler
-from app.engine.services.scheduler_service import schedule_alarm_scheduler
+from app.engine.services.scheduler_service import schedule_alarm_scheduler, calendar_scheduler
 
 # 라우터 import
 from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup, broker, ad_settings
@@ -85,6 +85,7 @@ async def lifespan(app: FastAPI):
     yahoo_index_scheduler.start()
     exchange_rate_scheduler.start()
     schedule_alarm_scheduler.start()
+    calendar_scheduler.start()
     naver_news_scheduler.start()
     investment_bank_news_scheduler.start()
     target_price_news_scheduler.start()
@@ -101,12 +102,14 @@ async def lifespan(app: FastAPI):
     yahoo_index_scheduler.shutdown()
     exchange_rate_scheduler.shutdown()
     schedule_alarm_scheduler.shutdown()
+    calendar_scheduler.shutdown()
     naver_news_scheduler.shutdown()
     investment_bank_news_scheduler.shutdown()
     target_price_news_scheduler.shutdown()
     naver_rising_scheduler.shutdown()
     stock_screening_scheduler.shutdown()
     jongbe_screening_scheduler.shutdown()
+
 
 
 # Rate Limiter (IP 기반)
@@ -616,7 +619,8 @@ def init_admin_user():
     print("=" * 60)
 
     try:
-        db = next(get_db())
+        # next(get_db())는 제너레이터 finally가 즉시 돌지 않아 세션/풀 관리가 애매함 → SessionLocal 직접 사용
+        db = SessionLocal()
         try:
             # DB에 관리자가 이미 있으면 초기화 불필요
             any_admin = db.query(models.AdminUser).first()

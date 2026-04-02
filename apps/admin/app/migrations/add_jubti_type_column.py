@@ -6,22 +6,14 @@ from app.database import engine
 
 
 def upgrade():
-    """jubti_type 컬럼 추가 (A|D|N|I)"""
+    """jubti_type 컬럼 추가 (A|D|N|I). 이미 있으면 DB 에러 로그 없이 스킵."""
     with engine.connect() as conn:
-        try:
-            conn.execute(text("""
-                ALTER TABLE members
-                ADD COLUMN jubti_type VARCHAR(10) NULL
-            """))
-            conn.commit()
-            print("✅ jubti_type 컬럼이 추가되었습니다.")
-        except Exception as e:
-            if "Duplicate column name" in str(e) or "already exists" in str(e).lower():
-                print("ℹ️ jubti_type 컬럼이 이미 존재합니다.")
-            else:
-                print(f"❌ 오류 발생: {e}")
-                conn.rollback()
-                raise
+        conn.execute(text("""
+            ALTER TABLE members
+            ADD COLUMN IF NOT EXISTS jubti_type VARCHAR(10) NULL
+        """))
+        conn.commit()
+        print("✅ jubti_type 컬럼 확인/추가 완료 (IF NOT EXISTS).")
 
 
 def downgrade():
@@ -30,7 +22,7 @@ def downgrade():
         try:
             conn.execute(text("""
                 ALTER TABLE members
-                DROP COLUMN jubti_type
+                DROP COLUMN IF EXISTS jubti_type
             """))
             conn.commit()
             print("✅ jubti_type 컬럼이 제거되었습니다.")

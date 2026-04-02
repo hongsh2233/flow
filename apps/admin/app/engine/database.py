@@ -114,9 +114,25 @@ else:
     _base = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_DATABASE_URL = f"{_base}?sslmode=require" if "rlwy.net" in str(DB_HOST) or "railway.app" in str(DB_HOST) else _base
 
-# 데이터베이스 엔진 생성
+# 연결 풀: 기본값은 동시 API(웹 프록시) 폭주에 취약한 SQLAlchemy 기본(5+10)보다 넉넉히 둠.
+# Railway 등에서도 보통 Postgres max_connections 여유가 있으면 DB_POOL_SIZE / DB_MAX_OVERFLOW 로 조절.
+def _int_env(name: str, default: int) -> int:
+    try:
+        v = int(os.getenv(name, str(default)))
+        return v if v > 0 else default
+    except ValueError:
+        return default
+
+
+_pool_size = _int_env("DB_POOL_SIZE", 10)
+_max_overflow = _int_env("DB_MAX_OVERFLOW", 20)
+_pool_timeout = _int_env("DB_POOL_TIMEOUT", 60)
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
+    pool_size=_pool_size,
+    max_overflow=_max_overflow,
+    pool_timeout=_pool_timeout,
     pool_recycle=3600,
     pool_pre_ping=True,
 )
