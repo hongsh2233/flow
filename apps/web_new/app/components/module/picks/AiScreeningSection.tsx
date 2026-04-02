@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { PicksGradeTier } from "@/lib/picks/gradeTier";
 import type { StockDetail } from "@/lib/types";
 import { DEFAULT_BROKERS } from "@/lib/picks/defaultBrokers";
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: Props) {
+  const { data: session, status } = useSession();
   const [strategy, setStrategy] = useState<"ichimoku" | "jongbe">("ichimoku");
   const [market, setMarket] = useState<"kospi" | "kosdaq">("kospi");
   const [rows, setRows] = useState<ScreeningRow[]>([]);
@@ -96,11 +98,14 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
   }, [load]);
 
   const titleDate = screeningDate ?? "—";
+  const isLoggedIn = status === "authenticated" && !!session?.user;
+  const displayRows =
+    !isLoggedIn || tier === "guest" ? [] : rows;
 
   return (
     <section aria-labelledby="ai-screening-heading">
       <h2 id="ai-screening-heading" className={styles.sectionTitle}>
-        {titleDate} 관심 종목
+        {titleDate} 검출 종목
       </h2>
       <div className={styles.strategyTabsRow} role="tablist" aria-label="추천 유형">
         <button
@@ -151,7 +156,7 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
         <p className={styles.meta}>불러오는 중...</p>
       ) : (
         <ScreeningResultTable
-          rows={rows}
+          rows={displayRows}
           tier={tier}
           onSelectStock={onSelectStock}
           onPickStock={onPickStock}

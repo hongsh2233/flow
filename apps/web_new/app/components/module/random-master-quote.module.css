@@ -1,0 +1,68 @@
+.wrap {
+  margin: 0 0 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-table-border, #e5e7eb);
+  background: var(--app-table-surface, #f9fafb);
+}
+
+.header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--app-text-muted, #6b7280);
+  margin: 0 0 0.65rem;
+  text-transform: none;
+}
+
+.card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--app-table-border, #e5e7eb);
+}
+
+.avatarPh {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-chip-bg, #e5e7eb);
+  color: var(--app-text-muted, #6b7280);
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--app-text, #111);
+}
+
+.title {
+  font-size: 0.75rem;
+  color: var(--app-text-muted, #6b7280);
+  margin: 0.1rem 0 0.45rem;
+}
+
+.quote {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
+  color: var(--app-text, #1f2937);
+}

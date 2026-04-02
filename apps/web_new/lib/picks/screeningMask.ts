@@ -35,10 +35,11 @@ function maskRow(row: ScreeningRow): ScreeningRow {
 }
 
 /**
- * Family 전체 공개 / 비회원 1행·일반 2행·VIP 5행까지 공개, 나머지 마스킹
+ * Family 전체 공개 / 비회원 0행·일반 2행·VIP 5행까지 공개, 나머지 마스킹
  */
 export function applyScreeningMask(rows: ScreeningRow[], tier: PicksGradeTier): ScreeningRow[] {
   const cap = screeningVisibleRankCount(tier);
   if (cap === null) return rows.map((r) => ({ ...r }));
+  if (cap === 0) return [];
   return rows.map((row, i) => (i < cap ? { ...row } : maskRow(row)));
 }

@@ -18,6 +18,8 @@ import type { StockDetail, MarketCapStock } from "@/lib/types";
 import type { NaverRisingStock } from "@/lib/types/home";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
 import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
+import { StockTermBox } from "../components/module/stock-term-box";
+import { RandomMasterQuote } from "../components/module/random-master-quote";
 import styles from "./SupplyPage.module.css";
 
 const LazyStockDetailModal = dynamic(
@@ -422,6 +424,11 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
 
   return (
     <div className={styles.page}>
+      <div className={styles.pageTopShelf}>
+        <StockTermBox wrapperStyle={{ margin: "0 0 0.75rem" }} />
+        <RandomMasterQuote />
+      </div>
+
       {variant === "stocks" && (
         <MarketPicksSection
           onSelectStock={setSelectedStock}
@@ -543,7 +550,7 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
 
       {variant === "stocks" && (
         <>
-      <h1 className={styles.title}>종목 흐름</h1>
+      <h1 className={styles.title}>종목</h1>
       <div className={styles.stockTabsSection}>
         <Tabs value={stockTab} onValueChange={(v) => setStockTab(v as StockTab)} variant="underline">
           <TabsList className={styles.stockTabList}>

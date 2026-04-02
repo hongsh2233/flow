@@ -24,12 +24,12 @@ export function gradeStringToPicksTier(grade: string | undefined | null): PicksG
 }
 
 /**
- * AI 스크리닝 표: 비회원 상위 1행 공개, 일반 2·VIP 5·Family 전체
- * @returns null 이면 전 행 공개
+ * AI 스크리닝 표: 비회원은 공개 행 없음(0), 일반 2·VIP 5·Family 전체
+ * @returns null 이면 전 행 공개, 0이면 비회원(표시 행 없음 — applyScreeningMask에서 [])
  */
 export function screeningVisibleRankCount(tier: PicksGradeTier): number | null {
   if (tier === "family") return null;
-  if (tier === "guest") return 1;
+  if (tier === "guest") return 0;
   if (tier === "member") return 2;
   if (tier === "vip") return 5;
   return 2;
