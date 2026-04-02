@@ -29,7 +29,7 @@ def upsert_b001_pending_report(
     *,
     author: str = "관리자",
 ) -> None:
-    """시황 게시판(B001)에 pending 글 등록 또는 당일 「YYYY-MM-DD … 모닝/시황」 글이 있으면 갱신."""
+    """시황 게시판(B001)에 pending 글 등록 또는 당일 「YYYY-MM-DD …」 모닝·시황·브리핑 글이 있으면 갱신."""
     from app.engine.models import BoardCategory, Post
 
     kst = pytz.timezone("Asia/Seoul")
@@ -53,7 +53,11 @@ def upsert_b001_pending_report(
         .filter(
             Post.board_id == "B001",
             Post.title.like(f"{dstr}%"),
-            or_(Post.title.like("%모닝%"), Post.title.like("%시황%")),
+            or_(
+                Post.title.like("%모닝%"),
+                Post.title.like("%시황%"),
+                Post.title.like("%브리핑%"),
+            ),
         )
         .first()
     )

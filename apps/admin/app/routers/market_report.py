@@ -34,7 +34,7 @@ async def market_report_page(
     if not user:
         return RedirectResponse(url="/", status_code=303)
     today = _kst_today()
-    default_title = f"{today.isoformat()} 시황"
+    default_title = f"{today.isoformat()} 출근길 브리핑"
 
     qp = request.query_params
     result = None
@@ -68,12 +68,12 @@ async def market_report_publish(
 
     today = _kst_today()
     date_str = today.isoformat()
-    title = (post_title or "").strip() or f"{date_str} 시황"
+    title = (post_title or "").strip() or f"{date_str} 출근길 브리핑"
     raw_body = (post_body or "").strip()
     html_content = post_body_to_html(raw_body)
 
     if not html_content:
-        msg = f"{date_str} 시황 등록 실패 — 게시 본문을 입력해 주세요."
+        msg = f"{date_str} 출근길 브리핑 등록 실패 — 게시 본문을 입력해 주세요."
         return RedirectResponse(
             url=f"/admin/market-report?ok=0&msg={quote(msg, safe='')}",
             status_code=303,
@@ -81,14 +81,14 @@ async def market_report_publish(
 
     try:
         upsert_b001_pending_report(db, title, html_content, target_date=today, author="관리자")
-        msg = f"{date_str} 시황 성공 — 시황 게시판(B001)에 대기(pending)로 등록되었습니다."
+        msg = f"{date_str} 출근길 브리핑 등록 성공 — 시황 게시판(B001)에 대기(pending)로 등록되었습니다."
         return RedirectResponse(
             url=f"/admin/market-report?ok=1&msg={quote(msg, safe='')}",
             status_code=303,
         )
     except Exception as e:
         db.rollback()
-        msg = f"{date_str} 시황 실패 — {str(e)[:280]}"
+        msg = f"{date_str} 출근길 브리핑 등록 실패 — {str(e)[:280]}"
         return RedirectResponse(
             url=f"/admin/market-report?ok=0&msg={quote(msg, safe='')}",
             status_code=303,
