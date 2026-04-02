@@ -1,6 +1,6 @@
 """
 시장 데이터 — 보고서 작성
-시황 원자료(DB)를 텍스트로 보여 주고, 관리자가 편집한 본문을 B001 시황 게시판에 pending 등록한다.
+관리자가 직접 수집·작성한 본문을 B001 시황 게시판에 pending 등록한다.
 """
 from datetime import datetime
 from urllib.parse import quote
@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.services.market_report_situation_service import (
-    build_situation_data_text,
     post_body_to_html,
     upsert_b001_pending_report,
 )
@@ -31,12 +30,10 @@ def _kst_today():
 async def market_report_page(
     request: Request,
     user=Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     if not user:
         return RedirectResponse(url="/", status_code=303)
     today = _kst_today()
-    situation_data = build_situation_data_text(db, today)
     default_title = f"{today.isoformat()} 시황"
 
     qp = request.query_params
@@ -52,7 +49,6 @@ async def market_report_page(
             "request": request,
             "admin_email": user.email,
             "active_page": "market-report",
-            "situation_data": situation_data,
             "default_title": default_title,
             "result": result,
         },

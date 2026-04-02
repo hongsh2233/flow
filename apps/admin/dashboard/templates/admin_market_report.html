@@ -5,21 +5,13 @@
 {% block extra_styles %}
 <style>
   .mr-wrap { max-width: 800px; }
-  .mr-hint { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 16px; padding: 14px 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; }
   .mr-label { display: block; font-weight: 600; color: #2c3e50; margin-bottom: 8px; font-size: 14px; }
   .mr-textarea, .mr-input {
     width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px;
     font-size: 14px; font-family: inherit; box-sizing: border-box;
   }
   .mr-textarea { min-height: 120px; resize: vertical; }
-  .mr-textarea.mr-readonly { background: #f4f6f8; color: #2c3e50; font-family: ui-monospace, monospace; font-size: 13px; line-height: 1.5; }
   .mr-textarea:focus, .mr-input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15); }
-  .mr-row-actions { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-  .mr-copy {
-    padding: 8px 16px; background: #34495e; color: #fff; border: none; border-radius: 6px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-  }
-  .mr-copy:hover { background: #2c3e50; }
   .mr-actions { margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .mr-submit {
     padding: 12px 28px; background: #2980b9; color: #fff; border: none; border-radius: 6px;
@@ -38,7 +30,7 @@
 {% block content %}
 <div class="card mr-wrap">
   <h2 style="color: #2c3e50; margin-top: 0;">📝 보고서 작성</h2>
-  <p style="color: #666; margin-bottom: 8px;">DB에 수집된 시황 수치를 복사한 뒤, 본문을 직접 편집해 시황 게시판에 올립니다.</p>
+  <p style="color: #666; margin-bottom: 8px;">시황 수치는 직접 수집한 뒤, 아래 본문에 붙여 넣거나 작성합니다. 완성된 글을 시황 게시판(B001)에 대기 등록합니다.</p>
 
   {% if result %}
   <div class="mr-result {% if result.ok %}ok{% else %}fail{% endif %}" role="status">
@@ -50,25 +42,8 @@
   </div>
   {% endif %}
 
-  <h3 class="mr-section-title">1. 시황 데이터</h3>
-  <div class="mr-hint">
-    아래는 <strong>당일(KST) 기준</strong> 야후 일별 지수(us/kr/foreign 등)·국내 지수 스냅샷·환율·일정을 텍스트로 묶은 것입니다.
-    <strong>복사</strong> 후 아래 「게시 본문」에 붙여넣고 문장을 다듬어 주세요.
-  </div>
-  <div class="mr-row-actions">
-    <button type="button" class="mr-copy" id="btn-copy-situation">시황 데이터 복사</button>
-    <span class="mr-note" style="margin:0;">페이지를 새로고침하면 DB 최신 값으로 갱신됩니다.</span>
-  </div>
-  <textarea
-    id="situation_data"
-    class="mr-textarea mr-readonly"
-    readonly
-    aria-label="시황 데이터"
-    rows="16"
-  >{{ situation_data }}</textarea>
-
-  <h3 class="mr-section-title">2. 게시 본문</h3>
   <form method="post" action="/admin/market-report/publish" id="market-report-form">
+    <h3 class="mr-section-title">1. 게시 본문</h3>
     <label class="mr-label" for="post_title">제목</label>
     <input type="text" class="mr-input" id="post_title" name="post_title" value="{{ default_title }}" maxlength="200" />
     <p class="mr-note">기본값은 오늘 날짜 + 「시황」입니다. 필요 시 수정하세요.</p>
@@ -79,11 +54,11 @@
       name="post_body"
       class="mr-textarea"
       style="min-height: 220px;"
-      placeholder="위 시황 데이터를 복사해 붙인 뒤, 브리핑·시황 문장으로 편집하세요. 줄바꿈은 그대로 반영됩니다."
+      placeholder="직접 수집·작성한 브리핑·시황 본문을 입력하세요. 줄바꿈은 그대로 반영됩니다."
       maxlength="100000"
     ></textarea>
 
-    <h3 class="mr-section-title">3. 참조문구</h3>
+    <h3 class="mr-section-title">2. 참조문구</h3>
     <label class="mr-label" for="reference_notes">참조문구 (선택)</label>
     <textarea
       id="reference_notes"
@@ -103,26 +78,6 @@
 
 <script>
 (function () {
-  var copyBtn = document.getElementById("btn-copy-situation");
-  var ta = document.getElementById("situation_data");
-  if (copyBtn && ta) {
-    copyBtn.addEventListener("click", function () {
-      ta.select();
-      ta.setSelectionRange(0, ta.value.length);
-      try {
-        document.execCommand("copy");
-        copyBtn.textContent = "복사됨";
-        setTimeout(function () { copyBtn.textContent = "시황 데이터 복사"; }, 2000);
-      } catch (e) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(ta.value).then(function () {
-            copyBtn.textContent = "복사됨";
-            setTimeout(function () { copyBtn.textContent = "시황 데이터 복사"; }, 2000);
-          });
-        }
-      }
-    });
-  }
   var f = document.getElementById("market-report-form");
   var btn = document.getElementById("mr-submit");
   if (f && btn) {

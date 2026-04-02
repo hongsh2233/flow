@@ -52,7 +52,7 @@ DEFAULT_KR_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="kr", symbol="^KS200", name="코스피 200", market="KR"),
 ]
 
-# 아침 시장 요약 지수 그룹 — 스케줄러가 DB에 적재하며, BO 보고서 작성 화면의 「시황 데이터」 복사본에 사용
+# 아침 시장 요약 지수 그룹 — 스케줄러가 DB에 적재 (앱·API 등 시황 참고용)
 MORNING_SUMMARY_INDICES: list[YahooIndexDef] = [
     YahooIndexDef(group="morning", symbol="^IXIC", name="나스닥", market="US"),
     YahooIndexDef(group="morning", symbol="^GSPC", name="S&P 500", market="US"),
