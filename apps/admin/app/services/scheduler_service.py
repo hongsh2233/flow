@@ -1212,7 +1212,8 @@ async def collect_naver_stock_news():
     """
     네이버 뉴스 API로 주가 직접 영향 뉴스 수집
     평일(월~금) 08:30, 12:30, 19:30 (KST) 실행
-    수집 직후 동일 세션에서 금일 이슈 Gemini 요약·시장의 목소리 뉴스/Gemini 수집을 실행한다.
+    수집 직후 동일 세션에서 금일 이슈 Gemini 요약을 실행한다.
+    (시장의 목소리 Gemini 요약은 토큰 절감으로 비활성화 — 아래 try 블록 주석 참고)
     수주, 실적발표, 배당, 연구개발, 기술이전, 유상증자 등 키워드 기반 필터링
     최근 2일치 뉴스만 유지
     """
@@ -1250,20 +1251,21 @@ async def collect_naver_stock_news():
             print(f"⚠️ 금일 이슈 요약 오류: {issue_err}")
             print(traceback.format_exc())
 
-        try:
-            from app.services.market_voice_service import fetch_and_summarize_news
-
-            cleanup_old_market_voices(db, keep_days=2)
-            mv_result = await fetch_and_summarize_news(db)
-            print(
-                f"✅ 시장의 목소리 수집 (뉴스 직후): "
-                f"조회 {mv_result.get('fetched', 0)}건, 신규 {mv_result.get('saved', 0)}건"
-            )
-        except Exception as mv_err:
-            import traceback
-
-            print(f"⚠️ 시장의 목소리 수집 오류: {mv_err}")
-            print(traceback.format_exc())
+        # 비활성화: 시장의 목소리 AI 요약(Gemini) — 토큰 소모 큼. 재개 시 아래 주석 해제.
+        # try:
+        #     from app.services.market_voice_service import fetch_and_summarize_news
+        #
+        #     cleanup_old_market_voices(db, keep_days=2)
+        #     mv_result = await fetch_and_summarize_news(db)
+        #     print(
+        #         f"✅ 시장의 목소리 수집 (뉴스 직후): "
+        #         f"조회 {mv_result.get('fetched', 0)}건, 신규 {mv_result.get('saved', 0)}건"
+        #     )
+        # except Exception as mv_err:
+        #     import traceback
+        #
+        #     print(f"⚠️ 시장의 목소리 수집 오류: {mv_err}")
+        #     print(traceback.format_exc())
 
         print(f"{'='*60}")
         print(f"네이버 주가 영향 뉴스 수집 완료")
@@ -1280,7 +1282,7 @@ async def collect_naver_stock_news():
 class NaverNewsScheduler:
     """
     네이버 주가 영향 뉴스 수집 스케줄러
-    평일(월~금) 08:30, 12:30, 19:30 (KST) 수집 + 금일 이슈 Gemini + 시장의 목소리
+    평일(월~금) 08:30, 12:30, 19:30 (KST) 수집 + 금일 이슈 Gemini (시장의 목소리 Gemini는 비활성화)
     """
 
     def __init__(self):
@@ -1304,7 +1306,7 @@ class NaverNewsScheduler:
             misfire_grace_time=300,
         )
         self.scheduler.start()
-        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:30/12:30/19:30 + 이슈 Gemini + 시장의 목소리, 월~금)")
+        print("네이버 주가 영향 뉴스 스케줄러 시작 (08:30/12:30/19:30 + 이슈 Gemini, 월~금; 시장의 목소리 Gemini 비활성화)")
 
     def shutdown(self):
         if self.scheduler:
@@ -1361,7 +1363,7 @@ async def collect_investment_bank_news():
 
 
 class InvestmentBankNewsScheduler:
-    """투자은행 뉴스 수집 스케줄러 (매일 12:00 KST)"""
+    """투자은행 뉴스 수집 스케줄러 (매일 12:00 KST) — 현재 Gemini 번역 토큰 절감을 위해 비활성화."""
 
     def __init__(self):
         self.scheduler = None
@@ -1370,19 +1372,21 @@ class InvestmentBankNewsScheduler:
     def start(self):
         if self.scheduler is not None:
             return
-        self.scheduler = AsyncIOScheduler(timezone=self.kst)
-        self.scheduler.add_job(
-            collect_investment_bank_news,
-            trigger=CronTrigger(hour=12, minute=0, timezone=self.kst),
-            id="investment_bank_news_collection",
-            name="투자은행 뉴스 수집 (12:00, 매일)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=600,
-        )
-        self.scheduler.start()
-        print("투자은행 뉴스 스케줄러 시작 (12:00, 매일)")
+        # 비활성화: 투자은행 뉴스 Gemini 번역 — 토큰 소모 큼. 재개 시 아래 주석 해제.
+        # self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        # self.scheduler.add_job(
+        #     collect_investment_bank_news,
+        #     trigger=CronTrigger(hour=12, minute=0, timezone=self.kst),
+        #     id="investment_bank_news_collection",
+        #     name="투자은행 뉴스 수집 (12:00, 매일)",
+        #     replace_existing=True,
+        #     max_instances=1,
+        #     coalesce=True,
+        #     misfire_grace_time=600,
+        # )
+        # self.scheduler.start()
+        # print("투자은행 뉴스 스케줄러 시작 (12:00, 매일)")
+        print("ℹ️ 투자은행 뉴스 스케줄러 비활성화 (Gemini 번역 토큰 절감)")
 
     def shutdown(self):
         if self.scheduler:
