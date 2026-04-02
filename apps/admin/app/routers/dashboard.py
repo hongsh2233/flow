@@ -96,22 +96,6 @@ async def admin_dashboard(request: Request, user=Depends(get_current_user), db: 
     })
 
 
-@router.get("/admin/stock-picks", response_class=HTMLResponse)
-async def admin_stock_picks_placeholder(request: Request, user=Depends(get_current_user)):
-    if not user:
-        return RedirectResponse(url="/")
-    return templates.TemplateResponse(
-        "admin_placeholder.html",
-        {
-            "request": request,
-            "admin_email": user.email,
-            "active_page": "stock-picks",
-            "page_title": "작가 픽 관리",
-            "page_message": "Phase 1 플레이스홀더입니다. 추천종목·픽 연동 후 이 화면을 구성합니다.",
-        },
-    )
-
-
 @router.get("/admin/notification-policy", response_class=HTMLResponse)
 async def admin_notification_policy_placeholder(request: Request, user=Depends(get_current_user)):
     if not user:

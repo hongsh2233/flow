@@ -223,9 +223,54 @@
     <form action="/admin/schedule/sync-api" method="post" style="margin: 0;">
       <button type="submit" class="btn-sync">🔄 공휴일 불러오기</button>
     </form>
+    <form action="/admin/schedule/sync-naver-calendar" method="post" style="margin: 0;">
+      <button type="submit" class="btn-sync" style="background:#2980b9;">📅 네이버 증시 캘린더</button>
+    </form>
+    <form action="/admin/schedule/sync-krx-ipo" method="post" style="margin: 0;">
+      <button type="submit" class="btn-sync" style="background:#8e44ad;">🏛️ KRX 공모·상장</button>
+    </form>
+    <form action="/admin/schedule/run-morning-briefing" method="post" style="margin: 0;" onsubmit="return confirm('모닝 브리핑을 지금 생성합니다. 수 분 걸릴 수 있습니다. 계속할까요?');">
+      <button type="submit" class="btn-sync" style="background:#c0392b;">☀️ 모닝 브리핑 수동 생성</button>
+    </form>
   </div>
 </div>
 
+{% if request.query_params.get('naver_cal') == 'ok' %}
+<div class="card" style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #0c5460;">✅ 네이버 증시 캘린더 반영</strong>
+  <p style="color: #0c5460; margin: 5px 0 0 0;">처리 행 수(수집): {{ request.query_params.get('naver_count', '0') }}</p>
+</div>
+{% endif %}
+{% if request.query_params.get('naver_cal') == 'err' %}
+<div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #721c24;">⚠️ 네이버 캘린더 동기화 실패</strong>
+  <p style="color: #721c24; margin: 5px 0 0 0;">{{ request.query_params.get('msg', '') }}</p>
+</div>
+{% endif %}
+{% if request.query_params.get('krx') == 'ok' %}
+<div class="card" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #155724;">✅ KRX 공모·상장 일정 반영</strong>
+  <p style="color: #155724; margin: 5px 0 0 0;">수집 건수: {{ request.query_params.get('krx_count', '0') }}</p>
+</div>
+{% endif %}
+{% if request.query_params.get('krx') == 'err' %}
+<div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #721c24;">⚠️ KRX 동기화 실패</strong>
+  <p style="color: #721c24; margin: 5px 0 0 0;">{{ request.query_params.get('msg', '') }}</p>
+</div>
+{% endif %}
+{% if request.query_params.get('morning') == 'ok' %}
+<div class="card" style="background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #856404;">☀️ 모닝 브리핑 수동 생성 완료</strong>
+  <p style="color: #856404; margin: 5px 0 0 0;">서버 로그에서 상세를 확인하세요.</p>
+</div>
+{% endif %}
+{% if request.query_params.get('morning') == 'err' %}
+<div class="card" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+  <strong style="color: #721c24;">⚠️ 모닝 브리핑 실행 실패</strong>
+  <p style="color: #721c24; margin: 5px 0 0 0;">{{ request.query_params.get('msg', '') }}</p>
+</div>
+{% endif %}
 {% if request.query_params.get('success') == 'true' %}
 <div class="card" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
   <strong style="color: #155724;">✅ 공휴일 동기화 완료</strong>

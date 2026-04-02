@@ -14,7 +14,8 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import { recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
-import type { StockDetail, MarketCapStock, RisingStock } from "@/lib/types";
+import type { StockDetail, MarketCapStock } from "@/lib/types";
+import type { NaverRisingStock } from "@/lib/types/home";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
 import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
 import styles from "./SupplyPage.module.css";
@@ -190,8 +191,8 @@ function formatMeta(bizdate: string | null | undefined, collectedTime: string | 
   return `기준일: ${date} / ${time}`;
 }
 
-// ─── 메인 페이지 ─────────────────────────────────────────────────────────────
-export default function SupplyPage() {
+// ─── 메인 페이지 (variant: supply=수급, stocks=추천·관심·시총·등락) ───────────────
+export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { favoriteStocks, favCodes, isLoading: favLoading } = useFavoriteStocks();
@@ -274,6 +275,7 @@ export default function SupplyPage() {
   const fetchedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (variant !== "supply") return;
     const key = `${mainTab}-${market}`;
     if (fetchedRef.current.has(key)) return;
 
@@ -308,7 +310,7 @@ export default function SupplyPage() {
       }
     }
     load();
-  }, [mainTab, market]);
+  }, [mainTab, market, variant]);
 
   // ── 시총상위 상태 ──
   const [stockTab, setStockTab] = useState<StockTab>("favorite");
@@ -319,6 +321,7 @@ export default function SupplyPage() {
   const [marketCapLoading, setMarketCapLoading] = useState(false);
 
   useEffect(() => {
+    if (variant !== "stocks") return;
     if (stockTab !== "marketcap") return;
     const load = async () => {
       setMarketCapLoading(true);
@@ -355,16 +358,17 @@ export default function SupplyPage() {
       }
     };
     load();
-  }, [stockTab]);
+  }, [stockTab, variant]);
 
   // ── 등락률상위 상태 ──
   const [risingMarket, setRisingMarket] = useState<MarketType>("KOSPI");
-  const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
-  const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
+  const [risingKospi, setRisingKospi] = useState<NaverRisingStock[]>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<NaverRisingStock[]>([]);
   const [risingCollectedTime, setRisingCollectedTime] = useState<string | null>(null);
   const [risingLoading, setRisingLoading] = useState(false);
 
   useEffect(() => {
+    if (variant !== "stocks") return;
     if (stockTab !== "rising") return;
     const load = async () => {
       setRisingLoading(true);
@@ -386,7 +390,7 @@ export default function SupplyPage() {
       }
     };
     load();
-  }, [stockTab]);
+  }, [stockTab, variant]);
 
   const currentInvestor = investorData[market];
   const currentProgram = programData[market];
@@ -396,14 +400,15 @@ export default function SupplyPage() {
 
   return (
     <div className={styles.page}>
-      {/* 마켓 허브: AI 추천·증권사·작가 픽 (상단) */}
-      <MarketPicksSection
-        onSelectStock={setSelectedStock}
-        onAddFavorite={handleAddFavorite}
-        favCodes={favCodes}
-      />
+      {variant === "stocks" && (
+        <MarketPicksSection
+          onSelectStock={setSelectedStock}
+          onAddFavorite={handleAddFavorite}
+          favCodes={favCodes}
+        />
+      )}
 
-      <InvestorTrendChart defaultMarket="kospi" variant="main" />
+      {variant === "supply" && <InvestorTrendChart defaultMarket="kospi" variant="main" />}
 
       {/* 검색 */}
       <div className={styles.searchArea}>
@@ -419,7 +424,8 @@ export default function SupplyPage() {
         <RandomAffiliateCard />
       </div>
 
-      {/* 수급 동향 탭 */}
+      {variant === "supply" && (
+        <>
       <h1 className={styles.title}>수급 동향</h1>
 
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)} variant="underline">
@@ -509,10 +515,13 @@ export default function SupplyPage() {
           )}
         </TabsContent>
       </Tabs>
-      {/* [AD_ZONE B5 — 수급동향과 수급요약 사이 / VIP회원까지] */}
       {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B5" />}
-      
-      {/* 4. 관심종목 / 시총상위 / 등락률상위 탭 */}
+        </>
+      )}
+
+      {variant === "stocks" && (
+        <>
+      <h1 className={styles.title}>종목</h1>
       <div className={styles.stockTabsSection}>
         <Tabs value={stockTab} onValueChange={(v) => setStockTab(v as StockTab)} variant="underline">
           <TabsList className={styles.stockTabList}>
@@ -697,9 +706,10 @@ export default function SupplyPage() {
           </TabsContent>
         </Tabs>
       </div>
+        </>
+      )}
 
-      {/* 모달 */}
-      {selectedStock && (
+      {variant === "stocks" && selectedStock && (
         <LazyStockDetailModal
           stock={selectedStock}
           onClose={handleClose}
@@ -709,7 +719,7 @@ export default function SupplyPage() {
         />
       )}
 
-      {toast && (
+      {variant === "stocks" && toast && (
         <div
           className={[
             toast.type === "success" ? styles.toastSuccess : styles.toastError,
@@ -724,4 +734,8 @@ export default function SupplyPage() {
       )}
     </div>
   );
+}
+
+export default function SupplyPage() {
+  return <MarketSupplyPage variant="supply" />;
 }

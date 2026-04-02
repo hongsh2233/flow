@@ -5,6 +5,7 @@
 """
 import httpx
 from bs4 import BeautifulSoup
+from datetime import date as date_cls
 from typing import List, Dict, Any
 
 from app.engine.models import Schedule
@@ -183,15 +184,22 @@ class NaverCalendarService:
         try:
             saved_count = 0
             for item in schedules:
+                d_raw = item.get("date")
+                if isinstance(d_raw, str):
+                    date_val = date_cls.fromisoformat(d_raw[:10])
+                elif isinstance(d_raw, date_cls):
+                    date_val = d_raw
+                else:
+                    continue
                 existing = db_session.query(Schedule).filter(
-                    Schedule.date == item['date'],
+                    Schedule.date == date_val,
                     Schedule.subject == item['subject'],
                     Schedule.type == 'naver_cal'
                 ).first()
 
                 if not existing:
                     new_sched = Schedule(
-                        date=item['date'],
+                        date=date_val,
                         subject=item['subject'],
                         content=item.get('content', ''),
                         type='naver_cal',

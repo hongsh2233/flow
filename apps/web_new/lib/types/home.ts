@@ -26,8 +26,8 @@ export interface ValueStock {
   value: string;
 }
 
-/* ── 상승종목 (네이버증권 10%이상) ── */
-export interface RisingStock {
+/* ── 상승종목 (네이버증권 등락 API 행 — stock.ts 의 RisingStock 과 구분) ── */
+export interface NaverRisingStock {
   rank: number;
   stock_code: string;
   stock_name: string;
@@ -86,8 +86,8 @@ export interface TradeRankingProps {
   kosdaqVolume: VolumeStock[];
   kospiValue: ValueStock[];
   kosdaqValue: ValueStock[];
-  risingKospi: RisingStock[];
-  risingKosdaq: RisingStock[];
+  risingKospi: NaverRisingStock[];
+  risingKosdaq: NaverRisingStock[];
   risingCollectedTime?: string | null;
   onSelect: (stock: StockDetail) => void;
   baseTimestamp?: string | null;

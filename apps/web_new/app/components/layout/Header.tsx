@@ -54,7 +54,7 @@ export default function Header() {
             ? { ...defaultItem, headerTitle: pageTitle }
             : navItems.find((item) => item.href === pathname) ??
               (pathname?.startsWith("/report") ? navItems.find((item) => item.id === "briefing") : null) ??
-              (pathname?.startsWith("/stocks") ? navItems.find((item) => item.id === "market") : null) ??
+              (pathname?.startsWith("/stocks") ? navItems.find((item) => item.id === "stocks") : null) ??
               navItems.find((item) => item.href !== "/" && pathname?.startsWith(item.href)) ??
               defaultItem;
 

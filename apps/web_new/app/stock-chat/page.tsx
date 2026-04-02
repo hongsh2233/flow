@@ -22,6 +22,9 @@ import type {
 
 const STOCK_CHAT_GUESTBOOK_BOARD_ID = "B005";
 
+/** 주톡: 시장의 목소리·투자은행 연동 UI 비활성화 */
+const ENABLE_MARKET_VOICES_SECTION = false;
+
 function stripHtml(html: string): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
@@ -271,6 +274,7 @@ export default function JuTalkPage() {
   };
 
   useEffect(() => {
+    if (!ENABLE_MARKET_VOICES_SECTION) return;
     const fetchMarketVoices = async () => {
       try {
         const res = await fetch("/api/market-voices?limit=30", { cache: "no-store" });
@@ -476,6 +480,7 @@ export default function JuTalkPage() {
 
   /* 시장의 목소리: 10초마다 새 1개 추가 (SNS 실시간 스타일, 최대 6개) */
   useEffect(() => {
+    if (!ENABLE_MARKET_VOICES_SECTION) return;
     if (marketVoices.length < 2) return;
     const interval = setInterval(() => {
       setDisplayedVoices((prev) => {
@@ -583,8 +588,8 @@ export default function JuTalkPage() {
         {/* [AD_ZONE B7 — 공부노트와 시장의 목소리 사이 / VIP회원까지] */}
         {shouldShowAdZoneB_vip(session, status) && <AdZoneSlot zone="B7" />}
 
-        {/* 시장의 목소리 - 최대 6개 랜덤, SNS 실시간 스타일 */}
-        {displayedVoices.length > 0 && (
+        {/* 시장의 목소리 - 비활성화 (ENABLE_MARKET_VOICES_SECTION) */}
+        {ENABLE_MARKET_VOICES_SECTION && displayedVoices.length > 0 && (
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시장의 목소리</h2>

@@ -3,7 +3,8 @@
 import { memo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { PriceChange } from "@/app/components/ui/PriceChange";
-import type { TradeRankingProps, VolumeStock, ValueStock, RisingStock, StockDetail } from "@/lib/types";
+import type { TradeRankingProps, VolumeStock, ValueStock, StockDetail } from "@/lib/types";
+import type { NaverRisingStock } from "@/lib/types/home";
 import styles from "./TradeRanking.module.css";
 
 const RankingList = memo(function RankingList({
@@ -61,7 +62,7 @@ const RankingList = memo(function RankingList({
   );
 });
 
-const RisingList = memo(function RisingList({ stocks }: { stocks: RisingStock[] }) {
+const RisingList = memo(function RisingList({ stocks }: { stocks: NaverRisingStock[] }) {
   return (
     <div className={styles.list}>
       {stocks.map((stock) => {

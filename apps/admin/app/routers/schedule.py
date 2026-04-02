@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import date as date_type
 from typing import List, Dict, Any
+from urllib.parse import quote
 
 from app.dependencies import get_current_user
 from app.database import get_db
@@ -73,7 +74,7 @@ async def schedule_page(
     })
 
 
-VALID_SCHEDULE_TYPES = {"api", "earnings", "ipo", "dividend", "news", "etc", "manual"}
+VALID_SCHEDULE_TYPES = {"api", "earnings", "ipo", "dividend", "news", "etc", "manual", "naver_cal", "krx"}
 
 
 @router.post("/admin/schedule/add")
@@ -321,5 +322,87 @@ async def sync_api_schedule(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"API 동기화 실패: {str(e)}")
 
+
+@router.post("/admin/schedule/sync-naver-calendar")
+async def sync_naver_calendar_schedule(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """네이버 증권 증시 캘린더(이번 달·다음 달) 수집 후 일정 등록"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    from datetime import datetime
+    import pytz
+    from app.engine.services.naver_calendar_service import naver_calendar_service
+
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+    total_items = 0
+    try:
+        for month_offset in (0, 1):
+            target_month = now.month + month_offset
+            target_year = now.year
+            while target_month > 12:
+                target_month -= 12
+                target_year += 1
+            schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
+            if schedules:
+                naver_calendar_service.save_schedules_to_db(db, schedules)
+                total_items += len(schedules)
+        return RedirectResponse(
+            url=f"/admin/schedule?naver_cal=ok&naver_count={total_items}",
+            status_code=303,
+        )
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(
+            url=f"/admin/schedule?naver_cal=err&msg={quote(str(e)[:200], safe='')}",
+            status_code=303,
+        )
+
+
+@router.post("/admin/schedule/sync-krx-ipo")
+async def sync_krx_ipo_schedule(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """KRX KIND 공모·상장 일정 수집 후 일정 등록"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    from app.engine.services.krx_kind_service import krx_kind_service
+
+    try:
+        rows = await krx_kind_service.fetch_ipo_schedules()
+        if rows:
+            krx_kind_service.save_schedules_to_db(db, rows)
+        return RedirectResponse(
+            url=f"/admin/schedule?krx=ok&krx_count={len(rows)}",
+            status_code=303,
+        )
+    except Exception as e:
+        db.rollback()
+        return RedirectResponse(
+            url=f"/admin/schedule?krx=err&msg={quote(str(e)[:200], safe='')}",
+            status_code=303,
+        )
+
+
+@router.post("/admin/schedule/run-morning-briefing")
+async def run_morning_briefing_manual(
+    user=Depends(get_current_user),
+):
+    """모닝 브리핑(야후·Gemini·B001 게시) 수동 1회 실행 — 스케줄러 자동 실행은 비활성화됨"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    try:
+        from app.services.scheduler_service import collect_market_morning_summary
+
+        await collect_market_morning_summary()
+        return RedirectResponse(url="/admin/schedule?morning=ok", status_code=303)
+    except Exception as e:
+        return RedirectResponse(
+            url=f"/admin/schedule?morning=err&msg={quote(str(e)[:200], safe='')}",
+            status_code=303,
+        )
 
 

@@ -43,11 +43,18 @@ function navigate(href: string): void {
   window.location.assign(href);
 }
 
+/** Next 웹 번들은 @capacitor/core 스텁이라 isNativePlatform이 항상 false일 수 있음 → 런타임 주입 객체 사용 */
+function isCapacitorNative(): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+  return w.Capacitor?.isNativePlatform?.() === true;
+}
+
 /**
  * 증권사 MTS/앱 열기
  * - 모바일 웹: Android는 intent 우선, 그 외는 custom scheme(deep_link)을 같은 창에서 호출 (window.open 금지)
  * - 데스크톱: 모바일웹 새 탭
- * - Capacitor 네이티브: intent(Android) 또는 deep / 모바일웹
+ * - Capacitor 네이티브: @capacitor/app App.openUrl (WebView에서 스킴 처리 안정적) → intent / deep
  */
 export async function openBrokerApp(b: BrokerItem): Promise<void> {
   if (typeof window === "undefined") return;
@@ -56,6 +63,21 @@ export async function openBrokerApp(b: BrokerItem): Promise<void> {
   const mobileWeb = b.mobile_web?.trim();
   const androidStore = b.android_store?.trim();
   const iosStore = b.ios_store?.trim();
+
+  if (isCapacitorNative()) {
+    try {
+      const { App } = await import("@capacitor/app");
+      const intent = isAndroidUa() ? buildAndroidIntentUrl(b) : null;
+      const url = intent || deep || mobileWeb || androidStore || iosStore;
+      if (url) {
+        type AppWithOpenUrl = { openUrl: (opts: { url: string }) => Promise<void> };
+        await (App as unknown as AppWithOpenUrl).openUrl({ url });
+        return;
+      }
+    } catch {
+      /* 폴백: 아래 일반 웹 로직 */
+    }
+  }
 
   try {
     const { Capacitor } = await import("@capacitor/core");

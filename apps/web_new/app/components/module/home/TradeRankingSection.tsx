@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { TradeRanking } from "./TradeRanking";
-import type { VolumeStock, ValueStock, RisingStock, StockDetail } from "@/lib/types";
+import type { VolumeStock, ValueStock, StockDetail } from "@/lib/types";
+import type { NaverRisingStock } from "@/lib/types/home";
 
 interface NaverRankingItem {
   rank: number;
@@ -30,8 +31,8 @@ export function TradeRankingSection({ onSelect }: { onSelect: (stock: StockDetai
   const [kosdaqVolume, setKosdaqVolume] = useState<VolumeStock[]>([]);
   const [kospiValue, setKospiValue] = useState<ValueStock[]>([]);
   const [kosdaqValue, setKosdaqValue] = useState<ValueStock[]>([]);
-  const [risingKospi, setRisingKospi] = useState<RisingStock[]>([]);
-  const [risingKosdaq, setRisingKosdaq] = useState<RisingStock[]>([]);
+  const [risingKospi, setRisingKospi] = useState<NaverRisingStock[]>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<NaverRisingStock[]>([]);
   const [risingCollectedTime, setRisingCollectedTime] = useState<string | null>(null);
   const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

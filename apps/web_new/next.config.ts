@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/picks",
-        destination: "/market",
+        destination: "/stocks",
         permanent: true,
       },
     ];

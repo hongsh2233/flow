@@ -1086,17 +1086,7 @@ class YahooIndexScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
-        # 아침 시장 요약 (뉴욕 마감, 나스닥 선물, 코스피200) - 06:35 KST
-        self.scheduler.add_job(
-            collect_market_morning_summary,
-            CronTrigger(hour=6, minute=35, timezone=self.kst),
-            id="market_morning_summary",
-            name="아침 시장 요약 (06:35)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=600,
-        )
+        # 모닝 브리핑은 BO 일정 관리에서 수동 실행 (/admin/schedule/run-morning-briefing)
 
         # US: 06:20, 00:00, 02:00, 04:00 (KST)
         self.scheduler.add_job(

@@ -6,6 +6,7 @@
 import httpx
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
+from datetime import date as date_cls
 import re
 
 from app.engine.models import Schedule
@@ -119,17 +120,28 @@ class KrxKindService:
         try:
             saved_count = 0
             for item in schedules:
-                # 중복 검사
+                d_raw = item.get("date")
+                if isinstance(d_raw, str):
+                    start_d = date_cls.fromisoformat(d_raw[:10])
+                elif isinstance(d_raw, date_cls):
+                    start_d = d_raw
+                else:
+                    continue
+                end_raw = item.get("end_date")
+                end_d = None
+                if end_raw:
+                    end_d = date_cls.fromisoformat(end_raw[:10]) if isinstance(end_raw, str) else end_raw
+
                 existing = db_session.query(Schedule).filter(
-                    Schedule.date == item['date'],
+                    Schedule.date == start_d,
                     Schedule.subject == item['subject'],
                     Schedule.type == item['type'] # 'krx'
                 ).first()
 
                 if not existing:
                     new_sched = Schedule(
-                        date=item['date'],
-                        end_date=item.get('end_date'),
+                        date=start_d,
+                        end_date=end_d,
                         subject=item['subject'],
                         content=item.get('content', ''),
                         detail=item.get('detail', ''),
@@ -143,7 +155,7 @@ class KrxKindService:
                     # 필요시 업데이트 로직
                     existing.underwriter = item.get('underwriter', existing.underwriter)
                     existing.detail = item.get('detail', existing.detail)
-                    existing.end_date = item.get('end_date', existing.end_date)
+                    existing.end_date = end_d if end_d is not None else existing.end_date
             
             db_session.commit()
             print(f"✅ KRX KIND DB 적재 완료 (종류: KRX, 신규추가: {saved_count}건)")
