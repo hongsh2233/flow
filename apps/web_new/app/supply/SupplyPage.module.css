@@ -416,7 +416,7 @@
   color: var(--app-kosdaq-label, #7c3aed);
 }
 
-/* Toast */
+/* Toast — 앱 시맨틱 컬러·그림자와 통일 */
 .toastSuccess,
 .toastError {
   position: fixed;
@@ -426,18 +426,21 @@
   padding: 0.75rem 1.25rem;
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   z-index: 100;
+  box-shadow: var(--app-card-shadow-hover);
+  border: 1px solid color-mix(in srgb, #fff 22%, transparent);
 }
 
 .toastSuccess {
-  background: var(--app-accent, #f97316);
+  background: var(--app-accent);
   color: #fff;
 }
 
 .toastError {
-  background: #ef4444;
+  background: var(--app-error);
   color: #fff;
+  border-color: color-mix(in srgb, var(--app-error) 35%, #fff);
 }
 
 /* 마켓 담기 성공 등 여러 줄 안내 */

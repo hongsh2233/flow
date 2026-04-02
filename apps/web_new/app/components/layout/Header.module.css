@@ -33,14 +33,19 @@
 }
 
 .pointBadge {
+    display: inline-flex;
+    align-items: center;
     flex-shrink: 0;
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 700;
-    color: var(--app-primary, #f97316);
+    letter-spacing: 0.02em;
     white-space: nowrap;
-    padding: 0.125rem 0.4rem;
-    border-radius: 0.375rem;
-    background: color-mix(in srgb, var(--app-primary, #f97316) 12%, transparent);
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    color: var(--app-tag-orange);
+    background: var(--app-tag-orange-bg);
+    border: 1px solid var(--app-accent-border);
+    box-shadow: var(--app-card-shadow);
 }
 
 .backBtn {
@@ -84,7 +89,7 @@
     width: 1.75rem;
     height: 1.75rem;
     padding: 0.375rem;
-    background: var(--app-primary, #f97316);
+    background: var(--app-primary);
     border-radius: 0.5rem;
 }
 
@@ -114,7 +119,7 @@
     width: 2.5rem;
     height: 2.5rem;
     padding: 0.5rem;
-    background: var(--app-primary, #f97316);
+    background: var(--app-primary);
     border-radius: 0.75rem;
 }
 
@@ -132,9 +137,8 @@
 
 .titleRow {
     display: flex;
-    align-items: flex-end;
-    gap: 0.15rem;
-    /* flex: 1; */
+    align-items: center;
+    gap: 0.5rem;
     min-width: 0;
 }
 
@@ -142,7 +146,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 700;
     overflow: hidden;
 }
 
@@ -279,7 +283,7 @@
 
 .readAllBtn {
     font-size: 0.75rem;
-    color: var(--app-primary, #f97316);
+    color: var(--app-primary);
     background: none;
     border: none;
     cursor: pointer;
@@ -346,7 +350,7 @@
     width: 0.4375rem;
     height: 0.4375rem;
     border-radius: 50%;
-    background: var(--app-primary, #f97316);
+    background: var(--app-primary);
 }
 
 .notiContent {

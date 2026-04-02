@@ -51,7 +51,7 @@
   padding: 0.35rem 0.65rem;
   border-radius: 0.5rem;
   border: 1px solid var(--app-table-border);
-  background: var(--app-surface, #fff);
+  background: var(--app-surface);
   color: var(--app-text);
   cursor: pointer;
 }
@@ -125,7 +125,7 @@
   padding: 0.5rem 0.25rem;
   border-radius: 0.5rem;
   border: 1px solid var(--app-table-border);
-  background: var(--app-surface, #fafafa);
+  background: var(--app-surface);
   cursor: pointer;
   font-size: 0.72rem;
 }
@@ -278,12 +278,12 @@
 }
 
 .chgUp {
-  color: #e53935;
+  color: var(--app-up);
   font-weight: 600;
 }
 
 .chgDown {
-  color: #1e88e5;
+  color: var(--app-down);
   font-weight: 600;
 }
 
@@ -380,7 +380,8 @@
   line-height: 1.4;
   padding: 0.5rem 0.65rem;
   border-radius: 0.5rem;
-  background: var(--app-surface, #f8f9fa);
+  background: color-mix(in srgb, var(--app-text-muted) 6%, var(--app-surface));
+  border: 1px solid var(--app-table-border);
   margin-bottom: 0.5rem;
 }
 

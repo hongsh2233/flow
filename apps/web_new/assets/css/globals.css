@@ -253,6 +253,9 @@ input[type='number'] {
   --app-accent-gradient-h: linear-gradient(90deg, #fb923c 0%, #ec4899 100%);
   --app-header-gradient: linear-gradient(to bottom right, #fb923c, #f472b6);
   --app-pink: #ec4899;
+  /* 브랜드 CTA·헤더 아이콘 등 — --app-accent 와 동기화 */
+  --app-primary: var(--app-accent);
+  --app-surface: var(--app-card-bg);
 
   --app-up: #ef4444;
   --app-up-bg: #fef2f2;
@@ -395,6 +398,8 @@ input[type='number'] {
   --app-accent-gradient-h: linear-gradient(90deg, #ea580c 0%, #be185d 100%);
   --app-header-gradient: linear-gradient(to bottom right, #ea580c, #be185d);
   --app-pink: #be185d;
+  --app-primary: var(--app-accent);
+  --app-surface: var(--app-card-bg);
 
   --app-up: #f87171;
   --app-up-bg: #450a0a;
