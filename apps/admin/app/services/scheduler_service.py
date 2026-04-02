@@ -11,8 +11,6 @@ FSC 데이터 자동 수집 스케줄러
   자동 수집 시에는 '직전 거래일'(-1, 월요일이면 -3 등) 기준일자를 조회합니다.
 """
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import asyncio
@@ -30,11 +28,6 @@ from app.services.yahoo_index_service import (
     DEFAULT_US_INDICES,
     DEFAULT_KR_INDICES,
     DEFAULT_FOREIGN_INDICES,
-    MORNING_SUMMARY_INDICES,
-)
-from app.services.investing_com_service import (
-    fetch_kospi200_futures,
-    upsert_kospi200_futures_to_db,
 )
 from app.models import FscStockPrice, FscRisingStock, KrxData
 
@@ -747,258 +740,6 @@ async def collect_yahoo_foreign_indices():
         db.close()
 
 
-async def collect_market_morning_summary(
-    reference_notes: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    아침 시장 요약 수집 (06:35 KST 자동 / BO 수동)
-    - 뉴욕증시 마감시황, 지수·환율, Gemini 요약 후 시황 게시판(B001) pending 등록
-    - BO 수동 시 reference_notes(참조문구)를 프롬프트에 포함
-    - 주말·공휴일은 건너뜀
-
-    Returns:
-        dict: ok, date (YYYY-MM-DD), message, skipped, posted
-    """
-    kst = pytz.timezone("Asia/Seoul")
-    now = datetime.now(kst)
-    date_str = now.strftime("%Y-%m-%d")
-    base_out: Dict[str, Any] = {
-        "ok": False,
-        "date": date_str,
-        "message": f"{date_str} 모닝 브리핑 실패",
-        "skipped": False,
-        "posted": False,
-    }
-
-    if should_skip_today():
-        print("ℹ️ 주말/공휴일: 아침 시장 요약 수집 건너뜀")
-        base_out["skipped"] = True
-        base_out["message"] = f"{date_str} 모닝 브리핑 — 주말·공휴일에는 실행되지 않습니다."
-        return base_out
-
-    print(f"\n📊 아침 시장 요약 수집 시작: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    db = SessionLocal()
-    try:
-        items = await fetch_indices(MORNING_SUMMARY_INDICES)
-        if items:
-            upsert_indices_to_db(db, items, collected_at=now, keep_days=7)
-            ok_count = sum(1 for i in items if i.get("ok") is True)
-            print(f"✅ 아침 시장 요약 저장 완료: {ok_count}개")
-        else:
-            print("⚠️ 아침 시장 요약 수집 결과 없음")
-
-        try:
-            kospi200_fut = await fetch_kospi200_futures()
-            if kospi200_fut and kospi200_fut.get("ok"):
-                upsert_kospi200_futures_to_db(db, kospi200_fut, collected_at=now)
-                print(f"✅ 코스피200 야간선물 저장 완료: {kospi200_fut.get('price')}")
-            else:
-                print(f"⚠️ 코스피200 야간선물 수집 실패: {kospi200_fut.get('error', 'unknown')}")
-        except Exception as e:
-            print(f"⚠️ 코스피200 야간선물 수집 오류: {e}")
-
-        try:
-            from app.engine import models as _models
-            from app.engine.models import BoardCategory, Post as _Post
-            from app.services.market_morning_gemini_service import generate_and_save_ai_summary
-
-            today = now.date()
-            _MORNING_ORDER = {
-                "^IXIC": 0, "^GSPC": 1, "^DJI": 2, "^SOX": 3, "NQ=F": 4,
-                "^KS200": 5, "INV:8893": 6, "^MSKR": 7, "EWY": 8, "^KS11": 9, "^KQ11": 10,
-            }
-            rows = db.query(_models.YahooIndexDaily).filter(
-                _models.YahooIndexDaily.date == today,
-                _models.YahooIndexDaily.group == "morning",
-            ).all()
-            rows = sorted(rows, key=lambda r: _MORNING_ORDER.get(r.symbol, 99))
-            indices_for_gemini = [
-                {
-                    "name": r.name,
-                    "symbol": r.symbol,
-                    "price": round(r.price or 0, 2),
-                    "change": round(r.change or 0, 2),
-                    "changePercent": round(r.change_percent or 0, 2),
-                }
-                for r in rows if r.price is not None
-            ]
-
-            latest_ex = db.query(func.max(_models.ExchangeRateSnapshot.collected_at)).scalar()
-            exchange_rates_for_gemini = []
-            if latest_ex:
-                currency_names = {"USD": "USD/KRW", "JPY": "JPY/KRW (100엔)", "EUR": "EUR/KRW"}
-                ex_rows = db.query(_models.ExchangeRateSnapshot).filter(
-                    _models.ExchangeRateSnapshot.collected_at == latest_ex,
-                ).all()
-                exchange_rates_for_gemini = [
-                    {
-                        "currency": currency_names.get(r.currency, r.currency),
-                        "rate": round(r.rate, 2),
-                        "change": round(r.change_val, 2),
-                    }
-                    for r in ex_rows
-                ]
-
-            overnight_news = []
-            try:
-                from app.services.investment_bank_news_service import _fetch_yahoo_search_news
-                _overnight_queries = [
-                    "US stock market overnight",
-                    "Wall Street news today",
-                    "Federal Reserve interest rate",
-                    "S&P500 Nasdaq",
-                ]
-                seen_titles: set = set()
-                for _q in _overnight_queries:
-                    _news = await _fetch_yahoo_search_news(_q, news_count=3)
-                    for _n in _news:
-                        _t = (_n.get("title") or "").strip()
-                        if _t and _t not in seen_titles:
-                            seen_titles.add(_t)
-                            overnight_news.append(_n)
-                        if len(overnight_news) >= 12:
-                            break
-                    if len(overnight_news) >= 12:
-                        break
-                print(f"[morning-gemini] 밤사이 뉴스 {len(overnight_news)}건 수집")
-            except Exception as _e:
-                print(f"[morning-gemini] 밤사이 뉴스 수집 오류 (무시): {_e}")
-
-            today_schedules = []
-            try:
-                from app.engine.models import Schedule as _Schedule
-                _sched_rows = db.query(_Schedule).filter(
-                    _Schedule.date == today
-                ).order_by(_Schedule.scheduled_time).all()
-                today_schedules = [
-                    {
-                        "time": r.scheduled_time or "",
-                        "subject": r.subject,
-                        "content": r.content or "",
-                    }
-                    for r in _sched_rows
-                ]
-                print(f"[morning-gemini] 당일 일정 {len(today_schedules)}건 조회")
-            except Exception as _e:
-                print(f"[morning-gemini] 당일 일정 조회 오류 (무시): {_e}")
-
-            if not indices_for_gemini:
-                print("[morning-gemini] 지수 데이터 없어 AI 요약 건너뜀")
-                base_out["message"] = (
-                    f"{date_str} 모닝 브리핑 실패 — 당일 아침 지수 데이터가 없습니다. 야후 지수 수집 후 다시 시도하세요."
-                )
-                return base_out
-
-            ref = (reference_notes or "").strip() or None
-            ok = generate_and_save_ai_summary(
-                db=db,
-                indices=indices_for_gemini,
-                exchange_rates=exchange_rates_for_gemini,
-                target_date=today,
-                overnight_news=overnight_news,
-                today_schedules=today_schedules,
-                reference_notes=ref,
-            )
-            if not ok:
-                base_out["message"] = f"{date_str} 모닝 브리핑 실패 — AI 요약 생성에 실패했습니다."
-                return base_out
-
-            morning_title = f"{today.strftime('%Y-%m-%d')} 모닝 브리핑"
-            morning_row = db.query(_models.MarketMorningAiSummary).filter(
-                _models.MarketMorningAiSummary.date == today
-            ).first()
-            if not morning_row:
-                base_out["message"] = f"{date_str} 모닝 브리핑 실패 — AI 요약 레코드를 찾을 수 없습니다."
-                return base_out
-
-            morning_content = (
-                f"<p>안녕하세요. {today.strftime('%Y-%m-%d')} 모닝 브리핑입니다.</p>"
-                f"<p>전일자 미국증시 마감시황입니다.</p>"
-                f"<p>{morning_row.us_market}</p>"
-                + (
-                    f"<br><p>밤사이 주요 이슈</p><p>{morning_row.overnight_issues}</p>"
-                    if morning_row.overnight_issues
-                    else ""
-                )
-                + "<br><p>한국관련 지수는</p>"
-                + f"<p>{morning_row.kr_indices}</p>"
-                + "<br><p>환율은</p>"
-                + f"<p>{morning_row.exchange_rate}</p>"
-                + (
-                    f"<br><p>오늘의 주요 일정</p><p>{morning_row.today_schedule}</p>"
-                    if morning_row.today_schedule
-                    else ""
-                )
-                + "<br><p>오늘 한국증시 주요 포인트</p>"
-                + f"<p>{morning_row.kr_focus}</p>"
-            )
-
-            category_id = None
-            try:
-                cat = (
-                    db.query(BoardCategory)
-                    .filter(BoardCategory.board_id == "B001", BoardCategory.name == "시황")
-                    .first()
-                )
-                if cat:
-                    category_id = cat.id
-            except Exception as _ce:
-                print(f"[morning-gemini] 시황 카테고리 조회 오류: {_ce}")
-
-            day_prefix = today.strftime("%Y-%m-%d")
-            existing_post = (
-                db.query(_Post)
-                .filter(
-                    _Post.board_id == "B001",
-                    _Post.title.like(f"{day_prefix}%"),
-                    _Post.title.like("%모닝%"),
-                )
-                .first()
-            )
-            now_kst = datetime.now(kst)
-            if existing_post:
-                existing_post.title = morning_title
-                existing_post.content = morning_content
-                existing_post.status = "pending"
-                existing_post.approved_at = None
-                if category_id is not None:
-                    existing_post.category_id = category_id
-                existing_post.updated_at = now_kst
-            else:
-                db.add(
-                    _Post(
-                        board_id="B001",
-                        title=morning_title,
-                        content=morning_content,
-                        author="플로우Ai",
-                        status="pending",
-                        category_id=category_id,
-                        created_at=now_kst,
-                        updated_at=now_kst,
-                    )
-                )
-            db.commit()
-            print(f"[morning-gemini] B001 모닝 브리핑 대기 등록 완료 ({today})")
-            base_out["ok"] = True
-            base_out["posted"] = True
-            base_out["message"] = (
-                f"{date_str} 모닝 브리핑 성공 — 시황 게시판(B001)에 대기(pending)로 등록되었습니다."
-            )
-            return base_out
-
-        except Exception as e:
-            print(f"⚠️ Gemini AI 요약·게시 오류: {e}")
-            base_out["message"] = f"{date_str} 모닝 브리핑 실패 — {e!s}"
-            return base_out
-
-    except Exception as e:
-        print(f"❌ 아침 시장 요약 수집 오류: {e}")
-        base_out["message"] = f"{date_str} 모닝 브리핑 실패 — {e!s}"
-        return base_out
-    finally:
-        db.close()
-
-
 async def collect_market_closing_summary():
     """
     장마감 시황 생성 및 board/B001 게시 (16:25 KST)
@@ -1146,7 +887,7 @@ class YahooIndexScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
-        # 모닝 브리핑은 BO 시장 데이터 > 보고서 작성에서 수동 실행 (/admin/market-report)
+        # 시황 보고서(B001)는 BO 시장 데이터 > 보고서 작성에서 관리자가 직접 작성·등록 (/admin/market-report)
 
         # US: 06:20, 00:00, 02:00, 04:00 (KST)
         self.scheduler.add_job(

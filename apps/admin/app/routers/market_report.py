@@ -1,25 +1,44 @@
 """
-시장 데이터 — 보고서 작성 (모닝 브리핑 수동 생성 등)
+시장 데이터 — 보고서 작성
+시황 원자료(DB)를 텍스트로 보여 주고, 관리자가 편집한 본문을 B001 시황 게시판에 pending 등록한다.
 """
+from datetime import datetime
 from urllib.parse import quote
 
+import pytz
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.dependencies import get_current_user
+from app.services.market_report_situation_service import (
+    build_situation_data_text,
+    post_body_to_html,
+    upsert_b001_pending_report,
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
+
+
+def _kst_today():
+    return datetime.now(pytz.timezone("Asia/Seoul")).date()
 
 
 @router.get("/admin/market-report", response_class=HTMLResponse)
 async def market_report_page(
     request: Request,
     user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if not user:
         return RedirectResponse(url="/", status_code=303)
+    today = _kst_today()
+    situation_data = build_situation_data_text(db, today)
+    default_title = f"{today.isoformat()} 시황"
+
     qp = request.query_params
     result = None
     if qp.get("ok") is not None:
@@ -33,34 +52,48 @@ async def market_report_page(
             "request": request,
             "admin_email": user.email,
             "active_page": "market-report",
+            "situation_data": situation_data,
+            "default_title": default_title,
             "result": result,
         },
     )
 
 
-@router.post("/admin/market-report/morning-briefing")
-async def market_report_morning_briefing_submit(
+@router.post("/admin/market-report/publish")
+async def market_report_publish(
     request: Request,
-    reference_notes: str = Form(""),
     user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    post_title: str = Form(""),
+    post_body: str = Form(""),
 ):
-    """참조문구를 반영해 모닝 브리핑 생성 후 B001 시황 게시판에 pending 등록"""
     if not user:
         return RedirectResponse(url="/", status_code=303)
-    from app.services.scheduler_service import collect_market_morning_summary
 
-    ref = (reference_notes or "").strip()
-    try:
-        out = await collect_market_morning_summary(
-            reference_notes=ref if ref else None,
-        )
-        ok = bool(out.get("ok"))
-        msg = str(out.get("message") or "")
-        q = "ok=1" if ok else "ok=0"
-        q += f"&msg={quote(msg, safe='')}"
-        return RedirectResponse(url=f"/admin/market-report?{q}", status_code=303)
-    except Exception as e:
+    today = _kst_today()
+    date_str = today.isoformat()
+    title = (post_title or "").strip() or f"{date_str} 시황"
+    raw_body = (post_body or "").strip()
+    html_content = post_body_to_html(raw_body)
+
+    if not html_content:
+        msg = f"{date_str} 시황 등록 실패 — 게시 본문을 입력해 주세요."
         return RedirectResponse(
-            url=f"/admin/market-report?ok=0&msg={quote(str(e)[:300], safe='')}",
+            url=f"/admin/market-report?ok=0&msg={quote(msg, safe='')}",
+            status_code=303,
+        )
+
+    try:
+        upsert_b001_pending_report(db, title, html_content, target_date=today, author="관리자")
+        msg = f"{date_str} 시황 성공 — 시황 게시판(B001)에 대기(pending)로 등록되었습니다."
+        return RedirectResponse(
+            url=f"/admin/market-report?ok=1&msg={quote(msg, safe='')}",
+            status_code=303,
+        )
+    except Exception as e:
+        db.rollback()
+        msg = f"{date_str} 시황 실패 — {str(e)[:280]}"
+        return RedirectResponse(
+            url=f"/admin/market-report?ok=0&msg={quote(msg, safe='')}",
             status_code=303,
         )
