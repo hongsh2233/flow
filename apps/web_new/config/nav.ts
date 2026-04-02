@@ -6,7 +6,7 @@ import Home from '@mui/icons-material/Home'
 import CalendarToday from '@mui/icons-material/CalendarToday'
 import Article from '@mui/icons-material/Article'
 import TrendingUp from '@mui/icons-material/TrendingUp'
-import ShowChart from '@mui/icons-material/ShowChart'
+import CandlestickChart from '@mui/icons-material/CandlestickChart'
 import Settings from '@mui/icons-material/Settings'
 import navData from './nav-items.json'
 
@@ -25,7 +25,7 @@ const iconMap: Record<string, IconComponent> = {
   briefing: Article,
   calendar: CalendarToday,
   market: TrendingUp,
-  stocks: ShowChart,
+  stocks: CandlestickChart,
   settings: Settings,
 }
 
