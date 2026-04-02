@@ -48,6 +48,10 @@ from app.engine.models import (
     MarketVoice,
     InvestmentBankNews,
     AliexpressAffiliateProduct,
+    BoEvent,
+    BoEventParticipation,
+    GradePolicy,
+    GradePolicyLog,
 )
 
 __all__ = [
@@ -60,4 +64,8 @@ __all__ = [
     "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote", "MasterQuoteLike",
     "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice", "InvestmentBankNews",
     "AliexpressAffiliateProduct",
+    "BoEvent",
+    "BoEventParticipation",
+    "GradePolicy",
+    "GradePolicyLog",
 ]

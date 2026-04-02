@@ -870,3 +870,49 @@ class CalendarScheduler:
             print("✅ 캘린더 데이터 수집 스케줄러 종료")
 
 calendar_scheduler = CalendarScheduler()
+
+
+def run_grade_policy_batch():
+    db = SessionLocal()
+    try:
+        from app.services.grade_policy_service import run_auto_grade_policies_sync
+
+        run_auto_grade_policies_sync(db)
+    except Exception as e:
+        import traceback
+
+        print(f"❌ 등급 정책 배치 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+
+
+class GradePolicyScheduler:
+    """등급 정책 자동 적용 — 매일 02:00 KST"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            run_grade_policy_batch,
+            trigger=CronTrigger(hour=2, minute=0, timezone=self.kst),
+            id="grade_policy_batch",
+            name="등급 정책 자동 적용 (매일 02:00 KST)",
+            replace_existing=True,
+        )
+        self.scheduler.start()
+        print("✅ 등급 정책 스케줄러 시작 (매일 02:00 KST)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 등급 정책 스케줄러 종료")
+
+
+grade_policy_scheduler = GradePolicyScheduler()

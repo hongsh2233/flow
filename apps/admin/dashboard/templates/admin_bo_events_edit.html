@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{% if event %}이벤트 수정{% else %}이벤트 추가{% endif %} - Jurin-i BO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{% if event %}이벤트 수정{% else %}이벤트 추가{% endif %}</h1>
+  <p class="page-desc"><a href="/admin/events">← 목록으로</a></p>
+</div>
+
+<div class="card">
+  <form method="post" action="{% if event %}/admin/events/{{ event.id }}/edit{% else %}/admin/events/add{% endif %}" style="max-width:640px;">
+    <div style="margin-bottom:1rem;">
+      <label>이벤트명</label><br/>
+      <input type="text" name="name" value="{{ event.name if event else '' }}" required style="width:100%; padding:.5rem; box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>유형</label><br/>
+      <select name="event_type" style="width:100%; padding:.5rem;">
+        {% set t = event.event_type if event else 'join_welcome' %}
+        <option value="join_welcome" {% if t == 'join_welcome' %}selected{% endif %}>join_welcome (가입 환영)</option>
+        <option value="activity_reward" {% if t == 'activity_reward' %}selected{% endif %}>activity_reward</option>
+        <option value="period_promo" {% if t == 'period_promo' %}selected{% endif %}>period_promo</option>
+        <option value="jubti_reward" {% if t == 'jubti_reward' %}selected{% endif %}>jubti_reward</option>
+        <option value="referral" {% if t == 'referral' %}selected{% endif %}>referral</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>설명</label><br/>
+      <textarea name="description" rows="3" style="width:100%; padding:.5rem; box-sizing:border-box;">{{ event.description if event and event.description else '' }}</textarea>
+    </div>
+    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+      <div style="flex:1; min-width:200px;">
+        <label>시작일시 (비우면 즉시)</label><br/>
+        <input type="datetime-local" name="start_date" value="{% if event and event.start_date %}{{ event.start_date.astimezone().strftime('%Y-%m-%dT%H:%M') }}{% endif %}" style="width:100%; padding:.5rem;" />
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <label>종료일시 (비우면 무기한)</label><br/>
+        <input type="datetime-local" name="end_date" value="{% if event and event.end_date %}{{ event.end_date.astimezone().strftime('%Y-%m-%dT%H:%M') }}{% endif %}" style="width:100%; padding:.5rem;" />
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>최대 참여 인원 (비우면 무제한)</label><br/>
+      <input type="number" name="max_participants" min="1" value="{{ event.max_participants if event and event.max_participants else '' }}" style="width:200px; padding:.5rem;" />
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label><input type="checkbox" name="is_active" {% if not event or event.is_active %}checked{% endif %} /> 활성</label>
+    </div>
+    <hr style="margin:1.5rem 0; border:none; border-top:1px solid var(--color-gray-200);" />
+    <div style="margin-bottom:1rem;">
+      <label>혜택 유형</label><br/>
+      {% set bt = event.benefit_type if event else 'grade_upgrade' %}
+      <select name="benefit_type" style="width:100%; padding:.5rem;">
+        <option value="grade_upgrade" {% if bt == 'grade_upgrade' %}selected{% endif %}>grade_upgrade</option>
+        <option value="grade_extend" {% if bt == 'grade_extend' %}selected{% endif %}>grade_extend</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+      <div>
+        <label>혜택 등급</label><br/>
+        {% set bg = event.benefit_grade if event else 'vip' %}
+        <select name="benefit_grade" style="padding:.5rem;">
+          <option value="vip" {% if bg == 'vip' %}selected{% endif %}>vip</option>
+          <option value="family" {% if bg == 'family' %}selected{% endif %}>family</option>
+        </select>
+      </div>
+      <div>
+        <label>혜택 기간(일)</label><br/>
+        <input type="number" name="benefit_days" min="0" value="{{ event.benefit_days if event else 7 }}" style="width:120px; padding:.5rem;" />
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>발동 조건 JSON (선택)</label><br/>
+      <textarea name="trigger_condition_json" rows="6" style="width:100%; padding:.5rem; font-family:monospace; font-size:12px; box-sizing:border-box;">{{ trigger_json }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">저장</button>
+    <a href="/admin/events" class="btn btn-secondary">취소</a>
+  </form>
+</div>
+{% endblock %}

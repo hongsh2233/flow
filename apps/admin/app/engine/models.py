@@ -1,7 +1,7 @@
 """
 데이터베이스 모델 정의 (PostgreSQL 호환)
 """
-from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float, Index, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, UniqueConstraint, Float, Index, Boolean, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.engine.database import Base
@@ -83,7 +83,11 @@ __all__ = [
   "InvestmentBankNews",
   "MarketMorningAiSummary",
   "SupplySummaryAi",
-  "AliexpressAffiliateProduct",
+    "AliexpressAffiliateProduct",
+    "BoEvent",
+    "BoEventParticipation",
+    "GradePolicy",
+    "GradePolicyLog",
 ]
 
 
@@ -123,6 +127,84 @@ class Member(Base):
     jubti_type = Column(String(10), nullable=True)  # 주BTI 성향: A | D | N | I
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class BoEvent(Base):
+    """BO 이벤트·프로모션 정책 (테이블명 bo_events — PostgreSQL events 혼동 방지)"""
+    __tablename__ = "bo_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    event_type = Column(String(30), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
+    max_participants = Column(Integer, nullable=True)
+
+    benefit_type = Column(String(20), nullable=False)  # grade_upgrade | grade_extend
+    benefit_grade = Column(String(20), nullable=False, default="vip")
+    benefit_days = Column(Integer, nullable=False)
+
+    trigger_condition = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    participations = relationship(
+        "BoEventParticipation", back_populates="event", cascade="all, delete-orphan"
+    )
+
+
+class BoEventParticipation(Base):
+    __tablename__ = "bo_event_participations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("bo_events.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
+    participated_at = Column(DateTime(timezone=True), server_default=func.now())
+    benefit_applied = Column(Boolean, nullable=False, default=False, server_default="false")
+    benefit_expires = Column(DateTime(timezone=True), nullable=True)
+
+    event = relationship("BoEvent", back_populates="participations")
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "member_id", name="uq_bo_event_member"),
+    )
+
+
+class GradePolicy(Base):
+    """회원 등급 자동 부여 정책 (스케줄러가 is_auto=True 인 항목 실행)"""
+    __tablename__ = "grade_policies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    target_grade = Column(String(20), nullable=False)  # vip | family
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
+    is_auto = Column(Boolean, nullable=False, default=False, server_default="false")
+
+    condition_type = Column(String(30), nullable=False)
+    conditions_json = Column(JSON, nullable=True)
+
+    benefit_days = Column(Integer, nullable=True)
+    upgrade_once = Column(Boolean, nullable=False, default=True, server_default="true")
+
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class GradePolicyLog(Base):
+    __tablename__ = "grade_policy_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(Integer, ForeignKey("grade_policies.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
+    before_grade = Column(String(20), nullable=True)
+    after_grade = Column(String(20), nullable=True)
+    applied_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    trigger_source = Column(String(20), nullable=False, default="auto")
 
 
 class RefreshToken(Base):

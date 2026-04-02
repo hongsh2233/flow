@@ -8,54 +8,76 @@
     </a>
   </h2>
   <nav class="sidebar-nav">
-    <!-- 설정 -->
     <div class="menu-group">
-      <div class="menu-group-title">설정</div>
-      <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
-        <span class="menu-icon">🏦</span> 증권사 설정
-      </a>
-      <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
-        <span class="menu-icon">🎨</span> 프로필 설정
-      </a>
-      <a href="/admin/ad-settings" class="menu-item menu-sub {% if active_page == 'ad-settings' %}active{% endif %}">
-        <span class="menu-icon">📣</span> 광고설정
+      <div class="menu-group-title">대시보드</div>
+      <a href="/admin/dashboard" class="menu-item menu-sub {% if active_page == 'dashboard' %}active{% endif %}">
+        <span class="menu-icon">📊</span> 요약
       </a>
     </div>
-    <!-- 회원관리 -->
+
     <div class="menu-group">
-      <div class="menu-group-title">회원관리</div>
-      <a href="/admin/users" class="menu-item menu-sub {% if active_page == 'users' %}active{% endif %}">
-        <span class="menu-icon">⚙️</span> 관리자관리
-      </a>
+      <div class="menu-group-title">회원 &amp; 등급</div>
       <a href="/admin/members" class="menu-item menu-sub {% if active_page == 'members' %}active{% endif %}">
-        <span class="menu-icon">👥</span> 회원관리
+        <span class="menu-icon">👥</span> 회원 관리
+      </a>
+      <a href="/admin/grade-policies" class="menu-item menu-sub {% if active_page == 'grade-policies' %}active{% endif %}">
+        <span class="menu-icon">⭐</span> 등급 정책
+      </a>
+      <a href="/admin/users" class="menu-item menu-sub {% if active_page == 'users' %}active{% endif %}">
+        <span class="menu-icon">⚙️</span> 관리자 관리
       </a>
     </div>
-    <!-- 게시관리 -->
+
     <div class="menu-group">
-      <div class="menu-group-title">게시관리</div>
+      <div class="menu-group-title">이벤트 &amp; 마케팅</div>
+      <a href="/admin/events" class="menu-item menu-sub {% if active_page == 'events' %}active{% endif %}">
+        <span class="menu-icon">🎯</span> 이벤트 정책
+      </a>
+      <a href="/admin/banner-manage" class="menu-item menu-sub {% if active_page == 'banner-manage' %}active{% endif %}">
+        <span class="menu-icon">🖼️</span> 배너 관리
+      </a>
+      <a href="/admin/popup" class="menu-item menu-sub {% if active_page == 'popup' %}active{% endif %}">
+        <span class="menu-icon">🪟</span> 팝업 관리
+      </a>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-group-title">콘텐츠 &amp; 게시</div>
       <a href="/admin/board" class="menu-item menu-sub {% if active_page == 'board' %}active{% endif %}">
-        <span class="menu-icon">📝</span> 게시판관리
+        <span class="menu-icon">📝</span> 게시판 관리
       </a>
       <a href="/admin/polls" class="menu-item menu-sub {% if active_page == 'polls' %}active{% endif %}">
         <span class="menu-icon">📊</span> 투표
       </a>
-      <a href="/admin/schedule" class="menu-item menu-sub {% if active_page == 'schedule' %}active{% endif %}">
-        <span class="menu-icon">🗓️</span> 일정관리
-      </a>
       <a href="/admin/faq" class="menu-item menu-sub {% if active_page == 'faq' %}active{% endif %}">
         <span class="menu-icon">❓</span> FAQ 관리
       </a>
-      <a href="/admin/banner-manage" class="menu-item menu-sub {% if active_page == 'banner-manage' %}active{% endif %}">
-        <span class="menu-icon">🖼️</span> 배너관리
+      <a href="/admin/schedule" class="menu-item menu-sub {% if active_page == 'schedule' %}active{% endif %}">
+        <span class="menu-icon">🗓️</span> 일정 관리
       </a>
-      <a href="/admin/popup" class="menu-item menu-sub {% if active_page == 'popup' %}active{% endif %}">
-        <span class="menu-icon">🪟</span> 팝업관리
+      <a href="/admin/terms/privacy" class="menu-item menu-sub {% if active_page == 'terms-privacy' %}active{% endif %}">
+        <span class="menu-icon">🔒</span> 개인정보처리방침
+      </a>
+      <a href="/admin/terms/service" class="menu-item menu-sub {% if active_page == 'terms-service' %}active{% endif %}">
+        <span class="menu-icon">📄</span> 이용약관
+      </a>
+      <a href="/admin/terms/about" class="menu-item menu-sub {% if active_page == 'terms-about' %}active{% endif %}">
+        <span class="menu-icon">📱</span> 플로우 앱 소개
       </a>
     </div>
-    <!-- 주식 데이터 -->
+
     <div class="menu-group">
-      <div class="menu-group-title">주식 데이터</div>
+      <div class="menu-group-title">추천종목 &amp; 스크리닝</div>
+      <a href="/admin/stock-picks" class="menu-item menu-sub {% if active_page == 'stock-picks' %}active{% endif %}">
+        <span class="menu-icon">📌</span> 작가 픽 관리
+      </a>
+      <a href="/admin/stock-screening" class="menu-item menu-sub {% if active_page == 'stock-screening' %}active{% endif %}">
+        <span class="menu-icon">🔍</span> 조건검색 · 종베
+      </a>
+    </div>
+
+    <div class="menu-group">
+      <div class="menu-group-title">시장 데이터</div>
       <a href="/admin/finance-data" class="menu-item menu-sub {% if active_page == 'finance-data' %}active{% endif %}">
         <span class="menu-icon">📈</span> 한국거래소
       </a>
@@ -63,24 +85,21 @@
         <span class="menu-icon">🏛️</span> 금융위원회
       </a>
       <a href="/admin/yahoo-index" class="menu-item menu-sub {% if active_page == 'yahoo-index' %}active{% endif %}">
-        <span class="menu-icon">🌐</span> 야후지수
+        <span class="menu-icon">🌐</span> 야후 지수
       </a>
       <a href="/admin/naver-ranking" class="menu-item menu-sub {% if active_page == 'naver-ranking' %}active{% endif %}">
-        <span class="menu-icon">📊</span> 네이버랭킹
+        <span class="menu-icon">📊</span> 네이버 랭킹
       </a>
       <a href="/admin/favorite-stocks" class="menu-item menu-sub {% if active_page == 'favorite-stocks' %}active{% endif %}">
         <span class="menu-icon">⭐</span> 관심종목
       </a>
-      <a href="/admin/stock-screening" class="menu-item menu-sub {% if active_page == 'stock-screening' %}active{% endif %}">
-        <span class="menu-icon">🔍</span> 조건검색
-      </a>
       <a href="/admin/stock-news" class="menu-item menu-sub {% if active_page == 'stock-news' %}active{% endif %}">
-        <span class="menu-icon">📰</span> 이슈
+        <span class="menu-icon">📰</span> 이슈 · 수급
       </a>
     </div>
-    <!-- 위키 & 뉴스 -->
+
     <div class="menu-group">
-      <div class="menu-group-title">위키 & 뉴스</div>
+      <div class="menu-group-title">위키 &amp; 뉴스</div>
       <a href="/admin/stock-terms" class="menu-item menu-sub {% if active_page == 'stock-terms' %}active{% endif %}">
         <span class="menu-icon">📖</span> 주식용어 사전
       </a>
@@ -91,27 +110,30 @@
         <span class="menu-icon">🎤</span> 시장의 목소리
       </a>
       <a href="/admin/investment-bank-news" class="menu-item menu-sub {% if active_page == 'investment-bank-news' %}active{% endif %}">
-        <span class="menu-icon">🏦</span> 투자은행 뉴스 (GS/MS/JPM)
+        <span class="menu-icon">🏦</span> 투자은행 뉴스
       </a>
       <a href="/admin/target-price-news" class="menu-item menu-sub {% if active_page == 'target-price-news' %}active{% endif %}">
         <span class="menu-icon">📈</span> 목표가 상향 뉴스
       </a>
     </div>
-    <!-- 콘텐츠 관리 -->
+
     <div class="menu-group">
-      <div class="menu-group-title">콘텐츠 관리</div>
-      <a href="/admin/terms/privacy" class="menu-item menu-sub {% if active_page == 'terms-privacy' %}active{% endif %}">
-        <span class="menu-icon">🔒</span> 개인정보처리방침
+      <div class="menu-group-title">설정</div>
+      <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
+        <span class="menu-icon">🏦</span> 증권사 설정
       </a>
-      <a href="/admin/terms/service" class="menu-item menu-sub {% if active_page == 'terms-service' %}active{% endif %}">
-        <span class="menu-icon">📄</span> 이용약관
+      <a href="/admin/ad-settings" class="menu-item menu-sub {% if active_page == 'ad-settings' %}active{% endif %}">
+        <span class="menu-icon">📣</span> 광고 설정
       </a>
-      <a href="/admin/terms/about" class="menu-item menu-sub {% if active_page == 'terms-about' %}active{% endif %}">
-        <span class="menu-icon">📱</span> 플로우 앱
+      <a href="/admin/notification-policy" class="menu-item menu-sub {% if active_page == 'notification-policy' %}active{% endif %}">
+        <span class="menu-icon">🔔</span> 알림 정책
+      </a>
+      <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
+        <span class="menu-icon">🎨</span> 프로필 설정
       </a>
     </div>
   </nav>
   <div style="padding:.875rem 1.25rem;border-top:1px solid rgba(255,255,255,.06);margin-top:auto;">
-    <p style="font-size:11px;color:rgba(255,255,255,.25);margin:0;text-align:center;">Jurin-i BO v1.0</p>
+    <p style="font-size:11px;color:rgba(255,255,255,.25);margin:0;text-align:center;">Jurin-i BO v1.1</p>
   </div>
 </div>

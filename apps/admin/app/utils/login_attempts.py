@@ -2,6 +2,8 @@
 로그인 실패 횟수 제한 (SECURITY_AUDIT 10번)
 """
 from datetime import datetime, timedelta
+from typing import Optional, Tuple
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -14,7 +16,7 @@ def _identifier(email: str, ip: str) -> str:
     return f"{email.strip().lower()}|{ip or 'unknown'}"
 
 
-def check_locked(db: Session, email: str, ip: str) -> tuple[bool, str | None]:
+def check_locked(db: Session, email: str, ip: str) -> Tuple[bool, Optional[str]]:
     """
     잠금 여부 확인. (locked, message) 반환.
     """
@@ -49,7 +51,7 @@ def check_locked(db: Session, email: str, ip: str) -> tuple[bool, str | None]:
     return False, None
 
 
-def record_failure(db: Session, email: str, ip: str) -> tuple[int, bool]:
+def record_failure(db: Session, email: str, ip: str) -> Tuple[int, bool]:
     """
     실패 기록. (현재 시도 횟수, 잠금됨 여부) 반환.
     """

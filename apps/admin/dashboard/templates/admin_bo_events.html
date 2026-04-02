@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}이벤트 정책 - Jurin-i BO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>🎯 이벤트 정책</h1>
+  <p class="page-desc">기간·유형·혜택이 있는 캠페인을 정의합니다. 참여 적용·FCM 연동은 추후 API·트리거 서비스와 연결합니다.</p>
+  <a href="/admin/events/new" class="btn btn-primary">+ 이벤트 추가</a>
+</div>
+
+<div class="card">
+  <table class="data-table" style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid var(--color-gray-200);">
+        <th style="padding:.5rem;">이름</th>
+        <th style="padding:.5rem;">유형</th>
+        <th style="padding:.5rem;">기간</th>
+        <th style="padding:.5rem;">참여</th>
+        <th style="padding:.5rem;">혜택</th>
+        <th style="padding:.5rem;">상태</th>
+        <th style="padding:.5rem;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in events %}
+      <tr style="border-bottom:1px solid var(--color-gray-100);">
+        <td style="padding:.5rem;"><strong>{{ ev.name }}</strong></td>
+        <td style="padding:.5rem;"><code>{{ ev.event_type }}</code></td>
+        <td style="padding:.5rem; font-size:.875rem; color:var(--color-gray-600);">
+          {% if ev.start_date %}{{ ev.start_date.astimezone().strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
+          ~
+          {% if ev.end_date %}{{ ev.end_date.astimezone().strftime('%Y-%m-%d %H:%M') }}{% else %}무기한{% endif %}
+        </td>
+        <td style="padding:.5rem;">{{ part_counts.get(ev.id, 0) }}{% if ev.max_participants %} / {{ ev.max_participants }}{% endif %}</td>
+        <td style="padding:.5rem; font-size:.875rem;">{{ ev.benefit_grade }} · {{ ev.benefit_days }}일 · {{ ev.benefit_type }}</td>
+        <td style="padding:.5rem;">{% if ev.is_active %}<span style="color:var(--color-success);">활성</span>{% else %}비활성{% endif %}</td>
+        <td style="padding:.5rem;">
+          <a href="/admin/events/{{ ev.id }}/edit" class="btn btn-secondary btn-sm">수정</a>
+          <a href="/admin/events/{{ ev.id }}/delete" class="btn btn-secondary btn-sm" onclick="return confirm('삭제하시겠습니까? 참여 이력도 함께 삭제됩니다.');">삭제</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="padding:1rem; color:var(--color-gray-500);">등록된 이벤트가 없습니다.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

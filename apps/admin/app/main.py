@@ -27,10 +27,32 @@ from app.database import engine, get_db, SessionLocal
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
 from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler
-from app.engine.services.scheduler_service import schedule_alarm_scheduler, calendar_scheduler
+from app.engine.services.scheduler_service import (
+    schedule_alarm_scheduler,
+    calendar_scheduler,
+    grade_policy_scheduler,
+)
 
 # 라우터 import
-from app.routers import auth, dashboard, admin, members, board, schedule, polls, finance, fsc, api, faq, terms, popup, broker, ad_settings
+from app.routers import (
+    auth,
+    dashboard,
+    admin,
+    members,
+    board,
+    schedule,
+    polls,
+    finance,
+    fsc,
+    api,
+    faq,
+    terms,
+    popup,
+    broker,
+    ad_settings,
+    bo_events,
+    grade_policies,
+)
 try:
     from app.routers import profile
 except ImportError as e:
@@ -86,6 +108,7 @@ async def lifespan(app: FastAPI):
     exchange_rate_scheduler.start()
     schedule_alarm_scheduler.start()
     calendar_scheduler.start()
+    grade_policy_scheduler.start()
     naver_news_scheduler.start()
     investment_bank_news_scheduler.start()
     target_price_news_scheduler.start()
@@ -103,6 +126,7 @@ async def lifespan(app: FastAPI):
     exchange_rate_scheduler.shutdown()
     schedule_alarm_scheduler.shutdown()
     calendar_scheduler.shutdown()
+    grade_policy_scheduler.shutdown()
     naver_news_scheduler.shutdown()
     investment_bank_news_scheduler.shutdown()
     target_price_news_scheduler.shutdown()
@@ -259,6 +283,12 @@ def run_migrations():
         upgrade_jubti_type()
     except Exception as e:
         print(f"⚠️ 주BTI(jubti_type) 컬럼 추가 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_bo_events_grade_policies import upgrade as upgrade_bo_events_grade
+        upgrade_bo_events_grade()
+    except Exception as e:
+        print(f"⚠️ 이벤트/등급정책 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
         from app.migrations.init_characters_and_words import init_characters_and_words
@@ -703,6 +733,8 @@ if investment_bank_news:
     app.include_router(investment_bank_news.router)  # 투자은행 뉴스 (GS/MS/JPM)
 if target_price_news:
     app.include_router(target_price_news.router)  # 증권사 목표가 상향 뉴스
+app.include_router(bo_events.router)    # 이벤트 정책 (bo_events)
+app.include_router(grade_policies.router)  # 등급 정책
 app.include_router(faq.router)          # FAQ 관리
 app.include_router(terms.router)        # 약관 (개인정보처리방침, 이용약관)
 app.include_router(popup.router)        # 팝업관리

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{% if policy %}등급 정책 수정{% else %}등급 정책 추가{% endif %} - Jurin-i BO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{% if policy %}등급 정책 수정{% else %}등급 정책 추가{% endif %}</h1>
+  <p class="page-desc"><a href="/admin/grade-policies">← 목록으로</a></p>
+</div>
+
+<div class="card">
+  <form method="post" action="{% if policy %}/admin/grade-policies/{{ policy.id }}/edit{% else %}/admin/grade-policies/add{% endif %}" style="max-width:640px;">
+    <div style="margin-bottom:1rem;">
+      <label>정책 이름</label><br/>
+      <input type="text" name="name" value="{{ policy.name if policy else '' }}" required style="width:100%; padding:.5rem; box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>목표 등급</label><br/>
+      {% set tg = policy.target_grade if policy else 'vip' %}
+      <select name="target_grade" style="padding:.5rem;">
+        <option value="vip" {% if tg == 'vip' %}selected{% endif %}>vip</option>
+        <option value="family" {% if tg == 'family' %}selected{% endif %}>family</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>조건 유형</label><br/>
+      {% set ct = policy.condition_type if policy else 'join_days' %}
+      <select name="condition_type" style="width:100%; padding:.5rem;">
+        <option value="join_days" {% if ct == 'join_days' %}selected{% endif %}>join_days — {"days": N}</option>
+        <option value="post_count" {% if ct == 'post_count' %}selected{% endif %}>post_count — {"count": N}</option>
+        <option value="jubti_complete" {% if ct == 'jubti_complete' %}selected{% endif %}>jubti_complete — {}</option>
+        <option value="favorite_count" {% if ct == 'favorite_count' %}selected{% endif %}>favorite_count — {"count": N}</option>
+        <option value="login_days" {% if ct == 'login_days' %}selected{% endif %}>login_days (미구현, 배치에서 제외)</option>
+        <option value="composite" {% if ct == 'composite' %}selected{% endif %}>composite — AND/OR rules</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>조건 JSON</label><br/>
+      <textarea name="conditions_json" rows="10" style="width:100%; padding:.5rem; font-family:monospace; font-size:12px; box-sizing:border-box;">{{ conditions_json }}</textarea>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>혜택 기간(일) — 비우면 만료 없음</label><br/>
+      <input type="number" name="benefit_days" min="0" value="{{ policy.benefit_days if policy and policy.benefit_days is not none else '' }}" placeholder="비움=무기한" style="width:200px; padding:.5rem;" />
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label><input type="checkbox" name="is_active" {% if not policy or policy.is_active %}checked{% endif %} /> 활성</label>
+      &nbsp;&nbsp;
+      <label><input type="checkbox" name="is_auto" {% if policy and policy.is_auto %}checked{% endif %} /> 자동 배치에 포함</label>
+      &nbsp;&nbsp;
+      <label><input type="checkbox" name="upgrade_once" {% if not policy or policy.upgrade_once %}checked{% endif %} /> 이 정책은 회원당 1회만 (로그 있으면 스킵)</label>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>설명</label><br/>
+      <textarea name="description" rows="2" style="width:100%; padding:.5rem; box-sizing:border-box;">{{ policy.description if policy and policy.description else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">저장</button>
+    <a href="/admin/grade-policies" class="btn btn-secondary">취소</a>
+  </form>
+</div>
+{% endblock %}
