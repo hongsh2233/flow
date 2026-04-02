@@ -1,16 +1,19 @@
 """
 장마감 시황 Gemini AI 처리 서비스
 
-KR 지수(domestic_index_snapshots 네이버 우선, Yahoo 폴백)·환율·네이버 수급(16:10 일자별 수집 이후)·뉴스·이슈 AI요약을 Gemini에 전달하고
+KR 지수(domestic_index_snapshots 네이버 우선, Yahoo 폴백)·환율·뉴스·이슈 AI요약을 Gemini에 전달하고
 구조화된 시황 문장을 생성해 board/B001에 Post로 등록한다(pending 상태).
+
+수급 본문은 `supply_summary_ai_summaries`(앱 수급 카드와 동일)의 코스피·코스닥 ai_summary만 1회 노출한다.
+investor_day 표·deal_rank 표는 마감시황에서 제외(표 파싱 오류·중복 방지).
 
 Gemini 응답 JSON 필드:
   - summary:        시장 총평 (코스피/코스닥 등락 요약)
   - exchange_rate:  환율 현황
-  - supply_trend:   외국인/기관 동향 (순매수·매도 대표 종목 포함)
   - today_highlight: 오늘 특징 (업종/테마/상한가)
   - tomorrow_focus: 내일 주목할 점
 """
+import html
 import json
 import re
 from datetime import date, datetime
@@ -34,6 +37,7 @@ from app.engine.models import (
     NaverStockNews,
     Post,
     BoardCategory,
+    SupplySummaryAi,
 )
 
 
@@ -196,57 +200,24 @@ def _get_exchange_rate(db: Session) -> List[dict]:
     ]
 
 
-def _get_deal_rank(db: Session, bizdate: str) -> Dict[str, List[str]]:
-    """
-    NaverSupplyData deal_rank 에서 외국인/기관 순매수·매도 상위 5종목 추출.
-    bizdate: YYYYMMDD 문자열
-    반환: {
-        "foreign_buy_kospi": ["삼성전자", ...],
-        "foreign_sell_kospi": [...],
-        "inst_buy_kospi": [...],
-        "inst_sell_kospi": [...],
-        (kosdaq 동일)
-    }
-    """
-    sub_keys = [
-        ("kospi", "foreign_buy"),
-        ("kospi", "foreign_sell"),
-        ("kospi", "inst_buy"),
-        ("kospi", "inst_sell"),
-        ("kosdaq", "foreign_buy"),
-        ("kosdaq", "foreign_sell"),
-        ("kosdaq", "inst_buy"),
-        ("kosdaq", "inst_sell"),
-    ]
-    result: Dict[str, List[str]] = {}
-
-    for market, sub_key in sub_keys:
-        # 해당 날짜의 가장 최근 수집본 사용
+def _get_latest_supply_ai_summaries(db: Session, bizdate: str) -> Dict[str, str]:
+    """supply_summary_ai_summaries: 시장별 당일 collected_time 최신 ai_summary (앱 수급 요약과 동일 소스)."""
+    out: Dict[str, str] = {}
+    for market in ("kospi", "kosdaq"):
         row = (
-            db.query(NaverSupplyData)
+            db.query(SupplySummaryAi)
             .filter(
-                NaverSupplyData.data_type == "deal_rank",
-                NaverSupplyData.market == market,
-                NaverSupplyData.sub_key == sub_key,
-                NaverSupplyData.bizdate == bizdate,
+                SupplySummaryAi.bizdate == bizdate,
+                SupplySummaryAi.market == market,
+                SupplySummaryAi.ai_summary.isnot(None),
+                SupplySummaryAi.ai_summary != "",
             )
-            .order_by(NaverSupplyData.collected_at.desc())
+            .order_by(SupplySummaryAi.collected_time.desc())
             .first()
         )
-        key = f"{sub_key}_{market}"
-        if not row or not row.data_json:
-            result[key] = []
-            continue
-        try:
-            data = json.loads(row.data_json)
-            rows = data.get("rows", [])
-            # col[0]=순위, col[1]=종목명
-            names = [r[1] for r in rows[:5] if len(r) > 1]
-            result[key] = names
-        except Exception:
-            result[key] = []
-
-    return result
+        if row and (row.ai_summary or "").strip():
+            out[market] = (row.ai_summary or "").strip()
+    return out
 
 
 def _get_upper_limit_stocks(db: Session, bizdate: str) -> List[str]:
@@ -348,11 +319,10 @@ def _get_issue_summary(db: Session, target_date: date) -> Optional[str]:
 def _build_prompt(
     kr_indices: List[dict],
     exchange_rates: List[dict],
-    deal_rank: Dict[str, List[str]],
     upper_limit: List[str],
     news: List[dict],
     issue_summary: Optional[str] = None,
-    investor_summary: Optional[Dict[str, dict]] = None,
+    supply_ai_summaries: Optional[Dict[str, str]] = None,
 ) -> str:
     # ① 주가지수
     idx_lines = []
@@ -370,23 +340,16 @@ def _build_prompt(
         ex_lines.append(f"- {ex['currency']}: {ex['rate']:,.2f}원 ({sign}{ex['change']:.2f})")
     ex_section = "\n".join(ex_lines) if ex_lines else "- 데이터 없음"
 
-    # ③ 외국인/기관 동향
-    def _rank_line(key: str, label: str) -> str:
-        names = deal_rank.get(key, [])
-        return f"- {label}: {', '.join(names) if names else '없음'}"
-
-    supply_section = "\n".join([
-        "[코스피]",
-        _rank_line("foreign_buy_kospi",  "외국인 순매수"),
-        _rank_line("foreign_sell_kospi", "외국인 순매도"),
-        _rank_line("inst_buy_kospi",     "기관 순매수"),
-        _rank_line("inst_sell_kospi",    "기관 순매도"),
-        "[코스닥]",
-        _rank_line("foreign_buy_kosdaq",  "외국인 순매수"),
-        _rank_line("foreign_sell_kosdaq", "외국인 순매도"),
-        _rank_line("inst_buy_kosdaq",     "기관 순매수"),
-        _rank_line("inst_sell_kosdaq",    "기관 순매도"),
-    ])
+    # ③ 수급 요약 (supply_summary_ai_summaries — 본문에 그대로 실릴 예정)
+    sa = supply_ai_summaries or {}
+    k_txt, d_txt = sa.get("kospi", ""), sa.get("kosdaq", "")
+    if k_txt or d_txt:
+        supply_section = (
+            f"[코스피]\n{k_txt or '없음'}\n\n"
+            f"[코스닥]\n{d_txt or '없음'}"
+        )
+    else:
+        supply_section = "- 당일 수급 AI 요약 없음 (수급 수집·요약 스케줄 확인)"
 
     # ④ 상한가
     upper_section = ", ".join(upper_limit) if upper_limit else "없음"
@@ -402,16 +365,6 @@ def _build_prompt(
     # ⑥ 이슈 AI요약
     issue_section = issue_summary.strip() if issue_summary else "- 데이터 없음"
 
-    # ⑦ 투자자별 매매동향 (개인/외국인/기관 합계)
-    inv_lines = []
-    key_cols = ["개인", "외국인", "기관계"]
-    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
-        inv = (investor_summary or {}).get(mkt_key, {})
-        if inv:
-            cols = ", ".join(f"{k}: {inv.get(k, '-')}" for k in key_cols if k in inv)
-            inv_lines.append(f"- [{mkt_label}] {cols}")
-    inv_section = "\n".join(inv_lines) if inv_lines else "- 데이터 없음"
-
     return f"""다음은 오늘 한국 주식시장 장마감 데이터입니다.
 한국 개인 주식 투자자를 위해 아래 JSON 형식으로 장마감 시황 코멘트를 작성해주세요.
 
@@ -421,7 +374,7 @@ def _build_prompt(
 [환율]
 {ex_section}
 
-[외국인·기관 수급 동향]
+[수급 요약 — 게시글 본문에 동일 문구가 포함되므로 아래를 요약·반복하지 말 것]
 {supply_section}
 
 [상한가 종목]
@@ -430,25 +383,21 @@ def _build_prompt(
 [오늘 핵심 뉴스]
 {news_section}
 
-[투자자별 매매동향 (개인/외국인/기관 합계, 단위: 억원)]
-{inv_section}
-
 [오늘 이슈 AI요약]
 {issue_section}
 
 작성 규칙:
 - 각 항목은 2~3문장, 자연스러운 한국어 문장
 - 수치 변화(상승/하락)와 맥락을 함께 서술
-- supply_trend 는 외국인·기관의 수급 특징과 대표 종목을 1~2개 언급
-- today_highlight 는 상한가 종목·업종·테마 특징을 설명 (상한가 없으면 거래대금/변동성 등 언급)
-- tomorrow_focus 는 내일 주목해야 할 이슈나 지수 흐름 전망 (1~2문장)
+- summary·exchange_rate·today_highlight·tomorrow_focus 어디에서도 외국인·개인·기관·프로그램 수급을 언급하지 말 것 (수급은 별도 섹션에만 게시)
+- today_highlight 는 상한가 종목·업종·테마 특징만 (상한가 없으면 거래대금/변동성 등)
+- tomorrow_focus 는 내일 주목할 이슈·지수 전망 (1~2문장)
 - 절대 JSON 외 다른 텍스트나 마크다운 코드블록(```)을 포함하지 말 것
 
 응답 형식 (반드시 이 JSON만 응답):
 {{
   "summary": "시장 총평 (코스피·코스닥 등락 요약)",
   "exchange_rate": "환율 현황 (달러원 위주, 1문장)",
-  "supply_trend": "외국인·기관 동향 (순매수·매도 대표 종목 포함, 2~3문장)",
   "today_highlight": "오늘 특징 (업종·테마·상한가 종목 포함, 2~3문장)",
   "tomorrow_focus": "내일 주목할 점 (1~2문장)"
 }}"""
@@ -485,7 +434,6 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
         return {
             "summary":          str(data.get("summary", "") or "").strip(),
             "exchange_rate":    str(data.get("exchange_rate", "") or "").strip(),
-            "supply_trend":     str(data.get("supply_trend", "") or "").strip(),
             "today_highlight":  str(data.get("today_highlight", "") or "").strip(),
             "tomorrow_focus":   str(data.get("tomorrow_focus", "") or "").strip(),
         }
@@ -499,29 +447,25 @@ def _call_gemini(prompt: str) -> Optional[Dict[str, str]]:
 # Post 내용 조립 (HTML)
 # ──────────────────────────────────────────────
 
-def _build_supply_html(deal_rank: Dict[str, List[str]], ai_comment: str) -> str:
-    """외국인·기관 수급을 DB 원본 데이터로 직접 렌더링.
-    AI(Gemini)는 순매수/순매도 종목 나열이 아닌 해석 코멘트만 보조로 사용."""
-    html = ""
-    markets = [
-        ("코스피", "foreign_buy_kospi", "foreign_sell_kospi", "inst_buy_kospi", "inst_sell_kospi"),
-        ("코스닥", "foreign_buy_kosdaq", "foreign_sell_kosdaq", "inst_buy_kosdaq", "inst_sell_kosdaq"),
-    ]
-    for market, fb, fs, ib, is_ in markets:
-        fb_names = ", ".join(deal_rank.get(fb, [])) or "없음"
-        fs_names = ", ".join(deal_rank.get(fs, [])) or "없음"
-        ib_names = ", ".join(deal_rank.get(ib, [])) or "없음"
-        is_names = ", ".join(deal_rank.get(is_, [])) or "없음"
-        html += (
-            f"<p><strong>[{market}]</strong></p>\n"
-            f"<p>• 외국인 순매수: {fb_names}</p>\n"
-            f"<p>• 외국인 순매도: {fs_names}</p>\n"
-            f"<p>• 기관 순매수: {ib_names}</p>\n"
-            f"<p>• 기관 순매도: {is_names}</p>\n"
+def _build_supply_ai_section_html(summaries: Dict[str, str]) -> str:
+    """supply_summary_ai_summaries 텍스트만 출력 (앱 수급 카드와 동일 DB)."""
+    if not summaries:
+        return (
+            "<p>당일 수급 AI 요약이 없습니다. 장중 수급 수집·요약 스케줄(예: 16:10) 이후 "
+            "<code>supply_summary_ai_summaries</code> 저장 여부를 확인하세요.</p>\n"
         )
-    if ai_comment:
-        html += f'<p style="color:#555;margin-top:8px;">{ai_comment}</p>\n'
-    return html
+    blocks = []
+    for mkt_key, label in (("kospi", "코스피"), ("kosdaq", "코스닥")):
+        text = (summaries.get(mkt_key) or "").strip()
+        if not text:
+            continue
+        safe = html.escape(text).replace("\n", "<br/>\n")
+        blocks.append(f"<p><strong>[{label}]</strong></p>\n<p>{safe}</p>\n")
+    if not blocks:
+        return (
+            "<p>당일 수급 AI 요약이 없습니다. 수급 수집·요약 스케줄을 확인하세요.</p>\n"
+        )
+    return "".join(blocks)
 
 
 def _build_post_content(
@@ -530,9 +474,8 @@ def _build_post_content(
     news: List[dict],
     ai: Dict[str, str],
     upper_limit: List[str],
-    deal_rank: Optional[Dict[str, List[str]]] = None,
     issue_summary: Optional[str] = None,
-    investor_summary: Optional[Dict[str, dict]] = None,
+    supply_ai_summaries: Optional[Dict[str, str]] = None,
 ) -> str:
     # ① 주가지수 HTML
     idx_html = ""
@@ -556,28 +499,7 @@ def _build_post_content(
     if not news_html:
         news_html = "<p>오늘 주요 뉴스 없음</p>\n"
 
-    # ⑤ 외국인·기관 동향: DB 원본 데이터 직접 렌더링 (AI 오류 방지)
-    supply_html = _build_supply_html(deal_rank or {}, ai.get("supply_trend", ""))
-
-    # 투자자별 매매동향 HTML (개인/외국인/기관계)
-    inv_html = ""
-    key_cols = ["개인", "외국인", "기관계", "금융투자", "보험", "투신(사모)", "연기금등"]
-    for mkt_label, mkt_key in [("코스피", "kospi"), ("코스닥", "kosdaq")]:
-        inv = (investor_summary or {}).get(mkt_key, {})
-        if inv:
-            inv_html += f"<p><strong>[{mkt_label}]</strong></p>\n"
-            for k in key_cols:
-                if k in inv:
-                    val = inv[k]
-                    try:
-                        num = int(str(val).replace(",", "").replace("+", ""))
-                        color = "#e53935" if num > 0 else "#1565c0" if num < 0 else ""
-                        style_str = f' style="color:{color}"' if color else ""
-                        inv_html += f"<p>• {k}: <strong{style_str}>{val}</strong></p>\n"
-                    except (ValueError, TypeError):
-                        inv_html += f"<p>• {k}: {val}</p>\n"
-    if not inv_html:
-        inv_html = "<p>데이터 없음</p>\n"
+    supply_html = _build_supply_ai_section_html(supply_ai_summaries or {})
 
     # 상한가
     upper_html = (
@@ -610,14 +532,12 @@ def _build_post_content(
 <p>USD/KRW {ex_str}</p>
 <p>{ai.get("exchange_rate", "")}</p>
 
-<h3>⑥ 투자자별 매매동향</h3>
-{inv_html}
-<h3>⑦ 외국인·기관 수급 순위</h3>
+<h3>⑥ 수급 요약 (수급 AI·DB, 앱과 동일)</h3>
 {supply_html}
-<h3>⑧ 오늘 특징 (상한가·업종·테마)</h3>
+<h3>⑦ 오늘 특징 (상한가·업종·테마)</h3>
 {upper_html}<p>{ai.get("today_highlight", "")}</p>
 
-<h3>⑨ 내일 주목할 점</h3>
+<h3>⑧ 내일 주목할 점</h3>
 <p>{ai.get("tomorrow_focus", "")}</p>
 
 <p style="margin-top:24px;font-size:12px;color:#999;">※ 본 시황은 AI가 자동 생성한 콘텐츠로, 데이터 수집 시점의 차이로 인해 실제 수치와 약간의 오차가 있을 수 있습니다. 투자 판단의 참고 자료로만 활용하시기 바랍니다.</p>
@@ -666,8 +586,8 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     # 데이터 수집
     kr_indices       = _get_kr_indices(db, target_date)
     exchange_rates   = _get_exchange_rate(db)
-    deal_rank        = _get_deal_rank(db, bizdate)
     investor_summary = _get_investor_summary(db, bizdate)
+    supply_ai        = _get_latest_supply_ai_summaries(db, bizdate)
     upper_limit      = _get_upper_limit_stocks(db, bizdate)
     news             = _get_top_news(db, target_date)
     issue_summary    = _get_issue_summary(db, target_date)
@@ -681,17 +601,24 @@ def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
     else:
         print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
 
+    if supply_ai:
+        print(f"[closing-gemini] 수급 AI요약 포함 (kospi={bool(supply_ai.get('kospi'))}, kosdaq={bool(supply_ai.get('kosdaq'))})")
+    else:
+        print("[closing-gemini] 수급 AI요약 없음 — supply_summary_ai_summaries 확인 (장중 수급 요약 스케줄)")
+
     # Gemini 호출
-    prompt = _build_prompt(kr_indices, exchange_rates, deal_rank, upper_limit, news, issue_summary, investor_summary)
+    prompt = _build_prompt(kr_indices, exchange_rates, upper_limit, news, issue_summary, supply_ai)
     ai = _call_gemini(prompt)
     if not ai:
         return False
 
-    # 제목 생성 (investor_summary 수집 후)
+    # 제목 생성 (investor_day 코스피 — 제목 줄만)
     title = _make_closing_title(target_date, investor_summary)
 
     # 게시글 내용 조립
-    content = _build_post_content(kr_indices, exchange_rates, news, ai, upper_limit, deal_rank, issue_summary, investor_summary)
+    content = _build_post_content(
+        kr_indices, exchange_rates, news, ai, upper_limit, issue_summary, supply_ai
+    )
 
     # "시황" 카테고리 ID 조회
     category_id = None

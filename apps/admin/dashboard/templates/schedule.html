@@ -246,7 +246,7 @@
   {% if _nf == '0' %}
   <p style="color: #0c5460; margin: 8px 0 0 0; font-size: 13px; line-height: 1.5;">
     이번 실행에서 네이버에서 가져온 일정이 없습니다. DB에 예전에 넣어 둔 일정은 그대로입니다.
-    JSON·PC 달력 URL이 404이거나 차단이면 서버 로그(네이버 캘린더 관련 줄)를 확인하세요.
+    네이버는 구 JSON·PC 달력 URL을 404로 폐기한 경우가 많습니다. 이슈 일정은 <strong>KRX 공모·상장</strong> 동기화와 BO 수동 등록으로 보완하세요. 불필요한 HTTP 요청을 막으려면 서버에 <code>NAVER_CALENDAR_ENABLED=0</code> 을 설정하세요.
   </p>
   {% elif _ns is not none and _ns == '0' %}
   <p style="color: #0c5460; margin: 8px 0 0 0; font-size: 13px;">

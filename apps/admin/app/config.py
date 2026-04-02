@@ -89,6 +89,14 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")  # 네이버 API 클라이언트 시크릿
 
+# 네이버 증시 캘린더 자동 스크래핑 (JSON·PC URL이 404로 폐기된 경우 false 권장 → 요청·로그 생략)
+NAVER_CALENDAR_ENABLED = os.environ.get("NAVER_CALENDAR_ENABLED", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
 # Resend 이메일 발송 (비밀번호 재설정 등)
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 # 발신 이메일 (Resend 도메인 검증 필요. 미설정 시 onboarding@resend.dev 사용 - 수신 제한 있음)

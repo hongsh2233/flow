@@ -3,15 +3,17 @@
 
 실적발표, 경제지표, 주주총회, 테마성 이벤트 등을 수집합니다.
 
-※ 모바일 JSON(scheduleMonthly.nhn)·PC HTML(sise_market_cal)은 네이버 정책에 따라 404·차단될 수 있습니다.
-  이 경우 파싱 0건이 되어도 DB에 과거 수집분이 남아 있으면 앱 일정은 유지됩니다. 서버 로그의 HTTP 상태를 확인하세요.
+※ 2026년 기준 `scheduleMonthly.nhn`·`sise_market_cal.naver` 등 기존 URL이 HTTP 404로 응답하는 경우가 많습니다.
+  (네이버 측 엔드포인트 폐기·이전) 이 경우 자동 수집은 0건이며, KRX 공모·BO 수동 일정으로 보완하세요.
+  불필요한 요청을 끄려면 환경변수 NAVER_CALENDAR_ENABLED=0 을 설정합니다.
 """
 import httpx
 from bs4 import BeautifulSoup
 from datetime import date as date_cls
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.engine.models import Schedule
+from app.config import NAVER_CALENDAR_ENABLED
 
 
 def _parse_naver_schedule_monthly_json(year: int, month: int, payload: Any) -> List[Dict]:
@@ -97,7 +99,7 @@ class NaverCalendarService:
     def __init__(self):
         self.base_url = "https://finance.naver.com"
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
         self.timeout = 30.0
 
@@ -108,6 +110,10 @@ class NaverCalendarService:
         """
         ym = f"{year}{month:02d}"
         results: List[Dict] = []
+
+        if not NAVER_CALENDAR_ENABLED:
+            return results
+
         json_url = f"https://m.stock.naver.com/api/json/sise/scheduleMonthly.nhn?month={ym}"
         json_headers = {
             **self.headers,
@@ -115,26 +121,34 @@ class NaverCalendarService:
             "Accept": "application/json, text/plain, */*",
         }
 
+        json_was_404 = False
+        json_other_error: Optional[Tuple[int, str]] = None
+
         try:
             async with httpx.AsyncClient(headers=self.headers, timeout=self.timeout) as client:
                 jr = await client.get(json_url, headers=json_headers)
                 ct = (jr.headers.get("content-type") or "").lower()
                 txt0 = (jr.text or "").lstrip()[:1]
                 looks_json = "json" in ct or txt0 == "{"
+
                 if not jr.is_success:
-                    print(
-                        f"⚠️ 네이버 캘린더 JSON HTTP {jr.status_code} ({ym}) — "
-                        f"URL 폐기·차단 가능, PC HTML 폴백 시도"
-                    )
+                    if jr.status_code == 404:
+                        json_was_404 = True
+                    else:
+                        json_other_error = (jr.status_code, "JSON")
                 elif jr.is_success and looks_json:
                     try:
                         results = _parse_naver_schedule_monthly_json(year, month, jr.json())
                     except Exception:
                         results = []
                     if not results:
-                        print(f"⚠️ 네이버 캘린더 JSON 성공({ym})이나 파싱 결과 0건 — 응답 스키마 변경 가능")
+                        print(
+                            f"⚠️ 네이버 캘린더 JSON 성공({ym})이나 파싱 결과 0건 — 응답 스키마 변경 가능"
+                        )
                 elif jr.is_success and not looks_json:
-                    print(f"⚠️ 네이버 캘린더 JSON({ym}) 비 JSON 응답(content-type={ct!r}) — HTML 폴백 시도")
+                    print(
+                        f"⚠️ 네이버 캘린더 JSON({ym}) 비 JSON 응답(content-type={ct!r}) — HTML 폴백 시도"
+                    )
 
                 if results:
                     print(f"✅ 네이버 증권 캘린더(JSON, {ym}) 파싱 완료: {len(results)}건")
@@ -142,11 +156,31 @@ class NaverCalendarService:
 
                 html_url = f"{self.base_url}/sise/sise_market_cal.naver?ym={ym}"
                 response = await client.get(html_url)
+                html_404 = not response.is_success and response.status_code == 404
+
                 if not response.is_success:
-                    print(
-                        f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
-                        f"— JSON·PC 달력 모두 실패 시 이번 달 수집 0건"
-                    )
+                    if json_was_404 and html_404:
+                        print(
+                            f"⚠️ 네이버 캘린더 ({ym}): JSON·PC 달력 모두 HTTP 404 — "
+                            f"네이버 엔드포인트 폐기로 자동 수집 불가. "
+                            f"KRX 공모·상장(BO 버튼) 및 수동 일정을 사용하거나 NAVER_CALENDAR_ENABLED=0 으로 요청을 끄세요."
+                        )
+                    elif json_was_404:
+                        print(
+                            f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
+                            f"(JSON은 이미 404)"
+                        )
+                    elif json_other_error:
+                        sc, _ = json_other_error
+                        print(
+                            f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
+                            f"(JSON은 HTTP {sc})"
+                        )
+                    else:
+                        print(
+                            f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
+                            f"— 이번 달 수집 0건"
+                        )
                     return results
 
                 soup = BeautifulSoup(
@@ -154,7 +188,9 @@ class NaverCalendarService:
                 )
                 cal_table = soup.find("table", class_="type_cal")
                 if not cal_table:
-                    print(f"⚠️ 네이버 PC 달력 페이지({ym})에 table.type_cal 없음 — 마크업 변경 가능")
+                    print(
+                        f"⚠️ 네이버 PC 달력 페이지({ym})에 table.type_cal 없음 — 마크업 변경 가능"
+                    )
                     return results
 
                 tds = cal_table.find_all("td")
@@ -207,23 +243,27 @@ class NaverCalendarService:
                     date_val = d_raw
                 else:
                     continue
-                existing = db_session.query(Schedule).filter(
-                    Schedule.date == date_val,
-                    Schedule.subject == item['subject'],
-                    Schedule.type == 'naver_cal'
-                ).first()
+                existing = (
+                    db_session.query(Schedule)
+                    .filter(
+                        Schedule.date == date_val,
+                        Schedule.subject == item["subject"],
+                        Schedule.type == "naver_cal",
+                    )
+                    .first()
+                )
 
                 if not existing:
                     new_sched = Schedule(
                         date=date_val,
-                        subject=item['subject'],
-                        content=item.get('content', ''),
-                        type='naver_cal',
-                        show_main_popup=False
+                        subject=item["subject"],
+                        content=item.get("content", ""),
+                        type="naver_cal",
+                        show_main_popup=False,
                     )
                     db_session.add(new_sched)
                     saved_count += 1
-            
+
             db_session.commit()
             print(f"✅ 네이버 캘린더 DB 적재 완료 (신규추가: {saved_count}건)")
             return saved_count

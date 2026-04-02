@@ -128,8 +128,8 @@
       </div>
     </div>
 
-    <div class="menu-group menu-group-accordion {% if active_page in ['stock-terms', 'master-quotes', 'market-voices', 'investment-bank-news', 'target-price-news'] %}is-open{% endif %}">
-      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['stock-terms', 'master-quotes', 'market-voices', 'investment-bank-news', 'target-price-news'] %}true{% else %}false{% endif %}">
+    <div class="menu-group menu-group-accordion {% if active_page in ['stock-terms', 'master-quotes', 'target-price-news'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['stock-terms', 'master-quotes', 'target-price-news'] %}true{% else %}false{% endif %}">
         위키 &amp; 뉴스
         <span class="menu-group-chevron" aria-hidden="true"></span>
       </button>
@@ -140,12 +140,14 @@
         <a href="/admin/master-quotes" class="menu-item menu-sub {% if active_page == 'master-quotes' %}active{% endif %}">
           <span class="menu-icon">💬</span> 대가들의 한마디
         </a>
+        {# 재개 시 주석 해제: 시장의 목소리 / 투자은행 뉴스 (라우트·스케줄은 유지)
         <a href="/admin/market-voices" class="menu-item menu-sub {% if active_page == 'market-voices' %}active{% endif %}">
           <span class="menu-icon">🎤</span> 시장의 목소리
         </a>
         <a href="/admin/investment-bank-news" class="menu-item menu-sub {% if active_page == 'investment-bank-news' %}active{% endif %}">
           <span class="menu-icon">🏦</span> 투자은행 뉴스
         </a>
+        #}
         <a href="/admin/target-price-news" class="menu-item menu-sub {% if active_page == 'target-price-news' %}active{% endif %}">
           <span class="menu-icon">📈</span> 목표가 상향 뉴스
         </a>
