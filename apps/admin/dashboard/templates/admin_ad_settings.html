@@ -53,13 +53,21 @@
   .thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
   .cell-title { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
   .cell-url a { word-break: break-all; color: #2980b9; font-size: 12px; }
-  .btn-edit, .btn-del { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; margin-right: 4px; display: inline-block; }
+  .btn-edit, .btn-del, .btn-bulk-del {
+    padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; margin-right: 4px; display: inline-block;
+  }
   .btn-edit { background: #3498db; color: white; }
   .btn-del { background: #e74c3c; color: white; }
+  .btn-bulk-del { background: #c0392b; color: white; font-weight: 600; margin-bottom: 12px; }
+  .btn-bulk-del:disabled { opacity: .45; cursor: not-allowed; }
+  .bulk-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .bulk-toolbar label { font-size: 13px; color: #444; cursor: pointer; user-select: none; }
+  .th-check { width: 36px; text-align: center; }
   .status-active { color: #27ae60; font-weight: 600; }
   .status-inactive { color: #95a5a6; }
   .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; font-weight: 500; }
   .toast { background: #d4edda; color: #155724; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 </style>
 {% endblock %}
 
@@ -158,10 +166,16 @@
     <h3>등록된 상품 ({{ products|length }}건)</h3>
     <p style="color:#888;font-size:13px;margin-bottom:8px;">앱 연동 API: <code>GET /api/affiliate-products</code> (헤더 <code>X-API-KEY</code>)</p>
     {% if products %}
+    <form method="POST" action="/admin/ad-settings/bulk-delete" id="ad-bulk-delete-form" class="bulk-delete-form">
+      <div class="bulk-toolbar">
+        <label><input type="checkbox" id="ad-select-all" /> 전체 선택</label>
+        <button type="submit" class="btn-bulk-del" id="ad-bulk-delete-btn" disabled>선택 삭제</button>
+      </div>
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
+            <th class="th-check" scope="col"><span class="sr-only">선택</span></th>
             <th></th>
             <th>상품 ID</th>
             <th>제목</th>
@@ -175,6 +189,9 @@
         <tbody>
           {% for p in products %}
           <tr>
+            <td class="th-check">
+              <input type="checkbox" name="item_ids" value="{{ p.id }}" class="ad-row-check" />
+            </td>
             <td>
               {% if p.image_url %}
               <img class="thumb" src="{{ p.image_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" />
@@ -195,6 +212,39 @@
         </tbody>
       </table>
     </div>
+    </form>
+    <script>
+    (function () {
+      var form = document.getElementById("ad-bulk-delete-form");
+      if (!form) return;
+      var all = document.getElementById("ad-select-all");
+      var btn = document.getElementById("ad-bulk-delete-btn");
+      function rowChecks() { return form.querySelectorAll(".ad-row-check"); }
+      function sync() {
+        var checks = rowChecks();
+        var n = 0;
+        checks.forEach(function (c) { if (c.checked) n++; });
+        if (btn) btn.disabled = n === 0;
+        if (all && checks.length) {
+          all.checked = n === checks.length;
+          all.indeterminate = n > 0 && n < checks.length;
+        }
+      }
+      form.addEventListener("change", function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains("ad-row-check")) sync();
+      });
+      if (all) {
+        all.addEventListener("change", function () {
+          rowChecks().forEach(function (c) { c.checked = all.checked; });
+          sync();
+        });
+      }
+      form.addEventListener("submit", function (e) {
+        if (!confirm("선택한 상품을 삭제할까요?")) e.preventDefault();
+      });
+      sync();
+    })();
+    </script>
     {% else %}
     <p style="color:#999;padding:40px;text-align:center;">등록된 상품이 없습니다.</p>
     {% endif %}

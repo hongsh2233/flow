@@ -11,11 +11,11 @@ import styles from "./Picks.module.css";
 
 type Props = {
   onSelectStock?: (s: StockDetail) => void;
-  onAddFavorite?: (s: StockDetail) => void;
-  favCodes?: Set<string>;
+  onPickStock?: (s: StockDetail) => void;
+  pickedCodes?: Set<string>;
 };
 
-export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: Props) {
+export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: Props) {
   const [strategy, setStrategy] = useState<"ichimoku" | "jongbe">("ichimoku");
   const [market, setMarket] = useState<"kospi" | "kosdaq">("kospi");
   const [rows, setRows] = useState<ScreeningRow[]>([]);
@@ -154,8 +154,8 @@ export function AiScreeningSection({ onSelectStock, onAddFavorite, favCodes }: P
           rows={rows}
           tier={tier}
           onSelectStock={onSelectStock}
-          onAddFavorite={onAddFavorite}
-          favCodes={favCodes}
+          onPickStock={onPickStock}
+          pickedCodes={pickedCodes}
           onMtsClick={handleMtsClick}
         />
       )}

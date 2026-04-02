@@ -215,7 +215,7 @@ function SearchResultsContent() {
   return (
     <div className={styles.page}>
       <Link href="/stocks" className={styles.backLink}>
-        ← 종목으로 돌아가기
+        ← 종목 흐름으로 돌아가기
       </Link>
 
       <div className={styles.searchArea}>

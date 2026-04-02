@@ -321,3 +321,31 @@ async def ad_settings_delete(
         db.delete(row)
         db.commit()
     return RedirectResponse(url="/admin/ad-settings", status_code=303)
+
+
+@router.post("/admin/ad-settings/bulk-delete")
+async def ad_settings_bulk_delete(
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    form = await request.form()
+    raw_list = form.getlist("item_ids")
+    ids: list[int] = []
+    for x in raw_list:
+        try:
+            ids.append(int(x))
+        except (TypeError, ValueError):
+            continue
+    if ids:
+        db.query(models.AliexpressAffiliateProduct).filter(
+            models.AliexpressAffiliateProduct.id.in_(ids)
+        ).delete(synchronize_session=False)
+        db.commit()
+    from urllib.parse import quote
+
+    n = len(ids)
+    msg = f"선택한 상품 {n}건을 삭제했습니다." if n else "선택된 상품이 없습니다."
+    return RedirectResponse(url=f"/admin/ad-settings?msg={quote(msg)}", status_code=303)

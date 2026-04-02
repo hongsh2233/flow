@@ -162,6 +162,50 @@
     letter-spacing: .05em;
   }
 
+  .menu-group-accordion .menu-group-body {
+    display: none;
+  }
+  .menu-group-accordion.is-open .menu-group-body {
+    display: block;
+  }
+  .menu-group-toggle {
+    width: calc(100% - 1.25rem);
+    margin: 0 0.625rem 2px;
+    padding: .5rem 0.75rem .35rem 1.25rem;
+    text-align: left;
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    font-family: inherit;
+    color: rgba(255,255,255,.55);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .menu-group-toggle:hover {
+    color: rgba(255,255,255,.9);
+    background: rgba(255,255,255,.06);
+  }
+  .menu-group-chevron {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid rgba(255,255,255,.4);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .menu-group-accordion.is-open .menu-group-chevron {
+    transform: rotate(180deg);
+  }
+
   .menu-item.menu-sub {
     padding-left: 2.25rem;
     margin: 1px .625rem;

@@ -57,8 +57,8 @@ type Props = {
   rows: ScreeningRow[];
   tier: PicksGradeTier;
   onSelectStock?: (s: StockDetail) => void;
-  onAddFavorite?: (s: StockDetail) => void;
-  favCodes?: Set<string>;
+  onPickStock?: (s: StockDetail) => void;
+  pickedCodes?: Set<string>;
   onMtsClick?: () => void;
 };
 
@@ -66,8 +66,8 @@ export function ScreeningResultTable({
   rows,
   tier,
   onSelectStock,
-  onAddFavorite,
-  favCodes,
+  onPickStock,
+  pickedCodes,
   onMtsClick,
 }: Props) {
   return (
@@ -100,7 +100,7 @@ export function ScreeningResultTable({
               const blinded = row.stock_name === "***";
               const detail = rowToDetail(row);
               const code = detail?.code ?? "";
-              const added = Boolean(code && favCodes?.has(code));
+              const added = Boolean(code && pickedCodes?.has(code));
               const chg = changeDirection(row.change_percent);
               const chgClass =
                 chg === "up" ? styles.chgUp : chg === "down" ? styles.chgDown : styles.chgFlat;
@@ -134,7 +134,7 @@ export function ScreeningResultTable({
                     {row.change_percent != null ? String(row.change_percent) : "-"}
                   </td>
                   <td className={styles.tdIcon}>
-                    {blinded || !detail || !onAddFavorite ? (
+                    {blinded || !detail || !onPickStock ? (
                       <span className={styles.addMuted} aria-hidden>
                         —
                       </span>
@@ -150,7 +150,7 @@ export function ScreeningResultTable({
                         aria-label="종목 담기"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onAddFavorite(detail);
+                          onPickStock(detail);
                         }}
                       >
                         <AddPicksIcon size={20} isAdded={false} aria-hidden />

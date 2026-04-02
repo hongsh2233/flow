@@ -7,130 +7,182 @@
       Jurin-i BO
     </a>
   </h2>
-  <nav class="sidebar-nav">
-    <div class="menu-group">
-      <div class="menu-group-title">대시보드</div>
-      <a href="/admin/dashboard" class="menu-item menu-sub {% if active_page == 'dashboard' %}active{% endif %}">
-        <span class="menu-icon">📊</span> 요약
-      </a>
+  <nav class="sidebar-nav" id="bo-sidebar-nav">
+    <div class="menu-group menu-group-accordion {% if active_page == 'dashboard' %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page == 'dashboard' %}true{% else %}false{% endif %}">
+        대시보드
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/dashboard" class="menu-item menu-sub {% if active_page == 'dashboard' %}active{% endif %}">
+          <span class="menu-icon">📊</span> 요약
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">회원 &amp; 등급</div>
-      <a href="/admin/members" class="menu-item menu-sub {% if active_page == 'members' %}active{% endif %}">
-        <span class="menu-icon">👥</span> 회원 관리
-      </a>
-      <a href="/admin/grade-policies" class="menu-item menu-sub {% if active_page == 'grade-policies' %}active{% endif %}">
-        <span class="menu-icon">⭐</span> 등급 정책
-      </a>
-      <a href="/admin/users" class="menu-item menu-sub {% if active_page == 'users' %}active{% endif %}">
-        <span class="menu-icon">⚙️</span> 관리자 관리
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['members', 'grade-policies', 'users'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['members', 'grade-policies', 'users'] %}true{% else %}false{% endif %}">
+        회원 &amp; 등급
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/members" class="menu-item menu-sub {% if active_page == 'members' %}active{% endif %}">
+          <span class="menu-icon">👥</span> 회원 관리
+        </a>
+        <a href="/admin/grade-policies" class="menu-item menu-sub {% if active_page == 'grade-policies' %}active{% endif %}">
+          <span class="menu-icon">⭐</span> 등급 정책
+        </a>
+        <a href="/admin/users" class="menu-item menu-sub {% if active_page == 'users' %}active{% endif %}">
+          <span class="menu-icon">⚙️</span> 관리자 관리
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">이벤트 &amp; 마케팅</div>
-      <a href="/admin/events" class="menu-item menu-sub {% if active_page == 'events' %}active{% endif %}">
-        <span class="menu-icon">🎯</span> 이벤트 정책
-      </a>
-      <a href="/admin/banner-manage" class="menu-item menu-sub {% if active_page == 'banner-manage' %}active{% endif %}">
-        <span class="menu-icon">🖼️</span> 배너 관리
-      </a>
-      <a href="/admin/popup" class="menu-item menu-sub {% if active_page == 'popup' %}active{% endif %}">
-        <span class="menu-icon">🪟</span> 팝업 관리
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['events', 'banner-manage', 'popup'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['events', 'banner-manage', 'popup'] %}true{% else %}false{% endif %}">
+        이벤트 &amp; 마케팅
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/events" class="menu-item menu-sub {% if active_page == 'events' %}active{% endif %}">
+          <span class="menu-icon">🎯</span> 이벤트 정책
+        </a>
+        <a href="/admin/banner-manage" class="menu-item menu-sub {% if active_page == 'banner-manage' %}active{% endif %}">
+          <span class="menu-icon">🖼️</span> 배너 관리
+        </a>
+        <a href="/admin/popup" class="menu-item menu-sub {% if active_page == 'popup' %}active{% endif %}">
+          <span class="menu-icon">🪟</span> 팝업 관리
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">콘텐츠 &amp; 게시</div>
-      <a href="/admin/board" class="menu-item menu-sub {% if active_page == 'board' %}active{% endif %}">
-        <span class="menu-icon">📝</span> 게시판 관리
-      </a>
-      <a href="/admin/polls" class="menu-item menu-sub {% if active_page == 'polls' %}active{% endif %}">
-        <span class="menu-icon">📊</span> 투표
-      </a>
-      <a href="/admin/faq" class="menu-item menu-sub {% if active_page == 'faq' %}active{% endif %}">
-        <span class="menu-icon">❓</span> FAQ 관리
-      </a>
-      <a href="/admin/schedule" class="menu-item menu-sub {% if active_page == 'schedule' %}active{% endif %}">
-        <span class="menu-icon">🗓️</span> 일정 관리
-      </a>
-      <a href="/admin/terms/privacy" class="menu-item menu-sub {% if active_page == 'terms-privacy' %}active{% endif %}">
-        <span class="menu-icon">🔒</span> 개인정보처리방침
-      </a>
-      <a href="/admin/terms/service" class="menu-item menu-sub {% if active_page == 'terms-service' %}active{% endif %}">
-        <span class="menu-icon">📄</span> 이용약관
-      </a>
-      <a href="/admin/terms/about" class="menu-item menu-sub {% if active_page == 'terms-about' %}active{% endif %}">
-        <span class="menu-icon">📱</span> 플로우 앱 소개
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['board', 'polls', 'faq', 'schedule', 'terms-privacy', 'terms-service', 'terms-about'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['board', 'polls', 'faq', 'schedule', 'terms-privacy', 'terms-service', 'terms-about'] %}true{% else %}false{% endif %}">
+        콘텐츠 &amp; 게시
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/board" class="menu-item menu-sub {% if active_page == 'board' %}active{% endif %}">
+          <span class="menu-icon">📝</span> 게시판 관리
+        </a>
+        <a href="/admin/polls" class="menu-item menu-sub {% if active_page == 'polls' %}active{% endif %}">
+          <span class="menu-icon">📊</span> 투표
+        </a>
+        <a href="/admin/faq" class="menu-item menu-sub {% if active_page == 'faq' %}active{% endif %}">
+          <span class="menu-icon">❓</span> FAQ 관리
+        </a>
+        <a href="/admin/schedule" class="menu-item menu-sub {% if active_page == 'schedule' %}active{% endif %}">
+          <span class="menu-icon">🗓️</span> 일정 관리
+        </a>
+        <a href="/admin/terms/privacy" class="menu-item menu-sub {% if active_page == 'terms-privacy' %}active{% endif %}">
+          <span class="menu-icon">🔒</span> 개인정보처리방침
+        </a>
+        <a href="/admin/terms/service" class="menu-item menu-sub {% if active_page == 'terms-service' %}active{% endif %}">
+          <span class="menu-icon">📄</span> 이용약관
+        </a>
+        <a href="/admin/terms/about" class="menu-item menu-sub {% if active_page == 'terms-about' %}active{% endif %}">
+          <span class="menu-icon">📱</span> 플로우 앱 소개
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">추천종목 &amp; 스크리닝</div>
-      <a href="/admin/favorite-stocks" class="menu-item menu-sub {% if active_page == 'favorite-stocks' %}active{% endif %}">
-        <span class="menu-icon">⭐</span> 관심종목
-      </a>
-      <a href="/admin/stock-screening" class="menu-item menu-sub {% if active_page == 'stock-screening' %}active{% endif %}">
-        <span class="menu-icon">🔍</span> 조건검색 · 종베
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['favorite-stocks', 'stock-screening'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['favorite-stocks', 'stock-screening'] %}true{% else %}false{% endif %}">
+        추천종목 &amp; 스크리닝
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/favorite-stocks" class="menu-item menu-sub {% if active_page == 'favorite-stocks' %}active{% endif %}">
+          <span class="menu-icon">⭐</span> 관심종목
+        </a>
+        <a href="/admin/stock-screening" class="menu-item menu-sub {% if active_page == 'stock-screening' %}active{% endif %}">
+          <span class="menu-icon">🔍</span> 조건검색 · 종베
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">시장 데이터</div>
-      <a href="/admin/finance-data" class="menu-item menu-sub {% if active_page == 'finance-data' %}active{% endif %}">
-        <span class="menu-icon">📈</span> 한국거래소
-      </a>
-      <a href="/admin/finance-data2" class="menu-item menu-sub {% if active_page == 'finance-data2' %}active{% endif %}">
-        <span class="menu-icon">🏛️</span> 금융위원회
-      </a>
-      <a href="/admin/yahoo-index" class="menu-item menu-sub {% if active_page == 'yahoo-index' %}active{% endif %}">
-        <span class="menu-icon">🌐</span> 야후 지수
-      </a>
-      <a href="/admin/naver-ranking" class="menu-item menu-sub {% if active_page == 'naver-ranking' %}active{% endif %}">
-        <span class="menu-icon">📊</span> 네이버 랭킹
-      </a>
-      <a href="/admin/stock-news" class="menu-item menu-sub {% if active_page == 'stock-news' %}active{% endif %}">
-        <span class="menu-icon">📰</span> 이슈 · 수급
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news'] %}true{% else %}false{% endif %}">
+        시장 데이터
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/finance-data" class="menu-item menu-sub {% if active_page == 'finance-data' %}active{% endif %}">
+          <span class="menu-icon">📈</span> 한국거래소
+        </a>
+        <a href="/admin/finance-data2" class="menu-item menu-sub {% if active_page == 'finance-data2' %}active{% endif %}">
+          <span class="menu-icon">🏛️</span> 금융위원회
+        </a>
+        <a href="/admin/yahoo-index" class="menu-item menu-sub {% if active_page == 'yahoo-index' %}active{% endif %}">
+          <span class="menu-icon">🌐</span> 야후 지수
+        </a>
+        <a href="/admin/naver-ranking" class="menu-item menu-sub {% if active_page == 'naver-ranking' %}active{% endif %}">
+          <span class="menu-icon">📊</span> 네이버 랭킹
+        </a>
+        <a href="/admin/stock-news" class="menu-item menu-sub {% if active_page == 'stock-news' %}active{% endif %}">
+          <span class="menu-icon">📰</span> 이슈 · 수급
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">위키 &amp; 뉴스</div>
-      <a href="/admin/stock-terms" class="menu-item menu-sub {% if active_page == 'stock-terms' %}active{% endif %}">
-        <span class="menu-icon">📖</span> 주식용어 사전
-      </a>
-      <a href="/admin/master-quotes" class="menu-item menu-sub {% if active_page == 'master-quotes' %}active{% endif %}">
-        <span class="menu-icon">💬</span> 대가들의 한마디
-      </a>
-      <a href="/admin/market-voices" class="menu-item menu-sub {% if active_page == 'market-voices' %}active{% endif %}">
-        <span class="menu-icon">🎤</span> 시장의 목소리
-      </a>
-      <a href="/admin/investment-bank-news" class="menu-item menu-sub {% if active_page == 'investment-bank-news' %}active{% endif %}">
-        <span class="menu-icon">🏦</span> 투자은행 뉴스
-      </a>
-      <a href="/admin/target-price-news" class="menu-item menu-sub {% if active_page == 'target-price-news' %}active{% endif %}">
-        <span class="menu-icon">📈</span> 목표가 상향 뉴스
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['stock-terms', 'master-quotes', 'market-voices', 'investment-bank-news', 'target-price-news'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['stock-terms', 'master-quotes', 'market-voices', 'investment-bank-news', 'target-price-news'] %}true{% else %}false{% endif %}">
+        위키 &amp; 뉴스
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/stock-terms" class="menu-item menu-sub {% if active_page == 'stock-terms' %}active{% endif %}">
+          <span class="menu-icon">📖</span> 주식용어 사전
+        </a>
+        <a href="/admin/master-quotes" class="menu-item menu-sub {% if active_page == 'master-quotes' %}active{% endif %}">
+          <span class="menu-icon">💬</span> 대가들의 한마디
+        </a>
+        <a href="/admin/market-voices" class="menu-item menu-sub {% if active_page == 'market-voices' %}active{% endif %}">
+          <span class="menu-icon">🎤</span> 시장의 목소리
+        </a>
+        <a href="/admin/investment-bank-news" class="menu-item menu-sub {% if active_page == 'investment-bank-news' %}active{% endif %}">
+          <span class="menu-icon">🏦</span> 투자은행 뉴스
+        </a>
+        <a href="/admin/target-price-news" class="menu-item menu-sub {% if active_page == 'target-price-news' %}active{% endif %}">
+          <span class="menu-icon">📈</span> 목표가 상향 뉴스
+        </a>
+      </div>
     </div>
 
-    <div class="menu-group">
-      <div class="menu-group-title">설정</div>
-      <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
-        <span class="menu-icon">🏦</span> 증권사 설정
-      </a>
-      <a href="/admin/ad-settings" class="menu-item menu-sub {% if active_page == 'ad-settings' %}active{% endif %}">
-        <span class="menu-icon">📣</span> 광고 설정
-      </a>
-      <a href="/admin/notification-policy" class="menu-item menu-sub {% if active_page == 'notification-policy' %}active{% endif %}">
-        <span class="menu-icon">🔔</span> 알림 정책
-      </a>
-      <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
-        <span class="menu-icon">🎨</span> 프로필 설정
-      </a>
+    <div class="menu-group menu-group-accordion {% if active_page in ['broker-settings', 'ad-settings', 'notification-policy', 'profile'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['broker-settings', 'ad-settings', 'notification-policy', 'profile'] %}true{% else %}false{% endif %}">
+        설정
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/broker-settings" class="menu-item menu-sub {% if active_page == 'broker-settings' %}active{% endif %}">
+          <span class="menu-icon">🏦</span> 증권사 설정
+        </a>
+        <a href="/admin/ad-settings" class="menu-item menu-sub {% if active_page == 'ad-settings' %}active{% endif %}">
+          <span class="menu-icon">📣</span> 광고 설정
+        </a>
+        <a href="/admin/notification-policy" class="menu-item menu-sub {% if active_page == 'notification-policy' %}active{% endif %}">
+          <span class="menu-icon">🔔</span> 알림 정책
+        </a>
+        <a href="/admin/profile" class="menu-item menu-sub {% if active_page == 'profile' %}active{% endif %}">
+          <span class="menu-icon">🎨</span> 프로필 설정
+        </a>
+      </div>
     </div>
   </nav>
   <div style="padding:.875rem 1.25rem;border-top:1px solid rgba(255,255,255,.06);margin-top:auto;">
     <p style="font-size:11px;color:rgba(255,255,255,.25);margin:0;text-align:center;">Jurin-i BO v1.1</p>
   </div>
 </div>
+<script>
+(function () {
+  document.querySelectorAll(".menu-group-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var g = btn.closest(".menu-group-accordion");
+      if (!g) return;
+      var open = g.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+})();
+</script>

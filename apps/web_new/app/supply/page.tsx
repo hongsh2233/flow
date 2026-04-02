@@ -13,7 +13,7 @@ import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart
 import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
-import { recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
+import { readSavedPickPositions, recordSavedPickFromMarket } from "@/lib/stocks/savedPicksStorage";
 import type { StockDetail, MarketCapStock } from "@/lib/types";
 import type { NaverRisingStock } from "@/lib/types/home";
 import { AdZoneSlot } from "../components/module/AdZoneSlot";
@@ -214,6 +214,30 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
     window.dispatchEvent(new Event("favoritesUpdated"));
   }, []);
 
+  const [pickedCodes, setPickedCodes] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (variant !== "stocks") return;
+    const sync = () => {
+      const codes = new Set(readSavedPickPositions().map((p) => p.code));
+      setPickedCodes(codes);
+    };
+    sync();
+    window.addEventListener("savedPicksUpdated", sync);
+    return () => window.removeEventListener("savedPicksUpdated", sync);
+  }, [variant]);
+
+  /** 추천종목 표의 담기: 관심종목 API와 무관, 내 종목 시세(로컬)에만 기록 */
+  const handlePickFromRecommend = useCallback((stock: StockDetail) => {
+    recordSavedPickFromMarket(stock);
+    setPickedCodes((prev) => new Set(prev).add(stock.code));
+    setToast({
+      message: "종목을 담았습니다.\n설정 > 내 종목 시세에서 보실 수 있습니다.",
+      type: "success",
+      center: true,
+    });
+  }, []);
+
   const handleAddFavorite = useCallback(async (stock: StockDetail) => {
     if (!session?.user?.email) {
       setToast({ message: "로그인 후 이용해 주세요.", type: "error" });
@@ -222,12 +246,10 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
     addFavCode(stock.code); // optimistic
     const res = await addFavoriteStock({ email: session.user.email, stock_code: stock.code });
     if (res.success) {
-      recordSavedPickFromMarket(stock);
       refreshFavorites();
       setToast({
-        message: "종목을 담았습니다.\n설정 > 내 종목 시세에서 보실 수 있습니다.",
+        message: res.message || "관심종목에 추가했습니다.",
         type: "success",
-        center: true,
       });
     } else {
       removeFavCode(stock.code); // rollback
@@ -403,8 +425,8 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
       {variant === "stocks" && (
         <MarketPicksSection
           onSelectStock={setSelectedStock}
-          onAddFavorite={handleAddFavorite}
-          favCodes={favCodes}
+          onPickStock={handlePickFromRecommend}
+          pickedCodes={pickedCodes}
         />
       )}
 
@@ -521,7 +543,7 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
 
       {variant === "stocks" && (
         <>
-      <h1 className={styles.title}>종목</h1>
+      <h1 className={styles.title}>종목 흐름</h1>
       <div className={styles.stockTabsSection}>
         <Tabs value={stockTab} onValueChange={(v) => setStockTab(v as StockTab)} variant="underline">
           <TabsList className={styles.stockTabList}>

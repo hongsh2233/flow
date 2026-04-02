@@ -1,5 +1,5 @@
 /**
- * 마켓 관심 담기 성공 시 기록 → 설정「내 종목 시세」의 담은 종목 표에 사용.
+ * 마켓 추천「담기」 시 기록 → 설정「내 종목 시세」의 담은 종목 표에 사용.
  * 비우기 시 이력에 비우기 당시 기준가(clearPrice)를 저장해 수익률 표시.
  */
 
@@ -77,7 +77,7 @@ export function readClearedPickHistory(): ClearedPickHistory[] {
   }
 }
 
-/** 관심 담기 API 성공 직후 호출. 동일 코드는 최신 담기로 갱신. */
+/** 마켓 추천「담기」시 호출(관심종목 API와 무관). 동일 코드는 최신 담기로 갱신. */
 export function recordSavedPickFromMarket(stock: { code: string; name: string; price: number }): void {
   if (typeof window === "undefined") return;
   const row: SavedPickPosition = {
