@@ -157,6 +157,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
 }
 
 .stat {
@@ -175,6 +176,45 @@
   width: 1rem;
   height: 1rem;
   font-size: 1rem;
+}
+
+.likeWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.likeBtn {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-secondary);
+  cursor: pointer;
+}
+
+.likeBtn:hover:not(:disabled) {
+  border-color: var(--app-primary, #f97316);
+  color: var(--app-primary, #f97316);
+}
+
+.likeBtn:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
+.likeBtnLink {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--app-tag-blue);
+  text-decoration: none;
+}
+
+.likeBtnLink:hover {
+  text-decoration: underline;
 }
 
 .attachments {

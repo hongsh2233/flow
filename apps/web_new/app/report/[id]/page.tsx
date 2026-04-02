@@ -13,11 +13,11 @@ interface ReportDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function getPost(postId: string): Promise<PostFromApi | null> {
+async function getPost(postId: string, accessToken?: string | null): Promise<PostFromApi | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
       method: "GET",
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(accessToken ?? undefined),
       cache: "no-store",
     });
 
@@ -55,13 +55,14 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
     notFound();
   }
 
-  const apiPost = await getPost(id);
+  const session = await getServerSession(authOptions);
+  const accessToken =
+    (session as { backendAccessToken?: string | null } | null)?.backendAccessToken ?? null;
+  const apiPost = await getPost(id, accessToken);
 
   if (!apiPost) {
     return notFound();
   }
-
-  const session = await getServerSession(authOptions);
   const isMemberOnly = apiPost.is_member_only === "true";
   const memberOnlyGrade = apiPost.member_only_grade || "all";
   const publicVisibility = apiPost.public_visibility || "full";

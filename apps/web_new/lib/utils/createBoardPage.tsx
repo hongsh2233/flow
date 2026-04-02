@@ -35,6 +35,8 @@
  */
 
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import BoardList from "@/app/components/module/board/BoardList";
 import BoardDetail from "@/app/components/module/board/BoardDetail";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
@@ -94,11 +96,15 @@ export function createBoardDetailPage(config: BoardDetailPageConfig = {}) {
   }) {
     const { id } = await params;
 
+    const session = await getServerSession(authOptions);
+    const accessToken =
+      (session as { backendAccessToken?: string | null } | null)?.backendAccessToken ?? null;
+
     let apiPost: PostFromApi | null = null;
     try {
       const response = await fetch(`${API_BASE_URL}/api/posts/${id}`, {
         method: "GET",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(accessToken ?? undefined),
         cache: "no-store",
       });
       if (response.ok) {

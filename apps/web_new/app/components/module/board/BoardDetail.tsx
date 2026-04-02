@@ -8,6 +8,7 @@ import Group from "@mui/icons-material/Group";
 import type { BoardDetailProps } from "@/lib/types";
 import { getImageUrl } from "@/lib/config/api";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { PostLikeButton } from "./PostLikeButton";
 import styles from "./BoardDetail.module.css";
 
 export function BoardDetail({
@@ -118,12 +119,11 @@ export function BoardDetail({
             <span className={styles.statIcon}><Visibility fontSize="inherit" /></span>
             {post.views.toLocaleString()}
           </span>
-          {/* 댓글 기능 미구현 - 추후 추가 예정
-          <span className={styles.stat}>
-            <span className={styles.statIcon}><Comment fontSize="inherit" /></span>
-            {post.comments}
-          </span>
-          */}
+          <PostLikeButton
+            postId={post.id}
+            initialCount={post.likeCount}
+            initialLiked={post.likedByMe}
+          />
         </div>
       </footer>
 

@@ -14,6 +14,7 @@ from app.engine.models import (
     Board,
     BoardCategory,
     Post,
+    PostLike,
     KrxData,
     FscStockPrice,
     FscRisingStock,
@@ -55,7 +56,7 @@ from app.engine.models import (
 )
 
 __all__ = [
-    "Base", "Poll", "PollOption", "PollVote", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post",
+    "Base", "Poll", "PollOption", "PollVote", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post", "PostLike",
     "KrxData", "FscStockPrice", "FscRisingStock", "RefreshToken", "Member",
     "Character", "StockWord", "MainPageItem", "Banner", "Popup", "Notification", "NotificationRead",
     "ScheduleAlarmSubscription", "MemberFcmToken", "NaverSupplyData",

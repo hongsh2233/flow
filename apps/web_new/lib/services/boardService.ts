@@ -97,6 +97,8 @@ export function postToDetail(post: PostFromApi): BoardPost {
     author: formatAuthorName(post.author),
     time: formatTimeAgo(post.created_at),
     views: post.views || 0,
+    likeCount: post.like_count ?? 0,
+    likedByMe: Boolean(post.liked_by_me),
     category: post.category || null,
     content: rewriteUploadUrls(post.content),
     boardName: post.board?.name,

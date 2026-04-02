@@ -27,6 +27,8 @@ from app.dependencies import (
     get_current_user,
     get_current_user_from_token,
     get_current_user_from_token_optional,
+    get_current_member_from_bearer_optional,
+    require_current_member,
     get_admin_session_or_api_key,
     verify_api_key,
     API_SECRET_KEY,
@@ -1131,7 +1133,8 @@ async def poll_stats(
 async def get_post(
     post_id: int,
     db: Session = Depends(get_db),
-    auth = Depends(get_current_user_or_api_key)
+    auth = Depends(get_current_user_or_api_key),
+    member = Depends(get_current_member_from_bearer_optional),
 ):
     """게시글 상세 조회"""
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
@@ -1166,6 +1169,24 @@ async def get_post(
     # API Key로 호출하는 경우는 관리자로 간주하여 전체 표시
     # 실제 접근 제어는 프론트엔드에서 수행
     
+    like_count = (
+        db.query(func.count(models.PostLike.id))
+        .filter(models.PostLike.post_id == post_id)
+        .scalar()
+        or 0
+    )
+    liked_by_me = False
+    if member:
+        liked_by_me = (
+            db.query(models.PostLike.id)
+            .filter(
+                models.PostLike.post_id == post_id,
+                models.PostLike.member_id == member.id,
+            )
+            .first()
+            is not None
+        )
+
     response_data = {
         "id": post.id,
         "board_id": post.board_id,
@@ -1178,6 +1199,8 @@ async def get_post(
         "content": cleaned_content,
         "author": post.author,
         "views": post.views or 0,
+        "like_count": int(like_count),
+        "liked_by_me": liked_by_me,
         "is_secret": post.is_secret or "false",
         "is_member_only": _effective_is_member_only(post),
         "member_only_grade": getattr(post, "member_only_grade", None) or "all",
@@ -1192,6 +1215,57 @@ async def get_post(
     return {
         "success": True,
         "data": response_data
+    }
+
+
+@router.post("/api/posts/{post_id}/like")
+async def post_toggle_like(
+    post_id: int,
+    db: Session = Depends(get_db),
+    member=Depends(require_current_member),
+):
+    """게시글 좋아요 — 로그인 회원만, 게시글당 1회(중복 요청은 현재 상태 반환)."""
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    if getattr(post, "status", None) and post.status != "approved":
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+
+    existing = (
+        db.query(models.PostLike)
+        .filter(
+            models.PostLike.post_id == post_id,
+            models.PostLike.member_id == member.id,
+        )
+        .first()
+    )
+    if existing:
+        like_count = (
+            db.query(func.count(models.PostLike.id))
+            .filter(models.PostLike.post_id == post_id)
+            .scalar()
+            or 0
+        )
+        return {
+            "success": True,
+            "like_count": int(like_count),
+            "liked_by_me": True,
+            "already_liked": True,
+        }
+
+    db.add(models.PostLike(post_id=post_id, member_id=member.id))
+    db.commit()
+    like_count = (
+        db.query(func.count(models.PostLike.id))
+        .filter(models.PostLike.post_id == post_id)
+        .scalar()
+        or 0
+    )
+    return {
+        "success": True,
+        "like_count": int(like_count),
+        "liked_by_me": True,
+        "already_liked": False,
     }
 
 

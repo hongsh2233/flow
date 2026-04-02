@@ -294,6 +294,19 @@ class Post(Base):
     category = relationship("BoardCategory", back_populates="posts")
 
 
+class PostLike(Base):
+    """게시글 좋아요 — 회원당 게시글당 1회"""
+    __tablename__ = "post_likes"
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("post_id", "member_id", name="uq_post_like_post_member"),
+    )
+
+
 class Poll(Base):
     """
     별도 투표 모듈 - 게시판과 분리된 투표 관리.

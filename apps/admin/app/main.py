@@ -436,6 +436,12 @@ def run_migrations():
         print(f"⚠️ boards.random_view_boost 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
     try:
+        from app.migrations.add_post_likes import upgrade as add_post_likes_migration
+        add_post_likes_migration()
+    except Exception as e:
+        print(f"⚠️ post_likes 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
         from app.migrations.init_faq_and_legal import run_migration as init_faq_legal_migration
         from app.database import SessionLocal
         db = SessionLocal()

@@ -17,6 +17,8 @@ export const boardPosts: Record<number, BoardPost> = {
     author: "시황팀",
     time: "30분 전",
     views: 1234,
+    likeCount: 0,
+    likedByMe: false,
     /* 댓글 기능 미구현 - 추후 추가 예정 */
     // comments: 45,
     content: `코스피 지수가 외국인 투자자들의 순매수에 힘입어 1% 상승하며 2,456선에서 거래를 마쳤습니다. IT와 자동차 업종이 강세를 보였습니다.
@@ -33,6 +35,8 @@ export const boardPosts: Record<number, BoardPost> = {
     author: "시황팀",
     time: "1시간 전",
     views: 892,
+    likeCount: 0,
+    likedByMe: false,
     // comments: 23,
     content: `코스닥은 개인 투자자들의 매도 물량이 나오며 0.5% 하락했습니다. 바이오와 IT 중소형주 위주로 약세를 보였습니다.
 
@@ -46,6 +50,8 @@ export const boardPosts: Record<number, BoardPost> = {
     author: "종목분석팀",
     time: "2시간 전",
     views: 2156,
+    likeCount: 0,
+    likedByMe: false,
     // comments: 78,
     content: `삼성전자가 4분기 실적 호조 전망에 힘입어 장중 상한가에 근접했습니다. 반도체 업황 개선 기대감이 반영된 것으로 보입니다.
 
@@ -59,6 +65,8 @@ export const boardPosts: Record<number, BoardPost> = {
     author: "종목분석팀",
     time: "3시간 전",
     views: 1876,
+    likeCount: 0,
+    likedByMe: false,
     // comments: 56,
     content: `에코프로가 전기차 배터리 수요 증가 소식에 상한가를 기록했습니다. 2차전지 관련주들이 일제히 강세를 보이고 있습니다.
 
@@ -72,6 +80,8 @@ export const boardPosts: Record<number, BoardPost> = {
     author: "시황팀",
     time: "4시간 전",
     views: 1234,
+    likeCount: 0,
+    likedByMe: false,
     // comments: 34,
     content: `전날 미국 증시가 혼조세를 보인 영향으로 국내 증시도 방향성을 찾지 못하고 등락을 반복했습니다.
 

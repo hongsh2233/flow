@@ -19,6 +19,11 @@ export async function GET(
     if (apiSecretKey) {
       headers['X-API-KEY'] = apiSecretKey
     }
+    const backendToken = (session as { backendAccessToken?: string | null } | null)
+      ?.backendAccessToken
+    if (backendToken) {
+      headers['Authorization'] = `Bearer ${backendToken}`
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
       method: 'GET',

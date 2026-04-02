@@ -183,6 +183,43 @@ async def get_current_user_from_token(
 security_optional = HTTPBearer(auto_error=False)
 
 
+member_bearer_optional = HTTPBearer(auto_error=False)
+
+
+async def get_current_member_from_bearer_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(member_bearer_optional),
+    db: Session = Depends(get_db),
+):
+    """
+    회원 JWT (type=member, sub=email). 관리자 토큰과 구분.
+    게시글 조회 시 X-API-KEY와 함께 Authorization Bearer로 전달 가능.
+    """
+    if credentials is None:
+        return None
+    try:
+        payload = verify_token(credentials.credentials)
+        if not payload or payload.get("type") != "member":
+            return None
+        email = payload.get("sub")
+        if not email:
+            return None
+        return db.query(models.Member).filter(models.Member.email == email).first()
+    except Exception:
+        return None
+
+
+async def require_current_member(
+    member=Depends(get_current_member_from_bearer_optional),
+):
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="로그인이 필요합니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return member
+
+
 async def get_current_user_from_token_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
     db: Session = Depends(get_db)

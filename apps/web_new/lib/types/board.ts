@@ -48,6 +48,8 @@ export interface PostFromApi {
   content: string;
   author: string;
   views: number;
+  like_count?: number;
+  liked_by_me?: boolean;
   is_secret: string;
   is_member_only?: string;
   member_only_grade?: 'all' | 'vip' | 'family';
@@ -96,6 +98,8 @@ export interface BoardPost {
   author: string;
   time: string;
   views: number;
+  likeCount: number;
+  likedByMe: boolean;
   category?: string | null;
   content: string;
   boardName?: string;
