@@ -40,6 +40,8 @@ export async function POST(
         content,
         title: body.title || undefined,
         author_email: session.user.email,
+        reference_text: body.reference_text || undefined,
+        use_ai_summary: body.use_ai_summary || false,
       }),
       cache: 'no-store',
     })

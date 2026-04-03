@@ -72,6 +72,7 @@ class MemberSignupRequest(BaseModel):
     email: str
     password: str
     nickname: str = None  # 프론트에서 전달한 닉네임 (없으면 서버에서 자동 생성)
+    name: str = None  # 사용자 이름 (아이디 찾기에 사용)
 
     @field_validator("email")
     @classmethod
@@ -1054,13 +1055,17 @@ async def api_get_member_info(
     """
     # 이메일로 회원 찾기
     member = db.query(models.Member).filter(models.Member.email == email).first()
-    
+
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="회원을 찾을 수 없습니다."
         )
-    
+
+    # 세션 유지 상태에서도 일일 접속 포인트 적립 (중복 방지 로직 내장)
+    grant_daily_login_bonus(db, member)
+    db.refresh(member)
+
     return SocialLoginResponse(
         success=True,
         message="회원 정보를 조회했습니다.",
@@ -1538,9 +1543,12 @@ async def api_member_signup(
         # 비밀번호 해시화
         hashed_pw = utils.get_password_hash(signup_request.password)
 
+        # 사용자가 이름을 입력했으면 사용, 없으면 프로필 자동 생성 이름 사용
+        final_name = signup_request.name.strip() if signup_request.name and signup_request.name.strip() else profile["name"]
+
         new_member = models.Member(
             email=signup_request.email,
-            name=profile["name"],
+            name=final_name,
             nickname=final_nickname,
             hashed_password=hashed_pw,
             profile_image=profile["profile_image"],
@@ -1636,7 +1644,14 @@ async def api_member_login(
 
 # 아이디(이메일) 찾기 요청 모델
 class FindEmailRequest(BaseModel):
-    nickname: str
+    name: str  # 이름으로 검색
+
+
+# 아이디(이메일) 찾기 - 비밀번호 확인으로 전체 이메일 조회
+class VerifyEmailRequest(BaseModel):
+    email: str  # 마스킹된 이메일 중 선택한 원본 이메일 (masked index)
+    password: str
+    name: str  # 검색에 사용한 이름
 
 
 # 비밀번호 재설정 요청 모델
@@ -1646,8 +1661,20 @@ class RequestPasswordResetRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     email: str
-    code: str
+    name: str  # 본인 확인용 이름
     new_password: str
+
+
+def _mask_email(email: str) -> str:
+    """이메일 마스킹 (예: h***a@gmail.com)"""
+    if not email or "@" not in email:
+        return "***@***.***"
+    local, domain = email.rsplit("@", 1)
+    if len(local) <= 2:
+        masked_local = "*" * len(local)
+    else:
+        masked_local = local[0] + "*" * (len(local) - 2) + local[-1]
+    return f"{masked_local}@{domain}"
 
 
 @router.post("/api/auth/member/find-email")
@@ -1656,26 +1683,50 @@ async def api_find_email(
     db: Session = Depends(get_db)
 ):
     """
-    아이디(이메일) 찾기 - 닉네임으로 가입된 이메일 목록 조회 (일반 회원만, 마스킹 처리)
+    아이디(이메일) 찾기 - 이름으로 가입된 이메일 목록 조회 (일반 회원만, 마스킹 처리)
     """
+    search_name = request.name.strip()
+    if not search_name:
+        return {"success": False, "message": "이름을 입력해주세요."}
+
     members = db.query(models.Member).filter(
-        models.Member.nickname == request.nickname.strip(),
+        models.Member.name == search_name,
         models.Member.hashed_password.isnot(None),
         models.Member.status == "active"
     ).all()
 
-    def mask_email(email: str) -> str:
-        if not email or "@" not in email:
-            return "***@***.***"
-        local, domain = email.rsplit("@", 1)
-        if len(local) <= 2:
-            masked_local = "*" * len(local)
-        else:
-            masked_local = local[0] + "*" * (len(local) - 2) + local[-1]
-        return f"{masked_local}@{domain}"
-
-    emails = [mask_email(m.email) for m in members]
+    emails = [_mask_email(m.email) for m in members]
     return {"success": True, "emails": emails}
+
+
+@router.post("/api/auth/member/verify-email")
+async def api_verify_email(
+    request: VerifyEmailRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    아이디(이메일) 찾기 - 비밀번호 확인 후 전체 이메일 표시
+    """
+    search_name = request.name.strip()
+    if not search_name or not request.password:
+        return {"success": False, "message": "이름과 비밀번호를 입력해주세요."}
+
+    # 이름으로 검색된 회원 중 비밀번호가 일치하는 회원의 전체 이메일 반환
+    members = db.query(models.Member).filter(
+        models.Member.name == search_name,
+        models.Member.hashed_password.isnot(None),
+        models.Member.status == "active"
+    ).all()
+
+    verified_emails = []
+    for m in members:
+        if utils.verify_password(request.password, m.hashed_password):
+            verified_emails.append(m.email)
+
+    if not verified_emails:
+        return {"success": False, "message": "비밀번호가 일치하는 계정이 없습니다."}
+
+    return {"success": True, "emails": verified_emails}
 
 
 def _send_password_reset_email(to_email: str, code: str) -> bool:
@@ -1711,11 +1762,10 @@ async def api_request_password_reset(
     db: Session = Depends(get_db)
 ):
     """
-    비밀번호 재설정 인증코드 요청 - 6자리 코드 생성 후 이메일로 발송.
-    RESEND_API_KEY 설정 시 Resend로 실제 발송, 미설정 시 개발용으로 응답에 코드 포함.
+    비밀번호 재설정 1단계 - 이메일 존재 확인 + 이름 힌트 제공
     """
     member = db.query(models.Member).filter(
-        models.Member.email == request.email,
+        models.Member.email == request.email.strip().lower(),
         models.Member.hashed_password.isnot(None),
         models.Member.status == "active"
     ).first()
@@ -1723,32 +1773,19 @@ async def api_request_password_reset(
     if not member:
         return {"success": False, "message": "등록되지 않은 이메일입니다."}
 
-    code = "".join(secrets.choice("0123456789") for _ in range(6))
-    expires_at = datetime.utcnow() + timedelta(minutes=10)
+    # 이름 마스킹 힌트 제공 (예: "홍*동")
+    name = member.name or ""
+    if len(name) <= 1:
+        masked_name = "*"
+    elif len(name) == 2:
+        masked_name = name[0] + "*"
+    else:
+        masked_name = name[0] + "*" * (len(name) - 2) + name[-1]
 
-    # DB에 인증코드 저장 (다중 인스턴스/재시작 대응)
-    from app.engine.models import PasswordResetCode
-    db.query(PasswordResetCode).filter(PasswordResetCode.email == request.email).delete()
-    db.add(PasswordResetCode(email=request.email, code=code, expires_at=expires_at))
-    db.commit()
-
-    # Resend API 키가 있으면 실제 이메일 발송
-    if RESEND_API_KEY:
-        if not _send_password_reset_email(request.email, code):
-            return {
-                "success": False,
-                "message": "이메일이 발송되지 않고 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-            }
-        return {
-            "success": True,
-            "message": "인증코드가 이메일로 발송되었습니다.",
-        }
-
-    # 개발 환경: 이메일 발송 없이 응답에 코드 포함 (테스트용)
     return {
         "success": True,
-        "message": "인증코드가 이메일로 발송되었습니다.",
-        "code": code,
+        "message": "이메일이 확인되었습니다. 이름을 입력해주세요.",
+        "name_hint": masked_name,
     }
 
 
@@ -1760,7 +1797,7 @@ async def api_reset_password(
     db: Session = Depends(get_db)
 ):
     """
-    비밀번호 재설정 - 인증코드 검증 후 새 비밀번호로 변경 (Rate Limit 10/분)
+    비밀번호 재설정 2단계 - 이메일 + 이름 확인 후 새 비밀번호로 변경
     """
     if len(request.new_password) < 8:
         raise HTTPException(
@@ -1768,41 +1805,23 @@ async def api_reset_password(
             detail="비밀번호는 8자 이상이어야 합니다."
         )
 
-    from app.engine.models import PasswordResetCode
-    # 만료된 코드 정리
-    now = datetime.utcnow()
-    db.query(PasswordResetCode).filter(PasswordResetCode.expires_at <= now).delete(synchronize_session=False)
-    row = db.query(PasswordResetCode).filter(
-        PasswordResetCode.email == request.email
-    ).order_by(PasswordResetCode.created_at.desc()).first()
-
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="인증코드가 만료되었거나 올바르지 않습니다. 다시 요청해주세요."
-        )
-    expires_naive = row.expires_at.replace(tzinfo=None) if row.expires_at.tzinfo else row.expires_at
-    if datetime.utcnow() > expires_naive:
-        db.delete(row)
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="인증코드가 만료되었습니다. 다시 요청해주세요."
-        )
-    if request.code != row.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="인증코드가 일치하지 않습니다."
-        )
-
     member = db.query(models.Member).filter(
-        models.Member.email == request.email
+        models.Member.email == request.email.strip().lower(),
+        models.Member.hashed_password.isnot(None),
+        models.Member.status == "active"
     ).first()
+
     if not member:
         raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
 
+    # 이름 확인으로 본인 인증
+    if (member.name or "").strip() != (request.name or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이름이 일치하지 않습니다."
+        )
+
     member.hashed_password = utils.get_password_hash(request.new_password)
-    db.delete(row)
     db.commit()
 
     return {"success": True, "message": "비밀번호가 변경되었습니다."}
