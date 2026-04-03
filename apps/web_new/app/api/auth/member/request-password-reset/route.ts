@@ -16,7 +16,13 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    if (!res.ok) {
+      return NextResponse.json(
+        { success: false, message: data.detail || data.message || "요청에 실패했습니다." },
+        { status: res.status }
+      );
+    }
+    return NextResponse.json(data);
   } catch (error) {
     console.error("비밀번호 재설정 요청 오류:", error);
     return NextResponse.json(

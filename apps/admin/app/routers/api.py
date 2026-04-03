@@ -968,12 +968,9 @@ async def create_board_post(
 
     # AI 요약: 참고 문구가 없고 use_ai_summary가 True인 경우 Gemini로 요약
     if body.use_ai_summary and not (body.reference_text or "").strip():
-        try:
-            summarized = _summarize_content_with_gemini(content)
-            if summarized:
-                content = summarized
-        except Exception as e:
-            print(f"[AI요약] Gemini 요약 실패, 원문 사용: {e}")
+        summarized = _summarize_content_with_gemini(content)
+        if summarized:
+            content = summarized
 
     # 방명록: 제목 자동 생성
     title = body.title

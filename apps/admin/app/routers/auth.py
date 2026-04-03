@@ -1649,7 +1649,6 @@ class FindEmailRequest(BaseModel):
 
 # 아이디(이메일) 찾기 - 비밀번호 확인으로 전체 이메일 조회
 class VerifyEmailRequest(BaseModel):
-    email: str  # 마스킹된 이메일 중 선택한 원본 이메일 (masked index)
     password: str
     name: str  # 검색에 사용한 이름
 
