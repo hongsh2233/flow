@@ -17,6 +17,7 @@ import styles from "./SignupPage.module.css";
 export default function SignupPage() {
   const router = useRouter();
   const { update: updateSession } = useSession();
+  const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [nicknameLoading, setNicknameLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -96,6 +97,10 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAgreed) return;
+    if (!name.trim()) {
+      setError("이름을 입력해주세요.");
+      return;
+    }
     if (!nickname.trim()) {
       setError("닉네임을 입력해주세요.");
       return;
@@ -119,7 +124,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/member/signup", {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ email, password, nickname }),
+        body: JSON.stringify({ email, password, nickname, name: name.trim() }),
       });
 
       let data;
@@ -218,6 +223,14 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formFields}>
+              <FormField
+                label="이름"
+                type="text"
+                placeholder="실명을 입력해주세요 (아이디 찾기에 사용)"
+                value={name}
+                onChange={setName}
+                icon={User}
+              />
               <div className={styles.nicknameRow}>
                 <div className={styles.nicknameField}>
                   <FormField

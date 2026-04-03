@@ -3,25 +3,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Lock, KeyRound } from "lucide-react";
+import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { FormField } from "../../components/ui/FormField";
 import { Button } from "../../components/ui/Button";
 import styles from "../LoginPage.module.css";
 
-type Step = "email" | "code" | "done";
+type Step = "email" | "verify" | "done";
 
 export default function FindPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [nameHint, setNameHint] = useState("");
+  const [name, setName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [sentCode, setSentCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRequestCode = async (e: React.FormEvent) => {
+  const handleCheckEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email.trim()) {
@@ -37,8 +37,8 @@ export default function FindPasswordPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSentCode(data.code || "");
-        setStep("code");
+        setNameHint(data.name_hint || "");
+        setStep("verify");
       } else {
         setError(data.message || "요청에 실패했습니다.");
       }
@@ -52,8 +52,8 @@ export default function FindPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!code.trim()) {
-      setError("인증코드를 입력해주세요.");
+    if (!name.trim()) {
+      setError("이름을 입력해주세요.");
       return;
     }
     if (newPassword.length < 8) {
@@ -71,7 +71,7 @@ export default function FindPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim(),
-          code: code.trim(),
+          name: name.trim(),
           new_password: newPassword,
         }),
       });
@@ -79,7 +79,7 @@ export default function FindPasswordPage() {
       if (data.success) {
         setStep("done");
       } else {
-        setError(data.message || "비밀번호 변경에 실패했습니다.");
+        setError(data.message || data.detail || "비밀번호 변경에 실패했습니다.");
       }
     } catch {
       setError("서버 오류가 발생했습니다.");
@@ -124,13 +124,13 @@ export default function FindPasswordPage() {
           <h1 className={styles.headerTitle}>비밀번호 재설정</h1>
           <p className={styles.headerSub}>
             {step === "email"
-              ? "가입한 이메일로 인증코드를 발송합니다."
-              : "인증코드를 입력하고 새 비밀번호를 설정해주세요."}
+              ? "가입한 이메일을 입력해주세요."
+              : "본인 확인을 위해 이름을 입력하고 새 비밀번호를 설정해주세요."}
           </p>
         </div>
         <div className={styles.form}>
           {step === "email" ? (
-            <form onSubmit={handleRequestCode}>
+            <form onSubmit={handleCheckEmail}>
               <div className={styles.formFields}>
                 <FormField
                   label="이메일"
@@ -150,7 +150,7 @@ export default function FindPasswordPage() {
                 disabled={loading}
                 className={styles.submitBtn}
               >
-                {loading ? "발송 중..." : "인증코드 받기"}
+                {loading ? "확인 중..." : "다음"}
               </Button>
             </form>
           ) : (
@@ -165,13 +165,18 @@ export default function FindPasswordPage() {
                   icon={Mail}
                   readOnly
                 />
+                {nameHint && (
+                  <p style={{ fontSize: "0.85rem", color: "var(--app-text-muted)", margin: "0.25rem 0 0.5rem" }}>
+                    이름 힌트: <strong>{nameHint}</strong>
+                  </p>
+                )}
                 <FormField
-                  label="인증코드"
+                  label="이름"
                   type="text"
-                  placeholder="6자리 숫자 입력"
-                  value={code}
-                  onChange={setCode}
-                  icon={KeyRound}
+                  placeholder="가입 시 입력한 이름"
+                  value={name}
+                  onChange={setName}
+                  icon={User}
                 />
                 <FormField
                   label="새 비밀번호"
@@ -190,11 +195,6 @@ export default function FindPasswordPage() {
                   icon={Lock}
                 />
               </div>
-              {sentCode && (
-                <p className={styles.devCode}>
-                  (개발용) 인증코드: <strong>{sentCode}</strong>
-                </p>
-              )}
               {error && <p className={styles.errorMsg}>{error}</p>}
               <Button
                 type="submit"

@@ -15,6 +15,8 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [referenceText, setReferenceText] = useState("");
+  const [useAiSummary, setUseAiSummary] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,7 +44,12 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
       const res = await fetch(`/api/boards/${boardId}/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), content: content.trim() }),
+        body: JSON.stringify({
+          title: title.trim(),
+          content: content.trim(),
+          reference_text: referenceText.trim() || undefined,
+          use_ai_summary: useAiSummary,
+        }),
       });
 
       const data = await res.json();
@@ -100,6 +107,33 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
         rows={20}
       />
 
+      <textarea
+        className={styles.contentTextarea}
+        placeholder="참고 문구 (선택사항) - 입력하면 원문 그대로 등록됩니다."
+        value={referenceText}
+        onChange={(e) => setReferenceText(e.target.value)}
+        rows={4}
+        style={{ marginTop: "0.5rem" }}
+      />
+
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          margin: "0.75rem 0",
+          fontSize: "0.9rem",
+          cursor: "pointer",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={useAiSummary}
+          onChange={(e) => setUseAiSummary(e.target.checked)}
+        />
+        <span>AI 요약 후 등록 (참고 문구가 없을 때 Gemini가 내용을 요약합니다)</span>
+      </label>
+
       {error && <p className={styles.error}>{error}</p>}
 
       <div className={styles.btnRow}>
@@ -117,7 +151,11 @@ export function PostWriteForm({ boardId }: PostWriteFormProps) {
           onClick={handleSubmit}
           disabled={submitting}
         >
-          {submitting ? "등록 중..." : "등록"}
+          {submitting
+            ? useAiSummary && !referenceText.trim()
+              ? "AI 요약 중..."
+              : "등록 중..."
+            : "등록"}
         </button>
       </div>
     </div>
