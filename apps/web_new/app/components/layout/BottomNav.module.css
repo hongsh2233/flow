@@ -6,7 +6,8 @@
   background: var(--app-card-bg);
   border-top: 1px solid var(--app-border);
   padding-bottom: env(safe-area-inset-bottom, 0);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+  z-index: 50;
 }
 
 .inner {
@@ -27,11 +28,16 @@
   background: none;
   cursor: pointer;
   color: var(--app-text-placeholder);
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .button:hover {
   color: var(--app-text-tertiary);
+}
+
+.button:active {
+  transform: scale(0.92);
 }
 
 .buttonActive {
@@ -50,11 +56,16 @@
   gap: 0.25rem;
   text-decoration: none;
   color: var(--app-text-placeholder);
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .link:hover {
   color: var(--app-text-tertiary);
+}
+
+.link:active {
+  transform: scale(0.92);
 }
 
 .linkActive {
@@ -74,9 +85,15 @@
 }
 
 .icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 1.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 1.6rem;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.buttonActive .icon svg,
+.linkActive .icon svg {
+  transform: scale(1.1);
 }
 
 .label {

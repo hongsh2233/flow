@@ -208,7 +208,7 @@ input[type='number'] {
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
+  --radius: 1rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: #030213;
@@ -238,10 +238,10 @@ input[type='number'] {
 
   --app-card-bg: #ffffff;
   --app-index-card-bg: #ffffff;
-  --app-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --app-card-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --app-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --app-card-shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --app-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --app-card-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --app-card-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.06);
+  --app-card-shadow-xl: 0 20px 40px -4px rgba(0, 0, 0, 0.08);
 
   --app-accent: #f97316;
   --app-accent-hover: #ea580c;
@@ -383,10 +383,10 @@ input[type='number'] {
 
   --app-card-bg: #1e293b;
   --app-index-card-bg: #1e293b;
-  --app-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --app-card-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --app-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --app-card-shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --app-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --app-card-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --app-card-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --app-card-shadow-xl: 0 20px 40px -4px rgba(0, 0, 0, 0.6);
 
   --app-accent: #fb923c;
   --app-accent-hover: #f97316;
