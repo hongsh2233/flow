@@ -185,6 +185,7 @@ export default function FindPasswordPage() {
                   value={newPassword}
                   onChange={setNewPassword}
                   icon={Lock}
+                  showPasswordToggle
                 />
                 <FormField
                   label="비밀번호 확인"
@@ -193,6 +194,7 @@ export default function FindPasswordPage() {
                   value={confirmPassword}
                   onChange={setConfirmPassword}
                   icon={Lock}
+                  showPasswordToggle
                 />
               </div>
               {error && <p className={styles.errorMsg}>{error}</p>}

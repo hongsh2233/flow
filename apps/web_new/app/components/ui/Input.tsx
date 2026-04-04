@@ -6,6 +6,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   withIcon?: boolean;
+  withPasswordToggle?: boolean;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export function Input({
   value,
   onChange,
   withIcon,
+  withPasswordToggle,
   className,
   ...props
 }: InputProps) {
@@ -20,7 +22,7 @@ export function Input({
     <input
       value={value}
       onChange={onChange}
-      className={`${styles.root} ${withIcon ? styles.rootWithIcon : ""} ${className ?? ""}`}
+      className={`${styles.root} ${withIcon ? styles.rootWithIcon : ""} ${withPasswordToggle ? styles.rootWithPasswordToggle : ""} ${className ?? ""}`}
       {...props}
     />
   );

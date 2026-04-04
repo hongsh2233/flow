@@ -100,6 +100,64 @@
     font-size: 11px;
     color: #888;
   }
+
+  .pw-alert-ok {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: #d4edda;
+    color: #155724;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .pw-alert-err {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .pw-form {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e5e7eb;
+    max-width: 220px;
+  }
+
+  .pw-form input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .pw-form button {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #8e44ad;
+    background: #9b59b6;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .pw-form button:hover {
+    background: #8e44ad;
+  }
+
+  .pw-hint {
+    font-size: 11px;
+    color: #888;
+    margin: 0 0 6px;
+    line-height: 1.35;
+  }
 </style>
 {% endblock %}
 
@@ -110,6 +168,19 @@
     구글/네이버 소셜 로그인 회원들의 활동 상태를 모니터링하고 관리할 수 있습니다.
   </p>
   <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0" />
+
+  {% if pw_ok %}
+  <div class="pw-alert-ok">회원 비밀번호가 변경되었습니다.</div>
+  {% endif %}
+  {% if pw_err == 'mismatch' %}
+  <div class="pw-alert-err">비밀번호 확인이 일치하지 않습니다.</div>
+  {% elif pw_err == 'length' %}
+  <div class="pw-alert-err">비밀번호는 8자 이상 128자 이하여야 합니다.</div>
+  {% elif pw_err == 'empty' %}
+  <div class="pw-alert-err">새 비밀번호를 입력해 주세요.</div>
+  {% elif pw_err == 'notfound' %}
+  <div class="pw-alert-err">해당 회원을 찾을 수 없습니다.</div>
+  {% endif %}
 
   <form method="get" action="/admin/members" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
     <label for="member-search-q" style="font-weight: 600; color: #2c3e50;">이메일 검색</label>
@@ -230,6 +301,38 @@
           >
             {{ '계정 정지' if m.status == 'active' else '정지 해제' }}
           </a>
+          <form
+            method="post"
+            action="/admin/members/password/{{ m.id }}"
+            class="pw-form"
+            onsubmit="return confirm('이 회원의 이메일 로그인 비밀번호를 변경합니다. 계속하시겠습니까?')"
+          >
+            <input type="hidden" name="redirect_q" value="{{ search_q|default('')|e }}" />
+            <p class="pw-hint">
+              {% if m.has_password %}
+              이메일 로그인 비밀번호 변경
+              {% else %}
+              소셜 계정에 이메일 로그인 비밀번호 부여
+              {% endif %}
+            </p>
+            <input
+              type="password"
+              name="new_password"
+              placeholder="새 비밀번호 (8자+)"
+              minlength="8"
+              autocomplete="new-password"
+              required
+            />
+            <input
+              type="password"
+              name="new_password_confirm"
+              placeholder="비밀번호 확인"
+              minlength="8"
+              autocomplete="new-password"
+              required
+            />
+            <button type="submit">비밀번호 적용</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

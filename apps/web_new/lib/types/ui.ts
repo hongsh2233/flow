@@ -41,6 +41,9 @@ export interface FormFieldProps {
   icon?: LucideIcon;
   id?: string;
   readOnly?: boolean;
+  /** 비밀번호 필드 우측 표시/숨김 토글 (type이 password일 때만 동작) */
+  showPasswordToggle?: boolean;
+  maxLength?: number;
 }
 
 export interface SearchProps {

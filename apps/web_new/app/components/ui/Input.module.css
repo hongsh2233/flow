@@ -22,3 +22,7 @@
 .rootWithIcon {
   padding-left: 2.75rem;
 }
+
+.rootWithPasswordToggle {
+  padding-right: 2.75rem;
+}
