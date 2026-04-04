@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/providers/ThemeProvider";
 import { CapacitorProvider } from "./components/providers/CapacitorProvider";
 import type { RootLayoutProps } from "@/lib/types";
 import { buildRootMetadata } from "@/lib/config/seo";
+import { ADSENSE_CLIENT_ID, ADSENSE_SCRIPT_SRC } from "@/lib/config/adsense";
 import "../assets/css/index.css";
 
 export const viewport: Viewport = {
@@ -26,6 +27,10 @@ export const metadata: Metadata = {
     apple: "/images/icon-192.png",
   },
   manifest: "/images/manifest.json",
+  /** AdSense 사이트 연결·검증 안내 시 사용 (스크립트/ads.txt와 병행, 필수는 아님) */
+  other: {
+    "google-adsense-account": ADSENSE_CLIENT_ID,
+  },
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
@@ -41,7 +46,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-52KM4V3R" height="0" width="0" style={{ display: 'none', visibility: 'hidden' }}></iframe></noscript>
         {/* End Google Tag Manager (noscript) */}
         <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6042624006544756"
+          src={ADSENSE_SCRIPT_SRC}
           strategy="afterInteractive"
           crossOrigin="anonymous"
         />
