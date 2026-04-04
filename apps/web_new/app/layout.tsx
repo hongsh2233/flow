@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import LayoutShell from "./components/layout/LayoutShell";
-import PcMobileAccessGate from "./components/layout/PcMobileAccessGate";
+// import PcMobileAccessGate from "./components/layout/PcMobileAccessGate";
 import NextAuthProvider from "./components/providers/NextAuthProvider";
 import { ThemeProvider } from "./components/providers/ThemeProvider";
 import { CapacitorProvider } from "./components/providers/CapacitorProvider";
@@ -48,9 +48,12 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         <NextAuthProvider>
           <ThemeProvider>
             <CapacitorProvider>
+              {/* PC 접속 시 차단(PcMobileAccessGate) — /market 등 데스크톱 허용을 위해 잠시 비활성화
               <PcMobileAccessGate>
                 <LayoutShell>{children}</LayoutShell>
               </PcMobileAccessGate>
+              */}
+              <LayoutShell>{children}</LayoutShell>
             </CapacitorProvider>
           </ThemeProvider>
         </NextAuthProvider>
