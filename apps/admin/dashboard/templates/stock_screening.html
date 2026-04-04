@@ -235,32 +235,91 @@
     color: #6c757d;
   }
 
-  .date-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-    font-size: 13px;
-    color: #495057;
+  /* 아코디언 스타일 */
+  .accordion {
+    margin-top: 10px;
   }
 
-  .date-toolbar label {
+  .accordion-item {
+    margin-bottom: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.2s;
+  }
+
+  .accordion-header:hover {
+    background: #e9ecef;
+  }
+
+  .accordion-header.active {
+    background: #e7f3ff;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .accordion-title {
     font-weight: 600;
     color: #2c3e50;
+    font-size: 14px;
   }
 
-  .date-toolbar select {
-    min-width: 200px;
-    padding: 6px 10px;
+  .accordion-meta {
+    font-size: 12px;
+    color: #6c757d;
+    margin-left: 12px;
+  }
+
+  .accordion-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .accordion-icon {
+    font-size: 12px;
+    color: #6c757d;
+    transition: transform 0.3s;
+  }
+
+  .accordion-header.active .accordion-icon {
+    transform: rotate(180deg);
+  }
+
+  .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .accordion-content.active {
+    max-height: 8000px;
+    transition: max-height 0.5s ease-in;
+  }
+
+  .accordion-body {
+    padding: 12px 16px;
+  }
+
+  .date-hint {
+    font-size: 12px;
+    color: #868e96;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f8f9fa;
     border-radius: 4px;
-    border: 1px solid #ced4da;
-    font-size: 13px;
-    background: #fff;
+    border: 1px solid #e9ecef;
   }
 </style>
 {% endblock %}
@@ -324,14 +383,6 @@
   <button class="sub-tab-button" onclick="switchMarket('kosdaq', this)">코스닥</button>
 </div>
 
-<div class="date-toolbar">
-  <label for="screening-date-select">기준일</label>
-  <select id="screening-date-select" aria-label="스크리닝 기준일">
-    <option value="">최신 (마지막 수집)</option>
-  </select>
-  <span style="font-size:12px;color:#868e96;">과거 일자는 DB에 누적되며, 기준일 기준 30일이 지난 데이터는 스크리닝 저장 시 자동 삭제됩니다. 앱 사용자에게는 항상 최신 1회분만 노출됩니다.</span>
-</div>
-
 <div id="screening-content">
   <div class="loading">데이터를 불러오는 중...</div>
 </div>
@@ -341,21 +392,21 @@
 <script>
 let currentMarket = 'kospi';
 let currentStrategy = 'ichimoku';
-let selectedScreeningDate = '';
+// 날짜별 데이터 캐시: { "2026-04-03": { loaded: true, json: {...} }, ... }
+const dateCache = {};
 
 function formatNumber(val) {
   if (!val) return '-';
-  const n = parseInt(val.replace(/,/g, ''), 10);
+  const n = parseInt(String(val).replace(/,/g, ''), 10);
   return isNaN(n) ? val : n.toLocaleString();
 }
 
 function getChangeClass(pct) {
   if (!pct) return '';
-  return pct.startsWith('+') ? 'up' : pct.startsWith('-') ? 'down' : '';
+  return String(pct).startsWith('+') ? 'up' : String(pct).startsWith('-') ? 'down' : '';
 }
 
 function switchStrategy(strategy, btn) {
-  // 탭 전환 시 폴링 중지 + 프로그레스 숨김
   if (progressInterval) {
     clearInterval(progressInterval);
     progressInterval = null;
@@ -369,58 +420,32 @@ function switchStrategy(strategy, btn) {
   document.querySelectorAll('.strategy-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
-  // 전략별 UI 토글
   document.getElementById('info-ichimoku').style.display = strategy === 'ichimoku' ? '' : 'none';
   document.getElementById('info-jongbe').style.display = strategy === 'jongbe' ? '' : 'none';
   document.getElementById('legend-ichimoku').style.display = strategy === 'ichimoku' ? '' : 'none';
   document.getElementById('legend-jongbe').style.display = strategy === 'jongbe' ? '' : 'none';
 
-  // 타이틀 업데이트
   document.getElementById('screening-title').textContent =
     strategy === 'ichimoku' ? '조건검색 (익일 매수 후보)' : '종베 검색식 (당일 종가매수)';
 
-  loadAvailableDates().then(() => loadData(currentMarket));
+  // 캐시 초기화 후 아코디언 로드
+  clearDateCache();
+  loadAllDatesAccordion();
 }
 
 function switchMarket(market, btn) {
   currentMarket = market;
   document.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  loadAvailableDates().then(() => loadData(market));
+  clearDateCache();
+  loadAllDatesAccordion();
 }
 
-async function loadAvailableDates() {
-  const sel = document.getElementById('screening-date-select');
-  const apiUrl = currentStrategy === 'ichimoku'
-    ? `/api/stock-screening/dates?market_type=${currentMarket}&limit=120`
-    : `/api/jongbe-screening/dates?market_type=${currentMarket}&limit=120`;
-  const preserve = selectedScreeningDate;
-  try {
-    const resp = await fetch(apiUrl);
-    const json = await resp.json();
-    const dates = Array.isArray(json.dates) ? json.dates : [];
-    sel.innerHTML = '<option value="">최신 (마지막 수집)</option>';
-    for (const d of dates) {
-      const opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = d;
-      sel.appendChild(opt);
-    }
-    if (preserve && dates.includes(preserve)) {
-      sel.value = preserve;
-      selectedScreeningDate = preserve;
-    } else {
-      sel.value = '';
-      selectedScreeningDate = '';
-    }
-  } catch (e) {
-    console.warn('dates load failed', e);
-    sel.innerHTML = '<option value="">최신 (마지막 수집)</option>';
-    selectedScreeningDate = '';
-  }
+function clearDateCache() {
+  for (const k of Object.keys(dateCache)) delete dateCache[k];
 }
 
-function renderIchimokuTable(json) {
+function renderIchimokuTable(data) {
   let html = `
     <div class="data-table-container">
       <table class="data-table">
@@ -441,7 +466,7 @@ function renderIchimokuTable(json) {
         </thead>
         <tbody>`;
 
-  for (const item of json.data) {
+  for (const item of data) {
     const chgClass = getChangeClass(item.change_percent);
     html += `
       <tr>
@@ -463,7 +488,7 @@ function renderIchimokuTable(json) {
   return html;
 }
 
-function renderJongbeTable(json) {
+function renderJongbeTable(data) {
   let html = `
     <div class="data-table-container">
       <table class="data-table">
@@ -486,7 +511,7 @@ function renderJongbeTable(json) {
         </thead>
         <tbody>`;
 
-  for (const item of json.data) {
+  for (const item of data) {
     const chgClass = getChangeClass(item.change_percent);
     html += `
       <tr>
@@ -510,41 +535,120 @@ function renderJongbeTable(json) {
   return html;
 }
 
-async function loadData(market) {
-  const container = document.getElementById('screening-content');
-  container.innerHTML = '<div class="loading">데이터를 불러오는 중...</div>';
+/** 날짜별 데이터를 가져와 해당 아코디언 본문에 렌더링 */
+async function loadDateData(date) {
+  const bodyEl = document.getElementById(`acc-body-${date}`);
+  if (!bodyEl) return;
 
-  const dateParam = selectedScreeningDate
-    ? `&screening_date=${encodeURIComponent(selectedScreeningDate)}`
-    : '';
+  // 이미 로드된 경우 스킵
+  if (dateCache[date] && dateCache[date].loaded) return;
+
+  bodyEl.innerHTML = '<div class="loading" style="padding:20px;">데이터를 불러오는 중...</div>';
+
+  const dateParam = `&screening_date=${encodeURIComponent(date)}`;
   const apiUrl = currentStrategy === 'ichimoku'
-    ? `/api/stock-screening?market_type=${market}&limit=100${dateParam}`
-    : `/api/jongbe-screening?market_type=${market}&limit=100${dateParam}`;
+    ? `/api/stock-screening?market_type=${currentMarket}&limit=200${dateParam}`
+    : `/api/jongbe-screening?market_type=${currentMarket}&limit=200${dateParam}`;
 
   try {
     const resp = await fetch(apiUrl);
     const json = await resp.json();
 
     if (!json.success || !json.data || json.data.length === 0) {
+      bodyEl.innerHTML = '<div style="padding:20px;text-align:center;color:#6c757d;">해당 날짜에 조건에 부합하는 종목이 없습니다.</div>';
+      dateCache[date] = { loaded: true, count: 0 };
+    } else {
+      dateCache[date] = { loaded: true, count: json.data.length };
+      if (currentStrategy === 'ichimoku') {
+        bodyEl.innerHTML = renderIchimokuTable(json.data);
+      } else {
+        bodyEl.innerHTML = renderJongbeTable(json.data);
+      }
+      // 아코디언 헤더에 건수 업데이트
+      const metaEl = document.getElementById(`acc-meta-${date}`);
+      if (metaEl) metaEl.textContent = `${json.data.length}건`;
+    }
+  } catch (err) {
+    bodyEl.innerHTML = `<div style="padding:20px;text-align:center;color:#e74c3c;">로딩 실패: ${err.message}</div>`;
+  }
+}
+
+/** 아코디언 토글 */
+function toggleAccordion(date) {
+  const header = document.getElementById(`acc-header-${date}`);
+  const content = document.getElementById(`acc-content-${date}`);
+  if (!header || !content) return;
+
+  const isActive = header.classList.contains('active');
+  if (isActive) {
+    header.classList.remove('active');
+    content.classList.remove('active');
+  } else {
+    header.classList.add('active');
+    content.classList.add('active');
+    // 처음 열 때 데이터 로드
+    loadDateData(date);
+  }
+}
+
+/** 전체 날짜를 불러와서 아코디언으로 렌더링 */
+async function loadAllDatesAccordion() {
+  const container = document.getElementById('screening-content');
+  container.innerHTML = '<div class="loading">날짜 목록을 불러오는 중...</div>';
+
+  const apiUrl = currentStrategy === 'ichimoku'
+    ? `/api/stock-screening/dates?market_type=${currentMarket}&limit=120`
+    : `/api/jongbe-screening/dates?market_type=${currentMarket}&limit=120`;
+
+  try {
+    const resp = await fetch(apiUrl);
+    const json = await resp.json();
+    const dates = Array.isArray(json.dates) ? json.dates : [];
+
+    if (dates.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">📭</div>
-          <p>조건에 부합하는 종목이 없거나 아직 스크리닝이 실행되지 않았습니다.</p>
+          <p>스크리닝 데이터가 없습니다.</p>
           <p style="font-size:12px; color:#adb5bd;">수동 실행 버튼을 눌러 스크리닝을 시작하세요.</p>
         </div>`;
       document.getElementById('screening-meta').textContent = '데이터 없음';
       return;
     }
 
-    const date = json.screening_date || '-';
     const strategyLabel = currentStrategy === 'ichimoku' ? '일목균형표' : '종베';
     document.getElementById('screening-meta').textContent =
-      `[${strategyLabel}] 기준일: ${date} | ${market.toUpperCase()} | ${json.count}건`;
+      `[${strategyLabel}] ${currentMarket.toUpperCase()} | 총 ${dates.length}일치 데이터`;
 
-    if (currentStrategy === 'ichimoku') {
-      container.innerHTML = renderIchimokuTable(json);
-    } else {
-      container.innerHTML = renderJongbeTable(json);
+    let html = '<div class="date-hint">과거 일자는 DB에 누적되며, 기준일 기준 30일이 지난 데이터는 스크리닝 저장 시 자동 삭제됩니다. 날짜를 클릭하면 해당 일자의 전체 결과를 확인할 수 있습니다.</div>';
+    html += '<div class="accordion">';
+
+    for (let i = 0; i < dates.length; i++) {
+      const d = dates[i];
+      const isFirst = i === 0;
+      html += `
+        <div class="accordion-item">
+          <button class="accordion-header${isFirst ? ' active' : ''}" id="acc-header-${d}" onclick="toggleAccordion('${d}')">
+            <div class="accordion-left">
+              <span class="accordion-title">${d}</span>
+              <span class="accordion-meta" id="acc-meta-${d}">${isFirst ? '로딩 중...' : '클릭하여 조회'}</span>
+            </div>
+            <span class="accordion-icon">▼</span>
+          </button>
+          <div class="accordion-content${isFirst ? ' active' : ''}" id="acc-content-${d}">
+            <div class="accordion-body" id="acc-body-${d}">
+              ${isFirst ? '<div class="loading" style="padding:20px;">데이터를 불러오는 중...</div>' : ''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // 첫 번째 날짜(최신) 자동 로드
+    if (dates.length > 0) {
+      loadDateData(dates[0]);
     }
 
   } catch (err) {
@@ -572,7 +676,6 @@ async function runScreening() {
     const json = await resp.json();
 
     if (json.success) {
-      // 프로그레스 바 표시 + 폴링 시작
       const progressEl = document.getElementById('screening-progress');
       progressEl.style.display = '';
       const bar = document.getElementById('progress-bar');
@@ -632,9 +735,10 @@ function startProgressPolling() {
         btn.disabled = false;
         btn.textContent = '수동 실행';
 
-        // 1.5초 후 데이터 자동 리로드
+        // 완료 후 캐시 초기화 + 아코디언 리로드
         setTimeout(() => {
-          loadData(currentMarket);
+          clearDateCache();
+          loadAllDatesAccordion();
           setTimeout(() => {
             document.getElementById('screening-progress').style.display = 'none';
           }, 3000);
@@ -661,12 +765,7 @@ function startProgressPolling() {
 
 // 초기 로드
 document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('screening-date-select');
-  sel.addEventListener('change', () => {
-    selectedScreeningDate = sel.value || '';
-    loadData(currentMarket);
-  });
-  loadAvailableDates().then(() => loadData(currentMarket));
+  loadAllDatesAccordion();
 });
 </script>
 {% endblock %}
