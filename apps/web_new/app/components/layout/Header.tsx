@@ -38,6 +38,7 @@ export default function Header() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [panelOpen, setPanelOpen] = useState(false);
     const [pointBalance, setPointBalance] = useState<number | null>(null);
+    const [memberGrade, setMemberGrade] = useState<string | null>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
     const PAGE_HEADER_TITLES: Record<string, string> = {
@@ -99,6 +100,7 @@ export default function Header() {
             .then((j) => {
                 if (cancelled || typeof j.point_balance !== "number") return;
                 setPointBalance(j.point_balance);
+                if (j.grade) setMemberGrade(j.grade);
             })
             .catch(() => {});
         return () => {
@@ -200,7 +202,7 @@ export default function Header() {
                     </div>
 
                     <div className={styles.rightHeaderCluster}>
-                    {status === "authenticated" && pointBalance !== null && (
+                    {status === "authenticated" && pointBalance !== null && memberGrade !== "family" && (
                         <span className={styles.pointBadge} aria-label="보유 포인트">
                             {pointBalance.toLocaleString()} P
                         </span>
@@ -274,7 +276,7 @@ export default function Header() {
                 {/* 제목 (알림벨 앞) */}
                 <div className={styles.titleRow}>
                     <h2 className={styles.title}>{greetingTitle}</h2>
-                    {status === "authenticated" && pointBalance !== null && (
+                    {status === "authenticated" && pointBalance !== null && memberGrade !== "family" && (
                         <span className={styles.pointBadge} aria-label="보유 포인트">
                             {pointBalance.toLocaleString()} P
                         </span>

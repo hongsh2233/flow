@@ -273,6 +273,7 @@ export default function MyStocksPage() {
           </button>
         </div>
 
+        {savedPicks.length > 0 && (
         <div className={styles.group}>
           <div className={styles.groupTitleWrap}>
             <Briefcase className={styles.groupIcon} />
@@ -281,9 +282,7 @@ export default function MyStocksPage() {
           <p className={styles.subHint}>마켓 관심 종목에서 담기에 성공한 종목이 표시됩니다. 추천금액은 담기 시점 가격입니다.</p>
           {quoteHint ? <p className={styles.subHint}>{quoteHint}</p> : null}
 
-          {savedPicks.length === 0 ? (
-            <div className={styles.emptyBox}>아직 담은 종목이 없습니다. 마켓에서 관심 담기를 해 보세요.</div>
-          ) : (
+          {(
             <div className={styles.groupCard}>
               {savedPicks.map((p, pIdx) => {
                 const cur = prices[p.code];
@@ -333,7 +332,9 @@ export default function MyStocksPage() {
             </div>
           )}
         </div>
+        )}
 
+        {pickHistory.length > 0 && (
         <div className={styles.group}>
           <div className={styles.groupTitleWrap}>
             <History className={styles.groupIcon} />
@@ -342,9 +343,7 @@ export default function MyStocksPage() {
           <p className={styles.subHint}>
             비우기 시점의 시세를 기준가로 저장합니다. 수익률은 담기 추천금 대비 비움 시점가 기준입니다. 이력은 비운 날로부터 15일이 지난 항목은 자동으로 사라집니다.
           </p>
-          {pickHistory.length === 0 ? (
-            <div className={styles.emptyBox}>아직 이력이 없습니다. 담은 종목에서 비우기를 하면 여기에 표시됩니다.</div>
-          ) : (
+          {(
             <div className={styles.groupCard}>
               {pickHistory.map((h, hIdx) => {
                 const entry = h.entryPrice;
@@ -388,6 +387,7 @@ export default function MyStocksPage() {
             </div>
           )}
         </div>
+        )}
 
         <div className={styles.group}>
           <div className={styles.groupTitleWrap}>
