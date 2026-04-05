@@ -3,18 +3,6 @@
   padding-bottom: var(--content-bottom-padding);
 }
 
-.backLink {
-  display: inline-block;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: var(--app-accent);
-  text-decoration: none;
-}
-
-.backLink:hover {
-  text-decoration: underline;
-}
-
 .searchArea {
   margin-bottom: 1.5rem;
 }
@@ -320,4 +308,10 @@
 .newsDate {
   font-size: 0.7rem;
   color: var(--app-text-muted);
+}
+
+.stockFlowWrap {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--app-border, #e5e7eb);
 }
