@@ -37,6 +37,7 @@ if (isProduction && !process.env.NEXTAUTH_SECRET) {
   console.error('[NextAuth] NEXTAUTH_SECRET 미설정 — 프로덕션에서 세션/로그인이 실패할 수 있습니다.')
 }
 
+// trustHost + 배포 환경의 AUTH_TRUST_HOST(비 Vercel)로 x-forwarded-* 기반 origin 사용 → OAuth state 쿠키와 일치
 export const authOptions = {
   secret,
   trustHost: true,

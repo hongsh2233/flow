@@ -1,7 +1,6 @@
 "use client";
 
 import { Capacitor } from "@capacitor/core";
-import { signIn } from "next-auth/react";
 import type { SocialProvider } from "@/lib/types";
 
 const LAST_LOGIN_KEY = "lastLoginProvider";
@@ -27,12 +26,16 @@ export async function startMobileSocialOAuth(options: {
   const mobileCallback = options.mobileCallbackPath ?? "/auth/mobile-callback";
   const webCb = options.webCallbackUrl ?? "/";
 
-  /** Custom Tab 안에서 열 URL — 브릿지 페이지가 폼 POST로 state 쿠키를 브라우저에 심음 */
-  const buildOauthBridgeUrl = () => {
+  /** 브릿지 페이지가 CSRF + 폼 POST로 /api/auth/signin 호출 → Set-Cookie(state) 후 Google로 이동 (State cookie was missing 완화) */
+  const buildOauthBridgeUrl = (callbackPath: string) => {
     const origin = window.location.origin;
+    const safe =
+      callbackPath.startsWith("/") && !callbackPath.startsWith("//")
+        ? callbackPath
+        : "/";
     const params = new URLSearchParams({
       provider: options.provider,
-      callbackUrl: mobileCallback,
+      callbackUrl: safe,
     });
     return `${origin}/auth/oauth-bridge?${params.toString()}`;
   };
@@ -41,7 +44,7 @@ export async function startMobileSocialOAuth(options: {
     try {
       options.setSubmitting(true);
       options.setError("");
-      const url = buildOauthBridgeUrl();
+      const url = buildOauthBridgeUrl(mobileCallback);
       const { Browser } = await import("@capacitor/browser");
       const { App } = await import("@capacitor/app");
       await Browser.open({ url, presentationStyle: "popover" });
@@ -93,7 +96,7 @@ export async function startMobileSocialOAuth(options: {
     try {
       options.setSubmitting(true);
       options.setError("");
-      const url = buildOauthBridgeUrl();
+      const url = buildOauthBridgeUrl(mobileCallback);
       jurinApp.openAuthBrowser(url);
     } catch (err) {
       console.error("소셜 로그인 오류:", err);
@@ -103,5 +106,14 @@ export async function startMobileSocialOAuth(options: {
     return;
   }
 
-  signIn(options.provider, { callbackUrl: webCb });
+  // 일반 웹도 브릿지 경유: 클라이언트 signIn() 리다이렉트만으로는 state 쿠키가 안 남는 환경(프록시·호스트 불일치)이 있음
+  try {
+    options.setSubmitting(true);
+    options.setError("");
+    window.location.assign(buildOauthBridgeUrl(webCb));
+  } catch (err) {
+    console.error("소셜 로그인 오류:", err);
+    options.setError("소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+    options.setSubmitting(false);
+  }
 }
