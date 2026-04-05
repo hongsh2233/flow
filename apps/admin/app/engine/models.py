@@ -974,3 +974,48 @@ class AliexpressAffiliateProduct(Base):
     order_index = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CommunityPost(Base):
+    """투자 커뮤니티 게시글 (네이버 시장토론, DC인사이드 주식갤러리)"""
+    __tablename__ = "community_posts"
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(30), nullable=False, index=True)       # "naver_forum" | "dcinside"
+    post_id = Column(String(50), nullable=False)
+    title = Column(String(500), nullable=False)
+    view_count = Column(Integer, default=0)
+    like_count = Column(Integer, default=0)
+    written_at = Column(DateTime(timezone=True), nullable=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    collected_date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
+    __table_args__ = (
+        UniqueConstraint("source", "post_id", name="uq_community_post"),
+        Index("ix_community_date_source", "collected_date", "source"),
+    )
+
+
+class SentimentSnapshot(Base):
+    """투자자 심리지수 스냅샷 (7개 하위지표 복합)"""
+    __tablename__ = "sentiment_snapshots"
+    id = Column(Integer, primary_key=True, index=True)
+    snapshot_date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
+    snapshot_time = Column(String(5), nullable=False)                # HH:MM
+    # 7개 하위지표 (각 0~100)
+    momentum_score = Column(Integer, nullable=True)
+    vix_score = Column(Integer, nullable=True)
+    supply_score = Column(Integer, nullable=True)
+    volume_score = Column(Integer, nullable=True)
+    community_score = Column(Integer, nullable=True)
+    news_score = Column(Integer, nullable=True)
+    signal_score = Column(Integer, nullable=True)
+    # 종합
+    composite_score = Column(Integer, nullable=False)
+    label = Column(String(20), nullable=False)    # 탐욕/과욕/보통/불안/공포
+    # AI 분석
+    ai_analysis = Column(Text, nullable=True)
+    top_keywords = Column(Text, nullable=True)    # JSON array string
+    raw_data = Column(Text, nullable=True)         # JSON: 원본 수치
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("snapshot_date", "snapshot_time", name="uq_sentiment_snapshot"),
+    )
