@@ -3075,9 +3075,11 @@ async def trigger_naver_stock_news_collect(
 @router.get("/api/sentiment/latest")
 def get_sentiment_latest(
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """최신 심리지수 스냅샷"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.engine.models import SentimentSnapshot
     row = db.query(SentimentSnapshot).order_by(SentimentSnapshot.created_at.desc()).first()
     if not row:
@@ -3106,9 +3108,11 @@ def get_sentiment_latest(
 def get_sentiment_history(
     days: int = Query(30, ge=1, le=90),
     db: Session = Depends(get_db),
-    authorized: bool = Depends(verify_api_key),
+    user=Depends(get_current_user),
 ):
     """최근 N일 일별 스냅샷 (날짜별 마지막 스냅샷)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
     from app.engine.models import SentimentSnapshot
     from sqlalchemy import func as sa_func
     cutoff = (date.today() - __import__("datetime").timedelta(days=days)).strftime("%Y-%m-%d")

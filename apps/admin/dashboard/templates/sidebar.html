@@ -101,8 +101,8 @@
       </div>
     </div>
 
-    <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report'] %}is-open{% endif %}">
-      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report'] %}true{% else %}false{% endif %}">
+    <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report', 'sentiment'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report', 'sentiment'] %}true{% else %}false{% endif %}">
         시장 데이터
         <span class="menu-group-chevron" aria-hidden="true"></span>
       </button>
@@ -124,6 +124,9 @@
         </a>
         <a href="/admin/stock-news" class="menu-item menu-sub {% if active_page == 'stock-news' %}active{% endif %}">
           <span class="menu-icon">📰</span> 이슈 · 수급
+        </a>
+        <a href="/admin/sentiment" class="menu-item menu-sub {% if active_page == 'sentiment' %}active{% endif %}">
+          <span class="menu-icon">🧭</span> 심리지수
         </a>
       </div>
     </div>
