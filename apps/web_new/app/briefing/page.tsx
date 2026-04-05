@@ -4,8 +4,6 @@ import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { AllNews } from "../components/module/news/AllNews";
-import { FavoriteNews } from "../components/module/news/FavoriteNews";
-import { MarketIndicesTab } from "../components/module/briefing/MarketIndicesTab";
 import { ReportTabContent } from "../components/module/briefing/ReportTabContent";
 import { SpotlightNews } from "../components/module/briefing/SpotlightNews";
 import { StockTermBox } from "../components/module/stock-term-box";
@@ -15,7 +13,6 @@ import styles from "./Briefing.module.css";
 
 function BriefingContent() {
   const { data: session, status } = useSession();
-  const isLoggedIn = status === "authenticated";
 
   return (
     <div className={styles.wrap}>
@@ -23,10 +20,7 @@ function BriefingContent() {
       <Tabs defaultValue="all" variant="underline">
         <TabsList className={styles.tabList}>
           <TabsTrigger value="all" className={styles.tab}>
-            전체뉴스
-          </TabsTrigger>
-          <TabsTrigger value="favorite" className={styles.tab}>
-            관심뉴스
+            뉴스
           </TabsTrigger>
           <TabsTrigger value="spotlight" className={styles.tab}>
             이슈
@@ -36,24 +30,11 @@ function BriefingContent() {
           </TabsTrigger>
         </TabsList>
 
-        {/* [AD_ZONE B3 — 전체뉴스 탭과 리스트 사이 / 일반회원까지] */}
+        {/* [AD_ZONE B3 — 뉴스 탭과 리스트 사이 / 일반회원까지] */}
         {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B3" />}
 
         <TabsContent value="all" className={styles.tabContent}>
           <AllNews />
-        </TabsContent>
-
-        <TabsContent value="favorite" className={styles.tabContent}>
-          {isLoggedIn ? (
-            <FavoriteNews />
-          ) : (
-            <div className={styles.loginPrompt}>
-              <p>로그인 후 관심종목으로 등록한 종목의 뉴스를 확인할 수 있습니다.</p>
-              <a href="/login" className={styles.loginLink}>
-                로그인하기
-              </a>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="spotlight" className={styles.tabContent}>

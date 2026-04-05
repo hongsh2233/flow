@@ -4,37 +4,6 @@
   margin: 0 auto;
 }
 
-.brokerRow {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 1.25rem;
-}
-
-.brokerBtn {
-  font-size: 0.78rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--app-table-border);
-  background: var(--app-card-bg);
-  color: var(--app-text);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.brokerBtnPrimary {
-  font-size: 0.78rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, #0f766e 35%, var(--app-table-border));
-  background: #0d9488;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .group {
   margin-bottom: 2rem;
 }

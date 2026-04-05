@@ -450,3 +450,16 @@
   max-width: min(92vw, 20rem);
   line-height: 1.45;
 }
+
+.favoriteNewsSection {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--app-border, #e5e7eb);
+}
+
+.favoriteNewsTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--app-text);
+}
