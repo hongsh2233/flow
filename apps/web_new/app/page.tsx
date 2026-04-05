@@ -16,6 +16,7 @@ import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart"
 import { MainCardNews } from "./components/module/home/MainCardNews";
 import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
 import { HomeMarketCta } from "./components/module/home/HomeMarketCta";
+import { SentimentIndexCard } from "./components/module/home/SentimentIndexCard";
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
@@ -115,6 +116,7 @@ export default function Home() {
         홈→마켓: AI 추천 CTA. BO 배너만 쓰려면 제거하고 ManagedBannerSection에
         page_path=/, link_url=/market 로 등록 가능.
       */}
+      <SentimentIndexCard />
       <HomeMarketCta />
       <MainCardNews />
       {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
