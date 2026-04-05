@@ -151,16 +151,12 @@ export function SentimentIndexCard() {
             {latest.label}
           </span>
         </div>
-        <div className={styles.chartWrap}>
-          {history.length >= 2 ? (
-            <>
-              <MiniChart data={history} />
-              <span className={styles.chartHint}>최근 7일 추이</span>
-            </>
-          ) : (
-            <span className={styles.chartHint}>추이 데이터 수집 중</span>
-          )}
-        </div>
+        {history.length >= 2 && (
+          <div className={styles.chartWrap}>
+            <MiniChart data={history} />
+            <span className={styles.chartHint}>최근 7일 추이</span>
+          </div>
+        )}
       </div>
     </section>
   );
