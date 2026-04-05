@@ -823,10 +823,15 @@ async def collect_calendar_data():
                 target_year += 1
 
             try:
-                naver_schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
+                naver_result = await naver_calendar_service.fetch_monthly_schedule(
+                    target_year, target_month
+                )
+                naver_schedules = naver_result.items
                 naver_fetched_total += len(naver_schedules)
                 if naver_schedules:
-                    naver_saved_total += naver_calendar_service.save_schedules_to_db(db, naver_schedules)
+                    naver_saved_total += naver_calendar_service.save_schedules_to_db(
+                        db, naver_schedules
+                    )
             except Exception as e:
                 print(f"⚠️ 네이버 캘린더 수집 오류 ({target_year}/{target_month}): {e}")
         print(f"📊 [네이버 증시 캘린더] 수집(파싱) {naver_fetched_total}건 · 신규 저장 {naver_saved_total}건")

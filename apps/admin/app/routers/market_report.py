@@ -34,7 +34,15 @@ async def market_report_page(
     if not user:
         return RedirectResponse(url="/", status_code=303)
     today = _kst_today()
-    default_title = f"{today.isoformat()} 출근길 브리핑"
+    date_str = today.isoformat()
+    default_title = f"{date_str} 출근길 브리핑"
+    # BO 참조용 고정 틀(읽기 전용) — 첨부·수집 데이터로 각 줄을 채워 게시 본문에 옮겨 적음
+    reference_template = (
+        f"{date_str} 모닝 브리핑입니다.\n\n"
+        "뉴욕증시는 ~\n\n"
+        "한국관련 지표는 ~\n\n"
+        "금일 주요 이슈와 이벤트는 ~"
+    )
 
     qp = request.query_params
     result = None
@@ -50,6 +58,7 @@ async def market_report_page(
             "admin_email": user.email,
             "active_page": "market-report",
             "default_title": default_title,
+            "reference_template": reference_template,
             "result": result,
         },
     )

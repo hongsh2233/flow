@@ -3,10 +3,15 @@
 
 실적발표, 경제지표, 주주총회, 테마성 이벤트 등을 수집합니다.
 
-※ 2026년 기준 `scheduleMonthly.nhn`·`sise_market_cal.naver` 등 기존 URL이 HTTP 404로 응답하는 경우가 많습니다.
-  (네이버 측 엔드포인트 폐기·이전) 이 경우 자동 수집은 0건이며, KRX 공모·BO 수동 일정으로 보완하세요.
-  불필요한 요청을 끄려면 환경변수 NAVER_CALENDAR_ENABLED=0 을 설정합니다.
+※ 2026년 기준 기존 공개 엔드포인트
+  - `m.stock.naver.com/api/json/sise/scheduleMonthly.nhn`
+  - `finance.naver.com/sise/sise_market_cal.naver`
+  가 HTTP 404로 응답하는 경우가 확인되었습니다(네이버 측 폐기·이전).
+  이 경우 자동 수집은 0건이며, BO의 **KRX 공모·상장** 동기화·수동 일정으로 보완하세요.
+
+  불필요한 HTTP 요청을 끄려면 환경변수 NAVER_CALENDAR_ENABLED=0 을 설정합니다.
 """
+from dataclasses import dataclass
 import httpx
 from bs4 import BeautifulSoup
 from datetime import date as date_cls
@@ -95,6 +100,21 @@ def _parse_naver_schedule_monthly_json(year: int, month: int, payload: Any) -> L
     return out
 
 
+@dataclass
+class NaverCalendarFetchResult:
+    """한 달 조회 결과(HTTP 상태 포함 — BO·로그에서 원인 구분용)."""
+
+    items: List[Dict]
+    json_http: Optional[int] = None
+    html_http: Optional[int] = None
+    skipped: bool = False
+
+    @property
+    def both_legacy_endpoints_404(self) -> bool:
+        """구 JSON·PC HTML 모두 404인 경우(네이버가 경로를 폐기한 전형적 패턴)."""
+        return self.json_http == 404 and self.html_http == 404
+
+
 class NaverCalendarService:
     def __init__(self):
         self.base_url = "https://finance.naver.com"
@@ -103,16 +123,18 @@ class NaverCalendarService:
         }
         self.timeout = 30.0
 
-    async def fetch_monthly_schedule(self, year: int, month: int) -> List[Dict]:
+    async def fetch_monthly_schedule(self, year: int, month: int) -> NaverCalendarFetchResult:
         """
         특정 월의 달력을 조회하여 일별 이벤트 파싱.
         모바일 JSON(scheduleMonthly.nhn)을 우선 시도하고, 실패 시 구 PC HTML(sise_market_cal)을 시도한다.
         """
         ym = f"{year}{month:02d}"
         results: List[Dict] = []
+        json_http: Optional[int] = None
+        html_http: Optional[int] = None
 
         if not NAVER_CALENDAR_ENABLED:
-            return results
+            return NaverCalendarFetchResult(items=[], skipped=True)
 
         json_url = f"https://m.stock.naver.com/api/json/sise/scheduleMonthly.nhn?month={ym}"
         json_headers = {
@@ -127,6 +149,7 @@ class NaverCalendarService:
         try:
             async with httpx.AsyncClient(headers=self.headers, timeout=self.timeout) as client:
                 jr = await client.get(json_url, headers=json_headers)
+                json_http = jr.status_code
                 ct = (jr.headers.get("content-type") or "").lower()
                 txt0 = (jr.text or "").lstrip()[:1]
                 looks_json = "json" in ct or txt0 == "{"
@@ -152,10 +175,13 @@ class NaverCalendarService:
 
                 if results:
                     print(f"✅ 네이버 증권 캘린더(JSON, {ym}) 파싱 완료: {len(results)}건")
-                    return results
+                    return NaverCalendarFetchResult(
+                        items=results, json_http=json_http, html_http=None
+                    )
 
                 html_url = f"{self.base_url}/sise/sise_market_cal.naver?ym={ym}"
                 response = await client.get(html_url)
+                html_http = response.status_code
                 html_404 = not response.is_success and response.status_code == 404
 
                 if not response.is_success:
@@ -181,7 +207,11 @@ class NaverCalendarService:
                             f"⚠️ 네이버 캘린더 HTML HTTP {response.status_code} ({ym}) "
                             f"— 이번 달 수집 0건"
                         )
-                    return results
+                    return NaverCalendarFetchResult(
+                        items=results,
+                        json_http=json_http,
+                        html_http=html_http,
+                    )
 
                 soup = BeautifulSoup(
                     response.content.decode("euc-kr", "replace"), "html.parser"
@@ -191,7 +221,11 @@ class NaverCalendarService:
                     print(
                         f"⚠️ 네이버 PC 달력 페이지({ym})에 table.type_cal 없음 — 마크업 변경 가능"
                     )
-                    return results
+                    return NaverCalendarFetchResult(
+                        items=results,
+                        json_http=json_http,
+                        html_http=html_http,
+                    )
 
                 tds = cal_table.find_all("td")
                 for td in tds:
@@ -225,11 +259,17 @@ class NaverCalendarService:
                                 )
 
                 print(f"✅ 네이버 증권 캘린더(HTML, {ym}) 파싱 완료: {len(results)}건")
-                return results
+                return NaverCalendarFetchResult(
+                    items=results, json_http=json_http, html_http=html_http
+                )
 
         except Exception as e:
             print(f"❌ 네이버 캘린더 파싱 오류 ({ym}): {e}")
-            return []
+            return NaverCalendarFetchResult(
+                items=[],
+                json_http=json_http,
+                html_http=html_http,
+            )
 
     def save_schedules_to_db(self, db_session, schedules: List[Dict]) -> int:
         """신규 삽입 건수만 반환 (기존 date+subject+type 중복은 스킵)."""
