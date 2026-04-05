@@ -312,7 +312,7 @@ function setGaugeNeedle(score) {
 async function loadLatest() {
   try {
     const res = await fetch("/api/sentiment/latest", {
-      headers: { "X-API-Key": "{{ request.cookies.get('bo_session_id', '') }}" },
+      credentials: "same-origin",
     });
     const json = await res.json();
     if (!json.success || !json.data) {
@@ -375,7 +375,7 @@ async function loadLatest() {
 async function loadHistory() {
   try {
     const res = await fetch("/api/sentiment/history?days=30", {
-      headers: { "X-API-Key": "{{ request.cookies.get('bo_session_id', '') }}" },
+      credentials: "same-origin",
     });
     const json = await res.json();
     if (!json.success || !json.data || json.data.length === 0) {
