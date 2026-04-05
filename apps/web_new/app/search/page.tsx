@@ -90,11 +90,24 @@ const STOCK_INFO_COLUMNS: { key: keyof FscStockDetail; label: string }[] = [
 /* ─────────────────────────────────────────── 메인 컴포넌트 ── */
 function SearchResultsContent() {
   const searchParams = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  return (
+    <div className={styles.page}>
+      <SearchQueryPanel key={q} q={q} />
+      <div className={styles.stockFlowWrap}>
+        <StockFlowSection />
+      </div>
+      <StockTermBox wrapperStyle={{ margin: "0 0 1rem" }} />
+    </div>
+  );
+}
+
+/** URL `q`가 바뀔 때만 remount — 검색 입력/결과 상태 초기화 (종목 흐름은 바깥에서 유지) */
+function SearchQueryPanel({ q }: { q: string }) {
   const router = useRouter();
   const { data: session } = useSession();
   const { favCodes } = useFavoriteStocks();
   const { addFavCode, removeFavCode } = useFavoriteStore();
-  const q = searchParams.get("q") ?? "";
 
   const [searchTerm, setSearchTerm] = useState(q);
 
@@ -148,7 +161,7 @@ function SearchResultsContent() {
         removeFavCode(code);
       }
     }
-  }, [session?.user?.email, fscPick, favCodes, addFavCode, removeFavCode]);
+  }, [session, fscPick, favCodes, addFavCode, removeFavCode]);
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -161,32 +174,37 @@ function SearchResultsContent() {
     [router]
   );
 
-  useEffect(() => {
-    setSearchTerm(q);
-    setFscPick(null);
-  }, [q]);
-
   // 주가 목록 조회
   useEffect(() => {
     if (!q.trim()) return;
     const query = q.trim();
-    setStockLoading(true);
-    setStockList([]);
-    fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=20`)
-      .then((r) => r.json())
-      .then((j) => {
-        const all: FscStockDetail[] = Array.isArray(j.data) ? j.data : [];
-        // 백엔드 필터링이 동작 안 할 경우를 대비해 클라이언트에서 한 번 더 필터
-        const lowerQ = query.toLowerCase();
-        const list = all.filter((item) =>
-          (item.itms_nm ?? "").toLowerCase().includes(lowerQ)
-        );
-        setStockList(list);
-        // 정확히 1건이면 자동 선택
-        if (list.length === 1) setFscPick(list[0]);
-      })
-      .catch(() => setStockList([]))
-      .finally(() => setStockLoading(false));
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setStockLoading(true);
+      setStockList([]);
+      fetch(`/api/fsc-stock-price?itms_nm=${encodeURIComponent(query)}&limit=20`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (cancelled) return;
+          const all: FscStockDetail[] = Array.isArray(j.data) ? j.data : [];
+          const lowerQ = query.toLowerCase();
+          const list = all.filter((item) =>
+            (item.itms_nm ?? "").toLowerCase().includes(lowerQ)
+          );
+          setStockList(list);
+          if (list.length === 1) setFscPick(list[0]);
+        })
+        .catch(() => {
+          if (!cancelled) setStockList([]);
+        })
+        .finally(() => {
+          if (!cancelled) setStockLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [q]);
 
   // 선택 종목 변경 시 권리일정·뉴스 조회
@@ -194,26 +212,45 @@ function SearchResultsContent() {
     const name = fscPick?.itms_nm?.trim() ?? q.trim();
     if (!name) return;
 
-    setRightLoading(true);
-    fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(name)}&page_no=1&num_of_rows=1000`)
-      .then((r) => r.json())
-      .then((j) => setRightSchedule(Array.isArray(j.data) ? j.data : []))
-      .catch(() => setRightSchedule([]))
-      .finally(() => setRightLoading(false));
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setRightLoading(true);
+      setNewsLoading(true);
+      fetch(`/api/right-schedule?stck_issu_cmpy_nm=${encodeURIComponent(name)}&page_no=1&num_of_rows=1000`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (!cancelled) setRightSchedule(Array.isArray(j.data) ? j.data : []);
+        })
+        .catch(() => {
+          if (!cancelled) setRightSchedule([]);
+        })
+        .finally(() => {
+          if (!cancelled) setRightLoading(false);
+        });
 
-    setNewsLoading(true);
-    fetch(`/api/naver-news?query=${encodeURIComponent(name + " 주가")}&display=5&sort=date`)
-      .then((r) => r.json())
-      .then((j) => setNews(Array.isArray(j.data) ? j.data.slice(0, 5) : []))
-      .catch(() => setNews([]))
-      .finally(() => setNewsLoading(false));
+      fetch(`/api/naver-news?query=${encodeURIComponent(name + " 주가")}&display=5&sort=date`)
+        .then((r) => r.json())
+        .then((j) => {
+          if (!cancelled) setNews(Array.isArray(j.data) ? j.data.slice(0, 5) : []);
+        })
+        .catch(() => {
+          if (!cancelled) setNews([]);
+        })
+        .finally(() => {
+          if (!cancelled) setNewsLoading(false);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [fscPick, q]);
 
   // 표시할 주가 정보 (선택 or 단일 결과)
   const stockDetail = fscPick;
 
   return (
-    <div className={styles.page}>
+    <>
       <div className={styles.searchArea}>
         <Search
           value={searchTerm}
@@ -376,15 +413,10 @@ function SearchResultsContent() {
         </>
       )}
 
-      <div className={styles.stockFlowWrap}>
-        <StockFlowSection />
-      </div>
-
-      <StockTermBox wrapperStyle={{ margin: "0 0 1rem" }} />
       {favToast && (
         <div className={styles.favToast}>{favToast}</div>
       )}
-    </div>
+    </>
   );
 }
 

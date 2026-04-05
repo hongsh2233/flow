@@ -9,6 +9,8 @@ import { shouldShowAdZoneB_vip } from "@/lib/affiliate/adZoneB";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/config/api";
+import { pickMultipleWeightedByMaster, pickWeightedByMaster } from "@/lib/jubti/jubtiMasters";
+import { useJubtiMasterName } from "@/lib/hooks/useJubtiMasterName";
 import type {
   JuBTI,
   GuestbookMessage,
@@ -83,6 +85,7 @@ const SOURCE_COLORS: Record<string, string> = {
 
 export default function JuTalkPage() {
   const { data: session, status } = useSession();
+  const jubtiMasterName = useJubtiMasterName();
   const isLoggedIn = !!session?.user;
   const nickname =
     (session?.user as { nickname?: string | null; name?: string | null })?.nickname ||
@@ -337,9 +340,6 @@ export default function JuTalkPage() {
         }));
 
         setExperts(mapped);
-        // 초기 3개 랜덤 선택
-        const shuffled = [...mapped].sort(() => Math.random() - 0.5);
-        setDisplayedExperts(shuffled.slice(0, Math.min(3, shuffled.length)));
       } catch {
         // 무시: 전문가 명언이 없으면 섹션을 비워둔다.
       }
@@ -462,21 +462,31 @@ export default function JuTalkPage() {
     fetchBoardsAndContent().then((id) => fetchStatsIfNeeded(id)).catch(() => {});
   }, [session?.user]);
 
-  /* 대가들의 한마디: 10초마다 새 1개 추가 (SNS 스타일) */
+  /* 주BTI 대가 약 70% · 기타 약 30% 비율로 초기 3명 노출 */
+  useEffect(() => {
+    if (experts.length === 0) {
+      setDisplayedExperts([]);
+      return;
+    }
+    setDisplayedExperts(
+      pickMultipleWeightedByMaster(experts, jubtiMasterName, 3, (e) => String(e.id)),
+    );
+  }, [experts, jubtiMasterName]);
+
+  /* 대가들의 한마디: 10초마다 새 1개 추가 (SNS 스타일, 7:3 가중) */
   useEffect(() => {
     if (experts.length < 2) return;
     const interval = setInterval(() => {
       setDisplayedExperts((prev) => {
         const pool = experts.filter((e) => !prev.some((p) => p.id === e.id));
-        const next =
-          pool.length > 0
-            ? pool[Math.floor(Math.random() * pool.length)]
-            : prev[2] ?? prev[0]; // 모두 표시됐으면 맨 뒤 것을 맨 앞으로
+        const source = pool.length > 0 ? pool : experts;
+        const head = prev[0] ?? null;
+        const next = pickWeightedByMaster(source, head, jubtiMasterName, (e) => String(e.id));
         return [next, ...prev].slice(0, 3);
       });
     }, 10000);
     return () => clearInterval(interval);
-  }, [experts]);
+  }, [experts, jubtiMasterName]);
 
   /* 시장의 목소리: 10초마다 새 1개 추가 (SNS 실시간 스타일, 최대 6개) */
   useEffect(() => {

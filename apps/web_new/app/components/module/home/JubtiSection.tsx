@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import styles from "./JubtiSection.module.css";
 import questionPool from "@/lib/data/jubti-questions.json";
+import { JUBTI_MASTER_BY_TYPE } from "@/lib/jubti/jubtiMasters";
 
 type Dimension = "A" | "D" | "N" | "I";
 
@@ -53,7 +54,7 @@ const TYPE_META: Record<
   A: {
     label: "A (공격형)",
     characterName: "불나방 파이터",
-    master: "조지 소로스",
+    master: JUBTI_MASTER_BY_TYPE.A,
     quote: "맞았나 틀렸나가 중요한 게 아니라, 맞았을 때 얼마를 벌었느냐가 중요하다.",
     advice: "변동성을 즐기되, 손실 한도를 정하고 리스크 관리 원칙을 세워두는 것이 중요합니다.",
     recommendedConcepts: ["레버리지·인버스", "손절·익절 전략", "수급·주체 동향"],
@@ -62,7 +63,7 @@ const TYPE_META: Record<
   D: {
     label: "D (방어형)",
     characterName: "철벽 거북이",
-    master: "워런 버핏",
+    master: JUBTI_MASTER_BY_TYPE.D,
     quote: "10년을 보유할 주식이 아니라면 10분도 보유하지 마라.",
     advice: "단기 변동성에 흔들리기보다, 사업의 해자와 장기 경쟁력을 이해하는 데 시간을 써보세요.",
     recommendedConcepts: ["배당주·우량주", "안정성 지표(부채비율 등)", "거시 경제와 금리"],
@@ -71,7 +72,7 @@ const TYPE_META: Record<
   N: {
     label: "N (분석형)",
     characterName: "돋보기 탐정",
-    master: "찰리 멍거",
+    master: JUBTI_MASTER_BY_TYPE.N,
     quote: "큰 돈은 적게 사고 자주 파는 것이 아니라, 적게 사고 오래 보유하는 데서 나온다.",
     advice: "숫자 분석 능력에 더해, 경영진·산업 구조 등 정성적인 요소를 함께 보는 연습을 해보세요.",
     recommendedConcepts: ["재무제표 읽기", "밸류에이션(PER, PBR)", "기업지배구조·지분 구조"],
@@ -80,7 +81,7 @@ const TYPE_META: Record<
   I: {
     label: "I (직관형)",
     characterName: "촉 좋은 야생마",
-    master: "피터 린치",
+    master: JUBTI_MASTER_BY_TYPE.I,
     quote: "당신이 아는 것에 투자하라.",
     advice: "감각과 트렌드를 강점으로 삼되, 기본적인 재무 건전성과 리스크도 함께 체크해 보세요.",
     recommendedConcepts: ["차트·기술적 분석", "산업·섹터 트렌드", "공시·이벤트 해석"],

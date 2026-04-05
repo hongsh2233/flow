@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { Search } from "../components/module/Search";
 import { RandomAffiliateCard } from "../components/module/affiliate/RandomAffiliateCard";
 import { MarketPicksSection } from "../components/module/picks/MarketPicksSection";
 import { InvestorTrendChart } from "../components/module/home/InvestorTrendChart";
@@ -171,7 +169,6 @@ function formatMeta(bizdate: string | null | undefined, collectedTime: string | 
 
 // ─── 메인 페이지 (variant: supply=수급, stocks=추천·관심·시총·등락) ───────────────
 export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const { favCodes } = useFavoriteStocks();
   const { addFavCode, removeFavCode } = useFavoriteStore();
@@ -298,14 +295,6 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
     }
   }, [session?.user?.email, addFavCode, removeFavCode, refreshFavorites]);
 
-  // ── 검색 ──
-  const [searchTerm, setSearchTerm] = useState("");
-  const handleSearch = useCallback((query: string) => {
-    const q = query.trim();
-    if (!q) return;
-    router.push(`/search?q=${encodeURIComponent(q)}`);
-  }, [router]);
-
   // ── 선택된 종목 (모달) ──
   const [selectedStock, setSelectedStock] = useState<StockDetail | null>(null);
   const handleClose = useCallback(() => setSelectedStock(null), []);
@@ -381,18 +370,6 @@ export function MarketSupplyPage({ variant }: { variant: "supply" | "stocks" }) 
       )}
 
       {variant === "supply" && <InvestorTrendChart defaultMarket="kospi" variant="main" />}
-
-      {/* 검색 (수급 페이지만 — 추천은 하단 탭 검색으로 이동) */}
-      {variant === "supply" && (
-        <div className={styles.searchArea}>
-          <Search
-            value={searchTerm}
-            onChange={setSearchTerm}
-            onSearch={handleSearch}
-            placeholder="종목명 검색 (예: 삼성전자)"
-          />
-        </div>
-      )}
 
       <div className={styles.affiliateSlot} aria-label="제휴 상품">
         <RandomAffiliateCard />
