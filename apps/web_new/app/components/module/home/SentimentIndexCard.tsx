@@ -72,10 +72,10 @@ function MiniChart({ data }: { data: SentimentHistory[] }) {
   const max = Math.max(...scores);
   const range = max - min || 1;
 
-  const w = 200,
-    h = 50,
-    px = 8,
-    py = 6;
+  const w = 300,
+    h = 70,
+    px = 12,
+    py = 8;
   const stepX = (w - px * 2) / (scores.length - 1);
 
   const points = scores
