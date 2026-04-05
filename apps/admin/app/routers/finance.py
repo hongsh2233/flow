@@ -162,6 +162,18 @@ async def stock_screening_page(request: Request, user=Depends(get_current_user))
     })
 
 
+@router.get("/admin/sentiment", response_class=HTMLResponse)
+async def sentiment_page(request: Request, user=Depends(get_current_user)):
+    """투자자 심리지수 관리 페이지"""
+    if not user:
+        return RedirectResponse(url="/")
+    return templates.TemplateResponse("sentiment.html", {
+        "request": request,
+        "admin_email": user.email,
+        "active_page": "sentiment"
+    })
+
+
 @router.get("/admin/stock-news", response_class=HTMLResponse)
 async def stock_news_page(request: Request, user=Depends(get_current_user)):
     """재료(주가 영향 뉴스) 관리 페이지"""

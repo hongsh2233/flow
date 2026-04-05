@@ -3066,3 +3066,122 @@ async def trigger_naver_stock_news_collect(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"뉴스 수집 실패: {str(e)}")
+
+
+# =========================================================
+# 투자자 심리지수 API
+# =========================================================
+
+@router.get("/api/sentiment/latest")
+def get_sentiment_latest(
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """최신 심리지수 스냅샷"""
+    from app.engine.models import SentimentSnapshot
+    row = db.query(SentimentSnapshot).order_by(SentimentSnapshot.created_at.desc()).first()
+    if not row:
+        return {"success": False, "message": "데이터 없음"}
+    return {
+        "success": True,
+        "data": {
+            "snapshot_date": row.snapshot_date,
+            "snapshot_time": row.snapshot_time,
+            "composite_score": row.composite_score,
+            "label": row.label,
+            "momentum_score": row.momentum_score,
+            "vix_score": row.vix_score,
+            "supply_score": row.supply_score,
+            "volume_score": row.volume_score,
+            "community_score": row.community_score,
+            "news_score": row.news_score,
+            "signal_score": row.signal_score,
+            "ai_analysis": row.ai_analysis,
+            "top_keywords": json.loads(row.top_keywords) if row.top_keywords else [],
+        },
+    }
+
+
+@router.get("/api/sentiment/history")
+def get_sentiment_history(
+    days: int = Query(30, ge=1, le=90),
+    db: Session = Depends(get_db),
+    authorized: bool = Depends(verify_api_key),
+):
+    """최근 N일 일별 스냅샷 (날짜별 마지막 스냅샷)"""
+    from app.engine.models import SentimentSnapshot
+    from sqlalchemy import func as sa_func
+    cutoff = (date.today() - __import__("datetime").timedelta(days=days)).strftime("%Y-%m-%d")
+
+    # 날짜별 마지막 snapshot_time 기준
+    sub = (
+        db.query(
+            SentimentSnapshot.snapshot_date,
+            sa_func.max(SentimentSnapshot.snapshot_time).label("max_time"),
+        )
+        .filter(SentimentSnapshot.snapshot_date >= cutoff)
+        .group_by(SentimentSnapshot.snapshot_date)
+        .subquery()
+    )
+
+    rows = (
+        db.query(SentimentSnapshot)
+        .join(
+            sub,
+            (SentimentSnapshot.snapshot_date == sub.c.snapshot_date)
+            & (SentimentSnapshot.snapshot_time == sub.c.max_time),
+        )
+        .order_by(SentimentSnapshot.snapshot_date.desc())
+        .all()
+    )
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "snapshot_date": r.snapshot_date,
+                "snapshot_time": r.snapshot_time,
+                "composite_score": r.composite_score,
+                "label": r.label,
+                "momentum_score": r.momentum_score,
+                "vix_score": r.vix_score,
+                "supply_score": r.supply_score,
+                "volume_score": r.volume_score,
+                "community_score": r.community_score,
+                "news_score": r.news_score,
+                "signal_score": r.signal_score,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.post("/api/sentiment/run")
+async def run_sentiment_manual(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """심리지수 수동 실행 (BO용, 백그라운드)"""
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+
+    async def _run():
+        from app.database import SessionLocal
+        from app.services.community_sentiment_service import collect_community_posts
+        from app.services.sentiment_analysis_service import generate_sentiment_snapshot
+        bg_db = SessionLocal()
+        try:
+            counts = await collect_community_posts(bg_db)
+            print(f"[심리지수] 수동 수집: 네이버 {counts.get('naver', 0)}건, DC {counts.get('dc', 0)}건")
+            snapshot = await generate_sentiment_snapshot(bg_db)
+            if snapshot:
+                print(f"[심리지수] 수동 스냅샷: {snapshot.composite_score}점 ({snapshot.label})")
+        except Exception as e:
+            print(f"[심리지수] 수동 실행 오류: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            bg_db.close()
+
+    asyncio.create_task(_run())
+    return {"success": True, "message": "심리지수 분석이 백그라운드에서 시작되었습니다."}

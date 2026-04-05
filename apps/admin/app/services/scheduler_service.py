@@ -1678,3 +1678,66 @@ class JongbeScreeningScheduler:
 
 
 jongbe_screening_scheduler = JongbeScreeningScheduler()
+
+
+# =========================================================
+# 투자자 심리지수
+# 평일 09:00, 13:00, 18:00 KST
+# =========================================================
+
+async def collect_and_analyze_sentiment():
+    """심리지수 파이프라인 (스케줄러에서 호출)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.community_sentiment_service import collect_community_posts
+    from app.services.sentiment_analysis_service import generate_sentiment_snapshot
+    db = SessionLocal()
+    try:
+        # 1. 커뮤니티 게시글 수집
+        counts = await collect_community_posts(db)
+        print(f"[심리지수] 커뮤니티 수집: 네이버 {counts.get('naver', 0)}건, DC {counts.get('dc', 0)}건")
+        # 2. 7개 지표 산출 + 종합지수 저장
+        snapshot = await generate_sentiment_snapshot(db)
+        if snapshot:
+            print(f"[심리지수] 스냅샷 저장: {snapshot.composite_score}점 ({snapshot.label})")
+    except Exception as e:
+        print(f"[심리지수] 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class SentimentScheduler:
+    """투자자 심리지수 스케줄러 (평일 09:00, 13:00, 18:00 KST)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        for hour in [9, 13, 18]:
+            self.scheduler.add_job(
+                collect_and_analyze_sentiment,
+                trigger=CronTrigger(day_of_week="mon-fri", hour=hour, minute=0, timezone=self.kst),
+                id=f"sentiment_{hour:02d}00",
+                name=f"심리지수 ({hour}:00, 월~금)",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=600,
+            )
+        self.scheduler.start()
+        print("심리지수 스케줄러 시작 (09:00, 13:00, 18:00 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+sentiment_scheduler = SentimentScheduler()

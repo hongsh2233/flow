@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}투자자 심리지수 - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .sentiment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .sentiment-header h2 { margin: 0; font-size: 18px; color: #2c3e50; }
+  .sentiment-header .meta { font-size: 13px; color: #6c757d; }
+
+  .btn-run {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .btn-run:hover { background: #2980b9; }
+  .btn-run:disabled { background: #95a5a6; cursor: not-allowed; }
+
+  /* 게이지 */
+  .gauge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px auto;
+  }
+  .gauge-container {
+    position: relative;
+    width: 240px;
+    height: 130px;
+    overflow: hidden;
+  }
+  .gauge-bg {
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: conic-gradient(
+      #e74c3c 0deg 36deg,
+      #e67e22 36deg 79deg,
+      #f1c40f 79deg 100deg,
+      #95a5a6 100deg 115deg,
+      #2ecc71 115deg 158deg,
+      #27ae60 158deg 180deg,
+      #eee 180deg 360deg
+    );
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .gauge-inner {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    background: #fff;
+    border-radius: 50%;
+    top: 30px;
+    left: 30px;
+  }
+  .gauge-needle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 4px;
+    height: 100px;
+    background: #2c3e50;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg);
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px 2px 0 0;
+    z-index: 2;
+  }
+  .gauge-center-dot {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    background: #2c3e50;
+    border-radius: 50%;
+    z-index: 3;
+  }
+  .gauge-score {
+    margin-top: 8px;
+    font-size: 36px;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  .gauge-label {
+    font-size: 18px;
+    font-weight: 600;
+    padding: 4px 16px;
+    border-radius: 16px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+  .label-공포 { background: #e74c3c; color: #fff; }
+  .label-불안 { background: #e67e22; color: #fff; }
+  .label-보통 { background: #95a5a6; color: #fff; }
+  .label-과욕 { background: #2ecc71; color: #fff; }
+  .label-탐욕 { background: #27ae60; color: #fff; }
+
+  /* 하위지표 바 */
+  .indicators-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 24px 0;
+  }
+  @media (max-width: 700px) {
+    .indicators-grid { grid-template-columns: 1fr; }
+  }
+  .indicator-item {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+  .indicator-item .name {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .indicator-item .name .score { font-weight: 600; color: #2c3e50; }
+  .bar-bg {
+    height: 8px;
+    background: #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  .bar-low { background: #e74c3c; }
+  .bar-mid { background: #f1c40f; }
+  .bar-high { background: #2ecc71; }
+
+  /* 키워드 태그 */
+  .keywords { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .keyword-tag {
+    background: #edf2f7;
+    color: #2d3748;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+  }
+
+  /* AI 분석 */
+  .ai-analysis {
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+    padding: 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+  }
+
+  /* 이력 테이블 */
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 24px;
+  }
+  .history-table th {
+    background: #f8f9fa;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+  }
+  .history-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+  .history-table tr:hover { background: #f8f9fa; }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #eee;
+  }
+
+  .no-data {
+    text-align: center;
+    color: #adb5bd;
+    padding: 40px;
+    font-size: 14px;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 14px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sentiment-header">
+  <div>
+    <h2>투자자 심리지수</h2>
+    <span class="meta" id="lastUpdated">-</span>
+  </div>
+  <button class="btn-run" id="btnRun" onclick="runManual()">수동 실행</button>
+</div>
+
+<!-- 게이지 -->
+<div class="gauge-wrapper" id="gaugeSection" style="display:none;">
+  <div class="gauge-container">
+    <div class="gauge-bg"></div>
+    <div class="gauge-inner"></div>
+    <div class="gauge-needle" id="gaugeNeedle">
+      <div class="gauge-center-dot"></div>
+    </div>
+  </div>
+  <div class="gauge-score" id="compositeScore">-</div>
+  <div class="gauge-label" id="compositeLabel">-</div>
+</div>
+
+<!-- 하위지표 -->
+<div class="section-title">하위지표 상세</div>
+<div class="indicators-grid" id="indicatorsGrid">
+  <div class="loading">데이터를 불러오는 중...</div>
+</div>
+
+<!-- 키워드 -->
+<div class="section-title">주요 키워드</div>
+<div class="keywords" id="keywordsContainer">
+  <span class="no-data" style="padding:8px;">-</span>
+</div>
+
+<!-- AI 분석 -->
+<div class="section-title">AI 분석</div>
+<div class="ai-analysis" id="aiAnalysis">-</div>
+
+<!-- 이력 -->
+<div class="section-title">최근 이력</div>
+<table class="history-table">
+  <thead>
+    <tr>
+      <th>날짜</th>
+      <th>시간</th>
+      <th>종합</th>
+      <th>라벨</th>
+      <th>모멘텀</th>
+      <th>VIX</th>
+      <th>수급</th>
+      <th>거래량</th>
+      <th>커뮤니티</th>
+      <th>뉴스</th>
+      <th>신호</th>
+    </tr>
+  </thead>
+  <tbody id="historyBody">
+    <tr><td colspan="11" class="no-data">데이터를 불러오는 중...</td></tr>
+  </tbody>
+</table>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const INDICATOR_NAMES = {
+  momentum_score: "시장 모멘텀",
+  vix_score: "VIX 변동성",
+  supply_score: "수급 동향",
+  volume_score: "거래량 이상도",
+  community_score: "커뮤니티 감성",
+  news_score: "뉴스 감성",
+  signal_score: "스크리닝 신호",
+};
+
+function getBarClass(score) {
+  if (score <= 35) return "bar-low";
+  if (score <= 65) return "bar-mid";
+  return "bar-high";
+}
+
+function setGaugeNeedle(score) {
+  // 0 → -90deg (왼쪽), 100 → +90deg (오른쪽)
+  const deg = -90 + (score / 100) * 180;
+  document.getElementById("gaugeNeedle").style.transform =
+    `translateX(-50%) rotate(${deg}deg)`;
+}
+
+async function loadLatest() {
+  try {
+    const res = await fetch("/api/sentiment/latest", {
+      headers: { "X-API-Key": "{{ request.cookies.get('bo_session_id', '') }}" },
+    });
+    const json = await res.json();
+    if (!json.success || !json.data) {
+      document.getElementById("indicatorsGrid").innerHTML =
+        '<div class="no-data">심리지수 데이터가 없습니다. 수동 실행을 눌러주세요.</div>';
+      return;
+    }
+    const d = json.data;
+
+    // 게이지
+    document.getElementById("gaugeSection").style.display = "flex";
+    document.getElementById("compositeScore").textContent = d.composite_score;
+    const labelEl = document.getElementById("compositeLabel");
+    labelEl.textContent = d.label;
+    labelEl.className = `gauge-label label-${d.label}`;
+    setGaugeNeedle(d.composite_score);
+
+    // 최근 업데이트
+    document.getElementById("lastUpdated").textContent =
+      `최근 업데이트: ${d.snapshot_date} ${d.snapshot_time}`;
+
+    // 하위지표
+    let html = "";
+    for (const [key, name] of Object.entries(INDICATOR_NAMES)) {
+      const score = d[key] ?? "-";
+      const barClass = typeof score === "number" ? getBarClass(score) : "";
+      const width = typeof score === "number" ? score : 0;
+      html += `
+        <div class="indicator-item">
+          <div class="name">
+            <span>${name}</span>
+            <span class="score">${score}</span>
+          </div>
+          <div class="bar-bg">
+            <div class="bar-fill ${barClass}" style="width: ${width}%"></div>
+          </div>
+        </div>`;
+    }
+    document.getElementById("indicatorsGrid").innerHTML = html;
+
+    // 키워드
+    const keywords = d.top_keywords || [];
+    if (keywords.length > 0) {
+      document.getElementById("keywordsContainer").innerHTML =
+        keywords.map(k => `<span class="keyword-tag">${k}</span>`).join("");
+    } else {
+      document.getElementById("keywordsContainer").innerHTML =
+        '<span class="no-data" style="padding:8px;">키워드 없음</span>';
+    }
+
+    // AI 분석
+    document.getElementById("aiAnalysis").textContent =
+      d.ai_analysis || "분석 데이터 없음";
+
+  } catch (e) {
+    console.error("loadLatest error:", e);
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch("/api/sentiment/history?days=30", {
+      headers: { "X-API-Key": "{{ request.cookies.get('bo_session_id', '') }}" },
+    });
+    const json = await res.json();
+    if (!json.success || !json.data || json.data.length === 0) {
+      document.getElementById("historyBody").innerHTML =
+        '<tr><td colspan="11" class="no-data">이력 데이터가 없습니다.</td></tr>';
+      return;
+    }
+
+    let html = "";
+    for (const r of json.data) {
+      html += `<tr>
+        <td>${r.snapshot_date}</td>
+        <td>${r.snapshot_time}</td>
+        <td><strong>${r.composite_score}</strong></td>
+        <td><span class="gauge-label label-${r.label}" style="font-size:12px;padding:2px 8px;">${r.label}</span></td>
+        <td>${r.momentum_score ?? "-"}</td>
+        <td>${r.vix_score ?? "-"}</td>
+        <td>${r.supply_score ?? "-"}</td>
+        <td>${r.volume_score ?? "-"}</td>
+        <td>${r.community_score ?? "-"}</td>
+        <td>${r.news_score ?? "-"}</td>
+        <td>${r.signal_score ?? "-"}</td>
+      </tr>`;
+    }
+    document.getElementById("historyBody").innerHTML = html;
+  } catch (e) {
+    console.error("loadHistory error:", e);
+  }
+}
+
+async function runManual() {
+  const btn = document.getElementById("btnRun");
+  btn.disabled = true;
+  btn.textContent = "실행 중...";
+  try {
+    const res = await fetch("/api/sentiment/run", { method: "POST" });
+    const json = await res.json();
+    alert(json.message || "실행 시작됨");
+    // 30초 후 자동 새로고침
+    setTimeout(() => {
+      loadLatest();
+      loadHistory();
+      btn.disabled = false;
+      btn.textContent = "수동 실행";
+    }, 30000);
+  } catch (e) {
+    alert("실행 오류: " + e.message);
+    btn.disabled = false;
+    btn.textContent = "수동 실행";
+  }
+}
+
+// 초기 로드
+document.addEventListener("DOMContentLoaded", () => {
+  loadLatest();
+  loadHistory();
+});
+</script>
+{% endblock %}
