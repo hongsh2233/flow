@@ -52,8 +52,9 @@ async def fetch_search_trend(
         API 응답 dict 또는 None
     """
     if not NAVER_TREND_CLIENT_ID or not NAVER_TREND_CLIENT_SECRET:
-        print("[검색트렌드] Naver_trend / Naver_trend_Secret 환경변수 미설정")
-        return None
+        msg = f"[검색트렌드] 환경변수 미설정 (Naver_trend={'설정됨' if NAVER_TREND_CLIENT_ID else '없음'}, Naver_trend_Secret={'설정됨' if NAVER_TREND_CLIENT_SECRET else '없음'})"
+        print(msg)
+        raise ValueError(msg)
 
     headers = {
         "X-Naver-Client-Id": NAVER_TREND_CLIENT_ID,
@@ -68,11 +69,14 @@ async def fetch_search_trend(
         "keywordGroups": keyword_groups,
     }
 
+    print(f"[검색트렌드] API 호출: {time_unit} {start_date}~{end_date}, {len(keyword_groups)}개 그룹")
+
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(API_URL, headers=headers, json=body)
         if resp.status_code != 200:
-            print(f"[검색트렌드] API 오류: {resp.status_code} {resp.text[:200]}")
-            return None
+            msg = f"[검색트렌드] API 오류 {resp.status_code}: {resp.text[:300]}"
+            print(msg)
+            raise ValueError(msg)
         return resp.json()
 
 
@@ -108,6 +112,7 @@ async def collect_search_trends(db, time_unit: str = "date") -> int:
         batch = DEFAULT_KEYWORD_GROUPS[i : i + 5]
         result = await fetch_search_trend(batch, start_str, end_str, time_unit)
         if not result or "results" not in result:
+            print(f"[검색트렌드] 응답에 results 없음: {str(result)[:200]}")
             continue
 
         for item in result["results"]:
