@@ -126,41 +126,7 @@ async def add_schedule(
         db.commit()
         db.refresh(new_schedule)
 
-        type_label = {
-            "earnings": "실적발표", "ipo": "공모청약", "dividend": "배당",
-            "news": "소식", "etc": "기타", "manual": "기타", "api": "공휴일",
-        }.get(schedule_type, schedule_type)
-        from app.utils.push_copy import fcm_new_schedule, noti_new_schedule
-
-        n_title, n_msg = noti_new_schedule(type_label, subject.strip())
-        f_title, f_body = fcm_new_schedule(type_label, subject.strip())
-
-        # 앱 내 알림 생성
-        try:
-            noti = models.Notification(
-                type="new_schedule",
-                title=n_title,
-                message=n_msg,
-                link_url="/calendar",
-                is_global="true",
-            )
-            db.add(noti)
-            db.commit()
-        except Exception as noti_err:
-            print(f"[DEBUG] 캘린더 알림 생성 생략: {noti_err}")
-
-        # FCM 전체 푸시
-        try:
-            from app.services.fcm_service import send_push_to_all
-            await send_push_to_all(
-                db,
-                title=f_title,
-                body=f_body,
-                data={"link_url": "/calendar", "type": "new_schedule"},
-            )
-        except Exception as fcm_err:
-            print(f"[DEBUG] FCM 전송 생략: {fcm_err}")
-
+        # 알림은 사용자가 직접 알림설정(schedule-alarm)할 때만 발송
         return RedirectResponse(url="/admin/schedule", status_code=303)
     except ValueError as e:
         db.rollback()

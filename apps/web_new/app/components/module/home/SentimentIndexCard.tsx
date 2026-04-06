@@ -143,6 +143,7 @@ export function SentimentIndexCard() {
           {latest.snapshot_date} {latest.snapshot_time}
         </span>
       </div>
+      <div className={styles.disclaimer}>지수는 참고용입니다.</div>
       <div className={styles.body}>
         <div className={styles.gaugeWrap}>
           <GaugeArc score={latest.composite_score} />
