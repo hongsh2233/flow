@@ -27,6 +27,12 @@
   color: var(--app-text-muted, #999);
 }
 
+.disclaimer {
+  font-size: 0.6875rem;
+  color: var(--app-text-muted, #999);
+  margin-bottom: 0.5rem;
+}
+
 .body {
   display: flex;
   flex-direction: column;
