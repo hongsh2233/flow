@@ -10,7 +10,7 @@ from typing import Optional
 
 from app.dependencies import get_current_user
 from app.database import get_db
-from app import models
+from app import models, utils
 
 router = APIRouter()
 templates = Jinja2Templates(directory="dashboard/templates")
@@ -22,6 +22,8 @@ async def admin_members_page(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
     q: Optional[str] = Query(None, description="이메일 부분 일치 검색"),
+    pw_ok: Optional[str] = Query(None),
+    pw_err: Optional[str] = Query(None),
 ):
     """회원 관리 페이지"""
     if not user:
@@ -62,7 +64,8 @@ async def admin_members_page(
                 "grade": grade,
                 "grade_expires_at": grade_expires_at.strftime("%Y-%m-%d") if grade_expires_at else "",
                 "posts": post_count,
-                "comments": comment_count
+                "comments": comment_count,
+                "has_password": bool(m.hashed_password),
             })
         
         return templates.TemplateResponse("members.html", {
@@ -71,6 +74,8 @@ async def admin_members_page(
             "members": members,
             "active_page": "members",
             "search_q": search_q,
+            "pw_ok": pw_ok == "1",
+            "pw_err": pw_err or "",
         })
     except Exception as e:
         # 에러 발생 시 상세 정보 출력
@@ -86,7 +91,9 @@ async def admin_members_page(
             "members": [],
             "active_page": "members",
             "search_q": (q or "").strip() if q else "",
-            "error": f"데이터베이스 오류가 발생했습니다: {str(e)}"
+            "error": f"데이터베이스 오류가 발생했습니다: {str(e)}",
+            "pw_ok": False,
+            "pw_err": "",
         })
 
 
@@ -139,4 +146,48 @@ async def set_member_grade(
             maybe_grant_vip_welcome_points(db, member, grade_before)
 
     return RedirectResponse(url="/admin/members", status_code=303)
+
+
+def _members_redirect_with_q(q: Optional[str], **params: str) -> RedirectResponse:
+    from urllib.parse import urlencode
+
+    base = "/admin/members"
+    merged = {k: v for k, v in params.items() if v}
+    if q and str(q).strip():
+        merged["q"] = str(q).strip()
+    qs = urlencode(merged) if merged else ""
+    url = f"{base}?{qs}" if qs else base
+    return RedirectResponse(url=url, status_code=303)
+
+
+@router.post("/admin/members/password/{member_id}")
+async def set_member_password(
+    member_id: int,
+    new_password: str = Form(""),
+    new_password_confirm: str = Form(""),
+    redirect_q: str = Form(""),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """관리자: 회원 이메일 로그인 비밀번호 설정·변경 (소셜 전용 회원에도 설정 가능)"""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    rq = (redirect_q or "").strip()
+    member = db.query(models.Member).filter(models.Member.id == member_id).first()
+    if not member:
+        return _members_redirect_with_q(rq, pw_err="notfound")
+
+    a = (new_password or "").strip()
+    b = (new_password_confirm or "").strip()
+    if not a:
+        return _members_redirect_with_q(rq, pw_err="empty")
+    if len(a) < 8 or len(a) > 128:
+        return _members_redirect_with_q(rq, pw_err="length")
+    if a != b:
+        return _members_redirect_with_q(rq, pw_err="mismatch")
+
+    member.hashed_password = utils.get_password_hash(a)
+    db.commit()
+    return _members_redirect_with_q(rq, pw_ok="1")
 

@@ -122,7 +122,7 @@ export default function Home() {
       {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
       <MarketTabSection />
-      <InvestorTrendChart defaultMarket="kospi" variant="main" />
+      <InvestorTrendChart defaultMarket="kospi" variant="main" hideMoreLink />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>

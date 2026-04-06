@@ -1,7 +1,8 @@
 .wrap {
   position: fixed;
   bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
-  right: 1rem;
+  /* PC: 1280px 컬럼 오른쪽 안쪽에 맞춤 (뷰포트가 좁으면 1rem) */
+  right: max(1rem, calc((100vw - min(100vw, 1280px)) / 2 + 1rem));
   display: flex;
   flex-direction: column;
   gap: 0.625rem;

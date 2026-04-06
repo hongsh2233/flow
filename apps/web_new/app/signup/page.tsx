@@ -230,6 +230,7 @@ export default function SignupPage() {
                 value={name}
                 onChange={setName}
                 icon={User}
+                maxLength={50}
               />
               <div className={styles.nicknameRow}>
                 <div className={styles.nicknameField}>
@@ -289,6 +290,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={setPassword}
                 icon={Lock}
+                showPasswordToggle
               />
               <FormField
                 label="비밀번호 확인"
@@ -297,6 +299,7 @@ export default function SignupPage() {
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 icon={Lock}
+                showPasswordToggle
               />
             </div>
 

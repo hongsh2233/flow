@@ -305,6 +305,7 @@ async def sync_naver_calendar_schedule(
     now = datetime.now(kst)
     total_fetched = 0
     total_saved = 0
+    reports = []
     try:
         for month_offset in (0, 1):
             target_month = now.month + month_offset
@@ -312,10 +313,31 @@ async def sync_naver_calendar_schedule(
             while target_month > 12:
                 target_month -= 12
                 target_year += 1
-            schedules = await naver_calendar_service.fetch_monthly_schedule(target_year, target_month)
-            total_fetched += len(schedules)
-            if schedules:
-                total_saved += naver_calendar_service.save_schedules_to_db(db, schedules)
+            result = await naver_calendar_service.fetch_monthly_schedule(
+                target_year, target_month
+            )
+            reports.append(result)
+            total_fetched += len(result.items)
+            if result.items:
+                total_saved += naver_calendar_service.save_schedules_to_db(
+                    db, result.items
+                )
+
+        if reports and all(r.skipped for r in reports):
+            return RedirectResponse(
+                url="/admin/schedule?naver_cal=disabled",
+                status_code=303,
+            )
+        if (
+            total_fetched == 0
+            and reports
+            and all(r.both_legacy_endpoints_404 for r in reports)
+        ):
+            return RedirectResponse(
+                url="/admin/schedule?naver_cal=unavailable",
+                status_code=303,
+            )
+
         return RedirectResponse(
             url=(
                 f"/admin/schedule?naver_cal=ok"

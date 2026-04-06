@@ -97,6 +97,19 @@ class MemberSignupRequest(BaseModel):
             raise ValueError("비밀번호가 너무 깁니다.")
         return v
 
+    @field_validator("name")
+    @classmethod
+    def name_strip_and_length(cls, v: Optional[str]) -> Optional[str]:
+        """DB Member.name String(50)과 정합. 공백만이면 None(프로필 기본 이름 사용)."""
+        if v is None:
+            return None
+        s = v.strip()
+        if not s:
+            return None
+        if len(s) > 50:
+            raise ValueError("이름은 50자 이하여야 합니다.")
+        return s
+
 
 # 일반 회원 로그인 요청 모델
 class MemberLoginRequest(BaseModel):

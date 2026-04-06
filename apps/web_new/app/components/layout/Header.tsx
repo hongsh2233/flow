@@ -47,6 +47,7 @@ export default function Header() {
         "/settings/profile": "정보 수정",
         "/settings/pin": "간편 비밀번호",
         "/settings/my-stocks": "내 종목 시세",
+        "/market": "수급",
     };
 
     const defaultItem = navItems.find((item) => item.id === "home") ?? navItems[0];
@@ -57,6 +58,7 @@ export default function Header() {
             : navItems.find((item) => item.href === pathname) ??
               (pathname?.startsWith("/report") ? navItems.find((item) => item.id === "briefing") : null) ??
               (pathname?.startsWith("/stocks") ? navItems.find((item) => item.id === "stocks") : null) ??
+              (pathname?.startsWith("/search") ? navItems.find((item) => item.id === "search") : null) ??
               navItems.find((item) => item.href !== "/" && pathname?.startsWith(item.href)) ??
               defaultItem;
 

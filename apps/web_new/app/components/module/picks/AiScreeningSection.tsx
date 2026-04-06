@@ -106,7 +106,7 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
   return (
     <section aria-labelledby="ai-screening-heading">
       <h2 id="ai-screening-heading" className={styles.sectionTitle}>
-        {titleDate} 검출 종목
+        {titleDate} 주목해야할 종목
       </h2>
       <div className={styles.strategyTabsRow} role="tablist" aria-label="추천 유형">
         <button

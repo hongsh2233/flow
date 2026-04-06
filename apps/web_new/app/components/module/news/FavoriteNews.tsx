@@ -130,7 +130,7 @@ export function FavoriteNews() {
       <div className={styles.empty}>
         <p>등록된 관심종목이 없습니다.</p>
         <p className={styles.emptySub}>
-          종목 페이지에서 관심종목을 등록한 후 뉴스를 확인하세요.
+          추천 탭의 관심종목에서 등록한 후 뉴스를 확인하세요.
         </p>
       </div>
     );

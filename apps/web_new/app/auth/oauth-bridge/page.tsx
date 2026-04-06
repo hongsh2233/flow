@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 /**
- * 모바일 Chrome Custom Tab / Capacitor Browser 전용.
- * 서버에서 signIn POST를 대신 하면 state 쿠키가 브라우저에 안 내려가 OAuthCallbackError가 난다.
- * 이 페이지는 탭 안에서 CSRF를 받아 동일 출처 폼 POST로 /api/auth/signin/:provider 를 호출해
- * NextAuth가 Set-Cookie(state) + Google 리다이렉트를 정상 수행하게 한다.
+ * Google OAuth 시작 브릿지 (모바일 Custom Tab / 일반 웹 공통 권장).
+ * 클라이언트 signIn()만 쓰면 state 쿠키가 안 남아 OAuthCallbackError(State cookie was missing)가 날 수 있어,
+ * CSRF를 받은 뒤 동일 출처 폼 POST로 /api/auth/signin/:provider 를 호출해
+ * NextAuth가 Set-Cookie(state) 후 Google로 리다이렉트하도록 한다.
  */
 function OauthBridgeInner() {
   const searchParams = useSearchParams();

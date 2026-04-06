@@ -145,6 +145,7 @@ export default function FindIdPage() {
                     value={password}
                     onChange={setPassword}
                     icon={Lock}
+                    showPasswordToggle
                   />
                   {error && <p className={styles.errorMsg}>{error}</p>}
                   <Button

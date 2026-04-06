@@ -4,37 +4,6 @@
   margin: 0 auto;
 }
 
-.brokerRow {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 1.25rem;
-}
-
-.brokerBtn {
-  font-size: 0.78rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--app-table-border);
-  background: var(--app-card-bg);
-  color: var(--app-text);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.brokerBtnPrimary {
-  font-size: 0.78rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, #0f766e 35%, var(--app-table-border));
-  background: #0d9488;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .group {
   margin-bottom: 2rem;
 }
@@ -69,7 +38,7 @@
 
 .groupCard {
   background-color: var(--app-card-bg);
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   border: 1px solid var(--app-border-light);
   box-shadow: var(--app-card-shadow);
   overflow: hidden;
@@ -80,7 +49,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 1rem 1.15rem;
+  padding: 1.15rem 1.25rem;
+  transition: background-color 0.15s;
+}
+
+.stockRow:active {
+  background-color: color-mix(in srgb, var(--app-bg-hover) 80%, transparent);
 }
 
 .stockRowBordered {
@@ -143,6 +117,7 @@
 
 .clearPickBtn:active {
   opacity: 0.9;
+  transform: scale(0.92);
 }
 
 .priceInfo {
@@ -235,19 +210,24 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 1rem;
-  border-radius: 1rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
   border: 1px solid var(--app-border-light);
   background: var(--app-card-bg);
-  box-shadow: var(--app-card-shadow, 0 2px 8px rgba(0, 0, 0, 0.04));
+  box-shadow: var(--app-card-shadow);
   text-align: left;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .favCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-card-shadow-hover);
+}
+
+.favCard:active {
+  transform: scale(0.96) translateY(0);
 }
 
 .favCardHeader {

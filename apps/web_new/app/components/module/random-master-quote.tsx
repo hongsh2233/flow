@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { User } from "lucide-react";
 import { getAuthHeaders } from "@/lib/config/api";
+import { pickWeightedByMaster } from "@/lib/jubti/jubtiMasters";
+import { useJubtiMasterName } from "@/lib/hooks/useJubtiMasterName";
 import styles from "./random-master-quote.module.css";
 
 type QuoteItem = {
@@ -29,17 +31,9 @@ function itemKey(it: QuoteItem): string {
   return `q:${(it.quote ?? "").slice(0, 40)}`;
 }
 
-function pickAnother(items: QuoteItem[], current: QuoteItem | null): QuoteItem {
-  if (items.length === 0) return current!;
-  if (items.length === 1) return items[0];
-  const cur = current ? itemKey(current) : "";
-  const others = items.filter((x) => itemKey(x) !== cur);
-  const pool = others.length > 0 ? others : items;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
 export function RandomMasterQuote() {
   const { data: session } = useSession();
+  const jubtiMasterName = useJubtiMasterName();
   const [pool, setPool] = useState<QuoteItem[]>([]);
   const [item, setItem] = useState<QuoteItem | null>(null);
   const [imgFailed, setImgFailed] = useState(false);
@@ -66,13 +60,13 @@ export function RandomMasterQuote() {
         return;
       }
       setPool(withQuote);
-      setItem(withQuote[Math.floor(Math.random() * withQuote.length)]);
+      setItem(pickWeightedByMaster(withQuote, null, jubtiMasterName, itemKey));
       setImgFailed(false);
     } catch {
       setPool([]);
       setItem(null);
     }
-  }, [session?.user]);
+  }, [session?.user, jubtiMasterName]);
 
   useEffect(() => {
     void loadPool();
@@ -86,10 +80,10 @@ export function RandomMasterQuote() {
   useEffect(() => {
     if (pool.length < 2) return;
     const id = window.setInterval(() => {
-      setItem((prev) => pickAnother(pool, prev));
+      setItem((prev) => pickWeightedByMaster(pool, prev, jubtiMasterName, itemKey));
     }, 10_000);
     return () => window.clearInterval(id);
-  }, [pool]);
+  }, [pool, jubtiMasterName]);
 
   if (!item?.quote?.trim()) return null;
 

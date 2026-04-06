@@ -113,6 +113,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={setPassword}
                 icon={Lock}
+                showPasswordToggle
               />
             </div>
 

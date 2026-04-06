@@ -24,6 +24,9 @@
   .mr-result.fail { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
   .mr-note { font-size: 13px; color: #888; margin-top: 8px; line-height: 1.5; }
   .mr-section-title { color: #34495e; font-size: 1.05rem; margin: 28px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #ecf0f1; }
+  .mr-textarea[readonly] {
+    background: #f8f9fa; color: #2c3e50; cursor: text; border-color: #e0e0e0;
+  }
 </style>
 {% endblock %}
 
@@ -59,16 +62,22 @@
     ></textarea>
 
     <h3 class="mr-section-title">2. 참조문구</h3>
-    <label class="mr-label" for="reference_notes">참조문구 (선택)</label>
+    <p class="mr-note" style="margin-bottom: 10px;">
+      아래 문장 틀을 <strong>기본 참고 형식</strong>으로 쓰고, 첨부·수집한 수치·뉴스 데이터를 반영해
+      위쪽 <strong>게시 본문</strong>에 완성 문장을 작성합니다. 이 칸은 안내용이며 <strong>읽기 전용</strong>입니다.
+    </p>
+    <label class="mr-label" for="reference_template">참조문구 (읽기 전용)</label>
     <textarea
-      id="reference_notes"
-      name="reference_notes"
+      id="reference_template"
       class="mr-textarea"
-      style="min-height: 100px;"
-      placeholder="나중에 문장 작성·외부 도구에 넘길 때 참고할 메모만 적어 두세요. 지금은 저장되지 않습니다."
-      maxlength="8000"
-    ></textarea>
-    <p class="mr-note">전송해도 서버에 저장하지 않습니다. 등록 후 이 페이지로 돌아오면 입력 내용은 유지되지 않습니다.</p>
+      style="min-height: 160px;"
+      readonly
+      aria-readonly="true"
+    >{{ reference_template }}</textarea>
+    <p class="mr-note">
+      「~」자리에 데이터에 맞는 문장을 채우면 됩니다. 복사하려면 칸 안을 드래그하거나 전체 선택(Cmd/Ctrl+A) 후 복사하세요.
+      등록 시 이 필드는 전송되지 않습니다.
+    </p>
 
     <div class="mr-actions">
       <button type="submit" class="mr-submit" id="mr-submit">시황 게시판(B001)에 대기 등록</button>
