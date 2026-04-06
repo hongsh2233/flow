@@ -579,6 +579,26 @@ class NaverStockRanking(Base):
     __table_args__ = (UniqueConstraint('ranking_type', 'market_type', 'rank', 'collected_at', name='uq_naver_ranking'),)
 
 
+class NaverSearchTrend(Base):
+    """
+    네이버 데이터랩 검색어 트렌드 결과
+    time_unit: 'date'(일간), 'week'(주간), 'month'(월간)
+    """
+    __tablename__ = "naver_search_trends"
+    id = Column(Integer, primary_key=True, index=True)
+    time_unit = Column(String(10), nullable=False, index=True)      # date / week / month
+    keyword_group = Column(String(100), nullable=False, index=True)  # 키워드 그룹명
+    keywords = Column(Text, nullable=False)                          # JSON array of keywords
+    start_date = Column(String(10), nullable=False)                  # YYYY-MM-DD
+    end_date = Column(String(10), nullable=False)                    # YYYY-MM-DD
+    data_json = Column(Text, nullable=False)                         # JSON: [{period, ratio}, ...]
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        Index("ix_naver_trend_unit_group", "time_unit", "keyword_group"),
+    )
+
+
 class NaverRisingStock(Base):
     """
     네이버증권 상승률 상위 종목 (10%이상) - 하루 3회 수집 (12:00, 15:40, 20:30 KST)

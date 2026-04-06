@@ -89,6 +89,10 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")       # 네이버 API 클라이언트 ID
 NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")  # 네이버 API 클라이언트 시크릿
 
+# 네이버 데이터랩 검색어 트렌드 API
+NAVER_TREND_CLIENT_ID = os.environ.get("Naver_trend")
+NAVER_TREND_CLIENT_SECRET = os.environ.get("Naver_trend_Secret")
+
 # 네이버 증시 캘린더 자동 스크래핑 (JSON·PC URL이 404로 폐기된 경우 false 권장 → 요청·로그 생략)
 NAVER_CALENDAR_ENABLED = os.environ.get("NAVER_CALENDAR_ENABLED", "true").strip().lower() in (
     "1",
