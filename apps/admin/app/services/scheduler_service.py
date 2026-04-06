@@ -1740,3 +1740,116 @@ class SentimentScheduler:
 
 
 sentiment_scheduler = SentimentScheduler()
+
+
+# =========================================================
+# 네이버 검색어 트렌드 스케줄러
+# =========================================================
+
+async def collect_naver_trend_daily():
+    """일간 트렌드 수집 (하루 3회)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.naver_trend_service import collect_search_trends
+    db = SessionLocal()
+    try:
+        await collect_search_trends(db, time_unit="date")
+    except Exception as e:
+        print(f"[검색트렌드] 일간 수집 오류: {e}")
+        import traceback; traceback.print_exc()
+    finally:
+        db.close()
+
+
+async def collect_naver_trend_weekly():
+    """주간 트렌드 수집 (주 1회 월요일)"""
+    from app.database import SessionLocal
+    from app.services.naver_trend_service import collect_search_trends
+    db = SessionLocal()
+    try:
+        await collect_search_trends(db, time_unit="week")
+    except Exception as e:
+        print(f"[검색트렌드] 주간 수집 오류: {e}")
+        import traceback; traceback.print_exc()
+    finally:
+        db.close()
+
+
+async def collect_naver_trend_monthly():
+    """월간 트렌드 수집 (매월 1일)"""
+    from app.database import SessionLocal
+    from app.services.naver_trend_service import collect_search_trends
+    db = SessionLocal()
+    try:
+        await collect_search_trends(db, time_unit="month")
+    except Exception as e:
+        print(f"[검색트렌드] 월간 수집 오류: {e}")
+        import traceback; traceback.print_exc()
+    finally:
+        db.close()
+
+
+class NaverTrendScheduler:
+    """네이버 검색어 트렌드 스케줄러
+    - 일간: 평일 09:00, 13:00, 18:00
+    - 주간: 매주 월요일 08:00
+    - 월간: 매월 1일 08:00
+    """
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+
+        # 일간 (평일 3회)
+        for hour in [9, 13, 18]:
+            self.scheduler.add_job(
+                collect_naver_trend_daily,
+                trigger=CronTrigger(day_of_week="mon-fri", hour=hour, minute=0, timezone=self.kst),
+                id=f"naver_trend_daily_{hour:02d}",
+                name=f"검색트렌드 일간 ({hour}:00)",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=600,
+            )
+
+        # 주간 (월요일 08:00)
+        self.scheduler.add_job(
+            collect_naver_trend_weekly,
+            trigger=CronTrigger(day_of_week="mon", hour=8, minute=0, timezone=self.kst),
+            id="naver_trend_weekly",
+            name="검색트렌드 주간 (월 08:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+
+        # 월간 (매월 1일 08:00)
+        self.scheduler.add_job(
+            collect_naver_trend_monthly,
+            trigger=CronTrigger(day=1, hour=8, minute=0, timezone=self.kst),
+            id="naver_trend_monthly",
+            name="검색트렌드 월간 (1일 08:00)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+
+        self.scheduler.start()
+        print("검색트렌드 스케줄러 시작 (일간 09/13/18, 주간 월08, 월간 1일08)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+naver_trend_scheduler = NaverTrendScheduler()

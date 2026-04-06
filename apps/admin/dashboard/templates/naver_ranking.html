@@ -240,6 +240,7 @@
     <button class="tab-button"        onclick="switchMainTab('investor', this)">👥 투자자별 매매동향</button>
     <button class="tab-button"        onclick="switchMainTab('deal_rank', this)">🏆 수급 순위</button>
     <button class="tab-button"        onclick="switchMainTab('program', this)">💻 프로그램 매매</button>
+    <button class="tab-button"        onclick="switchMainTab('trend', this)">📊 검색어 트렌드</button>
   </div>
 
   <!-- ── 거래량 상위 ── -->
@@ -345,6 +346,22 @@
     </div>
     <div id="program-content"><div class="loading">데이터 로딩 중...</div></div>
   </div>
+
+  <!-- ── 검색어 트렌드 ── -->
+  <div id="tab-trend" class="tab-content">
+    <div class="sub-tab-buttons">
+      <button class="sub-tab-button active" onclick="switchTrendUnit('date',this)">일간</button>
+      <button class="sub-tab-button"        onclick="switchTrendUnit('week',this)">주간</button>
+      <button class="sub-tab-button"        onclick="switchTrendUnit('month',this)">월간</button>
+    </div>
+    <div class="ctrl-row">
+      <button type="button" onclick="manualCollectTrend()" id="btn-trend-collect"
+              style="padding:6px 14px;background:#27ae60;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;font-size:13px;">
+        📡 수동 수집
+      </button>
+    </div>
+    <div id="trend-content"><div class="loading">데이터 로딩 중...</div></div>
+  </div>
 </div>
 {% endblock %}
 
@@ -355,6 +372,7 @@ let currentMainTab = 'volume';
 let currentSubTab  = { volume: 'kospi', amount: 'kospi', search: 'all' };
 let supplyMode     = { investor: 'time', program: 'time' }; // 'time' | 'day'
 let supplyMarket   = { investor: 'kospi', program: 'kospi' };
+let currentTrendUnit = 'date';
 
 /* ── 랭킹 탭 전환 ── */
 function switchMainTab(tab, btn) {
@@ -370,6 +388,7 @@ function switchMainTab(tab, btn) {
   else if (tab === 'investor') initSupplyTab('investor');
   else if (tab === 'deal_rank') initDealRankTab();
   else if (tab === 'program') initSupplyTab('program');
+  else if (tab === 'trend') loadTrendData(currentTrendUnit);
 }
 
 function switchSubTab(mainTab, subTab, btn) {
@@ -772,6 +791,141 @@ async function manualCollectSupply() {
       else if (currentMainTab === 'deal_rank') loadDealRankAll();
       else if (currentMainTab === 'program') loadSupplyData('program');
     } else { alert('❌ ' + (data.message || '수집 실패')); }
+  } catch (e) { alert('❌ 오류: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+/* ══════════════════════════════════════════════
+   검색어 트렌드
+═══════════════════════════════════════════════ */
+function switchTrendUnit(unit, btn) {
+  const container = document.querySelector('#tab-trend .sub-tab-buttons');
+  container.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTrendUnit = unit;
+  loadTrendData(unit);
+}
+
+const TREND_COLORS = [
+  '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6',
+  '#1abc9c','#e67e22','#34495e','#e91e63','#00bcd4'
+];
+
+async function loadTrendData(unit) {
+  const el = document.getElementById('trend-content');
+  el.innerHTML = '<div class="loading">로딩 중...</div>';
+  try {
+    const res = await fetch(`/api/naver-trend/data?time_unit=${unit}`);
+    const json = await res.json();
+    if (!json.success || !json.data || json.data.length === 0) {
+      el.innerHTML = '<div class="loading">데이터가 없습니다. 수동 수집을 실행해주세요.</div>';
+      return;
+    }
+    renderTrendChart(el, json.data, unit);
+  } catch (e) {
+    el.innerHTML = '<div class="loading">오류: ' + e.message + '</div>';
+  }
+}
+
+function renderTrendChart(container, groups, unit) {
+  // 모든 기간(period) 수집
+  const allPeriods = new Set();
+  groups.forEach(g => g.data.forEach(d => allPeriods.add(d.period)));
+  const periods = [...allPeriods].sort();
+
+  const unitLabel = unit === 'date' ? '일간' : unit === 'week' ? '주간' : '월간';
+  const range = groups[0] ? `${groups[0].start_date} ~ ${groups[0].end_date}` : '';
+  const collected = groups[0]?.collected_at ? new Date(groups[0].collected_at).toLocaleString('ko-KR') : '';
+
+  // SVG 차트
+  const W = 700, H = 300, PL = 50, PR = 20, PT = 20, PB = 60;
+  const cw = W - PL - PR, ch = H - PT - PB;
+  const step = periods.length > 1 ? cw / (periods.length - 1) : cw;
+
+  // 범례
+  let legendHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:12px;">';
+  groups.forEach((g, i) => {
+    const c = TREND_COLORS[i % TREND_COLORS.length];
+    legendHtml += `<span style="font-size:12px;display:flex;align-items:center;gap:4px;">
+      <span style="width:12px;height:3px;background:${c};display:inline-block;border-radius:2px;"></span>
+      ${g.keyword_group}
+    </span>`;
+  });
+  legendHtml += '</div>';
+
+  // 라인 구축
+  let lines = '';
+  groups.forEach((g, gi) => {
+    const c = TREND_COLORS[gi % TREND_COLORS.length];
+    const dataMap = {};
+    g.data.forEach(d => { dataMap[d.period] = d.ratio; });
+    const pts = periods.map((p, pi) => {
+      const x = PL + pi * step;
+      const y = PT + ch - (ch * (dataMap[p] || 0) / 100);
+      return `${x},${y}`;
+    }).join(' ');
+    lines += `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`;
+  });
+
+  // X축 라벨 (간격 조절)
+  let xLabels = '';
+  const labelInterval = Math.max(1, Math.floor(periods.length / 10));
+  periods.forEach((p, i) => {
+    if (i % labelInterval === 0 || i === periods.length - 1) {
+      const x = PL + i * step;
+      const label = p.length > 7 ? p.slice(5) : p;
+      xLabels += `<text x="${x}" y="${H - PB + 18}" text-anchor="middle" font-size="10" fill="#888">${label}</text>`;
+    }
+  });
+
+  // Y축
+  let yLabels = '';
+  for (let v = 0; v <= 100; v += 25) {
+    const y = PT + ch - (ch * v / 100);
+    yLabels += `<line x1="${PL}" x2="${W - PR}" y1="${y}" y2="${y}" stroke="#eee" stroke-width="1"/>`;
+    yLabels += `<text x="${PL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#888">${v}</text>`;
+  }
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto;background:#fafafa;border-radius:8px;">
+    ${yLabels}${lines}${xLabels}
+  </svg>`;
+
+  // 테이블: 최근 값 비교
+  let tableHtml = `<table class="data-table" style="margin-top:16px;">
+    <thead><tr><th>키워드 그룹</th><th>키워드</th><th>최근 값</th><th>최고 값</th></tr></thead><tbody>`;
+  groups.forEach(g => {
+    const vals = g.data.map(d => d.ratio);
+    const last = vals.length ? vals[vals.length - 1] : 0;
+    const max = vals.length ? Math.max(...vals) : 0;
+    tableHtml += `<tr>
+      <td><strong>${g.keyword_group}</strong></td>
+      <td style="font-size:12px;color:#666;">${g.keywords.join(', ')}</td>
+      <td>${last}</td>
+      <td>${max}</td>
+    </tr>`;
+  });
+  tableHtml += '</tbody></table>';
+
+  container.innerHTML = `
+    <div style="font-size:13px;color:#666;margin-bottom:8px;">
+      ${unitLabel} 트렌드 · ${range} · 수집: ${collected}
+    </div>
+    ${legendHtml}${svg}${tableHtml}`;
+}
+
+async function manualCollectTrend() {
+  const btn = document.getElementById('btn-trend-collect');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '수집 중...';
+  try {
+    const res = await fetch(`/api/naver-trend/manual-collect?time_unit=${currentTrendUnit}`, { method: 'POST' });
+    const json = await res.json();
+    if (json.success) {
+      alert(`✅ ${currentTrendUnit} 트렌드 수집 완료! (${json.count}개 그룹)`);
+      loadTrendData(currentTrendUnit);
+    } else {
+      alert('❌ ' + (json.message || '수집 실패'));
+    }
   } catch (e) { alert('❌ 오류: ' + e.message); }
   finally { btn.disabled = false; btn.textContent = orig; }
 }

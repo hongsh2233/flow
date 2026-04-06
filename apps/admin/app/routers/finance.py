@@ -662,6 +662,101 @@ async def manual_collect_stock_news(
 
 
 # =========================================================
+# 네이버 검색어 트렌드 API
+# =========================================================
+
+@router.get("/api/naver-trend/data")
+async def get_naver_trend_data(
+    time_unit: str = Query("date", description="date | week | month"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """검색어 트렌드 데이터 조회 (최신 수집분)"""
+    if not user:
+        return JSONResponse({"success": False, "message": "인증 필요"}, status_code=401)
+
+    from app.engine.models import NaverSearchTrend
+    from sqlalchemy import func as sa_func
+
+    # 해당 time_unit의 최신 collected_at 조회
+    latest_at = (
+        db.query(sa_func.max(NaverSearchTrend.collected_at))
+        .filter(NaverSearchTrend.time_unit == time_unit)
+        .scalar()
+    )
+    if not latest_at:
+        return {"success": True, "data": [], "time_unit": time_unit}
+
+    rows = (
+        db.query(NaverSearchTrend)
+        .filter(NaverSearchTrend.time_unit == time_unit, NaverSearchTrend.collected_at == latest_at)
+        .all()
+    )
+
+    import json
+    data = []
+    for r in rows:
+        data.append({
+            "keyword_group": r.keyword_group,
+            "keywords": json.loads(r.keywords) if r.keywords else [],
+            "start_date": r.start_date,
+            "end_date": r.end_date,
+            "data": json.loads(r.data_json) if r.data_json else [],
+            "collected_at": r.collected_at.isoformat() if r.collected_at else None,
+        })
+
+    return {"success": True, "data": data, "time_unit": time_unit}
+
+
+@router.get("/api/naver-trend/history")
+async def get_naver_trend_history(
+    time_unit: str = Query("date"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """검색어 트렌드 수집 이력 (collected_at 목록)"""
+    if not user:
+        return JSONResponse({"success": False, "message": "인증 필요"}, status_code=401)
+
+    from app.engine.models import NaverSearchTrend
+    from sqlalchemy import func as sa_func
+
+    rows = (
+        db.query(
+            sa_func.max(NaverSearchTrend.collected_at).label("collected_at"),
+        )
+        .filter(NaverSearchTrend.time_unit == time_unit)
+        .group_by(sa_func.date(NaverSearchTrend.collected_at))
+        .order_by(sa_func.max(NaverSearchTrend.collected_at).desc())
+        .limit(30)
+        .all()
+    )
+
+    return {
+        "success": True,
+        "data": [{"collected_at": r.collected_at.isoformat()} for r in rows],
+    }
+
+
+@router.post("/api/naver-trend/manual-collect")
+async def manual_collect_naver_trend(
+    time_unit: str = Query("date", description="date | week | month"),
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """검색어 트렌드 수동 수집"""
+    if not user:
+        return JSONResponse({"success": False, "message": "인증 필요"}, status_code=401)
+
+    from app.services.naver_trend_service import collect_search_trends
+    try:
+        count = await collect_search_trends(db, time_unit=time_unit)
+        return {"success": True, "count": count, "time_unit": time_unit}
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+# =========================================================
 # 네이버 수급 동향 API
 # =========================================================
 
