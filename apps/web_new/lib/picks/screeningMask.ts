@@ -24,6 +24,10 @@ const SENSITIVE_KEYS = new Set([
   "ma60",
   "ma224",
   "ma_gap",
+  "box_high",
+  "box_low",
+  "box_range_pct",
+  "touch_count",
 ]);
 
 function maskRow(row: ScreeningRow): ScreeningRow {

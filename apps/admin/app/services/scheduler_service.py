@@ -1737,6 +1737,62 @@ ricebowl_screening_scheduler = RicebowlScreeningScheduler()
 
 
 # =========================================================
+# 급등 예상 (주도주 매물 소화 및 돌파)
+# 평일 20:55 KST, 거래대금 상위 150 종목 대상
+# =========================================================
+
+async def collect_breakout_screening():
+    """급등 예상 검색식 실행 (스케줄러에서 호출)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.breakout_screening_service import collect_and_save_breakout
+    db = SessionLocal()
+    try:
+        result = await collect_and_save_breakout(db)
+        print(f"[급등] 수집 완료: 코스피 {result.get('kospi', 0)}건, 코스닥 {result.get('kosdaq', 0)}건")
+    except Exception as e:
+        print(f"[급등] 수집 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class BreakoutScreeningScheduler:
+    """급등 예상 스케줄러 (평일 20:55 KST, 거래대금 상위 150종목)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_breakout_screening,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=20, minute=55, timezone=self.kst),
+            id="breakout_screening_2055",
+            name="급등 예상 검색식 (20:55, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 급등 예상 검색식 스케줄러 시작 (20:55 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+breakout_screening_scheduler = BreakoutScreeningScheduler()
+
+
+# =========================================================
 # 투자자 심리지수
 # 평일 09:00, 13:00, 18:00 KST
 # =========================================================

@@ -711,6 +711,41 @@ class RicebowlScreeningResult(Base):
     )
 
 
+class BreakoutScreeningResult(Base):
+    """
+    주도주 매물 소화 및 돌파 검색식 결과 (급등 예상)
+    박스권 매물 소화 후 돌파하는 주도주 스크리닝
+    평일 20:55 KST 1회 실행
+    """
+    __tablename__ = "breakout_screening_results"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)   # 'kospi' | 'kosdaq'
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))          # 현재가(종가)
+    change_percent = Column(String(20))         # 등락률
+    volume = Column(String(30))                 # 거래량
+    ma5 = Column(String(20))                    # 5일 이평선
+    ma20 = Column(String(20))                   # 20일 이평선
+    box_high = Column(String(20))               # 20봉 박스 상단
+    box_low = Column(String(20))                # 20봉 박스 하단
+    box_range_pct = Column(String(10))          # 박스 범위 (%)
+    touch_count = Column(String(5))             # 박스 상단 터치 횟수
+    volume_ratio = Column(String(10))           # 20일 평균 대비 거래량 비율
+    trading_value = Column(String(30))          # 거래대금 (억원)
+    trading_value_rank = Column(Integer)        # 거래대금 순위
+    market_cap = Column(String(30))             # 시가총액 (억원)
+    is_new_high_120 = Column(Boolean, default=False)  # 120봉 신고가 여부
+    matched_conditions = Column(String(50))     # 충족 조건 (A,B,C,D,E)
+    screening_date = Column(String(10), nullable=False, index=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('market_type', 'rank', 'screening_date', name='uq_breakout_screening'),
+    )
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터

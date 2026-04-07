@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
         ? "/api/jongbe-screening"
         : screeningType === "ricebowl"
           ? "/api/ricebowl-screening"
-          : "/api/stock-screening";
+          : screeningType === "breakout"
+            ? "/api/breakout-screening"
+            : "/api/stock-screening";
     const params = new URLSearchParams({
       market_type: marketType.toLowerCase(),
       limit: String(limit),
