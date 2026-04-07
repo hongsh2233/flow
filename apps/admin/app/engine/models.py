@@ -679,6 +679,38 @@ class JongbeScreeningResult(Base):
     )
 
 
+class RicebowlScreeningResult(Base):
+    """
+    밥그릇(U자형 반등) 검색식 결과 (추세 전환 후보)
+    224일 이평선 기준 과거 급락 → 횡보 → 반등 패턴 스크리닝
+    평일 20:45 KST 1회 실행
+    """
+    __tablename__ = "ricebowl_screening_results"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)   # 'kospi' | 'kosdaq'
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))          # 현재가(종가)
+    change_percent = Column(String(20))         # 등락률
+    volume = Column(String(30))                 # 거래량
+    ma20 = Column(String(20))                   # 20일 이평선
+    ma60 = Column(String(20))                   # 60일 이평선
+    ma224 = Column(String(20))                  # 224일 이평선
+    ma_gap = Column(String(10))                 # 20MA-60MA 이격도 (예: 2.3%)
+    volume_ratio = Column(String(10))           # 전일 대비 거래량 비율 (예: 450%)
+    trading_value = Column(String(30))          # 거래대금 (억원)
+    market_cap = Column(String(30))             # 시가총액 (억원)
+    cloud_position = Column(String(10))         # 'above' (구름대 위)
+    matched_conditions = Column(String(50))     # 충족 조건 (A,B,C,D,E,F,G)
+    screening_date = Column(String(10), nullable=False, index=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('market_type', 'rank', 'screening_date', name='uq_ricebowl_screening'),
+    )
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터

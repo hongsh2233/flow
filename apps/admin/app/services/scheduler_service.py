@@ -1681,6 +1681,62 @@ jongbe_screening_scheduler = JongbeScreeningScheduler()
 
 
 # =========================================================
+# 밥그릇(U자형 반등) 검색식
+# 평일 20:45 KST, 224일 이평선 기준 추세 전환 패턴
+# =========================================================
+
+async def collect_ricebowl_screening():
+    """밥그릇 검색식 실행 (스케줄러에서 호출)"""
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.ricebowl_screening_service import collect_and_save_ricebowl
+    db = SessionLocal()
+    try:
+        result = await collect_and_save_ricebowl(db)
+        print(f"[밥그릇] 수집 완료: 코스피 {result.get('kospi', 0)}건, 코스닥 {result.get('kosdaq', 0)}건")
+    except Exception as e:
+        print(f"[밥그릇] 수집 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class RicebowlScreeningScheduler:
+    """밥그릇 검색식 스케줄러 (평일 20:45 KST, 224일 이평선 기준)"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_ricebowl_screening,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=20, minute=45, timezone=self.kst),
+            id="ricebowl_screening_2045",
+            name="밥그릇 검색식 (20:45, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 밥그릇 검색식 스케줄러 시작 (20:45 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+ricebowl_screening_scheduler = RicebowlScreeningScheduler()
+
+
+# =========================================================
 # 투자자 심리지수
 # 평일 09:00, 13:00, 18:00 KST
 # =========================================================

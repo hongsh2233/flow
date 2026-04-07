@@ -348,6 +348,7 @@
 <div class="strategy-tabs">
   <button class="strategy-tab active" onclick="switchStrategy('ichimoku', this)">일목균형표</button>
   <button class="strategy-tab" onclick="switchStrategy('jongbe', this)">종베 검색식</button>
+  <button class="strategy-tab" onclick="switchStrategy('ricebowl', this)">반응예상</button>
 </div>
 
 <!-- 조건 설명 -->
@@ -356,6 +357,9 @@
 </div>
 <div id="info-jongbe" class="info-box jongbe" style="display:none;">
   종가 베팅(종베) 검색식입니다. 거래대금 주도주 + 고가권 유지 + 기술적 필터. 매일 15:00에 자동 스캔합니다.
+</div>
+<div id="info-ricebowl" class="info-box" style="display:none; border-left-color:#27ae60; background:#e8f8f0;">
+  밥그릇(U자형 반등) 검색식입니다. 224일 이평선 기준 과거 급락 후 횡보를 거쳐 추세 전환하는 종목을 스크리닝합니다. 매일 20:45에 자동 스캔합니다.
 </div>
 
 <!-- 조건 레전드 -->
@@ -375,6 +379,15 @@
   <span><b>F</b> 종가 > 5MA</span>
   <span><b>G</b> RSI 50~80</span>
   <span><b>H</b> 거래량 200%+</span>
+</div>
+<div id="legend-ricebowl" class="condition-legend" style="display:none;">
+  <span><b>A</b> 224일전 종가 > 현재가*1.5</span>
+  <span><b>B</b> 종가 > 224MA</span>
+  <span><b>C</b> 20MA~60MA 5%이내</span>
+  <span><b>D</b> 등락률 3~15%</span>
+  <span><b>E</b> 거래량 300%+</span>
+  <span><b>F</b> 60봉 최고가 돌파</span>
+  <span><b>G</b> 구름대 위</span>
 </div>
 
 <!-- 시장 탭 -->
@@ -422,11 +435,13 @@ function switchStrategy(strategy, btn) {
 
   document.getElementById('info-ichimoku').style.display = strategy === 'ichimoku' ? '' : 'none';
   document.getElementById('info-jongbe').style.display = strategy === 'jongbe' ? '' : 'none';
+  document.getElementById('info-ricebowl').style.display = strategy === 'ricebowl' ? '' : 'none';
   document.getElementById('legend-ichimoku').style.display = strategy === 'ichimoku' ? '' : 'none';
   document.getElementById('legend-jongbe').style.display = strategy === 'jongbe' ? '' : 'none';
+  document.getElementById('legend-ricebowl').style.display = strategy === 'ricebowl' ? '' : 'none';
 
-  document.getElementById('screening-title').textContent =
-    strategy === 'ichimoku' ? '조건검색 (익일 매수 후보)' : '종베 검색식 (당일 종가매수)';
+  const titles = { ichimoku: '조건검색 (익일 매수 후보)', jongbe: '종베 검색식 (당일 종가매수)', ricebowl: '반응예상 (U자형 반등)' };
+  document.getElementById('screening-title').textContent = titles[strategy] || strategy;
 
   // 캐시 초기화 후 아코디언 로드
   clearDateCache();
@@ -535,6 +550,55 @@ function renderJongbeTable(data) {
   return html;
 }
 
+function renderRicebowlTable(data) {
+  let html = `
+    <div class="data-table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th style="text-align:left">종목명</th>
+            <th>종목코드</th>
+            <th>현재가</th>
+            <th>등락률</th>
+            <th>거래량비율</th>
+            <th>거래대금(억)</th>
+            <th>시총(억)</th>
+            <th>20MA</th>
+            <th>60MA</th>
+            <th>224MA</th>
+            <th>MA이격</th>
+            <th>구름대</th>
+            <th>충족 조건</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  for (const item of data) {
+    const chgClass = getChangeClass(item.change_percent);
+    html += `
+      <tr>
+        <td class="rank">${item.rank}</td>
+        <td class="stock-name">${item.stock_name}</td>
+        <td class="stock-code">${item.stock_code}</td>
+        <td>${formatNumber(item.current_price)}</td>
+        <td class="${chgClass}">${item.change_percent || '-'}</td>
+        <td style="text-align:center">${item.volume_ratio || '-'}</td>
+        <td>${item.trading_value || '-'}</td>
+        <td>${item.market_cap || '-'}</td>
+        <td>${formatNumber(item.ma20)}</td>
+        <td>${formatNumber(item.ma60)}</td>
+        <td>${formatNumber(item.ma224)}</td>
+        <td style="text-align:center">${item.ma_gap || '-'}</td>
+        <td><span class="badge badge-cloud">${item.cloud_position === 'above' ? '구름 위' : '-'}</span></td>
+        <td><span class="badge badge-cond">${item.matched_conditions}</span></td>
+      </tr>`;
+  }
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
 /** 날짜별 데이터를 가져와 해당 아코디언 본문에 렌더링 */
 async function loadDateData(date) {
   const bodyEl = document.getElementById(`acc-body-${date}`);
@@ -546,9 +610,12 @@ async function loadDateData(date) {
   bodyEl.innerHTML = '<div class="loading" style="padding:20px;">데이터를 불러오는 중...</div>';
 
   const dateParam = `&screening_date=${encodeURIComponent(date)}`;
-  const apiUrl = currentStrategy === 'ichimoku'
-    ? `/api/stock-screening?market_type=${currentMarket}&limit=200${dateParam}`
-    : `/api/jongbe-screening?market_type=${currentMarket}&limit=200${dateParam}`;
+  const apiUrls = {
+    ichimoku: `/api/stock-screening?market_type=${currentMarket}&limit=200${dateParam}`,
+    jongbe: `/api/jongbe-screening?market_type=${currentMarket}&limit=200${dateParam}`,
+    ricebowl: `/api/ricebowl-screening?market_type=${currentMarket}&limit=200${dateParam}`,
+  };
+  const apiUrl = apiUrls[currentStrategy] || apiUrls.ichimoku;
 
   try {
     const resp = await fetch(apiUrl);
@@ -561,8 +628,10 @@ async function loadDateData(date) {
       dateCache[date] = { loaded: true, count: json.data.length };
       if (currentStrategy === 'ichimoku') {
         bodyEl.innerHTML = renderIchimokuTable(json.data);
-      } else {
+      } else if (currentStrategy === 'jongbe') {
         bodyEl.innerHTML = renderJongbeTable(json.data);
+      } else {
+        bodyEl.innerHTML = renderRicebowlTable(json.data);
       }
       // 아코디언 헤더에 건수 업데이트
       const metaEl = document.getElementById(`acc-meta-${date}`);
@@ -596,9 +665,12 @@ async function loadAllDatesAccordion() {
   const container = document.getElementById('screening-content');
   container.innerHTML = '<div class="loading">날짜 목록을 불러오는 중...</div>';
 
-  const apiUrl = currentStrategy === 'ichimoku'
-    ? `/api/stock-screening/dates?market_type=${currentMarket}&limit=120`
-    : `/api/jongbe-screening/dates?market_type=${currentMarket}&limit=120`;
+  const dateApiUrls = {
+    ichimoku: `/api/stock-screening/dates?market_type=${currentMarket}&limit=120`,
+    jongbe: `/api/jongbe-screening/dates?market_type=${currentMarket}&limit=120`,
+    ricebowl: `/api/ricebowl-screening/dates?market_type=${currentMarket}&limit=120`,
+  };
+  const apiUrl = dateApiUrls[currentStrategy] || dateApiUrls.ichimoku;
 
   try {
     const resp = await fetch(apiUrl);
@@ -616,7 +688,8 @@ async function loadAllDatesAccordion() {
       return;
     }
 
-    const strategyLabel = currentStrategy === 'ichimoku' ? '일목균형표' : '종베';
+    const strategyLabels = { ichimoku: '일목균형표', jongbe: '종베', ricebowl: '반응예상' };
+    const strategyLabel = strategyLabels[currentStrategy] || currentStrategy;
     document.getElementById('screening-meta').textContent =
       `[${strategyLabel}] ${currentMarket.toUpperCase()} | 총 ${dates.length}일치 데이터`;
 
@@ -667,9 +740,8 @@ async function runScreening() {
   btn.disabled = true;
   btn.textContent = '실행 중...';
 
-  const runUrl = currentStrategy === 'ichimoku'
-    ? '/api/stock-screening/run'
-    : '/api/jongbe-screening/run';
+  const runUrls = { ichimoku: '/api/stock-screening/run', jongbe: '/api/jongbe-screening/run', ricebowl: '/api/ricebowl-screening/run' };
+  const runUrl = runUrls[currentStrategy] || runUrls.ichimoku;
 
   try {
     const resp = await fetch(runUrl, { method: 'POST' });

@@ -26,7 +26,7 @@ from app import models
 from app.database import engine, get_db, SessionLocal
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler, sentiment_scheduler, naver_trend_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler, ricebowl_screening_scheduler, sentiment_scheduler, naver_trend_scheduler
 from app.engine.services.scheduler_service import (
     schedule_alarm_scheduler,
     calendar_scheduler,
@@ -116,6 +116,7 @@ async def lifespan(app: FastAPI):
     naver_rising_scheduler.start()
     stock_screening_scheduler.start()
     jongbe_screening_scheduler.start()
+    ricebowl_screening_scheduler.start()
     sentiment_scheduler.start()
     naver_trend_scheduler.start()
     yield
@@ -136,6 +137,7 @@ async def lifespan(app: FastAPI):
     naver_rising_scheduler.shutdown()
     stock_screening_scheduler.shutdown()
     jongbe_screening_scheduler.shutdown()
+    ricebowl_screening_scheduler.shutdown()
     sentiment_scheduler.shutdown()
     naver_trend_scheduler.shutdown()
 

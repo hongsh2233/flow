@@ -60,7 +60,7 @@ type Props = {
   onSelectStock?: (s: StockDetail) => void;
   onPickStock?: (s: StockDetail, meta: ScreeningPickMeta) => void;
   screeningDate: string | null;
-  screeningType: "ichimoku" | "jongbe";
+  screeningType: "ichimoku" | "jongbe" | "ricebowl";
   pickedCodes?: Set<string>;
   onMtsClick?: () => void;
 };
