@@ -20,6 +20,10 @@ const SENSITIVE_KEYS = new Set([
   "ma5",
   "rsi14",
   "volume_ratio",
+  "ma20",
+  "ma60",
+  "ma224",
+  "ma_gap",
 ]);
 
 function maskRow(row: ScreeningRow): ScreeningRow {

@@ -32,7 +32,11 @@ export async function GET(req: NextRequest) {
     const tier = sessionToPicksTier(session);
 
     const path =
-      screeningType === "jongbe" ? "/api/jongbe-screening" : "/api/stock-screening";
+      screeningType === "jongbe"
+        ? "/api/jongbe-screening"
+        : screeningType === "ricebowl"
+          ? "/api/ricebowl-screening"
+          : "/api/stock-screening";
     const params = new URLSearchParams({
       market_type: marketType.toLowerCase(),
       limit: String(limit),

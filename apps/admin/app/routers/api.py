@@ -625,9 +625,76 @@ async def run_jongbe_screening_manual(
     return {"success": True, "message": "종베 검색식이 백그라운드에서 시작되었습니다. (병렬처리 약 3~5분 소요)"}
 
 
+@router.get("/api/ricebowl-screening/dates")
+async def get_ricebowl_screening_dates(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    limit: int = Query(120, ge=1, le=400),
+    db: Session = Depends(get_db),
+    _auth=Depends(get_admin_session_or_api_key),
+):
+    """저장된 밥그릇 스크리닝 기준일 목록 (최신순, BO 전용)."""
+    from app.services.ricebowl_screening_service import list_ricebowl_screening_dates
+    dates = list_ricebowl_screening_dates(db, market_type=market_type.lower(), limit=limit)
+    return {"success": True, "dates": dates}
+
+
+@router.get("/api/ricebowl-screening")
+async def get_ricebowl_screening(
+    market_type: str = Query("kospi", description="시장구분 (kospi | kosdaq)"),
+    screening_date: Optional[str] = Query(
+        None,
+        description="YYYY-MM-DD. 생략 시 최신 수집분 1회만",
+    ),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _auth=Depends(get_admin_session_or_api_key),
+):
+    """
+    밥그릇(U자형 반등) 검색식 결과 조회 (추세 전환 후보)
+    """
+    from app.services.ricebowl_screening_service import get_latest_ricebowl_results
+    result = get_latest_ricebowl_results(
+        db,
+        market_type=market_type.lower(),
+        limit=limit,
+        screening_date=screening_date,
+    )
+    return {"success": True, **result}
+
+
+@router.post("/api/ricebowl-screening/run")
+async def run_ricebowl_screening_manual(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """
+    밥그릇 검색식 수동 실행 (테스트용, 백그라운드 실행)
+    """
+    if not user:
+        return JSONResponse({"error": "인증이 필요합니다."}, status_code=401)
+    import asyncio
+    from app.services.ricebowl_screening_service import collect_and_save_ricebowl
+
+    async def _run():
+        from app.database import SessionLocal
+        from app.services.screening_progress import update_progress
+        bg_db = SessionLocal()
+        try:
+            result = await collect_and_save_ricebowl(bg_db)
+            print(f"[밥그릇] 수동 실행 완료: {result}")
+        except Exception as e:
+            update_progress("ricebowl", status="error", phase="오류", message=f"실행 오류: {e}")
+            print(f"[밥그릇] 수동 실행 오류: {e}")
+        finally:
+            bg_db.close()
+
+    asyncio.create_task(_run())
+    return {"success": True, "message": "밥그릇 검색식이 백그라운드에서 시작되었습니다. (병렬처리 약 3~5분 소요)"}
+
+
 @router.get("/api/screening-progress")
 async def get_screening_progress(
-    screening_type: str = Query(..., description="스크리닝 타입 (ichimoku | jongbe)"),
+    screening_type: str = Query(..., description="스크리닝 타입 (ichimoku | jongbe | ricebowl)"),
     user=Depends(get_current_user),
 ):
     """

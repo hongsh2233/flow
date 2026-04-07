@@ -19,7 +19,7 @@ type Props = {
 
 export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: Props) {
   const { data: session, status } = useSession();
-  const [strategy, setStrategy] = useState<"ichimoku" | "jongbe">("ichimoku");
+  const [strategy, setStrategy] = useState<"ichimoku" | "jongbe" | "ricebowl">("ichimoku");
   const [market, setMarket] = useState<"kospi" | "kosdaq">("kospi");
   const [rows, setRows] = useState<ScreeningRow[]>([]);
   const [tier, setTier] = useState<PicksGradeTier>("guest");
@@ -71,7 +71,7 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const st = strategy === "jongbe" ? "jongbe" : "ichimoku";
+      const st = strategy === "jongbe" ? "jongbe" : strategy === "ricebowl" ? "ricebowl" : "ichimoku";
       const res = await fetch(
         `/api/picks/ai-screening?market_type=${market}&screening_type=${st}&limit=50`,
         { cache: "no-store", credentials: "same-origin" }
@@ -127,6 +127,15 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
         >
           종가종목
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={strategy === "ricebowl"}
+          className={strategy === "ricebowl" ? styles.strategyTabActive : styles.strategyTab}
+          onClick={() => setStrategy("ricebowl")}
+        >
+          반응예상
+        </button>
       </div>
       <div className={styles.marketTabsRow} role="tablist" aria-label="시장 구분">
         <button
@@ -150,8 +159,10 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
       </div>
       {strategy === "ichimoku" ? (
         <p className={styles.scheduleNotice}>추천종목은 20:40분 공개됩니다.</p>
-      ) : (
+      ) : strategy === "jongbe" ? (
         <p className={styles.scheduleNotice}>종가종목은 15:15분 전후 공개 됩니다.</p>
+      ) : (
+        <p className={styles.scheduleNotice}>반응예상은 20:50분 전후 공개됩니다.</p>
       )}
       {loading ? (
         <p className={styles.meta}>불러오는 중...</p>
