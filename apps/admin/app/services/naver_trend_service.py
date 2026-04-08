@@ -18,19 +18,44 @@ KST = pytz.timezone("Asia/Seoul")
 
 API_URL = "https://openapi.naver.com/v1/datalab/search"
 
-# 주식 투자 관련 주요 키워드 그룹
-DEFAULT_KEYWORD_GROUPS = [
-    {"groupName": "주식", "keywords": ["주식", "주식투자", "주식매매"]},
-    {"groupName": "코스피", "keywords": ["코스피", "KOSPI", "코스피지수"]},
-    {"groupName": "코스닥", "keywords": ["코스닥", "KOSDAQ", "코스닥지수"]},
-    {"groupName": "ETF", "keywords": ["ETF", "상장지수펀드", "ETF추천"]},
-    {"groupName": "부동산", "keywords": ["부동산", "아파트", "부동산투자"]},
-    {"groupName": "금리", "keywords": ["금리", "기준금리", "금리인하"]},
-    {"groupName": "환율", "keywords": ["환율", "달러환율", "원달러"]},
-    {"groupName": "비트코인", "keywords": ["비트코인", "암호화폐", "가상화폐"]},
-    {"groupName": "IPO", "keywords": ["IPO", "공모주", "공모주청약"]},
-    {"groupName": "배당", "keywords": ["배당금", "배당주", "고배당"]},
-]
+# 주식 투자 관련 주요 키워드 그룹 (카테고리별)
+KEYWORD_GROUP_CATEGORIES = {
+    "투자환경": [
+        {"groupName": "주식", "keywords": ["주식", "주식투자", "주식매매"]},
+        {"groupName": "코스피", "keywords": ["코스피", "KOSPI", "코스피지수"]},
+        {"groupName": "코스닥", "keywords": ["코스닥", "KOSDAQ", "코스닥지수"]},
+        {"groupName": "ETF", "keywords": ["ETF", "상장지수펀드", "ETF추천"]},
+        {"groupName": "부동산", "keywords": ["부동산", "아파트", "부동산투자"]},
+        {"groupName": "금리", "keywords": ["금리", "기준금리", "금리인하"]},
+        {"groupName": "환율", "keywords": ["환율", "달러환율", "원달러"]},
+        {"groupName": "비트코인", "keywords": ["비트코인", "암호화폐", "가상화폐"]},
+        {"groupName": "IPO", "keywords": ["IPO", "공모주", "공모주청약"]},
+        {"groupName": "배당", "keywords": ["배당금", "배당주", "고배당"]},
+    ],
+    "테마섹터": [
+        {"groupName": "반도체", "keywords": ["반도체", "반도체주", "SK하이닉스"]},
+        {"groupName": "2차전지", "keywords": ["2차전지", "에코프로", "LG에너지솔루션"]},
+        {"groupName": "바이오", "keywords": ["바이오", "바이오주", "셀트리온"]},
+        {"groupName": "AI", "keywords": ["AI주식", "AI반도체", "인공지능"]},
+        {"groupName": "방산", "keywords": ["방산주", "한화에어로스페이스", "LIG넥스원"]},
+        {"groupName": "조선", "keywords": ["조선주", "HD한국조선해양", "조선업"]},
+        {"groupName": "원전", "keywords": ["원전주", "두산에너빌리티", "원자력"]},
+        {"groupName": "로봇", "keywords": ["로봇주", "로보틱스", "레인보우로보틱스"]},
+        {"groupName": "자동차", "keywords": ["자동차주", "현대차", "전기차"]},
+        {"groupName": "엔터", "keywords": ["엔터주", "하이브", "K팝"]},
+    ],
+}
+
+# 전체 키워드 그룹 (하위 호환)
+DEFAULT_KEYWORD_GROUPS = []
+for _groups in KEYWORD_GROUP_CATEGORIES.values():
+    DEFAULT_KEYWORD_GROUPS.extend(_groups)
+
+# 카테고리 → 그룹명 매핑 (API 응답용)
+CATEGORY_GROUP_MAP = {
+    cat: [g["groupName"] for g in groups]
+    for cat, groups in KEYWORD_GROUP_CATEGORIES.items()
+}
 
 
 async def fetch_search_trend(

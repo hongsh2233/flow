@@ -162,7 +162,7 @@ class ScreeningPickChargeRequest(BaseModel):
     stock_code: str
     rank: int
     screening_date: str
-    screening_type: str  # ichimoku | jongbe
+    screening_type: str  # ichimoku | jongbe | ricebowl | breakout
 
 
 # 주BTI 성향 저장 요청 모델
@@ -1098,10 +1098,10 @@ async def api_screening_pick_charge(
 ):
     """스크리닝 표 담기: 무료 순위 초과 시 20P 차감(Family·무료 구간 제외)"""
     st = (body.screening_type or "").strip().lower()
-    if st not in ("ichimoku", "jongbe"):
+    if st not in ("ichimoku", "jongbe", "ricebowl", "breakout"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="screening_type은 ichimoku 또는 jongbe 여야 합니다.",
+            detail="screening_type은 ichimoku, jongbe, ricebowl, breakout 중 하나여야 합니다.",
         )
     email = (body.email or "").strip().lower()
     if not email:
