@@ -4,7 +4,7 @@ import type { StockDetail } from "@/lib/types";
 export type ScreeningPickMeta = {
   rank: number;
   screeningDate: string | null;
-  screeningType: "ichimoku" | "jongbe";
+  screeningType: "ichimoku" | "jongbe" | "ricebowl" | "breakout";
 };
 
 export type PickStockHandler = (stock: StockDetail, meta: ScreeningPickMeta) => void | Promise<void>;
