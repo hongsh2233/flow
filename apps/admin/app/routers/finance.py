@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
 
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_current_user_or_api_key_for_fsc
 from app.database import get_db
 from typing import Optional
 from app.services.api_service import krx_api_service
@@ -669,12 +669,10 @@ async def manual_collect_stock_news(
 async def get_naver_trend_data(
     time_unit: str = Query("date", description="date | week | month"),
     category: Optional[str] = Query(None, description="카테고리 필터 (투자환경 | 테마섹터)"),
-    user=Depends(get_current_user),
+    user=Depends(get_current_user_or_api_key_for_fsc),
     db: Session = Depends(get_db),
 ):
     """검색어 트렌드 데이터 조회 (최신 수집분, 카테고리 필터 지원)"""
-    if not user:
-        return JSONResponse({"success": False, "message": "인증 필요"}, status_code=401)
 
     from app.engine.models import NaverSearchTrend
     from sqlalchemy import func as sa_func
