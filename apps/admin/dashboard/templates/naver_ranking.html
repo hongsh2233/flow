@@ -354,6 +354,11 @@
       <button class="sub-tab-button"        onclick="switchTrendUnit('week',this)">주간</button>
       <button class="sub-tab-button"        onclick="switchTrendUnit('month',this)">월간</button>
     </div>
+    <div class="sub-tab-buttons" id="trend-category-tabs">
+      <button class="sub-tab-button active" onclick="switchTrendCategory(null,this)" style="font-size:12px;">전체</button>
+      <button class="sub-tab-button" onclick="switchTrendCategory('투자환경',this)" style="font-size:12px;">투자환경</button>
+      <button class="sub-tab-button" onclick="switchTrendCategory('테마섹터',this)" style="font-size:12px;">테마/섹터</button>
+    </div>
     <div class="ctrl-row">
       <button type="button" onclick="manualCollectTrend()" id="btn-trend-collect"
               style="padding:6px 14px;background:#27ae60;color:white;border:none;border-radius:4px;font-weight:500;cursor:pointer;font-size:13px;">
@@ -373,6 +378,7 @@ let currentSubTab  = { volume: 'kospi', amount: 'kospi', search: 'all' };
 let supplyMode     = { investor: 'time', program: 'time' }; // 'time' | 'day'
 let supplyMarket   = { investor: 'kospi', program: 'kospi' };
 let currentTrendUnit = 'date';
+let currentTrendCategory = null; // null = 전체
 
 /* ── 랭킹 탭 전환 ── */
 function switchMainTab(tab, btn) {
@@ -388,7 +394,7 @@ function switchMainTab(tab, btn) {
   else if (tab === 'investor') initSupplyTab('investor');
   else if (tab === 'deal_rank') initDealRankTab();
   else if (tab === 'program') initSupplyTab('program');
-  else if (tab === 'trend') loadTrendData(currentTrendUnit);
+  else if (tab === 'trend') loadTrendData(currentTrendUnit, currentTrendCategory);
 }
 
 function switchSubTab(mainTab, subTab, btn) {
@@ -803,37 +809,50 @@ function switchTrendUnit(unit, btn) {
   container.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentTrendUnit = unit;
-  loadTrendData(unit);
+  loadTrendData(unit, currentTrendCategory);
+}
+
+function switchTrendCategory(category, btn) {
+  const container = document.getElementById('trend-category-tabs');
+  container.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTrendCategory = category;
+  loadTrendData(currentTrendUnit, category);
 }
 
 const TREND_COLORS = [
   '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6',
-  '#1abc9c','#e67e22','#34495e','#e91e63','#00bcd4'
+  '#1abc9c','#e67e22','#34495e','#e91e63','#00bcd4',
+  '#ff6b6b','#4ecdc4','#45b7d1','#96ceb4','#ffeaa7',
+  '#dfe6e9','#fd79a8','#6c5ce7','#00b894','#fdcb6e'
 ];
 
-async function loadTrendData(unit) {
+async function loadTrendData(unit, category) {
   const el = document.getElementById('trend-content');
   el.innerHTML = '<div class="loading">로딩 중...</div>';
   try {
-    const res = await fetch(`/api/naver-trend/data?time_unit=${unit}`);
+    let url = `/api/naver-trend/data?time_unit=${unit}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    const res = await fetch(url);
     const json = await res.json();
     if (!json.success || !json.data || json.data.length === 0) {
       el.innerHTML = '<div class="loading">데이터가 없습니다. 수동 수집을 실행해주세요.</div>';
       return;
     }
-    renderTrendChart(el, json.data, unit);
+    renderTrendChart(el, json.data, unit, category);
   } catch (e) {
     el.innerHTML = '<div class="loading">오류: ' + e.message + '</div>';
   }
 }
 
-function renderTrendChart(container, groups, unit) {
+function renderTrendChart(container, groups, unit, category) {
   // 모든 기간(period) 수집
   const allPeriods = new Set();
   groups.forEach(g => g.data.forEach(d => allPeriods.add(d.period)));
   const periods = [...allPeriods].sort();
 
   const unitLabel = unit === 'date' ? '일간' : unit === 'week' ? '주간' : '월간';
+  const catLabel = category ? ` · ${category}` : ' · 전체';
   const range = groups[0] ? `${groups[0].start_date} ~ ${groups[0].end_date}` : '';
   const collected = groups[0]?.collected_at ? new Date(groups[0].collected_at).toLocaleString('ko-KR') : '';
 
@@ -908,7 +927,7 @@ function renderTrendChart(container, groups, unit) {
 
   container.innerHTML = `
     <div style="font-size:13px;color:#666;margin-bottom:8px;">
-      ${unitLabel} 트렌드 · ${range} · 수집: ${collected}
+      ${unitLabel} 트렌드${catLabel} · ${range} · 수집: ${collected}
     </div>
     ${legendHtml}${svg}${tableHtml}`;
 }

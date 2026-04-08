@@ -668,10 +668,11 @@ async def manual_collect_stock_news(
 @router.get("/api/naver-trend/data")
 async def get_naver_trend_data(
     time_unit: str = Query("date", description="date | week | month"),
+    category: Optional[str] = Query(None, description="카테고리 필터 (투자환경 | 테마섹터)"),
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """검색어 트렌드 데이터 조회 (최신 수집분)"""
+    """검색어 트렌드 데이터 조회 (최신 수집분, 카테고리 필터 지원)"""
     if not user:
         return JSONResponse({"success": False, "message": "인증 필요"}, status_code=401)
 
@@ -685,7 +686,7 @@ async def get_naver_trend_data(
         .scalar()
     )
     if not latest_at:
-        return {"success": True, "data": [], "time_unit": time_unit}
+        return {"success": True, "data": [], "time_unit": time_unit, "category": category}
 
     rows = (
         db.query(NaverSearchTrend)
@@ -693,9 +694,17 @@ async def get_naver_trend_data(
         .all()
     )
 
+    # 카테고리 필터링
+    from app.services.naver_trend_service import CATEGORY_GROUP_MAP
+    allowed_groups = None
+    if category and category in CATEGORY_GROUP_MAP:
+        allowed_groups = set(CATEGORY_GROUP_MAP[category])
+
     import json
     data = []
     for r in rows:
+        if allowed_groups and r.keyword_group not in allowed_groups:
+            continue
         data.append({
             "keyword_group": r.keyword_group,
             "keywords": json.loads(r.keywords) if r.keywords else [],
@@ -705,7 +714,8 @@ async def get_naver_trend_data(
             "collected_at": r.collected_at.isoformat() if r.collected_at else None,
         })
 
-    return {"success": True, "data": data, "time_unit": time_unit}
+    return {"success": True, "data": data, "time_unit": time_unit, "category": category,
+            "categories": list(CATEGORY_GROUP_MAP.keys())}
 
 
 @router.get("/api/naver-trend/history")
