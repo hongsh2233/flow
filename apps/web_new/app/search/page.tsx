@@ -14,6 +14,7 @@ import styles from "./SearchPage.module.css";
 import { shouldShowAdZoneB_regular } from "@/lib/affiliate/adZoneB";
 import { AdZoneSlot } from "@/app/components/module/AdZoneSlot";
 import { StockFlowSection } from "@/app/components/module/stock-flow/StockFlowSection";
+import { SearchTrendSection } from "@/app/components/module/SearchTrendSection";
 
 /* ─────────────────────────────────────────────── 타입 ── */
 interface FscStockDetail {
@@ -251,6 +252,8 @@ function SearchQueryPanel({ q }: { q: string }) {
 
   return (
     <>
+      <SearchTrendSection />
+
       <div className={styles.searchArea}>
         <Search
           value={searchTerm}
