@@ -39,7 +39,7 @@ function GaugeArc({ score }: { score: number }) {
   const color = scoreColor(score);
 
   return (
-    <svg viewBox="0 0 120 65" className={styles.gaugeSvg} width={120} height={65}>
+    <svg viewBox="0 0 120 65" className={styles.gaugeSvg}>
       {/* 배경 호 */}
       <path
         d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
@@ -90,7 +90,7 @@ function MiniChart({ data }: { data: SentimentHistory[] }) {
   const color = scoreColor(lastScore);
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className={styles.chartSvg} preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${w} ${h}`} className={styles.chartSvg} preserveAspectRatio="xMidYMid meet">
       <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       {/* 마지막 점 */}
       {(() => {
