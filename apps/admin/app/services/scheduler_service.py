@@ -1822,7 +1822,7 @@ async def collect_and_analyze_sentiment():
 
 
 class SentimentScheduler:
-    """투자자 심리지수 스케줄러 (매일 23:00 KST)"""
+    """투자자 심리지수 스케줄러 (매일 09:00, 12:00, 18:00 KST)"""
 
     def __init__(self):
         self.scheduler = None
@@ -1832,18 +1832,19 @@ class SentimentScheduler:
         if self.scheduler is not None:
             return
         self.scheduler = AsyncIOScheduler(timezone=self.kst)
-        self.scheduler.add_job(
-            collect_and_analyze_sentiment,
-            trigger=CronTrigger(hour=23, minute=0, timezone=self.kst),
-            id="sentiment_2300",
-            name="심리지수 (23:00, 매일)",
-            replace_existing=True,
-            max_instances=1,
-            coalesce=True,
-            misfire_grace_time=600,
-        )
+        for hour in [9, 12, 18]:
+            self.scheduler.add_job(
+                collect_and_analyze_sentiment,
+                trigger=CronTrigger(hour=hour, minute=0, timezone=self.kst),
+                id=f"sentiment_{hour:02d}00",
+                name=f"심리지수 ({hour:02d}:00, 매일)",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=600,
+            )
         self.scheduler.start()
-        print("심리지수 스케줄러 시작 (23:00 KST, 매일)")
+        print("심리지수 스케줄러 시작 (09:00, 12:00, 18:00 KST, 매일)")
 
     def shutdown(self):
         if self.scheduler:
