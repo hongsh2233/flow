@@ -515,17 +515,15 @@ async def generate_sentiment_snapshot(db: Session) -> Optional[SentimentSnapshot
 
     top_keywords = sentiment_raw.get("top_keywords", [])
 
-    # DB upsert (같은 날짜+시간은 덮어쓰기)
+    # DB upsert: 1일 1행만 유지 (같은 날짜의 기존 스냅샷을 최신 값으로 덮어씀)
     existing = (
         db.query(SentimentSnapshot)
-        .filter(
-            SentimentSnapshot.snapshot_date == today_str,
-            SentimentSnapshot.snapshot_time == time_str,
-        )
+        .filter(SentimentSnapshot.snapshot_date == today_str)
         .first()
     )
 
     if existing:
+        existing.snapshot_time = time_str
         existing.momentum_score = momentum_score
         existing.vix_score = vix_score
         existing.supply_score = supply_score
