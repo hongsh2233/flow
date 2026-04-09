@@ -70,12 +70,12 @@ function MiniChart({ data }: { data: SentimentHistory[] }) {
   const scores = sorted.map((d) => d.composite_score);
   const min = Math.min(...scores);
   const max = Math.max(...scores);
-  const range = max - min || 1;
+  const range = max - min || 10;
 
   const w = 300,
-    h = 70,
-    px = 12,
-    py = 8;
+    h = 90,
+    px = 16,
+    py = 12;
   const stepX = (w - px * 2) / (scores.length - 1);
 
   const points = scores
@@ -89,15 +89,30 @@ function MiniChart({ data }: { data: SentimentHistory[] }) {
   const lastScore = scores[scores.length - 1];
   const color = scoreColor(lastScore);
 
+  // 날짜 라벨
+  const dates = sorted.map((d) => d.snapshot_date.slice(5));
+
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className={styles.chartSvg} preserveAspectRatio="xMidYMid meet">
-      <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      {/* 마지막 점 */}
-      {(() => {
-        const lastX = px + (scores.length - 1) * stepX;
-        const lastY = h - py - ((lastScore - min) / range) * (h - py * 2);
-        return <circle cx={lastX} cy={lastY} r={3} fill={color} />;
-      })()}
+    <svg viewBox={`0 0 ${w} ${h}`} className={styles.chartSvg}>
+      {/* 가로 기준선 */}
+      <line x1={px} y1={py} x2={w - px} y2={py} stroke="var(--app-table-border, #e5e8eb)" strokeWidth={0.5} />
+      <line x1={px} y1={h / 2} x2={w - px} y2={h / 2} stroke="var(--app-table-border, #e5e8eb)" strokeWidth={0.5} />
+      <line x1={px} y1={h - py} x2={w - px} y2={h - py} stroke="var(--app-table-border, #e5e8eb)" strokeWidth={0.5} />
+      {/* 라인 */}
+      <polyline points={points} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+      {/* 각 점 + 날짜 */}
+      {scores.map((s, i) => {
+        const x = px + i * stepX;
+        const y = h - py - ((s - min) / range) * (h - py * 2);
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r={3} fill="#fff" stroke={color} strokeWidth={1.5} />
+            <text x={x} y={h - 1} textAnchor="middle" fontSize={8} fill="var(--app-text-muted, #999)">
+              {dates[i]}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
