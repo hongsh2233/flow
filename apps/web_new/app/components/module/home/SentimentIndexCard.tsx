@@ -35,7 +35,7 @@ function GaugeArc({ score }: { score: number }) {
   const y1 = cy + r * Math.sin(startAngle);
   const x2 = cx + r * Math.cos(endAngle);
   const y2 = cy + r * Math.sin(endAngle);
-  const largeArc = score > 50 ? 1 : 0;
+  const largeArc = 0;
   const color = scoreColor(score);
 
   return (
