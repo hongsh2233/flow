@@ -48,6 +48,9 @@
 
 .gaugeSvg {
   display: block;
+  width: 120px;
+  height: auto;
+  max-width: 100%;
 }
 
 .gaugeScore {
