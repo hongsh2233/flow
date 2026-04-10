@@ -2,6 +2,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import type { SocialProvider } from "@/lib/types";
+import { MOBILE_AUTH_CALLBACK_URL } from "@/lib/config/mobileAppAuth";
 
 const LAST_LOGIN_KEY = "lastLoginProvider";
 
@@ -70,7 +71,7 @@ export async function startMobileSocialOAuth(options: {
       };
 
       urlListener = await App.addListener("appUrlOpen", async ({ url: openUrl }) => {
-        if (openUrl.startsWith("com.jurini.app://auth/callback")) {
+        if (openUrl.startsWith(MOBILE_AUTH_CALLBACK_URL)) {
           await Browser.close().catch(() => {});
           await finish();
         }

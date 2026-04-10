@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { MOBILE_AUTH_CALLBACK_URL } from "@/lib/config/mobileAppAuth";
 
 /**
  * 모바일 앱(Capacitor / JurinApp WebView)의 소셜 로그인 콜백 페이지.
@@ -19,14 +20,14 @@ export default function MobileCallbackPage() {
         if (res.ok) {
           const { sessionToken } = await res.json();
           if (sessionToken) {
-            window.location.href = `com.jurini.app://auth/callback?token=${encodeURIComponent(sessionToken)}`;
+            window.location.href = `${MOBILE_AUTH_CALLBACK_URL}?token=${encodeURIComponent(sessionToken)}`;
             return;
           }
         }
       } catch {
         // 토큰 획득 실패 시 토큰 없이 deep link (fallback)
       }
-      window.location.href = "com.jurini.app://auth/callback";
+      window.location.href = MOBILE_AUTH_CALLBACK_URL;
     }
 
     redirectToApp();

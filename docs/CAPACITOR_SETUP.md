@@ -31,7 +31,7 @@ Android Studio에서 APK 빌드
 1. [Firebase Console](https://console.firebase.google.com) 접속
 2. **프로젝트 추가** → 이름: `jurini-app`
 3. Android 앱 추가:
-   - 패키지명: `com.jurini.app`
+   - 패키지명: `com.julianhong.flowapp`
    - 앱 닉네임: `주린이`
 4. `google-services.json` 다운로드
 
@@ -100,12 +100,16 @@ cp ~/Downloads/google-services.json apps/web_new/android/app/google-services.jso
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="com.jurini.app" />
+        <data android:scheme="com.julianhong.flowapp" />
     </intent-filter>
 </activity>
 ```
 
-이 설정으로 `com.jurini.app://...` 형식의 딥링크를 앱에서 처리할 수 있습니다.
+이 설정으로 `com.julianhong.flowapp://...` 형식의 딥링크를 앱에서 처리할 수 있습니다.
+
+> **웹·앱 일치**: OAuth 완료 후 열리는 URL은 `apps/web_new/lib/config/mobileAppAuth.ts`의 `MOBILE_AUTH_CALLBACK_URL`(스킴)과 이 `android:scheme`이 같아야 합니다. 웹 쪽만 바꾸거나 앱만 바꾸면 구글 로그인 후 앱으로 돌아오지 못합니다.  
+> PR 전 검증: `cd apps/web_new && npm run verify:mobile-deeplink`  
+> 독립 프로젝트 **JurinIApp** 은 `app/build.gradle.kts`의 `appAuthDeepLinkScheme`과 `manifestPlaceholders["authDeepLinkScheme"]`로 Manifest에 주입해 위 스킴과 한 번에 맞춥니다.
 
 ---
 
@@ -216,7 +220,7 @@ Google/Naver 로그인 후 앱으로 자동 복귀하려면 **딥링크(Custom U
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="com.jurini.app" />
+    <data android:scheme="com.julianhong.flowapp" />
 </intent-filter>
 ```
 
@@ -235,7 +239,7 @@ npx cap sync android
     <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-            <string>com.jurini.app</string>
+            <string>com.julianhong.flowapp</string>
         </array>
     </dict>
 </array>
@@ -251,7 +255,7 @@ npx cap sync ios
 ```
 OAuth 완료 → /auth/mobile-callback 페이지 로드 (Chrome Custom Tab)
     ↓
-페이지가 com.jurini.app://auth/callback 으로 리다이렉트
+페이지가 com.julianhong.flowapp://auth/callback 으로 리다이렉트
     ↓
 Android/iOS OS가 딥링크를 인식 → 앱을 포그라운드로 전환
     ↓

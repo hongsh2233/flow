@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--disable-warning=DEP0169 next dev",
-    "build": "next build",
+    "build": "npm run verify:mobile-deeplink && next build",
     "start": "cross-env NODE_OPTIONS=--disable-warning=DEP0169 next start -p ${PORT:-3000}",
     "lint": "eslint",
+    "verify:mobile-deeplink": "node scripts/verify-mobile-deeplink.mjs",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

@@ -1,7 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.jurini.app",
+  /** @sync apps/web_new/lib/config/mobileAppAuth.ts — MOBILE_AUTH_DEEPLINK_SCHEME */
+  appId: "com.julianhong.flowapp",
   appName: "플로우",
   // 정적 빌드 경로 (npx next export 결과물)
   webDir: "out",
