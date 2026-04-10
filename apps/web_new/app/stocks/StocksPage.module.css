@@ -244,12 +244,16 @@
   width: 100%;
   background: var(--app-card-bg);
   border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow);
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light);
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.favoriteCard:active {
+  transform: scale(0.99);
 }
 
 .favoriteCard:hover {
@@ -358,8 +362,8 @@
 .sectorCard {
   background: var(--app-card-bg);
   border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow);
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light);
   display: flex;
   align-items: center;
@@ -393,12 +397,16 @@
   width: 100%;
   background: var(--app-card-bg);
   border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow);
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light);
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.marketCapCard:active {
+  transform: scale(0.99);
 }
 
 .marketCapCard:hover {
@@ -527,7 +535,7 @@
   width: 100%;
   background: var(--app-card-bg);
   border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow);
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light);
 }

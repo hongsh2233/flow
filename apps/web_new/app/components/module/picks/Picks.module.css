@@ -135,10 +135,10 @@
   display: flex;
   width: 100%;
   gap: 0;
-  margin: 0.5rem 0 0.35rem;
-  padding: 0.2rem;
-  border-radius: 0.65rem;
-  background: color-mix(in srgb, var(--app-text-muted) 10%, var(--app-table-surface, #f0f2f4));
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--app-text-muted) 8%, var(--app-table-surface, #f0f2f4));
   border: 1px solid var(--app-table-border);
   box-sizing: border-box;
 }
@@ -164,7 +164,7 @@
 .strategyTabActive {
   background: var(--app-card-bg, #fff);
   color: var(--app-text);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--app-text) 12%, transparent);
+  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0,0,0,0.1));
 }
 
 /* 코스피 / 코스닥 — 밑줄 탭 */
@@ -199,9 +199,9 @@
 }
 
 .meta {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--app-text-muted);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
 }
 
 .tableWrap {
@@ -222,7 +222,7 @@
 
 .table th,
 .table td {
-  padding: 0.45rem 0.35rem;
+  padding: 0.6rem 0.4rem;
   text-align: center;
   border-bottom: 1px solid var(--app-table-cell-border, #eee);
 }
@@ -318,7 +318,7 @@
   justify-content: center;
   width: 2.35rem;
   height: 2.35rem;
-  color: var(--app-accent);
+  color: var(--app-success, #16a34a);
   vertical-align: middle;
 }
 
@@ -457,11 +457,11 @@
 }
 
 .scheduleNotice {
-  margin: 0.35rem 0 0.65rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 0.5rem;
-  font-size: 0.74rem;
-  line-height: 1.45;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
   color: var(--app-text-secondary, #444);
   background: color-mix(in srgb, var(--app-accent, #0d9488) 8%, var(--app-table-surface, #f4f6f8));
   border: 1px solid var(--app-table-border, #e5e8eb);

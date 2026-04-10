@@ -36,9 +36,10 @@
 .tableWrapper {
   width: 100%;
   overflow-x: auto;
-  border-radius: 0.75rem;
+  border-radius: 0.85rem;
   border: 1px solid var(--app-table-border);
   background: var(--app-table-surface);
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.03));
 }
 
 .table {
@@ -140,10 +141,11 @@
 }
 
 .card {
-  border-radius: 0.75rem;
+  border-radius: 0.85rem;
   border: 1px solid var(--app-border);
   background: var(--app-card-bg);
-  padding: 0.6rem 0.6rem 0.8rem;
+  padding: 0.75rem 0.75rem 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.03));
 }
 
 .cardHeader {
@@ -196,16 +198,20 @@
   gap: 0.5rem;
 }
 
-/* 관심종목 */
 .favoriteCard {
   width: 100%;
   background: var(--app-card-bg, #fff);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0,0,0,0.08));
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light, #e5e7eb);
   text-align: left;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.favoriteCard:active {
+  transform: scale(0.99);
 }
 
 .favoriteInner {
@@ -336,12 +342,17 @@
 .marketCapCard {
   width: 100%;
   background: var(--app-card-bg, #fff);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  box-shadow: var(--app-card-shadow, 0 1px 3px rgba(0,0,0,0.08));
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  box-shadow: var(--app-card-shadow, 0 4px 15px rgba(0,0,0,0.05));
   border: 1px solid var(--app-border-light, #e5e7eb);
   text-align: left;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.marketCapCard:active {
+  transform: scale(0.99);
 }
 
 .marketCapInner {
