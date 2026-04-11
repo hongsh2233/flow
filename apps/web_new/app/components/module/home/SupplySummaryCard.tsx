@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
+import { formatSupplySignedMillion } from "@/lib/utils/formatSupplyAmount";
 import styles from "./SupplySummaryCard.module.css";
 
 interface MarketSlice {
@@ -23,24 +24,11 @@ interface SupplySummary {
   kosdaq: MarketSlice;
 }
 
-// 네이버 수급 데이터 단위: 백만원 (1억 = 100, 1조 = 1,000,000)
-function formatNumber(n: number): string {
-  const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}조`;
-  if (abs >= 100) return `${Math.round(n / 100).toLocaleString()}억`;
-  return `${n}백만`;
-}
-
-function formatSigned(n: number): string {
-  const s = formatNumber(Math.abs(n));
-  return n >= 0 ? `+${s}` : `-${s}`;
-}
-
 function formatLabel(n: number): string {
-  const formatted = formatSigned(n);
+  if (n === 0) return "0원";
+  const formatted = formatSupplySignedMillion(n);
   if (n > 0) return `순매수 ${formatted}`;
-  if (n < 0) return `순매도 ${formatted}`;
-  return "0";
+  return `순매도 ${formatted}`;
 }
 
 function NumbersBlock({ slice }: { slice: MarketSlice }) {
@@ -62,11 +50,11 @@ function NumbersBlock({ slice }: { slice: MarketSlice }) {
       <div className={styles.programRow}>
         <span>프로그램매매 :</span>
         <span className={slice.programArbitrage >= 0 ? styles.up : styles.down}>
-          차익 {formatSigned(slice.programArbitrage)}
+          차익 {formatSupplySignedMillion(slice.programArbitrage)}
         </span>
         <span className={styles.sep}>·</span>
         <span className={slice.programNonArbitrage >= 0 ? styles.up : styles.down}>
-          비차익 {formatSigned(slice.programNonArbitrage)}
+          비차익 {formatSupplySignedMillion(slice.programNonArbitrage)}
         </span>
       </div>
     </div>
@@ -111,6 +99,9 @@ export function SupplySummaryCard() {
       {sharedSummary ? <p className={styles.excerpt}>{sharedSummary}</p> : null}
       <MarketSection title="코스피" slice={data.kospi} />
       <MarketSection title="코스닥" slice={data.kosdaq} />
+      <p className={styles.unitHint} role="note">
+        금액 뒤 단위: <strong>조원</strong>·<strong>억원</strong>·<strong>백만원</strong> (네이버 수급 합산 기준 백만 원).
+      </p>
     </>
   );
 

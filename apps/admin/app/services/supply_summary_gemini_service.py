@@ -140,20 +140,33 @@ def _get_supply_numbers(
 def _build_prompt(nums: dict, time_label: str, market_key: str) -> str:
     market_ko = MARKET_LABEL.get(market_key, market_key)
 
-    # 네이버 수급 데이터 단위: 백만원 (1억 = 100, 1조 = 1,000,000)
-    def fmt(n):
-        abs_n = abs(n)
+    # 네이버 수급 데이터 단위: 백만원 (1억원 = 100백만, 1조원 = 1,000,000백만)
+    # 앱 카드와 동일하게 조원·억원·백만원을 항상 붙여 혼동 방지
+    def fmt_abs(abs_n: int) -> str:
+        abs_n = int(abs(abs_n))
+        if abs_n == 0:
+            return "0원"
         if abs_n >= 1_000_000:
-            return f"{n / 1_000_000:.1f}조"
+            jo = abs_n / 1_000_000
+            if jo >= 10 or abs(jo - round(jo)) < 1e-6:
+                text = f"{round(jo):,}"
+            else:
+                text = f"{jo:.1f}"
+            return f"{text}조원"
         if abs_n >= 100:
-            return f"{round(n / 100):,}억"
-        if abs_n >= 1:
-            return f"{n}백만"
-        return "0"
+            eok = abs_n / 100
+            if abs(eok - round(eok)) < 1e-6 or abs(eok) >= 1000:
+                text = f"{round(eok):,}"
+            else:
+                text = f"{round(eok * 10) / 10:g}"
+            return f"{text}억원"
+        return f"{abs_n:,}백만원"
 
-    def signed(n):
-        s = fmt(abs(n))
-        return f"+{s}" if n > 0 else f"-{s}" if n < 0 else "0"
+    def signed(n: int) -> str:
+        if n == 0:
+            return "0원"
+        body = fmt_abs(n)
+        return f"+{body}" if n > 0 else f"-{body}"
 
     return f"""다음은 한국 증시 {market_ko} 수급 동향 데이터입니다. {time_label}
 
@@ -168,6 +181,7 @@ def _build_prompt(nums: dict, time_label: str, market_key: str) -> str:
 
 위 수치를 바탕으로 2~3문장으로 {market_ko} 수급 상황을 자연스러운 한국어로 요약해주세요.
 - 외국인/개인/기관의 매매 동향과 프로그램매매 흐름을 간결히 설명
+- 금액은 반드시 단위어를 붙이세요: 조원, 억원, 백만원 (예: 110억원, 1.2조원, 50백만원). "110억"처럼 원 단위를 생략하지 마세요.
 - 마크다운, JSON, 코드블록 없이 순수 텍스트만 응답
 - "현재", "기준" 등 시점 표현은 생략 가능
 """

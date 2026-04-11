@@ -1794,13 +1794,11 @@ breakout_screening_scheduler = BreakoutScreeningScheduler()
 
 # =========================================================
 # 투자자 심리지수
-# 평일 09:00, 13:00, 18:00 KST
+# 매일 09:00, 12:00, 18:00 KST (주말·공휴일 포함 — 커뮤니티·뉴스 기반 지표는 장중 여부와 무관)
 # =========================================================
 
 async def collect_and_analyze_sentiment():
-    """심리지수 파이프라인 (스케줄러에서 호출)"""
-    if should_skip_today():
-        return
+    """심리지수 파이프라인 (스케줄러에서 호출). 주말/공휴일에도 실행."""
     from app.database import SessionLocal
     from app.services.community_sentiment_service import collect_community_posts
     from app.services.sentiment_analysis_service import generate_sentiment_snapshot
@@ -1822,7 +1820,7 @@ async def collect_and_analyze_sentiment():
 
 
 class SentimentScheduler:
-    """투자자 심리지수 스케줄러 (매일 09:00, 12:00, 18:00 KST)"""
+    """투자자 심리지수 스케줄러 (매일 09:00, 12:00, 18:00 KST, 주말·공휴일 포함)"""
 
     def __init__(self):
         self.scheduler = None
@@ -1837,14 +1835,14 @@ class SentimentScheduler:
                 collect_and_analyze_sentiment,
                 trigger=CronTrigger(hour=hour, minute=0, timezone=self.kst),
                 id=f"sentiment_{hour:02d}00",
-                name=f"심리지수 ({hour:02d}:00, 매일)",
+                name=f"심리지수 ({hour:02d}:00, 매일·주말·공휴일 포함)",
                 replace_existing=True,
                 max_instances=1,
                 coalesce=True,
                 misfire_grace_time=600,
             )
         self.scheduler.start()
-        print("심리지수 스케줄러 시작 (09:00, 12:00, 18:00 KST, 매일)")
+        print("심리지수 스케줄러 시작 (09:00, 12:00, 18:00 KST, 매일·주말·공휴일 포함)")
 
     def shutdown(self):
         if self.scheduler:

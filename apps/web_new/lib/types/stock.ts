@@ -40,7 +40,8 @@ export interface MarketCapStock {
   code: string;
   price: number;
   change: number;
-  marketCap: string;
+  /** 시총상위 탭에서만 표시. 등락률상위 등에서는 생략 가능 */
+  marketCap?: string;
 }
 
 export interface FavoriteStock {

@@ -296,6 +296,26 @@
   flex-shrink: 0;
 }
 
+/* 금융위 공시 시세 안내 (시총·등락 탭) */
+.dataSourceNote {
+  margin: 0 0 1rem;
+  padding: 0 0.15rem;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--app-text-muted, #6b7280);
+}
+
+/* 리스트 하단 출처 (시총·등락 탭) */
+.dataProviderFooter {
+  margin: 0.75rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--app-border-light, #e5e7eb);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--app-text-muted, #6b7280);
+  text-align: center;
+}
+
 .subTabList {
   display: flex;
   align-items: center;

@@ -9,7 +9,6 @@ import { useFavoriteStocks } from "@/lib/hooks/useFavoriteStocks";
 import { useFavoriteStore } from "@/lib/stores/useFavoriteStore";
 import { addFavoriteStock, removeFavoriteStock } from "@/lib/services/authService";
 import type { StockDetail, MarketCapStock } from "@/lib/types";
-import type { NaverRisingStock } from "@/lib/types/home";
 import { FavoriteNews } from "@/app/components/module/news/FavoriteNews";
 import styles from "@/app/supply/SupplyPage.module.css";
 
@@ -45,6 +44,31 @@ function toStockDetail(s: {
   const change = typeof s.change === "string" ? parseFloat(s.change) || 0 : s.change;
   return { name: s.name, code: s.code, price: s.price, change, marketCap: s.marketCap };
 }
+
+/** 금융위(FSC) 공시 주식시세 API 행 → 카드용 (시총 컬럼 생략 가능) */
+function mapFscRowToStock(
+  r: {
+    srtn_cd?: string;
+    itms_nm?: string;
+    clpr?: string;
+    flt_rt?: string;
+    mrkt_tot_amt?: string;
+  },
+  i: number,
+  includeMarketCap: boolean
+): MarketCapStock {
+  return {
+    rank: i + 1,
+    name: r.itms_nm ?? "",
+    code: r.srtn_cd ?? "",
+    price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
+    change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
+    ...(includeMarketCap ? { marketCap: formatMarketCap(r.mrkt_tot_amt) } : {}),
+  };
+}
+
+const FSC_STOCK_NOTICE =
+  "표시 정보는 금융위원회 공시 주식시세를 기준으로 하며, 직전 거래일(전일) 종가 기준 데이터입니다.";
 
 /** 종목 흐름: 관심·시총·등락 탭 + 상세 모달 (검색 페이지 등에서 사용) */
 export function StockFlowSection() {
@@ -127,49 +151,18 @@ export function StockFlowSection() {
           fetch("/api/fsc-stock-price?limit=50&mrkt_ctg=KOSDAQ&order_by=mrkt_tot_amt&order_direction=desc"),
         ]);
         const kospiJson = await kospiRes.json();
-        const kosdaqData = (await kosdaqRes.json()).data ?? [];
+        const kosdaqJson = await kosdaqRes.json();
+        const kosdaqData = kosdaqJson.data ?? [];
         const kospiData = kospiJson.data ?? [];
-        if (kospiJson.bas_dt) setMarketCapDate(kospiJson.bas_dt);
+        setMarketCapDate(kospiJson.bas_dt ?? kosdaqJson.bas_dt ?? null);
         setMarketCapKospi(
-          kospiData.map(
-            (
-              r: {
-                srtn_cd?: string;
-                itms_nm?: string;
-                clpr?: string;
-                flt_rt?: string;
-                mrkt_tot_amt?: string;
-              },
-              i: number
-            ) => ({
-              rank: i + 1,
-              name: r.itms_nm ?? "",
-              code: r.srtn_cd ?? "",
-              price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
-              change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
-              marketCap: formatMarketCap(r.mrkt_tot_amt),
-            })
+          kospiData.map((r: Parameters<typeof mapFscRowToStock>[0], i: number) =>
+            mapFscRowToStock(r, i, true)
           )
         );
         setMarketCapKosdaq(
-          kosdaqData.map(
-            (
-              r: {
-                srtn_cd?: string;
-                itms_nm?: string;
-                clpr?: string;
-                flt_rt?: string;
-                mrkt_tot_amt?: string;
-              },
-              i: number
-            ) => ({
-              rank: i + 1,
-              name: r.itms_nm ?? "",
-              code: r.srtn_cd ?? "",
-              price: parseFloat(String(r.clpr ?? 0).replace(/,/g, "")) || 0,
-              change: parseFloat(String(r.flt_rt ?? 0).replace(/[%,+]/g, "")) || 0,
-              marketCap: formatMarketCap(r.mrkt_tot_amt),
-            })
+          kosdaqData.map((r: Parameters<typeof mapFscRowToStock>[0], i: number) =>
+            mapFscRowToStock(r, i, true)
           )
         );
       } catch {
@@ -183,9 +176,9 @@ export function StockFlowSection() {
   }, [stockTab]);
 
   const [risingMarket, setRisingMarket] = useState<MarketType>("KOSPI");
-  const [risingKospi, setRisingKospi] = useState<NaverRisingStock[]>([]);
-  const [risingKosdaq, setRisingKosdaq] = useState<NaverRisingStock[]>([]);
-  const [risingCollectedTime, setRisingCollectedTime] = useState<string | null>(null);
+  const [risingKospi, setRisingKospi] = useState<MarketCapStock[]>([]);
+  const [risingKosdaq, setRisingKosdaq] = useState<MarketCapStock[]>([]);
+  const [risingBasDt, setRisingBasDt] = useState<string | null>(null);
   const [risingLoading, setRisingLoading] = useState(false);
 
   useEffect(() => {
@@ -194,17 +187,32 @@ export function StockFlowSection() {
       setRisingLoading(true);
       try {
         const [kospiRes, kosdaqRes] = await Promise.all([
-          fetch("/api/naver-rising-stocks?market_type=kospi&limit=100"),
-          fetch("/api/naver-rising-stocks?market_type=kosdaq&limit=100"),
+          fetch(
+            "/api/fsc-stock-price?limit=50&mrkt_ctg=KOSPI&order_by=flt_rt&order_direction=desc"
+          ),
+          fetch(
+            "/api/fsc-stock-price?limit=50&mrkt_ctg=KOSDAQ&order_by=flt_rt&order_direction=desc"
+          ),
         ]);
         const kospiJson = await kospiRes.json();
         const kosdaqJson = await kosdaqRes.json();
-        setRisingKospi(kospiJson.data ?? []);
-        setRisingKosdaq(kosdaqJson.data ?? []);
-        setRisingCollectedTime(kospiJson.collected_time ?? kosdaqJson.collected_time ?? null);
+        const kospiData = kospiJson.data ?? [];
+        const kosdaqData = kosdaqJson.data ?? [];
+        setRisingBasDt(kospiJson.bas_dt ?? kosdaqJson.bas_dt ?? null);
+        setRisingKospi(
+          kospiData.map((r: Parameters<typeof mapFscRowToStock>[0], i: number) =>
+            mapFscRowToStock(r, i, false)
+          )
+        );
+        setRisingKosdaq(
+          kosdaqData.map((r: Parameters<typeof mapFscRowToStock>[0], i: number) =>
+            mapFscRowToStock(r, i, false)
+          )
+        );
       } catch {
         setRisingKospi([]);
         setRisingKosdaq([]);
+        setRisingBasDt(null);
       } finally {
         setRisingLoading(false);
       }
@@ -319,43 +327,51 @@ export function StockFlowSection() {
                 <span className={styles.dateLabel}>{formatDateLabel(marketCapDate)}</span>
               )}
             </div>
+            <p className={styles.dataSourceNote} role="note">
+              {FSC_STOCK_NOTICE}
+            </p>
             {marketCapLoading ? (
               <p className={styles.loadingText}>로딩 중...</p>
             ) : (
-              <div className={styles.cardList}>
-                {marketCapStocks.map((stock) => {
-                  const isPositive = stock.change >= 0;
-                  return (
-                    <button
-                      key={`${stock.code}-${stock.rank}`}
-                      type="button"
-                      onClick={() => setModalStock(toStockDetail(stock))}
-                      className={styles.marketCapCard}
-                    >
-                      <div className={styles.marketCapInner}>
-                        <div className={styles.rankBadgeOrange}>
-                          <span>{stock.rank}</span>
+              <>
+                <div className={styles.cardList}>
+                  {marketCapStocks.map((stock) => {
+                    const isPositive = stock.change >= 0;
+                    return (
+                      <button
+                        key={`${stock.code}-${stock.rank}`}
+                        type="button"
+                        onClick={() => setModalStock(toStockDetail(stock))}
+                        className={styles.marketCapCard}
+                      >
+                        <div className={styles.marketCapInner}>
+                          <div className={styles.rankBadgeOrange}>
+                            <span>{stock.rank}</span>
+                          </div>
+                          <div className={styles.marketCapInfo}>
+                            <h4>{stock.name}</h4>
+                            <p>{stock.code}</p>
+                          </div>
+                          <div className={styles.marketCapPrice}>
+                            <p>{stock.price.toLocaleString()}</p>
+                            <p className={isPositive ? styles.changeUp : styles.changeDown}>
+                              {isPositive ? "+" : ""}
+                              {stock.change}%
+                            </p>
+                          </div>
+                          {stock.marketCap != null && stock.marketCap !== "" && (
+                            <div className={styles.marketCapCol}>
+                              <p>시총</p>
+                              <p>{stock.marketCap}</p>
+                            </div>
+                          )}
                         </div>
-                        <div className={styles.marketCapInfo}>
-                          <h4>{stock.name}</h4>
-                          <p>{stock.code}</p>
-                        </div>
-                        <div className={styles.marketCapPrice}>
-                          <p>{stock.price.toLocaleString()}</p>
-                          <p className={isPositive ? styles.changeUp : styles.changeDown}>
-                            {isPositive ? "+" : ""}
-                            {stock.change}%
-                          </p>
-                        </div>
-                        <div className={styles.marketCapCol}>
-                          <p>시총</p>
-                          <p>{stock.marketCap}</p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className={styles.dataProviderFooter}>자료제공: 금융위원회</p>
+              </>
             )}
           </TabsContent>
 
@@ -377,40 +393,53 @@ export function StockFlowSection() {
                   코스닥
                 </button>
               </div>
-              {risingCollectedTime && (
-                <span className={styles.dateLabel}>{risingCollectedTime} 기준</span>
+              {risingBasDt && (
+                <span className={styles.dateLabel}>{formatDateLabel(risingBasDt)}</span>
               )}
             </div>
+            <p className={styles.dataSourceNote} role="note">
+              {FSC_STOCK_NOTICE}
+            </p>
             {risingLoading ? (
               <p className={styles.loadingText}>로딩 중...</p>
-            ) : risingStocks.length === 0 ? (
-              <p className={styles.loadingText}>데이터가 없습니다.</p>
             ) : (
-              <div className={styles.cardList}>
-                {risingStocks.map((stock) => {
-                  const pct = parseFloat(stock.change_percent.replace(/[%+,]/g, "")) || 0;
-                  const isUp = pct >= 0;
-                  return (
-                    <div key={`${stock.stock_code}-${stock.rank}`} className={styles.marketCapCard}>
-                      <div className={styles.marketCapInner}>
-                        <div className={styles.rankBadgeOrange}>
-                          <span>{stock.rank}</span>
-                        </div>
-                        <div className={styles.marketCapInfo}>
-                          <h4>{stock.stock_name}</h4>
-                          <p>{stock.stock_code}</p>
-                        </div>
-                        <div className={styles.marketCapPrice}>
-                          <p>{Number(stock.current_price.replace(/,/g, "")).toLocaleString()}</p>
-                          <p className={isUp ? styles.changeUp : styles.changeDown}>
-                            {stock.change_percent}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                {risingStocks.length === 0 ? (
+                  <p className={styles.loadingText}>데이터가 없습니다.</p>
+                ) : (
+                  <div className={styles.cardList}>
+                    {risingStocks.map((stock) => {
+                      const isPositive = stock.change >= 0;
+                      return (
+                        <button
+                          key={`${stock.code}-${stock.rank}`}
+                          type="button"
+                          onClick={() => setModalStock(toStockDetail(stock))}
+                          className={styles.marketCapCard}
+                        >
+                          <div className={styles.marketCapInner}>
+                            <div className={styles.rankBadgeOrange}>
+                              <span>{stock.rank}</span>
+                            </div>
+                            <div className={styles.marketCapInfo}>
+                              <h4>{stock.name}</h4>
+                              <p>{stock.code}</p>
+                            </div>
+                            <div className={styles.marketCapPrice}>
+                              <p>{stock.price.toLocaleString()}</p>
+                              <p className={isPositive ? styles.changeUp : styles.changeDown}>
+                                {isPositive ? "+" : ""}
+                                {stock.change}%
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className={styles.dataProviderFooter}>자료제공: 금융위원회</p>
+              </>
             )}
           </TabsContent>
         </Tabs>

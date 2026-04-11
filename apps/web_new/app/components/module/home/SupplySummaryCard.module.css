@@ -111,3 +111,17 @@
 .down {
   color: var(--app-down, #22c55e);
 }
+
+.unitHint {
+  margin: 0.75rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--app-border-light, #e5e7eb);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.unitHint strong {
+  font-weight: 600;
+  color: var(--app-text-secondary, #4b5563);
+}
