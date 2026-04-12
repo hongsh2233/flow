@@ -33,31 +33,41 @@ export async function POST(
       headers['X-API-KEY'] = API_SECRET_KEY
     }
 
+    const payload = JSON.stringify({
+      content,
+      title: body.title || undefined,
+      author_email: session.user.email,
+      reference_text: body.reference_text || undefined,
+      use_ai_summary: body.use_ai_summary || false,
+    })
+
     const response = await fetch(`${API_BASE_URL}/api/boards/${boardId}/posts`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        content,
-        title: body.title || undefined,
-        author_email: session.user.email,
-        reference_text: body.reference_text || undefined,
-        use_ai_summary: body.use_ai_summary || false,
-      }),
-      cache: 'no-store',
+      body: payload,
+      redirect: 'error',
     })
 
     const data = await response.json()
     if (!response.ok) {
+      // Pydantic v2 배열 에러 → 읽기 좋은 문자열로 변환
+      let message = '게시글 작성에 실패했습니다.'
+      if (Array.isArray(data.detail)) {
+        message = data.detail.map((e: { msg?: string }) => e.msg || '').join(', ') || message
+      } else if (typeof data.detail === 'string') {
+        message = data.detail
+      }
       return NextResponse.json(
-        { success: false, message: data.detail || '게시글 작성에 실패했습니다.' },
+        { success: false, message },
         { status: response.status }
       )
     }
     return NextResponse.json(data)
   } catch (error) {
-    console.error('게시글 작성 프록시 오류:', error)
+    const isRedirectError = error instanceof TypeError && String(error).includes('redirect')
+    console.error('게시글 작성 프록시 오류:', isRedirectError ? '백엔드 redirect 감지 (body 손실 가능)' : error)
     return NextResponse.json(
-      { success: false, message: '게시글 작성에 실패했습니다.' },
+      { success: false, message: isRedirectError ? '서버 연결 오류 (redirect). 관리자에게 문의하세요.' : '게시글 작성에 실패했습니다.' },
       { status: 500 }
     )
   }
