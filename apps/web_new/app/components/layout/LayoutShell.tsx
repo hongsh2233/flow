@@ -20,6 +20,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { data: session } = useSession();
   const isAuthPage = AUTH_ROUTES.includes(pathname) || pathname?.startsWith("/login/");
+  const isAdminPage = pathname?.startsWith("/admin");
 
   const [pinLocked, setPinLocked] = useState(false);
   const [ready, setReady] = useState(false);
@@ -47,6 +48,14 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   if (pinLocked) {
     return <PinLockScreen onUnlock={() => setPinLocked(false)} />;
+  }
+
+  if (isAdminPage) {
+    return (
+      <div className="wrap">
+        {children}
+      </div>
+    );
   }
 
   return (

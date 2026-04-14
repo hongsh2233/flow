@@ -31,6 +31,7 @@ ROOT = BASE_DIR.parent.parent  # jurin-i 루트
 UPLOADS_DIR = BASE_DIR / "uploads"
 ENV_LOCAL_ROOT = ROOT / ".env.local"
 ENV_FILE = BASE_DIR / ".env"
+ENV_LOCAL_ADMIN = BASE_DIR / ".env.local"
 
 # 1) 루트 .env.local 먼저 로드 (web + admin 공용)
 if ENV_LOCAL_ROOT.exists():
@@ -40,7 +41,15 @@ if ENV_LOCAL_ROOT.exists():
 if ENV_FILE.exists():
     load_dotenv(dotenv_path=ENV_FILE)
     print(f".env 로드 완료 (admin): {ENV_FILE}")
-if not ENV_LOCAL_ROOT.exists() and not ENV_FILE.exists():
+# 3) apps/admin/.env.local (로 오버라이드)
+if ENV_LOCAL_ADMIN.exists():
+    load_dotenv(dotenv_path=ENV_LOCAL_ADMIN)
+    print(f".env.local 로드 완료 (admin): {ENV_LOCAL_ADMIN}")
+if (
+    not ENV_LOCAL_ROOT.exists()
+    and not ENV_FILE.exists()
+    and not ENV_LOCAL_ADMIN.exists()
+):
     load_dotenv()
     print("경고: .env.local(루트) 또는 .env(admin) 없음. 기본 위치에서 시도합니다.")
 
@@ -101,6 +110,48 @@ NAVER_CALENDAR_ENABLED = os.environ.get("NAVER_CALENDAR_ENABLED", "false").strip
     "on",
 )
 
+# Kiwoom REST API (시세조회 등)
+KIWOOM_APP_KEY = os.environ.get("KIWOOM_APP_KEY")
+KIWOOM_APP_SECRET = os.environ.get("KIWOOM_APP_SECRET")
+KIWOOM_USE_MOCK = os.environ.get("KIWOOM_USE_MOCK", "false").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+_KIWOOM_BASE_RAW = os.environ.get("KIWOOM_BASE_URL", "").strip()
+KIWOOM_BASE_URL = _KIWOOM_BASE_RAW if _KIWOOM_BASE_RAW else None
+
+# 모의/실계좌 조회·주문 TR용 (kt00001·kt10000 등). 미설정 시 mock API는 400 안내
+KIWOOM_ACCOUNT_NO = (os.environ.get("KIWOOM_ACCOUNT_NO") or "").strip() or None
+KIWOOM_ACCOUNT_PWD = (os.environ.get("KIWOOM_ACCOUNT_PWD") or "").strip() or ""
+
+# 스크리닝 가격 소스: fdr(기본) | kiwoom (실험적, Kiwoom 일봉 TR)
+KIWOOM_SCREENING_PRICE_SOURCE = (
+    (os.environ.get("KIWOOM_SCREENING_PRICE_SOURCE") or "fdr").strip().lower()
+)
+
+# 자동매매·전략 실행 차단 (긴급 정지). true면 /api/kiwoom/strategies/*/execute 거부
+KIWOOM_KILL_SWITCH = os.environ.get("KIWOOM_KILL_SWITCH", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
+# 자동매매 API 활성화 (스켈레톤). false면 전략 생성만 허용하고 실행은 안내 메시지
+KIWOOM_AUTO_TRADING_ENABLED = os.environ.get(
+    "KIWOOM_AUTO_TRADING_ENABLED", "false"
+).strip().lower() in ("1", "true", "yes", "on")
+
+# 수동 모의/실주문 API 차단. true면 POST /api/kiwoom/mock/order* 거부 (운영 안전)
+KIWOOM_ORDER_KILL_SWITCH = os.environ.get("KIWOOM_ORDER_KILL_SWITCH", "false").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
 # Resend 이메일 발송 (비밀번호 재설정 등)
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 # 발신 이메일 (Resend 도메인 검증 필요. 미설정 시 onboarding@resend.dev 사용 - 수신 제한 있음)
@@ -124,4 +175,11 @@ if NAVER_CLIENT_ID:
 else:
     print("경고: NAVER_CLIENT_ID가 설정되지 않았습니다. 네이버 뉴스 검색 기능을 사용하려면 설정이 필요합니다.")
 
+if (KIWOOM_APP_KEY or "").strip() and (KIWOOM_APP_SECRET or "").strip():
+    _kiwoom_host = KIWOOM_BASE_URL or (
+        "https://mockapi.kiwoom.com" if KIWOOM_USE_MOCK else "https://api.kiwoom.com"
+    )
+    print(f"KIWOOM REST credentials loaded (host: {_kiwoom_host})")
+else:
+    print("KIWOOM REST: KIWOOM_APP_KEY / KIWOOM_APP_SECRET not set — quote API disabled")
 

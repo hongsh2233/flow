@@ -10,6 +10,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 from pydantic import BaseModel, field_validator
 from datetime import timedelta, datetime
 import secrets
@@ -537,6 +538,9 @@ async def login_page(request: Request):
         } else if (err === 'locked') {
           msgEl.textContent = params.get('msg') || '너무 많은 로그인 시도입니다. 15분 후 다시 시도해 주세요.';
           msgEl.classList.add('show');
+        } else if (err === 'db') {
+          msgEl.textContent = '데이터베이스에 연결할 수 없습니다. PostgreSQL(기본 5432)이 실행 중인지 확인한 뒤 다시 시도해 주세요. (로컬: apps/admin 에서 docker compose up -d db)';
+          msgEl.classList.add('show');
         }
       </script>
     </body>
@@ -561,40 +565,44 @@ async def do_login(
 ):
     """로그인 처리"""
     ip = _get_client_ip(request)
-    locked, msg = check_locked(db, username, ip)
-    if locked:
-        from urllib.parse import quote
-        return RedirectResponse(url=f"/login?error=locked&msg={quote(msg or '')}", status_code=303)
+    try:
+        locked, msg = check_locked(db, username, ip)
+        if locked:
+            from urllib.parse import quote
+            return RedirectResponse(url=f"/login?error=locked&msg={quote(msg or '')}", status_code=303)
 
-    user = db.query(models.AdminUser).filter(models.AdminUser.email == username).first()
-    
-    if not user or not utils.verify_password(password, user.hashed_password):
-        record_failure(db, username, ip)
-        return RedirectResponse(url="/login?error=1", status_code=303)
+        user = db.query(models.AdminUser).filter(models.AdminUser.email == username).first()
 
-    clear_attempts(db, username, ip)
-    
-    # 로그인 성공 시 관리자 세션 쿠키 설정 (30분 유효)
-    response = RedirectResponse(url="/admin/dashboard", status_code=303)
-    response.set_cookie(
-        key=AUTH_COOKIE_NAME,
-        value=SECRET_TOKEN,
-        httponly=True,
-        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
-        max_age=30 * 60,  # 30분
-        samesite="lax",
-    )
-    # 로그인 시각 전달용 쿠키 (프론트엔드 세션 타이머 표시용, httponly 아님)
-    login_time_ms = int(time.time() * 1000)
-    response.set_cookie(
-        key="bo_login_time",
-        value=str(login_time_ms),
-        httponly=False,
-        secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
-        max_age=30 * 60,
-        samesite="lax",
-    )
-    return response
+        if not user or not utils.verify_password(password, user.hashed_password):
+            record_failure(db, username, ip)
+            return RedirectResponse(url="/login?error=1", status_code=303)
+
+        clear_attempts(db, username, ip)
+
+        # 로그인 성공 시 관리자 세션 쿠키 설정 (30분 유효)
+        response = RedirectResponse(url="/admin/dashboard", status_code=303)
+        response.set_cookie(
+            key=AUTH_COOKIE_NAME,
+            value=SECRET_TOKEN,
+            httponly=True,
+            secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
+            max_age=30 * 60,  # 30분
+            samesite="lax",
+        )
+        # 로그인 시각 전달용 쿠키 (프론트엔드 세션 타이머 표시용, httponly 아님)
+        login_time_ms = int(time.time() * 1000)
+        response.set_cookie(
+            key="bo_login_time",
+            value=str(login_time_ms),
+            httponly=False,
+            secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
+            max_age=30 * 60,
+            samesite="lax",
+        )
+        return response
+    except OperationalError as e:
+        safe_log_error("login_db_unavailable", e)
+        return RedirectResponse(url="/login?error=db", status_code=303)
 
 
 @router.get("/logout")

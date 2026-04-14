@@ -18,16 +18,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-# .env 로드: 1) 루트 .env.local, 2) apps/admin/.env
+# .env: root .env.local, admin/.env, admin/.env.local (last wins)
 _admin_dir = Path(__file__).resolve().parent.parent.parent  # apps/admin
 _root = _admin_dir.parent.parent  # jurin-i 루트
 _env_local = _root / ".env.local"
 _env_file = _admin_dir / ".env"
+_admin_env_local = _admin_dir / ".env.local"
 if _env_local.exists():
     load_dotenv(dotenv_path=_env_local)
 if _env_file.exists():
     load_dotenv(dotenv_path=_env_file)
-if not _env_local.exists() and not _env_file.exists():
+if _admin_env_local.exists():
+    load_dotenv(dotenv_path=_admin_env_local)
+if not _env_local.exists() and not _env_file.exists() and not _admin_env_local.exists():
     load_dotenv()
 
 # 환경 변수에서 DB 접속 정보 가져오기 (PostgreSQL 기본값)

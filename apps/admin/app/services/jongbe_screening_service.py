@@ -44,6 +44,9 @@ def _rsi(close, period=14):
 
 def _fetch_ohlcv(symbol: str) -> Optional[Tuple[str, object]]:
     """개별 종목 OHLCV 조회 (ThreadPoolExecutor에서 호출)"""
+    from app.services.screening_price_source import warn_if_kiwoom_pending
+
+    warn_if_kiwoom_pending()
     import FinanceDataReader as fdr
 
     try:

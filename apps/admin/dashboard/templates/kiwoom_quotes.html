@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}시세조회 - Jurin-i BO{% endblock %}
+
+{% macro kw_rank_block(rows, err, raw, api_id, path_hint) %}
+  <p class="kw-rank-note">API <code>{{ api_id }}</code> · {{ path_hint }}</p>
+  {% if not kiwoom_configured %}
+  <p>키움 API 자격 증명을 설정하면 표시됩니다.</p>
+  {% elif err %}
+  <p style="color: var(--color-danger);"><strong>오류</strong> — {{ err }}</p>
+  {% elif rows and rows|length > 0 %}
+  <div style="overflow-x: auto;">
+    <table class="kw-rank-table">
+      <thead>
+        <tr>
+          {% for k in rows[0].keys() %}
+          <th title="{{ k }}">{{ kiwoom_col_ko(k) }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for k in rows[0].keys() %}
+          <td class="{{ kiwoom_td_class(row, k) }}">{{ row.get(k, '') }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif raw %}
+  <p class="kw-rank-note">행 목록이 없어 원문 JSON을 표시합니다. (단일 건·다른 스키마일 수 있음)</p>
+  <pre style="margin: 0; padding: 1rem; background: var(--color-gray-50); border-radius: var(--radius-md); overflow: auto; font-size: 12px; max-height: 420px;">{{ raw }}</pre>
+  {% else %}
+  <p>데이터가 없거나 응답 형식이 예상과 다릅니다.</p>
+  {% endif %}
+{% endmacro %}
+
+{% block extra_styles %}
+<style>
+  .kiwoom-tab-bar {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .kiwoom-tab-bar button {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--color-gray-300);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+  }
+  .kiwoom-tab-bar button:hover {
+    background: var(--color-gray-100);
+  }
+  .kiwoom-tab-bar button.active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+  .kw-panel {
+    display: none;
+  }
+  .kw-panel.active {
+    display: block;
+  }
+  .kw-rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+  }
+  .kw-rank-table th,
+  .kw-rank-table td {
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 0.45rem 0.5rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .kw-rank-table th {
+    color: var(--color-gray-600);
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--color-gray-50);
+  }
+  .kw-rank-note {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    margin: 0 0 0.75rem;
+  }
+  .kw-rank-table td.kw-stk-up {
+    color: #c62828;
+    font-weight: 600;
+  }
+  .kw-rank-table td.kw-stk-down {
+    color: #1565c0;
+    font-weight: 600;
+  }
+  .kw-rank-table td.kw-stk-flat {
+    color: var(--color-gray-700);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>시세조회</h1>
+  <p class="page-desc">
+    키움 REST 순위·시세 TR — 종목별 탭은 아래 <strong>종목코드(순위·외국인·증권사·기관)</strong>을 사용합니다.
+    파라미터는 공식 가이드와 다를 수 있어 오류 시 PDF 명세를 확인하세요.
+  </p>
+</div>
+
+{% if not kiwoom_configured %}
+<div class="card" style="border-left: 4px solid var(--color-warning); margin-bottom: 1.25rem;">
+  <p style="margin: 0;">
+    <strong>KIWOOM_APP_KEY</strong> / <strong>KIWOOM_APP_SECRET</strong>이 없습니다.
+    <code>apps/admin/.env.local</code> 등에 설정한 후 서버를 재시작하세요.
+  </p>
+</div>
+{% else %}
+<p style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0 0 1rem;">
+  연결 기준 URL: <code>{{ kiwoom_base_url }}</code>
+  {% if kiwoom_use_mock %}(모의){% else %}(운영){% endif %}
+</p>
+{% endif %}
+
+<div class="card" style="margin-bottom: 1rem;">
+  <h3 style="margin-top: 0; font-size: var(--font-size-md);">종목코드 (외국인·증권사·기관 등 종목별 TR)</h3>
+  <form method="get" action="/admin/kiwoom/quotes" class="form-inline" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+    <label for="rank_stk_cd">종목코드</label>
+    <input id="rank_stk_cd" name="rank_stk_cd" type="text" inputmode="numeric" maxlength="6" value="{{ rank_stk_cd or '005930' }}"
+      style="padding: 0.5rem 0.75rem; min-width: 120px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm);" />
+    <button type="submit" class="btn btn-secondary" {% if not kiwoom_configured %}disabled{% endif %}>순위 데이터 새로고침</button>
+  </form>
+  <p style="margin: 0.5rem 0 0; font-size: var(--font-size-sm); color: var(--color-gray-600);">GET으로만 갱신해도 됩니다. 기본 005930(삼성전자).</p>
+</div>
+
+<div class="kiwoom-tab-bar" role="tablist" aria-label="시세 조회 구분">
+  <button type="button" class="kw-tab active" data-kw-panel="stock" role="tab" aria-selected="true">종목 조회</button>
+  <button type="button" class="kw-tab" data-kw-panel="realtime" role="tab" aria-selected="false">실시간 조회 순위</button>
+  <button type="button" class="kw-tab" data-kw-panel="dayvol" role="tab" aria-selected="false">당일 거래량 상위</button>
+  <button type="button" class="kw-tab" data-kw-panel="prevday" role="tab" aria-selected="false">전일 거래량 상위</button>
+  <button type="button" class="kw-tab" data-kw-panel="tv" role="tab" aria-selected="false">거래대금 상위</button>
+  <button type="button" class="kw-tab" data-kw-panel="upperlower" role="tab" aria-selected="false">상하한가</button>
+  <button type="button" class="kw-tab" data-kw-panel="foreignc" role="tab" aria-selected="false">외인 연속 순매매</button>
+  <button type="button" class="kw-tab" data-kw-panel="foreignstk" role="tab" aria-selected="false">외국인 종목별</button>
+  <button type="button" class="kw-tab" data-kw-panel="broker" role="tab" aria-selected="false">종목별 증권사 순위</button>
+  <button type="button" class="kw-tab" data-kw-panel="inst" role="tab" aria-selected="false">일별 기관매매</button>
+</div>
+
+<div id="kw-panel-stock" class="kw-panel active" role="tabpanel">
+<div class="card" style="margin-bottom: 1.25rem;">
+  <h3 style="margin-top: 0;">종목 조회 (ka10001)</h3>
+  <form method="post" action="/admin/kiwoom/quotes" class="form-inline" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+    <input type="hidden" name="rank_stk_cd" value="{{ rank_stk_cd or '005930' }}" />
+    <label for="stk_cd" style="font-weight: var(--font-weight-medium);">종목코드</label>
+    <input
+      id="stk_cd"
+      name="stk_cd"
+      type="text"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      maxlength="6"
+      placeholder="예: 005930"
+      value="{{ stk_cd or '' }}"
+      required
+      style="padding: 0.5rem 0.75rem; min-width: 120px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm);"
+    />
+    <button type="submit" class="btn btn-primary" {% if not kiwoom_configured %}disabled{% endif %}>조회</button>
+  </form>
+</div>
+
+{% if error %}
+<div class="card" style="border-left: 4px solid var(--color-danger); margin-bottom: 1.25rem;">
+  <p style="margin: 0; color: var(--color-danger);"><strong>오류</strong> — {{ error }}</p>
+</div>
+{% endif %}
+
+{% if result and (result.get('return_code') == 0 or result.get('return_code') is none) %}
+<div class="card" style="margin-bottom: 1.25rem;">
+  <h3 style="margin-top: 0;">요약</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: var(--font-size-sm);">
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--color-gray-200);">
+        <th style="text-align: left; padding: 0.5rem 0; width: 140px; color: var(--color-gray-600);">종목코드</th>
+        <td style="padding: 0.5rem 0;">{{ stk_cd }}</td>
+      </tr>
+      {% if result.get('stk_nm') is not none %}
+      <tr style="border-bottom: 1px solid var(--color-gray-200);">
+        <th style="text-align: left; padding: 0.5rem 0; color: var(--color-gray-600);">종목명</th>
+        <td style="padding: 0.5rem 0;">{{ result.get('stk_nm', '') }}</td>
+      </tr>
+      {% endif %}
+      {% if result.get('cur_prc') is not none %}
+      <tr style="border-bottom: 1px solid var(--color-gray-200);">
+        <th style="text-align: left; padding: 0.5rem 0; color: var(--color-gray-600);">현재가</th>
+        <td style="padding: 0.5rem 0;">{{ result.get('cur_prc', '') }}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if response_json %}
+<div class="card">
+  <h3 style="margin-top: 0;">상세 (원문 JSON)</h3>
+  <pre style="margin: 0; padding: 1rem; background: var(--color-gray-50); border-radius: var(--radius-md); overflow: auto; font-size: 12px; line-height: 1.5; max-height: 420px;">{{ response_json }}</pre>
+</div>
+{% endif %}
+</div>
+
+<div id="kw-panel-realtime" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">실시간 종목 조회 순위</h3>
+    {{ kw_rank_block(realtime_rows, realtime_err, realtime_raw, 'ka00198', 'POST /api/dostk/stkinfo · 순위 1~50 · mrkt_tp=000') }}
+  </div>
+</div>
+
+<div id="kw-panel-dayvol" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">당일 거래량 상위</h3>
+    {{ kw_rank_block(day_vol_rows, day_vol_err, day_vol_raw, 'ka10030', 'POST /api/dostk/rkinfo · sort_tp=1 거래량 · stex_tp=3') }}
+  </div>
+</div>
+
+<div id="kw-panel-prevday" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">전일 거래량 상위</h3>
+    {{ kw_rank_block(prev_day_rows, prev_day_err, prev_day_raw, 'ka10031', 'POST /api/dostk/rkinfo · ka10030과 동일 파라미터 패턴') }}
+  </div>
+</div>
+
+<div id="kw-panel-tv" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">거래대금 상위</h3>
+    {{ kw_rank_block(trading_value_rows, trading_value_err, trading_value_raw, 'ka10032', 'POST /api/dostk/rkinfo · sort_tp=3 거래대금') }}
+  </div>
+</div>
+
+<div id="kw-panel-upperlower" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">상하한가 요청</h3>
+    {{ kw_rank_block(upper_lower_rows, upper_lower_err, upper_lower_raw, 'ka10017', 'POST /api/dostk/mrkcond · 필드는 가이드와 다를 수 있음') }}
+  </div>
+</div>
+
+<div id="kw-panel-foreignc" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">외인연속순매매상위</h3>
+    {{ kw_rank_block(foreign_consec_rows, foreign_consec_err, foreign_consec_raw, 'ka10035', 'POST /api/dostk/rkinfo · 1~50위') }}
+  </div>
+</div>
+
+<div id="kw-panel-foreignstk" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">주식 외국인 종목별 매매동향</h3>
+    <p class="kw-rank-note">종목 <code>{{ rank_stk_cd }}</code> · ka10008</p>
+    {{ kw_rank_block(foreign_stk_rows, foreign_stk_err, foreign_stk_raw, 'ka10008', 'POST /api/dostk/stkinfo') }}
+  </div>
+</div>
+
+<div id="kw-panel-broker" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">종목별 증권사 순위</h3>
+    <p class="kw-rank-note">종목 <code>{{ rank_stk_cd }}</code> · ka10038</p>
+    {{ kw_rank_block(broker_rank_rows, broker_rank_err, broker_rank_raw, 'ka10038', 'POST /api/dostk/rkinfo') }}
+  </div>
+</div>
+
+<div id="kw-panel-inst" class="kw-panel" role="tabpanel">
+  <div class="card">
+    <h3 style="margin-top: 0;">일별 기관매매 종목</h3>
+    <p class="kw-rank-note">종목 <code>{{ rank_stk_cd }}</code> · ka10044</p>
+    {{ kw_rank_block(inst_daily_rows, inst_daily_err, inst_daily_raw, 'ka10044', 'POST /api/dostk/mrkcond') }}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.kw-tab');
+  var panels = {
+    stock: document.getElementById('kw-panel-stock'),
+    realtime: document.getElementById('kw-panel-realtime'),
+    dayvol: document.getElementById('kw-panel-dayvol'),
+    prevday: document.getElementById('kw-panel-prevday'),
+    tv: document.getElementById('kw-panel-tv'),
+    upperlower: document.getElementById('kw-panel-upperlower'),
+    foreignc: document.getElementById('kw-panel-foreignc'),
+    foreignstk: document.getElementById('kw-panel-foreignstk'),
+    broker: document.getElementById('kw-panel-broker'),
+    inst: document.getElementById('kw-panel-inst')
+  };
+  function activate(name) {
+    tabs.forEach(function (btn) {
+      var on = btn.getAttribute('data-kw-panel') === name;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    Object.keys(panels).forEach(function (key) {
+      if (panels[key]) panels[key].classList.toggle('active', key === name);
+    });
+    try {
+      localStorage.setItem('kiwoom_quotes_tab', name);
+    } catch (e) {}
+  }
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activate(btn.getAttribute('data-kw-panel'));
+    });
+  });
+  try {
+    var saved = localStorage.getItem('kiwoom_quotes_tab');
+    if (saved && panels[saved]) activate(saved);
+  } catch (e) {}
+})();
+</script>
+{% endblock %}

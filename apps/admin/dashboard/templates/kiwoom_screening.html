@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - Jurin-i BO{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .ks-card { border: 1px solid var(--color-gray-200); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; background: #fff; }
+  .ks-info { font-size: var(--font-size-sm); color: var(--color-gray-600); margin: 0 0 0.75rem; line-height: 1.5; }
+  .ks-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+  .ks-table th, .ks-table td { border-bottom: 1px solid var(--color-gray-200); padding: 0.45rem 0.5rem; text-align: left; }
+  .ks-table th { background: var(--color-gray-50); color: var(--color-gray-600); white-space: nowrap; }
+  .ks-form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem; }
+  .ks-form label { font-size: var(--font-size-sm); }
+  .ks-form select, .ks-form input { padding: 0.45rem 0.5rem; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm); font-family: inherit; }
+  .ks-alert { padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: var(--font-size-sm); }
+  .ks-alert.err { background: #ffebee; border: 1px solid #e57373; }
+  .ks-alert.ok { background: #e8f5e9; border: 1px solid #81c784; }
+  .ks-alert.warn { background: #fff8e1; border: 1px solid #ffca28; }
+  code { font-size: 0.9em; }
+  .strategy-tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 1rem; border-bottom: 2px solid var(--color-gray-200); }
+  .strategy-tab {
+    padding: 0.55rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-600);
+    margin-bottom: -2px;
+  }
+  .strategy-tab:hover { color: var(--color-gray-800); }
+  .strategy-tab.active { color: #1565c0; border-bottom-color: #1565c0; }
+  .ks-algo-panel { display: none; }
+  .ks-algo-panel.is-visible { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set result_mode = (screening_result.mode if screening_result and screening_result.get('ok') else form_screening_mode) %}
+
+<div class="page-header">
+  <h1>{{ page_title }}</h1>
+  <p class="page-desc">{{ ks.page_desc_p1 }} {{ ks.page_desc_p2 }} {{ ks.page_desc_p3 }}</p>
+</div>
+
+{% if not kiwoom_configured %}
+<div class="ks-alert warn">
+  <strong>KIWOOM_APP_KEY</strong> / <strong>KIWOOM_APP_SECRET</strong>{{ ks.warn_suffix }}
+  JSON: <code>POST /api/kiwoom/screening/run</code>
+  {{ ks.warn_json }} <code>{"mode":"ichimoku","market":"kospi","top_n":40}</code> —
+  <code>mode</code>: <code>ichimoku</code> | <code>jongbe</code> | <code>ricebowl</code> | <code>breakout</code>
+</div>
+{% endif %}
+
+<div class="ks-card">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.h2_run }}</h2>
+  <div class="strategy-tabs" role="tablist">
+    <button type="button" class="strategy-tab{% if form_screening_mode == 'ichimoku' %} active{% endif %}" data-mode="ichimoku" role="tab">{{ ks.tab_ichimoku }}</button>
+    <button type="button" class="strategy-tab{% if form_screening_mode == 'jongbe' %} active{% endif %}" data-mode="jongbe" role="tab">{{ ks.tab_jongbe }}</button>
+    <button type="button" class="strategy-tab{% if form_screening_mode == 'ricebowl' %} active{% endif %}" data-mode="ricebowl" role="tab">{{ ks.tab_ricebowl }}</button>
+    <button type="button" class="strategy-tab{% if form_screening_mode == 'breakout' %} active{% endif %}" data-mode="breakout" role="tab">{{ ks.tab_breakout }}</button>
+  </div>
+
+  <form method="post" action="/admin/kiwoom/screening" class="ks-form" id="ks-screening-form">
+    <input type="hidden" name="screening_mode" id="screening_mode" value="{{ form_screening_mode }}" />
+    <label for="market">{{ ks.market_label }}</label>
+    <select id="market" name="market">
+      <option value="kospi" {% if form_market == 'kospi' %}selected{% endif %}>KOSPI</option>
+      <option value="kosdaq" {% if form_market == 'kosdaq' %}selected{% endif %}>KOSDAQ</option>
+    </select>
+    <label for="top_n">{{ ks.label_top_n }}</label>
+    <input id="top_n" name="top_n" type="number" min="5" max="120" value="{{ form_top_n }}" />
+    <button type="submit" class="btn btn-primary" {% if not kiwoom_configured %}disabled{% endif %}>{{ ks.btn_run }}</button>
+  </form>
+  <p class="ks-info">{{ ks.hint_tr }}</p>
+</div>
+
+<div class="ks-card ks-algo-panel{% if form_screening_mode == 'ichimoku' %} is-visible{% endif %}" data-algo="ichimoku">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.algo_ichimoku_title }}</h2>
+  <ul class="ks-info" style="margin:0; padding-left:1.25rem;">
+    {% for n in range(1, 6) %}
+    <li>{{ ks['algo_ichimoku_li' ~ n] }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="ks-card ks-algo-panel{% if form_screening_mode == 'jongbe' %} is-visible{% endif %}" data-algo="jongbe">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.algo_jongbe_title }}</h2>
+  <p class="ks-info" style="margin:0 0 0.5rem;">{{ ks.algo_jongbe_note }}</p>
+  <ul class="ks-info" style="margin:0; padding-left:1.25rem;">
+    {% for n in range(1, 9) %}
+    <li>{{ ks['algo_jongbe_li' ~ n] }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="ks-card ks-algo-panel{% if form_screening_mode == 'ricebowl' %} is-visible{% endif %}" data-algo="ricebowl">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.algo_ricebowl_title }}</h2>
+  <p class="ks-info" style="margin:0 0 0.5rem;">{{ ks.algo_ricebowl_note }}</p>
+  <ul class="ks-info" style="margin:0; padding-left:1.25rem;">
+    {% for n in range(1, 8) %}
+    <li>{{ ks['algo_ricebowl_li' ~ n] }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="ks-card ks-algo-panel{% if form_screening_mode == 'breakout' %} is-visible{% endif %}" data-algo="breakout">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.algo_breakout_title }}</h2>
+  <p class="ks-info" style="margin:0 0 0.5rem;">{{ ks.algo_breakout_note }}</p>
+  <ul class="ks-info" style="margin:0; padding-left:1.25rem;">
+    {% for n in range(1, 6) %}
+    <li>{{ ks['algo_breakout_li' ~ n] }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% if screening_error %}
+<div class="ks-alert err"><strong>{{ ks.err_label }}</strong> — {{ screening_error }}</div>
+{% endif %}
+
+{% if screening_result and screening_result.get('ok') %}
+<div class="ks-alert ok">
+  {{ ks.mode_label }} <strong>{{ screening_result.get('mode') }}</strong> ·
+  {{ ks.market_label }} <strong>{{ screening_result.get('market') }}</strong> ·
+  {{ ks.summary_scan_label }} <strong>{{ screening_result.get('universe_size') }}</strong>{{ ks.suffix_jongmok }} ·
+  {{ ks.summary_hits }} <strong>{{ screening_result.get('hit_count') }}</strong>{{ ks.suffix_geon }}
+  · {{ ks.summary_skip }} {{ screening_result.get('skipped_count', 0) }}{{ ks.suffix_geon }}
+</div>
+{% if screening_result.get('note') %}
+<p class="ks-info">{{ screening_result.get('note') }}</p>
+{% endif %}
+
+{% if screening_result.get('results') %}
+<div class="ks-card" style="overflow-x:auto;">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.result_title }}</h2>
+  {% if result_mode == 'ichimoku' %}
+  <table class="ks-table">
+    <thead>
+      <tr>
+        <th>{{ ks.th_seq }}</th>
+        <th>{{ ks.th_code }}</th>
+        <th>{{ ks.th_name }}</th>
+        <th>{{ ks.th_price }}</th>
+        <th>{{ ks.th_chg }}</th>
+        <th>{{ ks.th_vol }}</th>
+        <th>{{ ks.th_tenkan }}</th>
+        <th>{{ ks.th_kijun }}</th>
+        <th>{{ ks.th_cond }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in screening_result.results %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.stock_code }}</td>
+        <td>{{ r.stock_name }}</td>
+        <td>{{ r.current_price }}</td>
+        <td>{{ r.change_percent }}</td>
+        <td>{{ r.volume }}</td>
+        <td>{{ r.tenkan_sen }}</td>
+        <td>{{ r.kijun_sen }}</td>
+        <td>{{ r.matched_conditions }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% elif result_mode == 'jongbe' %}
+  <table class="ks-table">
+    <thead>
+      <tr>
+        <th>{{ ks.th_seq }}</th>
+        <th>{{ ks.th_code }}</th>
+        <th>{{ ks.th_name }}</th>
+        <th>{{ ks.th_price }}</th>
+        <th>{{ ks.th_chg }}</th>
+        <th>{{ ks.th_trdval }}</th>
+        <th>{{ ks.th_tvrank }}</th>
+        <th>RSI</th>
+        <th>{{ ks.th_volratio }}</th>
+        <th>{{ ks.th_cond }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in screening_result.results %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.stock_code }}</td>
+        <td>{{ r.stock_name }}</td>
+        <td>{{ r.current_price }}</td>
+        <td>{{ r.change_percent }}</td>
+        <td>{{ r.trading_value }}</td>
+        <td>{{ r.trading_value_rank }}</td>
+        <td>{{ r.rsi14 }}</td>
+        <td>{{ r.volume_ratio }}</td>
+        <td>{{ r.matched_conditions }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% elif result_mode == 'breakout' %}
+  <table class="ks-table">
+    <thead>
+      <tr>
+        <th>{{ ks.th_seq }}</th>
+        <th>{{ ks.th_code }}</th>
+        <th>{{ ks.th_name }}</th>
+        <th>{{ ks.th_price }}</th>
+        <th>{{ ks.th_chg }}</th>
+        <th>{{ ks.th_boxhi }}</th>
+        <th>{{ ks.th_touch }}</th>
+        <th>{{ ks.th_volratio }}</th>
+        <th>{{ ks.th_tvrank }}</th>
+        <th>{{ ks.th_120nh }}</th>
+        <th>{{ ks.th_cond }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in screening_result.results %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.stock_code }}</td>
+        <td>{{ r.stock_name }}</td>
+        <td>{{ r.current_price }}</td>
+        <td>{{ r.change_percent }}</td>
+        <td>{{ r.box_high }}</td>
+        <td>{{ r.touch_count }}</td>
+        <td>{{ r.volume_ratio }}</td>
+        <td>{{ r.trading_value_rank }}</td>
+        <td>{{ r.is_new_high_120 }}</td>
+        <td>{{ r.matched_conditions }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <table class="ks-table">
+    <thead>
+      <tr>
+        <th>{{ ks.th_seq }}</th>
+        <th>{{ ks.th_code }}</th>
+        <th>{{ ks.th_name }}</th>
+        <th>{{ ks.th_price }}</th>
+        <th>{{ ks.th_chg }}</th>
+        <th>{{ ks.th_ma_combo }}</th>
+        <th>{{ ks.th_gap }}</th>
+        <th>{{ ks.th_volratio }}</th>
+        <th>{{ ks.th_trdval }}</th>
+        <th>{{ ks.th_cond }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in screening_result.results %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.stock_code }}</td>
+        <td>{{ r.stock_name }}</td>
+        <td>{{ r.current_price }}</td>
+        <td>{{ r.change_percent }}</td>
+        <td>{{ r.ma20 }} / {{ r.ma60 }} / {{ r.ma224 }}</td>
+        <td>{{ r.ma_gap }}</td>
+        <td>{{ r.volume_ratio }}</td>
+        <td>{{ r.trading_value }}</td>
+        <td>{{ r.matched_conditions }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% else %}
+<p class="ks-info">{{ ks.no_hits }}</p>
+{% endif %}
+
+{% if screening_result.get('skipped_sample') %}
+<div class="ks-card">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.skipped_title }}</h2>
+  <table class="ks-table">
+    <thead><tr><th>{{ ks.th_code }}</th><th>{{ ks.th_reason }}</th></tr></thead>
+    <tbody>
+      {% for s in screening_result.skipped_sample %}
+      <tr><td>{{ s.stock_code }}</td><td>{{ s.reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endif %}
+
+<div class="ks-card">
+  <h2 style="margin: 0 0 0.75rem; font-size: var(--font-size-md);">{{ ks.batch_title }}</h2>
+  <p class="ks-info">
+    <code>KIWOOM_SCREENING_PRICE_SOURCE={{ screening_price_source }}</code> —
+    {{ ks.batch_p1 }}
+  </p>
+  <p class="ks-info"><a href="/admin/stock-screening">{{ ks.link_fdr }}</a> · <a href="/admin/kiwoom/quotes">{{ ks.link_quotes }}</a></p>
+</div>
+
+<script>
+(function () {
+  var modeInput = document.getElementById('screening_mode');
+  var tabs = document.querySelectorAll('.strategy-tab');
+  var panels = document.querySelectorAll('.ks-algo-panel');
+
+  function setMode(mode) {
+    if (modeInput) modeInput.value = mode;
+    tabs.forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-mode') === mode);
+    });
+    panels.forEach(function (p) {
+      p.classList.toggle('is-visible', p.getAttribute('data-algo') === mode);
+    });
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      setMode(tab.getAttribute('data-mode') || 'ichimoku');
+    });
+  });
+})();
+</script>
+{% endblock %}

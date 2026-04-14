@@ -87,9 +87,9 @@ class KiwoomService:
 ```
 
 **기본 설정**
-- Kiwoom REST API 문서 기반 OpenAPI 엔드포인트 매핑
-- Mock API: `https://mockapi.kiwoom.com/v1/...`
-- Real API: `https://openapi.kiwoom.com/v1/...`
+- Kiwoom REST API 문서 기반 엔드포인트 매핑 (공식: [openapi.kiwoom.com](https://openapi.kiwoom.com) 가이드)
+- OAuth2: `POST {base}/oauth2/token` — `base`는 운영 `https://api.kiwoom.com`, 모의 `https://mockapi.kiwoom.com` (환경변수 `KIWOOM_BASE_URL`로 덮어쓰기 가능)
+- 국내주식 TR 예: `POST {base}/api/dostk/stkinfo`, `rkinfo`, `acnt`, `ordr`, `chart` 등 — 경로에 `/v1` 접두사 없음(구현과 동일)
 - `.env` 변수: `KIWOOM_APP_KEY`, `KIWOOM_APP_SECRET`, `KIWOOM_USE_MOCK=true`
 
 **참조 패턴**: `apps/admin/app/services/firebase_service.py` (OAuth2 토큰 관리)
@@ -287,12 +287,19 @@ apps/web_new/
    KIWOOM_APP_KEY=<your_app_key>
    KIWOOM_APP_SECRET=<your_app_secret>
    KIWOOM_USE_MOCK=true  # 처음엔 true로 시작
+   KIWOOM_ACCOUNT_NO=        # 계좌·주문 TR (kt00001 등)
+   KIWOOM_ACCOUNT_PWD=       # 비밀번호(필요 시)
+   KIWOOM_SCREENING_PRICE_SOURCE=fdr   # 또는 kiwoom (로그만, OHLCV는 아직 FDR)
+   KIWOOM_KILL_SWITCH=true               # 자동 실행 차단(기본 on)
+   KIWOOM_AUTO_TRADING_ENABLED=false     # 전략 실행 API
+   KIWOOM_ORDER_KILL_SWITCH=false        # 수동 주문 API/BO 폼 차단 시 true
    ```
 
 3. **초기 검증**
-   - Phase 1 완료 후: `GET /api/kiwoom/health` 테스트
-   - Phase 2 완료 후: 모의투자 페이지에서 주문 생성 & 조회 테스트
-   - Phase 3 완료 후: 검색식에서 Kiwoom 가격 데이터 표시 확인
+   - Phase 1 완료 후: 관리자 로그인(쿠키) 상태에서 `GET /api/kiwoom/health`, `POST /api/kiwoom/auth/token` 테스트 (`apps/admin/app/routers/kiwoom.py`)
+   - Phase 2 완료 후: `GET /api/kiwoom/mock/balance`, `GET /api/kiwoom/mock/orders`, `POST /api/kiwoom/mock/order`(JSON `side`: buy/sell/cancel) 및 BO `/admin/kiwoom/mock`
+   - Phase 3 완료 후: `GET /api/kiwoom/prices/{symbol}`, `GET /api/kiwoom/price/{symbol}/current`, BO `/admin/kiwoom/screening`에서 가격 소스 설정 확인
+   - Phase 4: `GET/POST/DELETE /api/kiwoom/strategies`, `POST .../execute` (스켈레톤·안전 플래그)
 
 ---
 
