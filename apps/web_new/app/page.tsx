@@ -20,6 +20,7 @@ import { SentimentIndexCard } from "./components/module/home/SentimentIndexCard"
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
+import { FortuneSection } from "./components/module/home/FortuneSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
@@ -162,6 +163,7 @@ export default function Home() {
         </div>
       )}
       <JubtiSection />
+      <FortuneSection />
       <StockTermBox wrapperClassName="home-term-wrap" />
       {bannerBottom.length > 0 && (
         <section style={{ margin: "1rem 0" }}>

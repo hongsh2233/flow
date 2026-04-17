@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import styles from "./JubtiSection.module.css";
 import questionPool from "@/lib/data/jubti-questions.json";
-import { JUBTI_MASTER_BY_TYPE } from "@/lib/jubti/jubtiMasters";
+import { JUBTI_MASTER_BY_TYPE, MBTI_TO_JUBTI, MBTI_INVEST_DESCRIPTION, VALID_MBTI_TYPES } from "@/lib/jubti/jubtiMasters";
 
 type Dimension = "A" | "D" | "N" | "I";
 
@@ -21,7 +21,6 @@ interface Question {
 }
 
 const QUESTION_POOL = questionPool as Question[];
-
 const QUESTIONS_PER_RUN = 7;
 
 function shuffle<T>(arr: T[]): T[] {
@@ -91,13 +90,26 @@ const TYPE_META: Record<
 
 function pickMainType(scores: Record<Dimension, number>): Dimension {
   const max = Math.max(scores.A, scores.D, scores.N, scores.I);
-  const candidates = (Object.keys(scores) as Dimension[]).filter(
-    (key) => scores[key] === max,
-  );
+  const candidates = (Object.keys(scores) as Dimension[]).filter((key) => scores[key] === max);
   for (const dim of PRIORITY) {
     if (candidates.includes(dim)) return dim;
   }
   return candidates[0] ?? "D";
+}
+
+// Simple markdown → HTML renderer (bold, headings, lists)
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/^#### (.+)$/gm, "<h4>$1</h4>")
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    .replace(/\n{2,}/g, "</p><p>")
+    .replace(/^(?!<[hulo])/gm, "")
+    .replace(/\n/g, "<br/>");
 }
 
 function ChevronDownIcon() {
@@ -119,8 +131,7 @@ function ChevronUpIcon() {
 function LightbulbIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
+      <path d="M9 18h6" /><path d="M10 22h4" />
       <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
     </svg>
   );
@@ -148,18 +159,25 @@ export function JubtiSection() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [questionsForRun, setQuestionsForRun] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [scores, setScores] = useState<Record<Dimension, number>>({
-    A: 0,
-    D: 0,
-    N: 0,
-    I: 0,
-  });
+  const [scores, setScores] = useState<Record<Dimension, number>>({ A: 0, D: 0, N: 0, I: 0 });
   const [finished, setFinished] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedJubtiType, setSavedJubtiType] = useState<Dimension | null>(null);
 
+  // MBTI 상태
+  const [savedMbtiType, setSavedMbtiType] = useState<string | null>(null);
+  const [selectedMbti, setSelectedMbti] = useState<string | null>(null);
+  const [showMbtiSelector, setShowMbtiSelector] = useState(false);
+  const [isSavingMbti, setIsSavingMbti] = useState(false);
+
+  // AI 전략 상태
+  const [aiStrategy, setAiStrategy] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiBoxRef = useRef<HTMLDivElement>(null);
+
+  // 저장된 jubti_type 로드
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.email) return;
     fetch("/api/auth/member/jubti")
@@ -167,6 +185,20 @@ export function JubtiSection() {
       .then((data) => {
         if (data?.success && data?.jubti_type && ["A", "D", "N", "I"].includes(data.jubti_type)) {
           setSavedJubtiType(data.jubti_type as Dimension);
+        }
+      })
+      .catch(() => {});
+  }, [status, session?.user?.email]);
+
+  // 저장된 mbti_type 로드
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.email) return;
+    fetch("/api/auth/member/mbti")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && data?.mbti_type) {
+          setSavedMbtiType(data.mbti_type);
+          setSelectedMbti(data.mbti_type);
         }
       })
       .catch(() => {});
@@ -191,7 +223,6 @@ export function JubtiSection() {
       });
       return next;
     });
-
     if (currentIndex + 1 >= totalQuestions) {
       setFinished(true);
     } else {
@@ -206,15 +237,13 @@ export function JubtiSection() {
     setFinished(false);
     setSelectedOptionIndex(null);
     setShowLoginMessage(false);
+    setAiStrategy("");
     initQuestions();
   };
 
   const handleSaveResult = async () => {
     if (status === "loading") return;
-    if (!session?.user?.email) {
-      setShowLoginMessage(true);
-      return;
-    }
+    if (!session?.user?.email) { setShowLoginMessage(true); return; }
     setIsSaving(true);
     setShowLoginMessage(false);
     try {
@@ -238,61 +267,108 @@ export function JubtiSection() {
     }
   };
 
+  const handleSaveMbti = async () => {
+    if (!selectedMbti || !session?.user?.email) return;
+    setIsSavingMbti(true);
+    try {
+      const res = await fetch("/api/auth/member/mbti", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mbti_type: selectedMbti }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setSavedMbtiType(selectedMbti);
+        setShowMbtiSelector(false);
+        if (data.point_balance !== undefined) {
+          // 포인트 적립 안내 (최초 저장 시 점수 차이가 있을 때)
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsSavingMbti(false);
+    }
+  };
+
+  const handleAiStrategy = async () => {
+    if (!session?.user?.email) { setShowLoginMessage(true); return; }
+    setAiLoading(true);
+    setAiStrategy("");
+    try {
+      const res = await fetch("/api/jubti-strategy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jubti_type: mainType,
+          mbti_type: savedMbtiType,
+          scores,
+          character_name: meta.characterName,
+          master: meta.master,
+        }),
+      });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        setAiStrategy((prev) => prev + decoder.decode(value));
+        aiBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } catch {
+      setAiStrategy("AI 조언을 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // 접힌 상태에서 MBTI 연결 뱃지
+  const mbtiJubtiMatch = savedMbtiType ? MBTI_TO_JUBTI[savedMbtiType] : null;
+
   if (!isExpanded) {
     const savedMeta = savedJubtiType ? TYPE_META[savedJubtiType] : null;
     const content = (
       <>
         <button
-            type="button"
-            onClick={() => {
-              setQuestionsForRun(getRandomQuestions());
-              setIsExpanded(true);
-            }}
-            className={styles.collapsedBtn}
-          >
-            <div className={styles.collapsedInner}>
-              <div className={styles.iconBox}>
-                <LightbulbIcon />
-              </div>
-              <div className={styles.collapsedText}>
-                <h3 className={styles.collapsedTitle}>주BTI</h3>
-                <p className={styles.collapsedSubtitle}>
-                  {savedMeta
-                    ? `${savedMeta.characterName} · ${savedMeta.label}`
-                    : "재미로 하는 투자 성향 테스트"}
-                </p>
-              </div>
+          type="button"
+          onClick={() => { setQuestionsForRun(getRandomQuestions()); setIsExpanded(true); }}
+          className={styles.collapsedBtn}
+        >
+          <div className={styles.collapsedInner}>
+            <div className={styles.iconBox}><LightbulbIcon /></div>
+            <div className={styles.collapsedText}>
+              <h3 className={styles.collapsedTitle}>MBTI로 보는 투자성향</h3>
+              <p className={styles.collapsedSubtitle}>
+                {savedMeta
+                  ? `${savedMeta.characterName} · ${savedMeta.label}${savedMbtiType ? ` · ${savedMbtiType}` : ""}`
+                  : "MBTI × 투자심리 분석"}
+              </p>
             </div>
-            <span className={styles.collapsedChevron}>
-              <ChevronDownIcon />
-            </span>
-          </button>
-          {savedMeta && (
-            <div className={styles.collapsedActions}>
-              <button
-                type="button"
-                className={styles.retakeButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRestart();
-                  setQuestionsForRun(getRandomQuestions());
-                  setIsExpanded(true);
-                }}
-              >
-                <RotateIcon />
-                <span>다시 하기</span>
-              </button>
-            </div>
-          )}
+          </div>
+          <span className={styles.collapsedChevron}><ChevronDownIcon /></span>
+        </button>
+        {savedMeta && (
+          <div className={styles.collapsedActions}>
+            <button
+              type="button"
+              className={styles.retakeButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRestart();
+                setQuestionsForRun(getRandomQuestions());
+                setIsExpanded(true);
+              }}
+            >
+              <RotateIcon />
+              <span>다시 하기</span>
+            </button>
+          </div>
+        )}
       </>
     );
     return (
       <section className={styles.section}>
-        {savedMeta ? (
-          <div className={styles.collapsedCard}>{content}</div>
-        ) : (
-          content
-        )}
+        {savedMeta ? <div className={styles.collapsedCard}>{content}</div> : content}
       </section>
     );
   }
@@ -302,66 +378,46 @@ export function JubtiSection() {
       <div className={styles.card}>
         <div className={styles.headerStrip}>
           <div className={styles.headerLeft}>
-            <span className={styles.headerIcon}>
-              <LightbulbIcon />
-            </span>
+            <span className={styles.headerIcon}><LightbulbIcon /></span>
             <div>
-              <h3 className={styles.headerTitle}>주BTI</h3>
-              <p className={styles.headerSubtitle}>재미로 하는 투자 성향 테스트</p>
+              <h3 className={styles.headerTitle}>MBTI로 보는 투자성향</h3>
+              <p className={styles.headerSubtitle}>MBTI × 투자심리 분석</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(false)}
-            className={styles.collapseBtn}
-            aria-label="접기"
-          >
+          <button type="button" onClick={() => setIsExpanded(false)} className={styles.collapseBtn} aria-label="접기">
             <ChevronUpIcon />
           </button>
         </div>
 
         {!finished ? (
           totalQuestions === 0 ? (
-            <div className={styles.quizBody}>
-              <p className={styles.questionMeta}>질문 준비 중...</p>
-            </div>
+            <div className={styles.quizBody}><p className={styles.questionMeta}>질문 준비 중...</p></div>
           ) : (
-          <div className={styles.quizBody}>
-            <p className={styles.questionMeta}>
-              질문 {currentIndex + 1} / {totalQuestions}
-            </p>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressFill}
-                style={{
-                  width: `${((currentIndex + 1) / totalQuestions) * 100}%`,
-                }}
-              />
+            <div className={styles.quizBody}>
+              <p className={styles.questionMeta}>질문 {currentIndex + 1} / {totalQuestions}</p>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressFill} style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }} />
+              </div>
+              <h4 className={styles.questionText}>{currentQuestion.text}</h4>
+              <div className={styles.options}>
+                {currentQuestion.options.map((option, index) => (
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => handleSelect(option, index)}
+                    className={`${styles.optionButton} ${selectedOptionIndex === index ? styles.optionSelected : ""}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <h4 className={styles.questionText}>{currentQuestion.text}</h4>
-            <div className={styles.options}>
-              {currentQuestion.options.map((option, index) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  onClick={() => handleSelect(option, index)}
-                  className={`${styles.optionButton} ${
-                    selectedOptionIndex === index ? styles.optionSelected : ""
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
           )
         ) : (
           <div className={styles.resultBody}>
-            <p className={styles.resultMeta}>나의 투자 성향</p>
+            <p className={styles.resultMeta}>나의 MBTI 투자성향</p>
             <div className={`${styles.resultHero} ${styles[`resultHeroType${mainType}`]}`}>
-              <h3 className={styles.resultHeroTitle}>
-                {meta.characterName} · {meta.label}
-              </h3>
+              <h3 className={styles.resultHeroTitle}>{meta.characterName} · {meta.label}</h3>
             </div>
 
             <div className={styles.resultBlock}>
@@ -374,18 +430,14 @@ export function JubtiSection() {
 
             <div className={styles.resultBlock}>
               <h4 className={styles.resultBlockLabel}>지금 당신에게 필요한 한 마디</h4>
-              <div className={styles.adviceCard}>
-                <p className={styles.adviceText}>{meta.advice}</p>
-              </div>
+              <div className={styles.adviceCard}><p className={styles.adviceText}>{meta.advice}</p></div>
             </div>
 
             <div className={styles.resultBlock}>
               <h4 className={styles.resultBlockLabel}>당신에게 필요한 지식</h4>
               <ul className={styles.knowledgeList}>
                 {meta.recommendedConcepts.map((concept) => (
-                  <li key={concept} className={styles.knowledgeItem}>
-                    {concept}
-                  </li>
+                  <li key={concept} className={styles.knowledgeItem}>{concept}</li>
                 ))}
               </ul>
             </div>
@@ -394,42 +446,96 @@ export function JubtiSection() {
               <p className={styles.tipsText}>💡 {meta.tips}</p>
             </div>
 
-            {showLoginMessage && (
-              <div className={styles.loginMessageStrip} role="alert">
-                <p className={styles.loginMessageText}>
-                  로그인 후 이용 가능합니다.
-                </p>
-                <Link href="/login" className={styles.loginMessageLink}>
-                  로그인하기
-                </Link>
+            {/* MBTI 입력 섹션 */}
+            <div className={styles.mbtiSection}>
+              <h4 className={styles.mbtiSectionLabel}>
+                내 MBTI 연결하기
+                {savedMbtiType && mbtiJubtiMatch && (
+                  <span className={styles.mbtiConnectBadge} style={{ marginLeft: "0.5rem" }}>
+                    {savedMbtiType} → {mbtiJubtiMatch}형 매칭
+                  </span>
+                )}
+              </h4>
+              {!showMbtiSelector ? (
                 <button
                   type="button"
-                  className={styles.loginMessageClose}
-                  onClick={() => setShowLoginMessage(false)}
-                  aria-label="닫기"
+                  className={styles.mbtiSaveBtn}
+                  onClick={() => setShowMbtiSelector(true)}
                 >
-                  ×
+                  {savedMbtiType ? `${savedMbtiType} 변경하기` : "내 MBTI 입력하기"}
                 </button>
+              ) : (
+                <>
+                  <div className={styles.mbtiGrid}>
+                    {VALID_MBTI_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`${styles.mbtiChip} ${selectedMbti === type ? styles.mbtiChipSelected : ""}`}
+                        onClick={() => setSelectedMbti(type)}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedMbti && MBTI_INVEST_DESCRIPTION[selectedMbti] && (
+                    <p style={{ fontSize: "0.75rem", color: "var(--app-text-muted)", margin: "0.5rem 0 0" }}>
+                      {MBTI_INVEST_DESCRIPTION[selectedMbti]}
+                    </p>
+                  )}
+                  <div className={styles.mbtiSaveRow}>
+                    <button
+                      type="button"
+                      className={styles.mbtiSaveBtn}
+                      onClick={handleSaveMbti}
+                      disabled={!selectedMbti || isSavingMbti || !session?.user?.email}
+                    >
+                      {isSavingMbti ? "저장 중..." : "저장"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.retakeButton}
+                      style={{ width: "auto", padding: "0.5rem 0.75rem" }}
+                      onClick={() => setShowMbtiSelector(false)}
+                    >
+                      취소
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* AI 전략 추천 */}
+            {aiStrategy ? (
+              <div
+                ref={aiBoxRef}
+                className={styles.aiStrategyBox}
+                dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiStrategy)}</p>` }}
+              />
+            ) : null}
+            <button
+              type="button"
+              className={styles.aiStrategyBtn}
+              onClick={handleAiStrategy}
+              disabled={aiLoading}
+            >
+              {aiLoading ? "✨ AI 분석 중..." : "✨ AI 투자전략 추천받기"}
+            </button>
+
+            {showLoginMessage && (
+              <div className={styles.loginMessageStrip} role="alert">
+                <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
+                <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+                <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
               </div>
             )}
 
             <div className={styles.actionRow}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={handleRestart}
-              >
-                <RotateIcon />
-                <span>다시하기</span>
+              <button type="button" className={styles.secondaryButton} onClick={handleRestart}>
+                <RotateIcon /><span>다시하기</span>
               </button>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleSaveResult}
-                disabled={isSaving}
-              >
-                <BookmarkIcon />
-                <span>{isSaving ? "저장 중..." : "저장하기"}</span>
+              <button type="button" className={styles.primaryButton} onClick={handleSaveResult} disabled={isSaving}>
+                <BookmarkIcon /><span>{isSaving ? "저장 중..." : "저장하기"}</span>
               </button>
             </div>
           </div>

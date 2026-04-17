@@ -1964,3 +1964,46 @@ class NaverTrendScheduler:
 
 
 naver_trend_scheduler = NaverTrendScheduler()
+
+
+class DailyFortuneScheduler:
+    """매일 01:00 KST 띠/별자리 운세 Gemini 생성"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            print("⚠️ 운세 스케줄러가 이미 실행 중입니다.")
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            self._generate,
+            trigger=CronTrigger(hour=1, minute=0, timezone=self.kst),
+            id="daily_fortune_generate",
+            name="오늘의 띠/별자리 운세 생성",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=3600,
+        )
+        self.scheduler.start()
+        print("✅ 운세 스케줄러 시작 (매일 01:00 KST)")
+
+    async def _generate(self):
+        try:
+            from app.services.daily_fortune_gemini_service import generate_daily_fortunes
+            result = generate_daily_fortunes()
+            print(f"🔮 운세 생성 완료: {result}")
+        except Exception as e:
+            print(f"❌ 운세 스케줄러 오류: {e}")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 운세 스케줄러 종료")
+
+
+daily_fortune_scheduler = DailyFortuneScheduler()
