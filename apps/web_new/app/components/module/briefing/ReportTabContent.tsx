@@ -16,6 +16,7 @@ export function ReportTabContent() {
           if (b.id === "B003") return false; // 주린이 알림 제외
           if (b.name?.includes("커뮤니티")) return false;
           if (b.name?.includes("공부노트")) return false;
+          if (b.name?.includes("시황")) return false;
           if (b.name?.includes("시장의 목소리")) return false;
           if (b.name?.includes("투자은행")) return false;
           return true;
