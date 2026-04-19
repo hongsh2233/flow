@@ -20,6 +20,7 @@ import { SentimentIndexCard } from "./components/module/home/SentimentIndexCard"
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
+import { FortuneSection } from "./components/module/home/FortuneSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
@@ -147,8 +148,22 @@ export default function Home() {
 
       {/* [AD_ZONE B2 — 관심종목 아래 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B2" />}
-      <RealtimeSearchSection />
+      {status === "loading" ? (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          로그인 정보 확인 중...
+        </div>
+      ) : status === "authenticated" ? (
+        <RealtimeSearchSection />
+      ) : (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          <p>실시간 검색상위는 로그인 후 이용할 수 있습니다.</p>
+          <a href="/login" style={{ color: "var(--app-accent)", marginTop: "0.5rem", display: "inline-block" }}>
+            로그인하기
+          </a>
+        </div>
+      )}
       <JubtiSection />
+      <FortuneSection />
       <StockTermBox wrapperClassName="home-term-wrap" />
       {bannerBottom.length > 0 && (
         <section style={{ margin: "1rem 0" }}>

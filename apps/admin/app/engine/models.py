@@ -125,6 +125,9 @@ class Member(Base):
     grade_expires_at = Column(DateTime(timezone=True), nullable=True)  # NULL = 무기한
     favorite_stocks = Column(Text, nullable=True)
     jubti_type = Column(String(10), nullable=True)  # 주BTI 성향: A | D | N | I
+    mbti_type = Column(String(10), nullable=True)    # MBTI 16유형: INTJ, ENFP, ...
+    zodiac_animal = Column(String(20), nullable=True)  # 띠: 쥐|소|호랑이|...|돼지
+    zodiac_sign = Column(String(30), nullable=True)    # 별자리: 양자리|황소자리|...
     point_balance = Column(Integer, nullable=False, default=0, server_default="0")
     last_daily_login_bonus_date = Column(Date, nullable=True)  # KST 기준 일일 로그인 보너스 지급일
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -1106,3 +1109,19 @@ class SentimentSnapshot(Base):
     __table_args__ = (
         UniqueConstraint("snapshot_date", "snapshot_time", name="uq_sentiment_snapshot"),
     )
+
+
+class DailyFortune(Base):
+    """오늘의 띠/별자리 운세 캐시 (Gemini 일일 생성)"""
+    __tablename__ = "daily_fortunes"
+    id = Column(Integer, primary_key=True, index=True)
+    fortune_date = Column(Date, nullable=False, index=True)          # KST 기준 날짜
+    fortune_type = Column(String(10), nullable=False, index=True)    # "animal" | "sign"
+    key = Column(String(30), nullable=False, index=True)             # 쥐|소|... or 양자리|...
+    fortune_text = Column(Text, nullable=False)                       # 운세 본문 2~3문장
+    investment_tip = Column(Text, nullable=True)                     # 투자 한줄 팁
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("fortune_date", "fortune_type", "key", name="uq_daily_fortune"),
+    )
+

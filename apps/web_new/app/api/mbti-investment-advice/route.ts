@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { MBTI_INVEST_DESCRIPTION } from "@/lib/jubti/jubtiMasters";
+
+const client = new Anthropic();
+
+const TYPE_CONTEXT: Record<string, { label: string; style: string }> = {
+  A: { label: "공격형 (불나방 파이터)", style: "고위험·고수익 추구, 변동성 선호" },
+  D: { label: "방어형 (철벽 거북이)", style: "안정성 최우선, 장기 배당·우량주 선호" },
+  N: { label: "분석형 (돋보기 탐정)", style: "데이터 기반 의사결정, 재무제표 분석 중시" },
+  I: { label: "직관형 (촉 좋은 야생마)", style: "트렌드·감각 기반, 빠른 판단력" },
+};
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ success: false, message: "로그인 후 이용 가능합니다." }, { status: 401 });
+  }
+
+  const { jubti_type, mbti_type, zodiac_animal, zodiac_sign, animal_fortune, sign_fortune, scores, character_name } =
+    await req.json();
+
+  const ctx = TYPE_CONTEXT[jubti_type as keyof typeof TYPE_CONTEXT];
+  if (!ctx) return NextResponse.json({ success: false, message: "유효하지 않은 투자 유형입니다." }, { status: 400 });
+
+  const mbtiDesc = mbti_type ? (MBTI_INVEST_DESCRIPTION[mbti_type] ?? "") : null;
+
+  const prompt = `당신은 재미있고 친근한 금융 AI입니다.
+오늘의 운세와 투자 성향, MBTI를 결합하여 오늘 하루의 투자 방향을 조언해주세요.
+
+## 사용자 프로필
+${mbtiDesc ? `- MBTI: ${mbti_type} (${mbtiDesc})` : ""}
+- 투자 유형: ${ctx.label} — ${ctx.style}
+- 캐릭터: ${character_name ?? ""}
+- 점수 분포: A:${scores?.A ?? 0} D:${scores?.D ?? 0} N:${scores?.N ?? 0} I:${scores?.I ?? 0}
+
+## 오늘의 운세
+### 띠 운세 (${zodiac_animal ?? "미설정"})
+${animal_fortune?.fortune_text ?? "운세 정보 없음"}
+투자 팁: ${animal_fortune?.investment_tip ?? ""}
+
+### 별자리 운세 (${zodiac_sign ?? "미설정"})
+${sign_fortune?.fortune_text ?? "운세 정보 없음"}
+투자 팁: ${sign_fortune?.investment_tip ?? ""}
+
+## 요청 (마크다운 형식)
+1. **오늘의 투자 기운 종합** — 운세+성향+MBTI를 종합한 오늘의 투자 흐름 3~4문장 (재미있고 인사이트 있게)
+2. **오늘 특히 주의할 점** — 이 조합에서 오늘 조심해야 할 투자 실수 1~2가지
+3. **오늘의 한 가지 액션** — 오늘 당장 실천 가능한 구체적 투자 행동 1가지
+
+가볍고 재미있게, 하지만 투자 교육 가치도 담아주세요.
+"재미로 보는" 운세임을 유머스럽게 인정하면서 실질적 조언도 제공해주세요.`.trim();
+
+  const stream = await client.messages.stream({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return new Response(
+    new ReadableStream({
+      async start(controller) {
+        for await (const chunk of stream) {
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            controller.enqueue(new TextEncoder().encode(chunk.delta.text));
+          }
+        }
+        controller.close();
+      },
+    }),
+    { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+  );
+}
