@@ -506,29 +506,45 @@ export function JubtiSection() {
             </div>
 
             {/* AI 전략 추천 */}
-            {aiStrategy ? (
-              <div
-                ref={aiBoxRef}
-                className={styles.aiStrategyBox}
-                dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiStrategy)}</p>` }}
-              />
-            ) : null}
-            <button
-              type="button"
-              className={styles.aiStrategyBtn}
-              onClick={handleAiStrategy}
-              disabled={aiLoading}
-            >
-              {aiLoading ? "✨ AI 분석 중..." : "✨ AI 투자전략 추천받기"}
-            </button>
-
-            {showLoginMessage && (
-              <div className={styles.loginMessageStrip} role="alert">
-                <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
-                <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
-                <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
-              </div>
-            )}
+            {(() => {
+              const grade = ((session?.user as { grade?: string })?.grade ?? "regular").trim().toLowerCase();
+              const isVip = grade === "vip" || grade === "family";
+              if (!session?.user) {
+                return (
+                  <div className={styles.loginMessageStrip} role="alert">
+                    <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
+                    <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+                  </div>
+                );
+              }
+              if (!isVip) {
+                return (
+                  <div className={styles.vipLockStrip}>
+                    <span className={styles.vipLockIcon}>🔒</span>
+                    <p className={styles.vipLockText}>VIP 이상 회원만 이용할 수 있는 기능입니다.</p>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  {aiStrategy ? (
+                    <div
+                      ref={aiBoxRef}
+                      className={styles.aiStrategyBox}
+                      dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiStrategy)}</p>` }}
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    className={styles.aiStrategyBtn}
+                    onClick={handleAiStrategy}
+                    disabled={aiLoading}
+                  >
+                    {aiLoading ? "✨ AI 분석 중..." : "✨ AI 투자전략 추천받기"}
+                  </button>
+                </>
+              );
+            })()}
 
             <div className={styles.actionRow}>
               <button type="button" className={styles.secondaryButton} onClick={handleRestart}>
