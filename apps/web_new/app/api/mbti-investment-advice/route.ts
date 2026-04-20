@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: "로그인 후 이용 가능합니다." }, { status: 401 });
   }
 
+  const grade = ((session.user as { grade?: string }).grade ?? "regular").trim().toLowerCase();
+  if (grade !== "vip" && grade !== "family") {
+    return NextResponse.json({ success: false, message: "VIP 이상 회원만 이용할 수 있습니다." }, { status: 403 });
+  }
+
   const { jubti_type, mbti_type, zodiac_animal, zodiac_sign, animal_fortune, sign_fortune, scores, character_name } =
     await req.json();
 

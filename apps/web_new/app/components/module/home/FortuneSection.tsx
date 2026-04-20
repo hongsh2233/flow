@@ -476,8 +476,34 @@ export function FortuneSection() {
             />
           ) : null}
 
-          {(animalFortune || signFortune) && (
-            jubtiType ? (
+          {(animalFortune || signFortune) && (() => {
+            const grade = ((session?.user as { grade?: string })?.grade ?? "regular").trim().toLowerCase();
+            const isVip = grade === "vip" || grade === "family";
+            if (!session?.user) {
+              return (
+                <div className={styles.loginMessageStrip} role="alert">
+                  <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
+                  <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+                  <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
+                </div>
+              );
+            }
+            if (!isVip) {
+              return (
+                <div className={styles.vipLockStrip}>
+                  <span className={styles.vipLockIcon}>🔒</span>
+                  <p className={styles.vipLockText}>VIP 이상 회원만 이용할 수 있는 기능입니다.</p>
+                </div>
+              );
+            }
+            if (!jubtiType) {
+              return (
+                <p className={styles.noJubtiNote}>
+                  MBTI 투자성향 테스트 후 AI 투자 종합 조언을 받아보세요
+                </p>
+              );
+            }
+            return (
               <button
                 type="button"
                 className={styles.aiAdviceBtn}
@@ -486,20 +512,8 @@ export function FortuneSection() {
               >
                 {aiLoading ? "🌟 AI 분석 중..." : "🌟 오늘의 AI 투자 종합 조언"}
               </button>
-            ) : (
-              <p className={styles.noJubtiNote}>
-                MBTI 투자성향 테스트 후 AI 투자 종합 조언을 받아보세요
-              </p>
-            )
-          )}
-
-          {showLoginMessage && (
-            <div className={styles.loginMessageStrip} role="alert">
-              <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
-              <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
-              <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 

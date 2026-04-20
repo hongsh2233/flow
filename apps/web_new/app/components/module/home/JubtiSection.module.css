@@ -529,6 +529,30 @@
   padding: 0.25rem 0.5rem;
 }
 
+/* ----- VIP 잠금 안내 ----- */
+.vipLockStrip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+}
+
+.vipLockIcon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.vipLockText {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0;
+}
+
 /* ----- AI 전략 버튼 & 스트리밍 박스 ----- */
 .aiStrategyBtn {
   width: 100%;
