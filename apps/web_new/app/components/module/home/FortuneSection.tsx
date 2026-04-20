@@ -58,6 +58,15 @@ function StarIcon() {
   );
 }
 
+function GearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
 export function FortuneSection() {
   const { data: session, status } = useSession();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -68,14 +77,15 @@ export function FortuneSection() {
   const [jubtiType, setJubtiType] = useState<string | null>(null);
   const [mbtiType, setMbtiType] = useState<string | null>(null);
 
-  // Picker state
-  const [isEditing, setIsEditing] = useState(false);
+  // Settings modal state
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<ZodiacAnimal | null>(null);
   const [selectedSign, setSelectedSign] = useState<ZodiacSign | null>(null);
   const [birthYear, setBirthYear] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
 
   // Fortune data
   const [activeAnimal, setActiveAnimal] = useState<ZodiacAnimal | null>(null);
@@ -87,7 +97,6 @@ export function FortuneSection() {
   // AI advice
   const [aiAdvice, setAiAdvice] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [showLoginMessage, setShowLoginMessage] = useState(false);
   const aiBoxRef = useRef<HTMLDivElement>(null);
 
   // Load saved zodiac + jubti/mbti when authenticated
@@ -153,7 +162,7 @@ export function FortuneSection() {
     }
   }, []);
 
-  // When expanding with saved data, load fortunes
+  // When expanding, load fortunes or open settings if nothing saved
   useEffect(() => {
     if (!isExpanded) return;
     if (savedAnimal || savedSign) {
@@ -161,16 +170,29 @@ export function FortuneSection() {
       setActiveSign(savedSign);
       fetchFortunes(savedAnimal, savedSign);
     } else {
-      setIsEditing(true);
+      setShowSettings(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpanded]);
 
-  const handleViewFortune = () => {
+  const openSettings = () => {
+    // Pre-fill picker with currently active values
+    if (activeAnimal) setSelectedAnimal(activeAnimal);
+    if (activeSign) setSelectedSign(activeSign);
+    setShowLoginMessage(false);
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+    setShowLoginMessage(false);
+  };
+
+  const handleViewOnly = () => {
     if (!selectedAnimal && !selectedSign) return;
     setActiveAnimal(selectedAnimal);
     setActiveSign(selectedSign);
-    setIsEditing(false);
+    setShowSettings(false);
     fetchFortunes(selectedAnimal, selectedSign);
   };
 
@@ -190,7 +212,10 @@ export function FortuneSection() {
       if (res.ok && data.success) {
         if (selectedAnimal) setSavedAnimal(selectedAnimal);
         if (selectedSign) setSavedSign(selectedSign);
-        setIsEditing(false);
+        setActiveAnimal(selectedAnimal);
+        setActiveSign(selectedSign);
+        setShowSettings(false);
+        fetchFortunes(selectedAnimal, selectedSign);
       }
     } catch {
       // ignore
@@ -200,7 +225,10 @@ export function FortuneSection() {
   };
 
   const handleAiAdvice = async () => {
-    if (status !== "authenticated" || !session?.user?.email) { setShowLoginMessage(true); return; }
+    if (status !== "authenticated" || !session?.user?.email) {
+      setShowLoginMessage(true);
+      return;
+    }
     if (!jubtiType) return;
     setAiLoading(true);
     setAiAdvice("");
@@ -241,6 +269,118 @@ export function FortuneSection() {
       ].filter(Boolean).join(" · ")
     : "띠·별자리 운세 + AI 투자 조언";
 
+  // Settings modal (rendered outside the card via portal-like approach)
+  const settingsModal = showSettings ? (
+    <div className={styles.overlay} onClick={closeSettings} role="dialog" aria-modal="true" aria-label="띠·별자리 설정">
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h4 className={styles.modalTitle}>띠·별자리 설정</h4>
+          <button type="button" className={styles.modalClose} onClick={closeSettings} aria-label="닫기">×</button>
+        </div>
+
+        <div className={styles.modalBody}>
+          {/* 띠 선택 */}
+          <div className={styles.setupStep}>
+            <h5 className={styles.setupLabel}>🐾 나의 띠</h5>
+            <div className={styles.animalGrid}>
+              {ZODIAC_ANIMALS.map((animal) => (
+                <button
+                  key={animal}
+                  type="button"
+                  className={`${styles.animalChip} ${selectedAnimal === animal ? styles.animalChipSelected : ""}`}
+                  onClick={() => setSelectedAnimal(animal)}
+                >
+                  {ZODIAC_ANIMAL_EMOJI[animal]}<br />{animal}
+                </button>
+              ))}
+            </div>
+            <div className={styles.birthRow}>
+              <input
+                type="number"
+                placeholder="출생연도 (예: 1990)"
+                className={styles.birthInput}
+                value={birthYear}
+                onChange={(e) => setBirthYear(e.target.value)}
+                min={1900}
+                max={2024}
+              />
+              {selectedAnimal && birthYear && (
+                <span className={styles.autoCalcBadge}>→ {ZODIAC_ANIMAL_EMOJI[selectedAnimal]} {selectedAnimal}띠</span>
+              )}
+            </div>
+          </div>
+
+          {/* 별자리 선택 */}
+          <div className={styles.setupStep}>
+            <h5 className={styles.setupLabel}>⭐ 나의 별자리</h5>
+            <div className={styles.signGrid}>
+              {ZODIAC_SIGNS.map((sign) => (
+                <button
+                  key={sign}
+                  type="button"
+                  className={`${styles.signChip} ${selectedSign === sign ? styles.signChipSelected : ""}`}
+                  onClick={() => setSelectedSign(sign)}
+                >
+                  {ZODIAC_SIGN_EMOJI[sign]}<br /><span className={styles.signName}>{sign}</span>
+                </button>
+              ))}
+            </div>
+            <div className={styles.birthRow}>
+              <input
+                type="number"
+                placeholder="월 (1~12)"
+                className={styles.birthInputSmall}
+                value={birthMonth}
+                onChange={(e) => setBirthMonth(e.target.value)}
+                min={1}
+                max={12}
+              />
+              <input
+                type="number"
+                placeholder="일 (1~31)"
+                className={styles.birthInputSmall}
+                value={birthDay}
+                onChange={(e) => setBirthDay(e.target.value)}
+                min={1}
+                max={31}
+              />
+              {selectedSign && (birthMonth || birthDay) && (
+                <span className={styles.autoCalcBadge}>→ {ZODIAC_SIGN_EMOJI[selectedSign]} {selectedSign}</span>
+              )}
+            </div>
+          </div>
+
+          {showLoginMessage && (
+            <div className={styles.loginMessageStrip} role="alert">
+              <p className={styles.loginMessageText}>로그인 후 저장할 수 있습니다.</p>
+              <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+              <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.viewOnlyBtn}
+            onClick={handleViewOnly}
+            disabled={!selectedAnimal && !selectedSign}
+          >
+            운세만 보기
+          </button>
+          <button
+            type="button"
+            className={styles.saveProfileBtn}
+            onClick={handleSaveToProfile}
+            disabled={(!selectedAnimal && !selectedSign) || isSaving}
+          >
+            {isSaving ? "저장 중..." : "저장하기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (!isExpanded) {
     return (
       <section className={styles.section}>
@@ -254,6 +394,7 @@ export function FortuneSection() {
           </div>
           <span className={styles.collapsedChevron}><ChevronDownIcon /></span>
         </button>
+        {settingsModal}
       </section>
     );
   }
@@ -266,194 +407,103 @@ export function FortuneSection() {
             <span className={styles.headerIcon}><StarIcon /></span>
             <div>
               <h3 className={styles.headerTitle}>오늘의 운세</h3>
-              <p className={styles.headerSubtitle}>띠·별자리 + AI 투자 조언</p>
+              <p className={styles.headerSubtitle}>
+                {activeAnimal || activeSign
+                  ? [
+                      activeAnimal ? `${ZODIAC_ANIMAL_EMOJI[activeAnimal]}${activeAnimal}띠` : null,
+                      activeSign ? `${ZODIAC_SIGN_EMOJI[activeSign]}${activeSign}` : null,
+                    ].filter(Boolean).join(" · ")
+                  : "띠·별자리 + AI 투자 조언"}
+              </p>
             </div>
           </div>
-          <button type="button" onClick={() => setIsExpanded(false)} className={styles.collapseBtn} aria-label="접기">
-            <ChevronUpIcon />
-          </button>
+          <div className={styles.headerActions}>
+            <button type="button" onClick={openSettings} className={styles.gearBtn} aria-label="띠·별자리 설정">
+              <GearIcon />
+            </button>
+            <button type="button" onClick={() => setIsExpanded(false)} className={styles.collapseBtn} aria-label="접기">
+              <ChevronUpIcon />
+            </button>
+          </div>
         </div>
 
         <div className={styles.body}>
-          {isEditing ? (
-            <div className={styles.setupCard}>
-              {/* Step 1: 띠 선택 */}
-              <div className={styles.setupStep}>
-                <h4 className={styles.setupLabel}>🐾 나의 띠</h4>
-                <div className={styles.animalGrid}>
-                  {ZODIAC_ANIMALS.map((animal) => (
-                    <button
-                      key={animal}
-                      type="button"
-                      className={`${styles.animalChip} ${selectedAnimal === animal ? styles.animalChipSelected : ""}`}
-                      onClick={() => setSelectedAnimal(animal)}
-                    >
-                      {ZODIAC_ANIMAL_EMOJI[animal]}<br />{animal}
-                    </button>
-                  ))}
-                </div>
-                <div className={styles.birthRow}>
-                  <input
-                    type="number"
-                    placeholder="출생연도 (예: 1990)"
-                    className={styles.birthInput}
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
-                    min={1900}
-                    max={2024}
-                  />
-                  {selectedAnimal && birthYear && (
-                    <span className={styles.autoCalcBadge}>→ {ZODIAC_ANIMAL_EMOJI[selectedAnimal]} {selectedAnimal}띠</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Step 2: 별자리 선택 */}
-              <div className={styles.setupStep}>
-                <h4 className={styles.setupLabel}>⭐ 나의 별자리</h4>
-                <div className={styles.signGrid}>
-                  {ZODIAC_SIGNS.map((sign) => (
-                    <button
-                      key={sign}
-                      type="button"
-                      className={`${styles.signChip} ${selectedSign === sign ? styles.signChipSelected : ""}`}
-                      onClick={() => setSelectedSign(sign)}
-                    >
-                      {ZODIAC_SIGN_EMOJI[sign]}<br /><span className={styles.signName}>{sign}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className={styles.birthRow}>
-                  <input
-                    type="number"
-                    placeholder="월 (1~12)"
-                    className={styles.birthInputSmall}
-                    value={birthMonth}
-                    onChange={(e) => setBirthMonth(e.target.value)}
-                    min={1}
-                    max={12}
-                  />
-                  <input
-                    type="number"
-                    placeholder="일 (1~31)"
-                    className={styles.birthInputSmall}
-                    value={birthDay}
-                    onChange={(e) => setBirthDay(e.target.value)}
-                    min={1}
-                    max={31}
-                  />
-                  {selectedSign && (birthMonth || birthDay) && (
-                    <span className={styles.autoCalcBadge}>→ {ZODIAC_SIGN_EMOJI[selectedSign]} {selectedSign}</span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className={styles.viewFortuneBtn}
-                onClick={handleViewFortune}
-                disabled={!selectedAnimal && !selectedSign}
-              >
-                오늘의 운세 보기
-              </button>
-
-              {(selectedAnimal || selectedSign) && (
-                <div className={styles.saveRow}>
-                  <button
-                    type="button"
-                    className={styles.saveProfileBtn}
-                    onClick={handleSaveToProfile}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "저장 중..." : "프로필에 저장"}
-                  </button>
-                  <p className={styles.saveHint}>저장하면 매일 자동으로 운세를 볼 수 있어요</p>
-                </div>
-              )}
-
-              {showLoginMessage && (
-                <div className={styles.loginMessageStrip} role="alert">
-                  <p className={styles.loginMessageText}>로그인 후 저장할 수 있습니다.</p>
-                  <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
-                  <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
-                </div>
-              )}
+          {isLoadingFortune ? (
+            <p className={styles.loadingText}>오늘의 운세 불러오는 중...</p>
+          ) : !activeAnimal && !activeSign ? (
+            <div className={styles.emptyState}>
+              <p>⚙️ 위 설정 버튼을 눌러 띠와 별자리를 입력하면</p>
+              <p>오늘의 운세를 확인할 수 있어요</p>
             </div>
           ) : (
             <>
-              {isLoadingFortune ? (
-                <p className={styles.loadingText}>오늘의 운세 불러오는 중...</p>
-              ) : (
-                <>
-                  {animalFortune && activeAnimal && (
-                    <div className={`${styles.fortuneCard} ${styles.fortuneCardAnimal}`}>
-                      <div className={styles.fortuneCardHeader}>
-                        <span className={styles.fortuneEmoji}>{ZODIAC_ANIMAL_EMOJI[activeAnimal]}</span>
-                        <span className={styles.fortuneCardTitle}>{activeAnimal}띠 오늘의 운세</span>
-                      </div>
-                      <p className={styles.fortuneText}>{animalFortune.fortune_text}</p>
-                      {animalFortune.investment_tip && (
-                        <p className={styles.investTip}>💰 {animalFortune.investment_tip}</p>
-                      )}
-                    </div>
+              {animalFortune && activeAnimal && (
+                <div className={`${styles.fortuneCard} ${styles.fortuneCardAnimal}`}>
+                  <div className={styles.fortuneCardHeader}>
+                    <span className={styles.fortuneEmoji}>{ZODIAC_ANIMAL_EMOJI[activeAnimal]}</span>
+                    <span className={styles.fortuneCardTitle}>{activeAnimal}띠 오늘의 운세</span>
+                  </div>
+                  <p className={styles.fortuneText}>{animalFortune.fortune_text}</p>
+                  {animalFortune.investment_tip && (
+                    <p className={styles.investTip}>💰 {animalFortune.investment_tip}</p>
                   )}
-                  {signFortune && activeSign && (
-                    <div className={`${styles.fortuneCard} ${styles.fortuneCardSign}`}>
-                      <div className={styles.fortuneCardHeader}>
-                        <span className={styles.fortuneEmoji}>{ZODIAC_SIGN_EMOJI[activeSign]}</span>
-                        <span className={styles.fortuneCardTitle}>{activeSign} 오늘의 운세</span>
-                      </div>
-                      <p className={styles.fortuneText}>{signFortune.fortune_text}</p>
-                      {signFortune.investment_tip && (
-                        <p className={styles.investTip}>💰 {signFortune.investment_tip}</p>
-                      )}
-                    </div>
-                  )}
-                  {!animalFortune && !signFortune && !isLoadingFortune && (
-                    <p className={styles.noFortuneText}>오늘의 운세를 준비 중입니다. 잠시 후 다시 확인해 주세요.</p>
-                  )}
-                </>
-              )}
-
-              {/* AI 투자 조언 */}
-              {aiAdvice ? (
-                <div
-                  ref={aiBoxRef}
-                  className={styles.aiAdviceBox}
-                  dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiAdvice)}</p>` }}
-                />
-              ) : null}
-
-              {jubtiType ? (
-                <button
-                  type="button"
-                  className={styles.aiAdviceBtn}
-                  onClick={handleAiAdvice}
-                  disabled={aiLoading || (!animalFortune && !signFortune)}
-                >
-                  {aiLoading ? "🌟 AI 분석 중..." : "🌟 오늘의 AI 투자 종합 조언"}
-                </button>
-              ) : (
-                <p className={styles.noJubtiNote}>
-                  MBTI 투자성향 테스트 후 AI 투자 종합 조언을 받아보세요
-                </p>
-              )}
-
-              {showLoginMessage && (
-                <div className={styles.loginMessageStrip} role="alert">
-                  <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
-                  <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
-                  <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
                 </div>
               )}
-
-              <button type="button" className={styles.editBtn} onClick={() => setIsEditing(true)}>
-                띠·별자리 변경
-              </button>
+              {signFortune && activeSign && (
+                <div className={`${styles.fortuneCard} ${styles.fortuneCardSign}`}>
+                  <div className={styles.fortuneCardHeader}>
+                    <span className={styles.fortuneEmoji}>{ZODIAC_SIGN_EMOJI[activeSign]}</span>
+                    <span className={styles.fortuneCardTitle}>{activeSign} 오늘의 운세</span>
+                  </div>
+                  <p className={styles.fortuneText}>{signFortune.fortune_text}</p>
+                  {signFortune.investment_tip && (
+                    <p className={styles.investTip}>💰 {signFortune.investment_tip}</p>
+                  )}
+                </div>
+              )}
+              {!animalFortune && !signFortune && (
+                <p className={styles.noFortuneText}>오늘의 운세를 준비 중입니다. 잠시 후 다시 확인해 주세요.</p>
+              )}
             </>
+          )}
+
+          {/* AI 투자 조언 */}
+          {aiAdvice ? (
+            <div
+              ref={aiBoxRef}
+              className={styles.aiAdviceBox}
+              dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiAdvice)}</p>` }}
+            />
+          ) : null}
+
+          {(animalFortune || signFortune) && (
+            jubtiType ? (
+              <button
+                type="button"
+                className={styles.aiAdviceBtn}
+                onClick={handleAiAdvice}
+                disabled={aiLoading}
+              >
+                {aiLoading ? "🌟 AI 분석 중..." : "🌟 오늘의 AI 투자 종합 조언"}
+              </button>
+            ) : (
+              <p className={styles.noJubtiNote}>
+                MBTI 투자성향 테스트 후 AI 투자 종합 조언을 받아보세요
+              </p>
+            )
+          )}
+
+          {showLoginMessage && (
+            <div className={styles.loginMessageStrip} role="alert">
+              <p className={styles.loginMessageText}>로그인 후 이용 가능합니다.</p>
+              <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+              <button type="button" className={styles.loginMessageClose} onClick={() => setShowLoginMessage(false)} aria-label="닫기">×</button>
+            </div>
           )}
         </div>
       </div>
+
+      {settingsModal}
     </section>
   );
 }

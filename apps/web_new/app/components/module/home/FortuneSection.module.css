@@ -108,6 +108,27 @@
   color: var(--app-text-muted);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.gearBtn {
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.gearBtn:hover {
+  color: #d97706;
+}
+
 .collapseBtn {
   padding: 0.25rem;
   border: none;
@@ -127,13 +148,104 @@
   padding: 1rem;
 }
 
-/* ----- 선택(픽커) UI ----- */
-.setupCard {
+/* ----- 빈 상태 ----- */
+.emptyState {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--app-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+/* ----- 설정 모달 오버레이 ----- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 480px) {
+  .overlay {
+    align-items: center;
+  }
+}
+
+.modalCard {
+  width: 100%;
+  max-width: 480px;
+  background: var(--app-card-bg, #fff);
+  border-radius: 1.25rem 1.25rem 0 0;
+  padding: 1.25rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+@media (min-width: 480px) {
+  .modalCard {
+    border-radius: 1.25rem;
+    max-height: 85vh;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--app-text-primary);
+}
+
+.modalClose {
+  padding: 0 0.35rem;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.modalClose:hover {
+  color: var(--app-text-primary);
+}
+
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  padding-right: 0.25rem;
+  margin-bottom: 1rem;
 }
 
+.modalFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--app-border-light);
+}
+
+/* ----- 설정 픽커 UI ----- */
 .setupStep {
   display: flex;
   flex-direction: column;
@@ -257,48 +369,46 @@
   font-weight: 500;
 }
 
-.viewFortuneBtn {
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
+/* ----- 모달 푸터 버튼 ----- */
+.viewOnlyBtn {
+  padding: 0.75rem 1rem;
   border-radius: 0.75rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.viewOnlyBtn:hover {
+  border-color: #f59e0b;
+}
+
+.viewOnlyBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saveProfileBtn {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
   background: linear-gradient(to right, #f59e0b, #a855f7);
   color: #fff;
+  font-size: 0.875rem;
   font-weight: 700;
-  font-size: 0.9375rem;
   cursor: pointer;
   transition: opacity 0.15s ease, transform 0.08s ease;
 }
 
-.viewFortuneBtn:hover {
+.saveProfileBtn:hover {
   opacity: 0.92;
 }
 
-.viewFortuneBtn:active {
+.saveProfileBtn:active {
   transform: scale(0.99);
-}
-
-.viewFortuneBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.saveRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.saveProfileBtn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.625rem;
-  border: none;
-  background: linear-gradient(to right, #f59e0b, #a855f7);
-  color: #fff;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
 }
 
 .saveProfileBtn:disabled {
@@ -306,18 +416,12 @@
   cursor: not-allowed;
 }
 
-.saveHint {
-  font-size: 0.75rem;
-  color: var(--app-text-muted);
-  margin: 0;
-}
-
 /* ----- 운세 카드 ----- */
 .loadingText {
   text-align: center;
   font-size: 0.875rem;
   color: var(--app-text-muted);
-  padding: 1rem 0;
+  padding: 1.5rem 0;
   margin: 0;
 }
 
@@ -382,14 +486,13 @@
 /* ----- AI 조언 ----- */
 .noJubtiNote {
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem;
   border-radius: 0.75rem;
   border: 1px solid var(--app-border-light);
   background: var(--app-bg-secondary, #f9fafb);
   font-size: 0.8125rem;
   color: var(--app-text-muted);
   text-align: center;
-  margin: 0 0 1rem;
 }
 
 .aiAdviceBtn {
@@ -455,35 +558,14 @@
   color: #7c3aed;
 }
 
-/* ----- 하단 액션 ----- */
-.editBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  border: 1.5px solid var(--app-border-light);
-  background: var(--app-card-bg);
-  color: var(--app-text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.editBtn:hover {
-  border-color: #f59e0b;
-  color: #d97706;
-}
-
+/* ----- 로그인 안내 ----- */
 .loginMessageStrip {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   border-radius: 0.75rem;
   border: 1px solid var(--app-accent);
   background: rgba(47, 128, 237, 0.08);
