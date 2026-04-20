@@ -3320,3 +3320,20 @@ async def run_sentiment_manual(
 
     asyncio.create_task(_run())
     return {"success": True, "message": "심리지수 분석이 백그라운드에서 시작되었습니다."}
+
+@router.get("/api/fortune/today")
+async def api_get_today_fortune(
+    fortune_type: str,
+    key: str,
+    db: Session = Depends(get_db),
+):
+    """오늘의 띠/별자리 운세 조회 (공개 API)"""
+    from app.services.daily_fortune_gemini_service import get_today_fortune
+    if fortune_type not in ("animal", "sign"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"success": False, "message": "fortune_type은 animal 또는 sign이어야 합니다."}, status_code=400)
+    data = get_today_fortune(fortune_type, key)
+    if not data:
+        return JSONResponse({"success": False, "message": "운세 정보를 찾을 수 없습니다."}, status_code=404)
+    return {"success": True, **data}
+

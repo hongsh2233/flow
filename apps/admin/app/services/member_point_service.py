@@ -16,6 +16,9 @@ KST = pytz.timezone("Asia/Seoul")
 POINT_SIGNUP = 100
 POINT_DAILY_LOGIN = 20
 POINT_JUBTI_FIRST = 50
+POINT_MBTI_FIRST = 50
+POINT_ZODIAC_ANIMAL_FIRST = 30
+POINT_ZODIAC_SIGN_FIRST = 30
 POINT_POST_LIKE = 20
 POINT_SCREENING_PICK = -20
 POINT_VIP_WELCOME = 4900
@@ -23,6 +26,9 @@ POINT_VIP_WELCOME = 4900
 REASON_SIGNUP = "signup_bonus"
 REASON_DAILY_LOGIN = "daily_login"
 REASON_JUBTI_FIRST = "jubti_first"
+REASON_MBTI_FIRST = "mbti_first"
+REASON_ZODIAC_ANIMAL_FIRST = "zodiac_animal_first"
+REASON_ZODIAC_SIGN_FIRST = "zodiac_sign_first"
 REASON_POST_LIKE = "post_like"
 REASON_SCREENING_PICK = "screening_pick_over_quota"
 REASON_VIP_WELCOME = "vip_welcome"
@@ -157,6 +163,39 @@ def grant_jubti_first_bonus(db: Session, member: models.Member) -> None:
     key = f"jubti_first_{member.id}"
     ok, _, _ = apply_point_change(
         db, member.id, POINT_JUBTI_FIRST, REASON_JUBTI_FIRST, idempotency_key=key
+    )
+    if ok:
+        db.commit()
+
+
+def grant_mbti_first_bonus(db: Session, member: models.Member) -> None:
+    if member_points_frozen(member):
+        return
+    key = f"mbti_first_{member.id}"
+    ok, _, _ = apply_point_change(
+        db, member.id, POINT_MBTI_FIRST, REASON_MBTI_FIRST, idempotency_key=key
+    )
+    if ok:
+        db.commit()
+
+
+def grant_zodiac_animal_first_bonus(db: Session, member: models.Member) -> None:
+    if member_points_frozen(member):
+        return
+    key = f"zodiac_animal_first_{member.id}"
+    ok, _, _ = apply_point_change(
+        db, member.id, POINT_ZODIAC_ANIMAL_FIRST, REASON_ZODIAC_ANIMAL_FIRST, idempotency_key=key
+    )
+    if ok:
+        db.commit()
+
+
+def grant_zodiac_sign_first_bonus(db: Session, member: models.Member) -> None:
+    if member_points_frozen(member):
+        return
+    key = f"zodiac_sign_first_{member.id}"
+    ok, _, _ = apply_point_change(
+        db, member.id, POINT_ZODIAC_SIGN_FIRST, REASON_ZODIAC_SIGN_FIRST, idempotency_key=key
     )
     if ok:
         db.commit()

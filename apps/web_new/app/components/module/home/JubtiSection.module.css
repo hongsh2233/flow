@@ -453,3 +453,142 @@
 .primaryButton:active {
   transform: scale(0.98);
 }
+
+/* ----- MBTI 입력 섹션 ----- */
+.mbtiSection {
+  margin-bottom: 1rem;
+}
+
+.mbtiSectionLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--app-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.mbtiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+}
+
+.mbtiChip {
+  padding: 0.4rem 0.25rem;
+  border-radius: 0.5rem;
+  border: 1.5px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.mbtiChip:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.mbtiChipSelected {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.mbtiSaveRow {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mbtiSaveBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  border: none;
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.mbtiSaveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mbtiConnectBadge {
+  font-size: 0.75rem;
+  color: #6366f1;
+  font-weight: 600;
+  background: #eef2ff;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ----- AI 전략 버튼 & 스트리밍 박스 ----- */
+.aiStrategyBtn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.08s ease;
+}
+
+.aiStrategyBtn:hover {
+  opacity: 0.92;
+}
+
+.aiStrategyBtn:active {
+  transform: scale(0.99);
+}
+
+.aiStrategyBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aiStrategyBox {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--app-border-light);
+  border-radius: 0.75rem;
+  background: var(--app-bg-secondary, #f9fafb);
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: var(--app-text-primary);
+}
+
+.aiStrategyBox h1,
+.aiStrategyBox h2,
+.aiStrategyBox h3,
+.aiStrategyBox h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.25rem;
+  color: var(--app-text-primary);
+}
+
+.aiStrategyBox p {
+  margin: 0 0 0.5rem;
+}
+
+.aiStrategyBox ul,
+.aiStrategyBox ol {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.aiStrategyBox strong {
+  font-weight: 700;
+  color: #4338ca;
+}
