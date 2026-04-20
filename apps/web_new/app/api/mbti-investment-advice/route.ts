@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { MBTI_INVEST_DESCRIPTION } from "@/lib/jubti/jubtiMasters";
 
-const client = new Anthropic();
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 const TYPE_CONTEXT: Record<string, { label: string; style: string }> = {
   A: { label: "공격형 (불나방 파이터)", style: "고위험·고수익 추구, 변동성 선호" },
@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ success: false, message: "로그인 후 이용 가능합니다." }, { status: 401 });
+  }
+
+  const grade = ((session.user as { grade?: string }).grade ?? "regular").trim().toLowerCase();
+  if (grade !== "vip" && grade !== "family") {
+    return NextResponse.json({ success: false, message: "VIP 이상 회원만 이용할 수 있습니다." }, { status: 403 });
   }
 
   const { jubti_type, mbti_type, zodiac_animal, zodiac_sign, animal_fortune, sign_fortune, scores, character_name } =
@@ -53,18 +58,45 @@ ${sign_fortune?.fortune_text ?? "운세 정보 없음"}
 가볍고 재미있게, 하지만 투자 교육 가치도 담아주세요.
 "재미로 보는" 운세임을 유머스럽게 인정하면서 실질적 조언도 제공해주세요.`.trim();
 
-  const stream = await client.messages.stream({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const geminiRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }], role: "user" }],
+        generationConfig: { maxOutputTokens: 1024 },
+      }),
+    }
+  );
 
+  if (!geminiRes.ok || !geminiRes.body) {
+    return NextResponse.json({ success: false, message: "AI 서비스 오류" }, { status: 502 });
+  }
+
+  const upstream = geminiRes.body;
   return new Response(
     new ReadableStream({
       async start(controller) {
-        for await (const chunk of stream) {
-          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
-            controller.enqueue(new TextEncoder().encode(chunk.delta.text));
+        const reader = upstream.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (!data || data === "[DONE]") continue;
+            try {
+              const json = JSON.parse(data);
+              const text: string | undefined = json.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) controller.enqueue(encoder.encode(text));
+            } catch { /* ignore malformed chunk */ }
           }
         }
         controller.close();
