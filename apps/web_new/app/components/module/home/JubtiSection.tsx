@@ -97,7 +97,6 @@ function pickMainType(scores: Record<Dimension, number>): Dimension {
   return candidates[0] ?? "D";
 }
 
-// Simple markdown → HTML renderer (bold, headings, lists)
 function renderMarkdown(text: string): string {
   return text
     .replace(/^#### (.+)$/gm, "<h4>$1</h4>")
@@ -154,6 +153,15 @@ function RotateIcon() {
   );
 }
 
+function GearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
 export function JubtiSection() {
   const { data: session, status } = useSession();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -169,8 +177,9 @@ export function JubtiSection() {
   // MBTI 상태
   const [savedMbtiType, setSavedMbtiType] = useState<string | null>(null);
   const [selectedMbti, setSelectedMbti] = useState<string | null>(null);
-  const [showMbtiSelector, setShowMbtiSelector] = useState(false);
+  const [showMbtiModal, setShowMbtiModal] = useState(false);
   const [isSavingMbti, setIsSavingMbti] = useState(false);
+  const [showMbtiLoginMessage, setShowMbtiLoginMessage] = useState(false);
 
   // AI 전략 상태
   const [aiStrategy, setAiStrategy] = useState("");
@@ -203,6 +212,13 @@ export function JubtiSection() {
       })
       .catch(() => {});
   }, [status, session?.user?.email]);
+
+  // 펼칠 때 MBTI 미설정이면 모달 자동 오픈
+  useEffect(() => {
+    if (!isExpanded) return;
+    if (!savedMbtiType) setShowMbtiModal(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded]);
 
   const initQuestions = useCallback(() => {
     setQuestionsForRun(getRandomQuestions());
@@ -267,8 +283,22 @@ export function JubtiSection() {
     }
   };
 
+  const openMbtiModal = () => {
+    setShowMbtiLoginMessage(false);
+    setShowMbtiModal(true);
+  };
+
+  const closeMbtiModal = () => {
+    setShowMbtiModal(false);
+    setShowMbtiLoginMessage(false);
+  };
+
   const handleSaveMbti = async () => {
-    if (!selectedMbti || !session?.user?.email) return;
+    if (!selectedMbti) return;
+    if (!session?.user?.email) {
+      setShowMbtiLoginMessage(true);
+      return;
+    }
     setIsSavingMbti(true);
     try {
       const res = await fetch("/api/auth/member/mbti", {
@@ -279,10 +309,8 @@ export function JubtiSection() {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         setSavedMbtiType(selectedMbti);
-        setShowMbtiSelector(false);
-        if (data.point_balance !== undefined) {
-          // 포인트 적립 안내 (최초 저장 시 점수 차이가 있을 때)
-        }
+        setShowMbtiModal(false);
+        setShowMbtiLoginMessage(false);
       }
     } catch {
       // ignore
@@ -322,8 +350,57 @@ export function JubtiSection() {
     }
   };
 
-  // 접힌 상태에서 MBTI 연결 뱃지
-  const mbtiJubtiMatch = savedMbtiType ? MBTI_TO_JUBTI[savedMbtiType] : null;
+  // MBTI 설정 모달
+  const mbtiModal = showMbtiModal ? (
+    <div className={styles.overlay} onClick={closeMbtiModal} role="dialog" aria-modal="true" aria-label="MBTI 설정">
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h4 className={styles.modalTitle}>내 MBTI 설정</h4>
+          <button type="button" className={styles.modalClose} onClick={closeMbtiModal} aria-label="닫기">×</button>
+        </div>
+
+        <div className={styles.modalBody}>
+          <p className={styles.modalDesc}>MBTI를 입력하면 투자 성향과 연결된 맞춤 분석을 받을 수 있어요.</p>
+          <div className={styles.mbtiGrid}>
+            {VALID_MBTI_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={`${styles.mbtiChip} ${selectedMbti === type ? styles.mbtiChipSelected : ""}`}
+                onClick={() => setSelectedMbti(type)}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+          {selectedMbti && MBTI_INVEST_DESCRIPTION[selectedMbti] && (
+            <p className={styles.mbtiDesc}>{MBTI_INVEST_DESCRIPTION[selectedMbti]}</p>
+          )}
+          {showMbtiLoginMessage && (
+            <div className={styles.loginMessageStrip} role="alert">
+              <p className={styles.loginMessageText}>로그인 후 저장할 수 있습니다.</p>
+              <Link href="/login" className={styles.loginMessageLink}>로그인하기</Link>
+              <button type="button" className={styles.loginMessageClose} onClick={() => setShowMbtiLoginMessage(false)} aria-label="닫기">×</button>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button type="button" className={styles.skipBtn} onClick={closeMbtiModal}>
+            건너뛰기
+          </button>
+          <button
+            type="button"
+            className={styles.mbtiSaveModalBtn}
+            onClick={handleSaveMbti}
+            disabled={!selectedMbti || isSavingMbti}
+          >
+            {isSavingMbti ? "저장 중..." : "저장하기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (!isExpanded) {
     const savedMeta = savedJubtiType ? TYPE_META[savedJubtiType] : null;
@@ -369,6 +446,7 @@ export function JubtiSection() {
     return (
       <section className={styles.section}>
         {savedMeta ? <div className={styles.collapsedCard}>{content}</div> : content}
+        {mbtiModal}
       </section>
     );
   }
@@ -381,12 +459,21 @@ export function JubtiSection() {
             <span className={styles.headerIcon}><LightbulbIcon /></span>
             <div>
               <h3 className={styles.headerTitle}>MBTI로 보는 투자성향</h3>
-              <p className={styles.headerSubtitle}>MBTI × 투자심리 분석</p>
+              <p className={styles.headerSubtitle}>
+                {savedMbtiType
+                  ? `MBTI: ${savedMbtiType}${MBTI_TO_JUBTI[savedMbtiType] ? ` · ${MBTI_TO_JUBTI[savedMbtiType]}형 연결` : ""}`
+                  : "MBTI × 투자심리 분석"}
+              </p>
             </div>
           </div>
-          <button type="button" onClick={() => setIsExpanded(false)} className={styles.collapseBtn} aria-label="접기">
-            <ChevronUpIcon />
-          </button>
+          <div className={styles.headerActions}>
+            <button type="button" onClick={openMbtiModal} className={styles.gearBtn} aria-label="MBTI 설정">
+              <GearIcon />
+            </button>
+            <button type="button" onClick={() => setIsExpanded(false)} className={styles.collapseBtn} aria-label="접기">
+              <ChevronUpIcon />
+            </button>
+          </div>
         </div>
 
         {!finished ? (
@@ -446,65 +533,6 @@ export function JubtiSection() {
               <p className={styles.tipsText}>💡 {meta.tips}</p>
             </div>
 
-            {/* MBTI 입력 섹션 */}
-            <div className={styles.mbtiSection}>
-              <h4 className={styles.mbtiSectionLabel}>
-                내 MBTI 연결하기
-                {savedMbtiType && mbtiJubtiMatch && (
-                  <span className={styles.mbtiConnectBadge} style={{ marginLeft: "0.5rem" }}>
-                    {savedMbtiType} → {mbtiJubtiMatch}형 매칭
-                  </span>
-                )}
-              </h4>
-              {!showMbtiSelector ? (
-                <button
-                  type="button"
-                  className={styles.mbtiSaveBtn}
-                  onClick={() => setShowMbtiSelector(true)}
-                >
-                  {savedMbtiType ? `${savedMbtiType} 변경하기` : "내 MBTI 입력하기"}
-                </button>
-              ) : (
-                <>
-                  <div className={styles.mbtiGrid}>
-                    {VALID_MBTI_TYPES.map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        className={`${styles.mbtiChip} ${selectedMbti === type ? styles.mbtiChipSelected : ""}`}
-                        onClick={() => setSelectedMbti(type)}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                  {selectedMbti && MBTI_INVEST_DESCRIPTION[selectedMbti] && (
-                    <p style={{ fontSize: "0.75rem", color: "var(--app-text-muted)", margin: "0.5rem 0 0" }}>
-                      {MBTI_INVEST_DESCRIPTION[selectedMbti]}
-                    </p>
-                  )}
-                  <div className={styles.mbtiSaveRow}>
-                    <button
-                      type="button"
-                      className={styles.mbtiSaveBtn}
-                      onClick={handleSaveMbti}
-                      disabled={!selectedMbti || isSavingMbti || !session?.user?.email}
-                    >
-                      {isSavingMbti ? "저장 중..." : "저장"}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.retakeButton}
-                      style={{ width: "auto", padding: "0.5rem 0.75rem" }}
-                      onClick={() => setShowMbtiSelector(false)}
-                    >
-                      취소
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* AI 전략 추천 */}
             {(() => {
               const grade = ((session?.user as { grade?: string })?.grade ?? "regular").trim().toLowerCase();
@@ -557,6 +585,8 @@ export function JubtiSection() {
           </div>
         )}
       </div>
+
+      {mbtiModal}
     </section>
   );
 }

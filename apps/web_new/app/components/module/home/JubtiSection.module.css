@@ -149,6 +149,27 @@
   color: var(--app-text-muted);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.gearBtn {
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.gearBtn:hover {
+  color: #ea580c;
+}
+
 .collapseBtn {
   padding: 0.25rem;
   border: none;
@@ -454,7 +475,146 @@
   transform: scale(0.98);
 }
 
-/* ----- MBTI 입력 섹션 ----- */
+/* ----- MBTI 설정 모달 ----- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 480px) {
+  .overlay {
+    align-items: center;
+  }
+}
+
+.modalCard {
+  width: 100%;
+  max-width: 480px;
+  background: var(--app-card-bg, #fff);
+  border-radius: 1.25rem 1.25rem 0 0;
+  padding: 1.25rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+@media (min-width: 480px) {
+  .modalCard {
+    border-radius: 1.25rem;
+    max-height: 85vh;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--app-text-primary);
+}
+
+.modalClose {
+  padding: 0 0.35rem;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.modalClose:hover {
+  color: var(--app-text-primary);
+}
+
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.modalDesc {
+  font-size: 0.8125rem;
+  color: var(--app-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.mbtiDesc {
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.modalFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--app-border-light);
+}
+
+.skipBtn {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--app-border-light);
+  background: var(--app-card-bg);
+  color: var(--app-text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.skipBtn:hover {
+  border-color: #fb923c;
+}
+
+.mbtiSaveModalBtn {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: linear-gradient(to right, #fb923c, #ec4899);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.08s ease;
+}
+
+.mbtiSaveModalBtn:hover {
+  opacity: 0.92;
+}
+
+.mbtiSaveModalBtn:active {
+  transform: scale(0.99);
+}
+
+.mbtiSaveModalBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ----- MBTI 입력 섹션 (레거시 — 미사용) ----- */
 .mbtiSection {
   margin-bottom: 1rem;
 }
