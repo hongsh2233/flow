@@ -1,68 +1,47 @@
 import { memo } from "react";
-import { DollarSign, TrendingUp } from "lucide-react";
 import type { ExchangeRatesProps } from "@/lib/types";
 import styles from "./ExchangeRates.module.css";
-
-function formatBaseTimestamp(ts: string | null | undefined): string {
-  if (!ts) return "";
-  return `${ts}분 기준 데이터`;
-}
 
 export const ExchangeRates = memo(function ExchangeRates({ rates, interestRates, baseTimestamp }: ExchangeRatesProps) {
   return (
     <div className={styles.section}>
       {/* 환율 */}
-      <div className={styles.headingRow}>
-        <h3 className={styles.heading}>
-          <DollarSign className={styles.headingIcon} />
-          환율
-        </h3>
-        {baseTimestamp && (
-          <span className={styles.baseTimestamp}>{formatBaseTimestamp(baseTimestamp)}</span>
-        )}
-      </div>
-
-      <div className={styles.grid}>
-        {rates.map((item) => (
-          <div key={item.currency} className={styles.card}>
-            <p className={styles.currency}>{item.currency}</p>
-            <p className={styles.rate}>{item.rate}</p>
-            <p
-              className={`${styles.change} ${
-                item.isPositive ? styles.changeUp : styles.changeDown
-              }`}
-            >
-              {item.change}
-            </p>
+      {rates.length > 0 && (
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <p className={styles.groupLabel}>환율</p>
+            {baseTimestamp && <p className={styles.timestamp}>{baseTimestamp} 기준</p>}
           </div>
-        ))}
-      </div>
+          <ul className={styles.list}>
+            {rates.map((item) => (
+              <li key={item.currency} className={styles.row}>
+                <span className={styles.rowName}>{item.currency}</span>
+                <span className={styles.rowValue}>{item.rate}</span>
+                <span className={`${styles.rowChange} ${item.isPositive ? styles.changeUp : styles.changeDown}`}>
+                  {item.change}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* 금리 */}
       {interestRates && interestRates.length > 0 && (
-        <>
-          <div className={`${styles.headingRow} ${styles.interestHeadingRow}`}>
-            <h3 className={styles.heading}>
-              <TrendingUp className={styles.headingIconInterest} />
-              주요 금리
-            </h3>
-          </div>
-          <div className={styles.grid}>
+        <div className={`${styles.group} ${styles.groupDivider}`}>
+          <p className={styles.groupLabel}>금리</p>
+          <ul className={styles.list}>
             {interestRates.map((item) => (
-              <div key={item.name} className={styles.card}>
-                <p className={styles.currency}>{item.name}</p>
-                <p className={styles.rate}>{item.rate}</p>
-                <p
-                  className={`${styles.change} ${
-                    item.isPositive ? styles.changeUp : styles.changeDown
-                  }`}
-                >
+              <li key={item.name} className={styles.row}>
+                <span className={styles.rowName}>{item.name}</span>
+                <span className={styles.rowValue}>{item.rate}</span>
+                <span className={`${styles.rowChange} ${item.isPositive ? styles.changeUp : styles.changeDown}`}>
                   {item.change}
-                </p>
-              </div>
+                </span>
+              </li>
             ))}
-          </div>
-        </>
+          </ul>
+        </div>
       )}
     </div>
   );
