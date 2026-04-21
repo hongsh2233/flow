@@ -31,31 +31,27 @@ def _today_kst() -> date:
 
 
 def _call_gemini(prompt: str) -> str:
-    """Gemini API 호출 → 텍스트 반환"""
+    """Gemini API 호출 → 텍스트 반환 (google-genai SDK)"""
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(GEMINI_MODEL)
-        response = model.generate_content(prompt)
-        # 텍스트 추출
-        if hasattr(response, "text"):
-            return response.text or ""
-        parts = getattr(response, "parts", [])
-        texts = []
-        for part in parts:
-            if hasattr(part, "text") and part.text:
-                texts.append(part.text)
-        return "".join(texts)
+        from google import genai as google_genai
+        client = google_genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
+        return response.text or ""
     except Exception as e:
         print(f"❌ Gemini 호출 오류: {e}")
         return ""
 
 
 def _extract_json_array(text: str) -> list:
-    """텍스트에서 JSON 배열 추출 (Gemini 응답 래퍼 제거)"""
+    """텍스트에서 JSON 배열 추출 (Gemini 마크다운 래퍼 제거 포함)"""
+    # 마크다운 코드블록 제거 (```json ... ``` 또는 ``` ... ```)
+    text = re.sub(r"```(?:json)?\s*", "", text)
+    text = re.sub(r"```", "", text).strip()
     try:
-        # 직접 파싱 시도
-        return json.loads(text.strip())
+        return json.loads(text)
     except Exception:
         pass
     # 정규식으로 배열 부분만 추출
