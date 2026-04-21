@@ -2,7 +2,7 @@
   background: var(--app-card-bg, #fff);
   border: 1px solid var(--app-table-border, #e5e8eb);
   border-radius: 1rem;
-  margin: 1.25rem;
+  margin: 0 0 1.25rem;
   padding: 1rem 1.15rem;
   box-shadow: 0 2px 12px color-mix(in srgb, var(--app-text, #000) 4%, transparent);
 }
