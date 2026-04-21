@@ -562,6 +562,7 @@ export function JubtiSection() {
                       dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(aiStrategy)}</p>` }}
                     />
                   ) : null}
+                  {/* 준비 중 — 임시 비활성화
                   <button
                     type="button"
                     className={styles.aiStrategyBtn}
@@ -570,6 +571,7 @@ export function JubtiSection() {
                   >
                     {aiLoading ? "✨ AI 분석 중..." : "✨ AI 투자전략 추천받기"}
                   </button>
+                  */}
                 </>
               );
             })()}
