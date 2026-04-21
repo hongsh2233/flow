@@ -5,7 +5,7 @@ REST API 라우터 - 프론트엔드용
 주식 데이터(KRX, FSC)는 API Key를 통해 인증하고, 
 게시판 및 일정 관리 등은 JWT 토큰 또는 API Key를 통해 인증합니다.
 """
-from fastapi import APIRouter, HTTPException, Depends, Query, Header
+from fastapi import APIRouter, HTTPException, Depends, Query, Header, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import distinct, cast, Integer, Float, func, or_, and_, text
@@ -3320,6 +3320,33 @@ async def run_sentiment_manual(
 
     asyncio.create_task(_run())
     return {"success": True, "message": "심리지수 분석이 백그라운드에서 시작되었습니다."}
+
+@router.post("/api/fortune-ai-charge")
+async def fortune_ai_charge(
+    request: Request,
+    db: Session = Depends(get_db),
+    x_api_key: Optional[str] = Header(None, alias="X-API-KEY"),
+):
+    """운세 AI 조언 버튼 1일 사용 횟수 확인 및 VIP 포인트 차감"""
+    if not x_api_key or x_api_key.strip() != API_SECRET_KEY:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    body = await request.json()
+    email = (body.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="email 필수")
+
+    member = db.query(models.Member).filter(models.Member.email == email).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
+
+    from app.services.member_point_service import check_and_charge_fortune_ai
+    ok, err = check_and_charge_fortune_ai(db, member)
+    if not ok:
+        raise HTTPException(status_code=429, detail=err)
+
+    return {"success": True}
+
 
 @router.get("/api/fortune/today")
 async def api_get_today_fortune(

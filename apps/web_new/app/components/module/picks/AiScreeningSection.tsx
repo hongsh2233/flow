@@ -19,7 +19,7 @@ type Props = {
 
 export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: Props) {
   const { data: session, status } = useSession();
-  const [strategy, setStrategy] = useState<"ichimoku" | "jongbe" | "ricebowl" | "breakout">("ichimoku");
+  const [strategy, setStrategy] = useState<"ichimoku" | "jongbe" | "breakout">("ichimoku");
   const [market, setMarket] = useState<"kospi" | "kosdaq">("kospi");
   const [rows, setRows] = useState<ScreeningRow[]>([]);
   const [tier, setTier] = useState<PicksGradeTier>("guest");
@@ -71,7 +71,7 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const st = strategy === "jongbe" ? "jongbe" : strategy === "ricebowl" ? "ricebowl" : strategy === "breakout" ? "breakout" : "ichimoku";
+      const st = strategy === "jongbe" ? "jongbe" : strategy === "breakout" ? "breakout" : "ichimoku";
       const res = await fetch(
         `/api/picks/ai-screening?market_type=${market}&screening_type=${st}&limit=50`,
         { cache: "no-store", credentials: "same-origin" }
@@ -130,15 +130,6 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
         <button
           type="button"
           role="tab"
-          aria-selected={strategy === "ricebowl"}
-          className={strategy === "ricebowl" ? styles.strategyTabActive : styles.strategyTab}
-          onClick={() => setStrategy("ricebowl")}
-        >
-          반응예상
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={strategy === "breakout"}
           className={strategy === "breakout" ? styles.strategyTabActive : styles.strategyTab}
           onClick={() => setStrategy("breakout")}
@@ -170,8 +161,6 @@ export function AiScreeningSection({ onSelectStock, onPickStock, pickedCodes }: 
         <p className={styles.scheduleNotice}>추천종목은 20:40분 공개됩니다.</p>
       ) : strategy === "jongbe" ? (
         <p className={styles.scheduleNotice}>종가종목은 15:15분 전후 공개 됩니다.</p>
-      ) : strategy === "ricebowl" ? (
-        <p className={styles.scheduleNotice}>반응예상은 20:50분 전후 공개됩니다.</p>
       ) : (
         <p className={styles.scheduleNotice}>급등예상은 21:00분 전후 공개됩니다.</p>
       )}
