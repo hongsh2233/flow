@@ -54,6 +54,7 @@ from app.engine.models import (
     BoEventParticipation,
     GradePolicy,
     GradePolicyLog,
+    DailyFortune,
 )
 
 __all__ = [
@@ -70,4 +71,5 @@ __all__ = [
     "BoEventParticipation",
     "GradePolicy",
     "GradePolicyLog",
+    "DailyFortune",
 ]

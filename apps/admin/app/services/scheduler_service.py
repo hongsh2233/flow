@@ -1990,6 +1990,32 @@ class DailyFortuneScheduler:
         )
         self.scheduler.start()
         print("✅ 운세 스케줄러 시작 (매일 01:00 KST)")
+        # 오늘 데이터가 없으면 시작 시 즉시 생성
+        import asyncio as _asyncio
+        try:
+            loop = _asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self._generate_if_needed())
+        except Exception:
+            pass
+
+    async def _generate_if_needed(self):
+        """오늘 운세가 없을 때만 생성 (서버 시작 시 호출)"""
+        try:
+            from datetime import datetime
+            from app.database import SessionLocal
+            from app.engine.models import DailyFortune
+            today = datetime.now(self.kst).date()
+            db = SessionLocal()
+            try:
+                count = db.query(DailyFortune).filter(DailyFortune.fortune_date == today).count()
+            finally:
+                db.close()
+            if count < 24:
+                print(f"ℹ️ 오늘({today}) 운세 데이터 {count}개 — 즉시 생성 시작")
+                await self._generate()
+        except Exception as e:
+            print(f"⚠️ 운세 시작 시 체크 오류: {e}")
 
     async def _generate(self):
         try:
