@@ -2,7 +2,7 @@ import NextAuth, { type AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 // import KakaoProvider from 'next-auth/providers/kakao' // 카카오 가입 비활성화
 // import NaverProvider from 'next-auth/providers/naver' // 네이버 로그인 비활성화
-import GoogleProvider from 'next-auth/providers/google'
+// import GoogleProvider from 'next-auth/providers/google' // 구글 로그인 비활성화
 import { API_BASE_URL, API_SECRET_KEY } from '@/lib/config/api'
 
 /** JWT payload에서 만료 시간 추출 (라이브러리 없이 base64 디코딩) */
@@ -113,10 +113,11 @@ export const authOptions = {
     //   clientId: process.env.NAVER_CLIENT_ID ?? '',
     //   clientSecret: process.env.NAVER_CLIENT_SECRET ?? '',
     // }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
+    // 구글 로그인 비활성화
+    // GoogleProvider({
+    //   clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    // }),
   ],
   pages: {
     signIn: '/login',
@@ -134,59 +135,48 @@ export const authOptions = {
         token.grade = (user as { grade?: string }).grade ?? 'regular'
         token.backendAccessToken = (user as { backendAccessToken?: string }).backendAccessToken ?? null
 
-        // 소셜 로그인 시 BO social-login API 연동 (google; naver 비활성화)
+        // 소셜 로그인 시 BO social-login API 연동 (google 비활성화; naver 비활성화)
         token.lastLoginProvider = account?.provider ?? 'credentials'
 
-        if (account && account.provider === 'google') {
-          const base = backendBaseUrl()
-          if (!base) {
-            console.error('[NextAuth] Google 콜백: 백엔드 URL 없음 — social-login 호출 생략')
-            token.isNewUser = true
-          } else {
-            try {
-              const providerId =
-                account.providerAccountId ||
-                user.id ||
-                String(account.access_token ?? '').substring(0, 50) ||
-                ''
-              const email = user.email || ''
-              const name = user.name || user.email?.split('@')[0] || ''
-
-              const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-              }
-              if (API_SECRET_KEY) {
-                headers['X-API-KEY'] = API_SECRET_KEY
-              }
-
-              const response = await fetch(`${base}/api/auth/social-login`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                  provider: account.provider,
-                  email,
-                  name,
-                  provider_id: providerId,
-                }),
-              })
-
-              if (response.ok) {
-                const data = await response.json()
-                token.isNewUser = !data.has_nickname
-                token.name = data.nickname || name
-                token.picture = data.profile_image || user.image
-                token.nickname = data.nickname || null
-                token.profileImage = data.profile_image || null
-                token.grade = data.grade ?? 'regular'
-                token.backendAccessToken = data.access_token ?? null
-              } else {
-                token.isNewUser = true
-              }
-            } catch {
-              token.isNewUser = true
-            }
-          }
-        }
+        // 구글 로그인 비활성화
+        // if (account && account.provider === 'google') {
+        //   const base = backendBaseUrl()
+        //   if (!base) {
+        //     console.error('[NextAuth] Google 콜백: 백엔드 URL 없음 — social-login 호출 생략')
+        //     token.isNewUser = true
+        //   } else {
+        //     try {
+        //       const providerId =
+        //         account.providerAccountId ||
+        //         user.id ||
+        //         String(account.access_token ?? '').substring(0, 50) ||
+        //         ''
+        //       const email = user.email || ''
+        //       const name = user.name || user.email?.split('@')[0] || ''
+        //       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        //       if (API_SECRET_KEY) { headers['X-API-KEY'] = API_SECRET_KEY }
+        //       const response = await fetch(`${base}/api/auth/social-login`, {
+        //         method: 'POST',
+        //         headers,
+        //         body: JSON.stringify({ provider: account.provider, email, name, provider_id: providerId }),
+        //       })
+        //       if (response.ok) {
+        //         const data = await response.json()
+        //         token.isNewUser = !data.has_nickname
+        //         token.name = data.nickname || name
+        //         token.picture = data.profile_image || user.image
+        //         token.nickname = data.nickname || null
+        //         token.profileImage = data.profile_image || null
+        //         token.grade = data.grade ?? 'regular'
+        //         token.backendAccessToken = data.access_token ?? null
+        //       } else {
+        //         token.isNewUser = true
+        //       }
+        //     } catch {
+        //       token.isNewUser = true
+        //     }
+        //   }
+        // }
       }
       if (trigger === 'update' && session?.user) {
         if (session.user.name !== undefined) token.name = session.user.name

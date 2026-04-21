@@ -149,6 +149,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
+          {/* 소셜 로그인 비활성화
           <div className={styles.divider}>
             <div className={styles.dividerLine} />
             <div className={styles.dividerText}>
@@ -157,26 +158,26 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.socialButtons}>
-            {/* 카카오 로그인 비활성화
+            카카오 로그인 비활성화
             <SocialLoginButton
               provider="kakao"
               onClick={() => handleSocialLogin("kakao")}
               recent={lastLoginProvider === "kakao"}
             />
-            */}
-            {/* 네이버 로그인 비활성화
+            네이버 로그인 비활성화
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialLogin("naver")}
               recent={lastLoginProvider === "naver"}
             />
-            */}
+            구글 로그인 비활성화
             <SocialLoginButton
               provider="google"
               onClick={() => handleSocialLogin("google")}
               recent={lastLoginProvider === "google"}
             />
           </div>
+          */}
 
           <p className={styles.switchLink}>
             아직 계정이 없으신가요?{" "}
