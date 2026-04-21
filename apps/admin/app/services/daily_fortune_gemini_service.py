@@ -218,6 +218,7 @@ def get_today_fortune(fortune_type: str, key: str) -> Optional[dict]:
         # DB에 없으면 전체 배치 생성 후 재조회
         print(f"⚠️ {today} {fortune_type}/{key} 운세 없음 — 실시간 생성")
         generate_daily_fortunes(today)
+        db.expire_all()  # 다른 세션이 커밋한 데이터 반영
 
         row = (
             db.query(DailyFortune)

@@ -3329,10 +3329,14 @@ async def api_get_today_fortune(
 ):
     """오늘의 띠/별자리 운세 조회 (공개 API)"""
     from app.services.daily_fortune_gemini_service import get_today_fortune
+    from fastapi.responses import JSONResponse
     if fortune_type not in ("animal", "sign"):
-        from fastapi.responses import JSONResponse
         return JSONResponse({"success": False, "message": "fortune_type은 animal 또는 sign이어야 합니다."}, status_code=400)
-    data = get_today_fortune(fortune_type, key)
+    try:
+        data = get_today_fortune(fortune_type, key)
+    except Exception as e:
+        print(f"❌ 운세 조회 오류: {e}")
+        return JSONResponse({"success": False, "message": "운세 조회 중 오류가 발생했습니다."}, status_code=500)
     if not data:
         return JSONResponse({"success": False, "message": "운세 정보를 찾을 수 없습니다."}, status_code=404)
     return {"success": True, **data}
