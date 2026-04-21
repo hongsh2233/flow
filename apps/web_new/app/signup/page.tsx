@@ -341,6 +341,7 @@ export default function SignupPage() {
             </Button>
           </form>
 
+          {/* 소셜 가입 비활성화
           <div className={styles.divider}>
             <div className={styles.dividerLine} />
             <div className={styles.dividerText}>
@@ -349,23 +350,23 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.socialButtons}>
-            {/* 카카오 가입 비활성화
+            카카오 가입 비활성화
             <SocialLoginButton
               provider="kakao"
               onClick={() => handleSocialSignup("kakao")}
             />
-            */}
-            {/* 네이버 가입 비활성화
+            네이버 가입 비활성화
             <SocialLoginButton
               provider="naver"
               onClick={() => handleSocialSignup("naver")}
             />
-            */}
+            구글 가입 비활성화
             <SocialLoginButton
               provider="google"
               onClick={() => handleSocialSignup("google")}
             />
           </div>
+          */}
 
           <p className={styles.switchLink}>
             이미 계정이 있으신가요?{" "}
