@@ -395,7 +395,7 @@
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
   border: none;
-  background: linear-gradient(to right, #f59e0b, #a855f7);
+  background: #f97316;
   color: #fff;
   font-size: 0.875rem;
   font-weight: 700;
@@ -437,16 +437,20 @@
   border-radius: 1rem;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid;
 }
 
 .fortuneCardAnimal {
-  background: linear-gradient(to bottom right, #f59e0b, #ef4444);
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-top: 3px solid #f59e0b;
 }
 
 .fortuneCardSign {
-  background: linear-gradient(to bottom right, #a855f7, #3b82f6);
+  background: #faf5ff;
+  border-color: #e9d5ff;
+  border-top: 3px solid #a855f7;
 }
 
 .fortuneCardHeader {
@@ -464,13 +468,14 @@
 .fortuneCardTitle {
   font-weight: 700;
   font-size: 1rem;
+  color: var(--app-text-primary, #1f2937);
 }
 
 .fortuneText {
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 0 0 0.625rem;
-  opacity: 0.95;
+  color: var(--app-text-primary, #1f2937);
 }
 
 .investTip {
@@ -478,9 +483,10 @@
   font-weight: 600;
   margin: 0;
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 0.5rem;
   line-height: 1.5;
+  color: var(--app-text-primary, #1f2937);
 }
 
 /* ----- VIP 잠금 안내 ----- */
@@ -525,7 +531,7 @@
   margin-bottom: 1rem;
   border: none;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #f59e0b, #a855f7);
+  background: #f97316;
   color: #fff;
   font-weight: 700;
   font-size: 0.9375rem;
