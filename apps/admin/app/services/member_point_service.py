@@ -3,7 +3,7 @@
 """
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time as dt_time
 from typing import Optional, Tuple
 
 import pytz
@@ -22,6 +22,7 @@ POINT_ZODIAC_SIGN_FIRST = 30
 POINT_POST_LIKE = 20
 POINT_SCREENING_PICK = -20
 POINT_VIP_WELCOME = 4900
+POINT_FORTUNE_AI = -20
 
 REASON_SIGNUP = "signup_bonus"
 REASON_DAILY_LOGIN = "daily_login"
@@ -32,6 +33,9 @@ REASON_ZODIAC_SIGN_FIRST = "zodiac_sign_first"
 REASON_POST_LIKE = "post_like"
 REASON_SCREENING_PICK = "screening_pick_over_quota"
 REASON_VIP_WELCOME = "vip_welcome"
+REASON_FORTUNE_AI = "fortune_ai_advice"
+
+FORTUNE_AI_DAILY_LIMIT: dict[str, int] = {"vip": 1, "family": 2}
 
 
 def _effective_grade(member: models.Member) -> str:
@@ -277,3 +281,55 @@ def charge_screening_pick_if_needed(
         db.commit()
         return True, True, None
     return False, False, err or "포인트 차감 실패"
+
+
+def check_and_charge_fortune_ai(
+    db: Session,
+    member: models.Member,
+) -> Tuple[bool, Optional[str]]:
+    """
+    운세 AI 조언 버튼 클릭 1일 횟수 확인 및 VIP 포인트 차감.
+    VIP: 1회/일, 20포인트 차감
+    Family: 2회/일, 포인트 차감 없음 (delta=0 tracking 기록)
+    Returns: (ok, error_message)
+    """
+    grade = _effective_grade(member)
+    if grade not in ("vip", "family"):
+        return False, "VIP 이상 회원만 이용할 수 있습니다."
+
+    daily_limit = FORTUNE_AI_DAILY_LIMIT[grade]
+    today = _today_kst()
+    today_start = KST.localize(datetime(today.year, today.month, today.day, 0, 0, 0))
+
+    usage_count = (
+        db.query(models.MemberPointLedger)
+        .filter(
+            models.MemberPointLedger.member_id == member.id,
+            models.MemberPointLedger.reason == REASON_FORTUNE_AI,
+            models.MemberPointLedger.created_at >= today_start,
+        )
+        .count()
+    )
+
+    if usage_count >= daily_limit:
+        limit_label = "1회" if grade == "vip" else "2회"
+        grade_label = "VIP" if grade == "vip" else "패밀리"
+        return False, f"오늘 이용 횟수를 초과했습니다. ({grade_label}: {limit_label}/일)"
+
+    attempt = usage_count + 1
+    key = f"fortune_ai:{member.id}:{today.isoformat()}:{attempt}"
+    delta = POINT_FORTUNE_AI if grade == "vip" else 0
+
+    ok, _, err = apply_point_change(
+        db,
+        member.id,
+        delta,
+        REASON_FORTUNE_AI,
+        ref_type="fortune_ai",
+        ref_id=f"{member.id}:{today.isoformat()}:{attempt}",
+        idempotency_key=key,
+    )
+    if not ok:
+        return False, err or "처리 실패"
+    db.commit()
+    return True, None
