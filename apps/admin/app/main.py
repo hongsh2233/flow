@@ -664,6 +664,18 @@ def run_migrations():
     except Exception as e:
         print(f"⚠️ domestic_index_snapshots 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
+    try:
+        from app.migrations.add_mbti_zodiac_columns import upgrade as add_mbti_zodiac_migration
+        add_mbti_zodiac_migration()
+    except Exception as e:
+        print(f"⚠️ members mbti/zodiac 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.create_daily_fortunes_table import upgrade as create_daily_fortunes_migration
+        create_daily_fortunes_migration()
+    except Exception as e:
+        print(f"⚠️ daily_fortunes 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
 
 def init_admin_user():
     """
