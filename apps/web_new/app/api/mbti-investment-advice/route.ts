@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { MBTI_INVEST_DESCRIPTION } from "@/lib/jubti/jubtiMasters";
+import { API_BASE_URL, API_SECRET_KEY } from "@/lib/config/api";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
@@ -24,11 +25,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: "VIP 이상 회원만 이용할 수 있습니다." }, { status: 403 });
   }
 
+  // body 파싱 및 유효성 검사 (charge 전에 먼저 수행)
   const { jubti_type, mbti_type, zodiac_animal, zodiac_sign, animal_fortune, sign_fortune, scores, character_name } =
     await req.json();
 
   const ctx = TYPE_CONTEXT[jubti_type as keyof typeof TYPE_CONTEXT];
   if (!ctx) return NextResponse.json({ success: false, message: "유효하지 않은 투자 유형입니다." }, { status: 400 });
+
+  // 1일 사용 횟수 확인 + VIP 포인트 차감
+  const chargeRes = await fetch(`${API_BASE_URL}/api/fortune-ai-charge`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(API_SECRET_KEY ? { "X-API-KEY": API_SECRET_KEY } : {}),
+    },
+    body: JSON.stringify({ email: session.user.email }),
+    cache: "no-store",
+  });
+  if (!chargeRes.ok) {
+    const chargeData = await chargeRes.json().catch(() => ({}));
+    const status = chargeRes.status === 429 ? 429 : 403;
+    return NextResponse.json(
+      { success: false, message: chargeData.detail ?? "이용 횟수를 초과했습니다." },
+      { status }
+    );
+  }
 
   const mbtiDesc = mbti_type ? (MBTI_INVEST_DESCRIPTION[mbti_type] ?? "") : null;
 
