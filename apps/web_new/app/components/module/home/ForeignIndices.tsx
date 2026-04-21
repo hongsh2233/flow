@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Globe, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { parseIndexChangeStrings } from "@/lib/utils/indexChangeDirection";
 import styles from "./ForeignIndices.module.css";
 
@@ -19,17 +19,14 @@ function formatBaseTimestamp(ts: string | null | undefined): string {
     const [datePart, timePart] = ts.split(" ");
     const [, m, d] = datePart.split("-").map(Number);
     if (m && d) {
-      return timePart ? `${m}월 ${d}일 ${timePart} 기준` : `${m}월 ${d}일 기준`;
+      return timePart ? `${m}/${d} ${timePart}` : `${m}/${d}`;
     }
   } catch {
     // fallthrough
   }
-  return `${ts} 기준`;
+  return ts;
 }
 
-/**
- * 해외지수 - BO /api/foreign-indices 경유 (Yahoo Finance 프록시)
- */
 export function ForeignIndices() {
   const [indices, setIndices] = useState<ForeignIndexItem[]>([]);
   const [baseTimestamp, setBaseTimestamp] = useState<string | null>(null);
@@ -52,7 +49,7 @@ export function ForeignIndices() {
       }
     } catch (err) {
       console.error("해외지수 로딩 실패:", err);
-      setError("해외지수를 불러오는데 실패했습니다.");
+      setError("불러오기 실패");
       setIndices([]);
     } finally {
       setLoading(false);
@@ -66,10 +63,6 @@ export function ForeignIndices() {
   if (loading && indices.length === 0) {
     return (
       <div className={styles.section}>
-        <h3 className={styles.heading}>
-          <Globe className={styles.headingIcon} />
-          해외 지수
-        </h3>
         <div className={styles.loading}>지수를 불러오는 중...</div>
       </div>
     );
@@ -78,10 +71,6 @@ export function ForeignIndices() {
   if (error && indices.length === 0) {
     return (
       <div className={styles.section}>
-        <h3 className={styles.heading}>
-          <Globe className={styles.headingIcon} />
-          해외 지수
-        </h3>
         <div className={styles.error}>{error}</div>
       </div>
     );
@@ -89,27 +78,16 @@ export function ForeignIndices() {
 
   return (
     <div className={styles.section}>
-      <div className={styles.headingRow}>
-        <h3 className={styles.heading}>
-          <Globe className={styles.headingIcon} />
-          해외 지수
-        </h3>
-        {baseTimestamp && (
-          <span className={styles.baseTimestamp}>
-            {formatBaseTimestamp(baseTimestamp)}
-          </span>
-        )}
-      </div>
+      {baseTimestamp && (
+        <p className={styles.timestamp}>{formatBaseTimestamp(baseTimestamp)} 기준</p>
+      )}
       <div className={styles.grid}>
         {indices.map((item, idx) => {
           const { isNeutral, isPositive: isUp } = parseIndexChangeStrings(item.change, item.percent);
           const cardVariant = isNeutral ? styles.cardNeutral : isUp ? styles.cardUp : styles.cardDown;
           const textVariant = isNeutral ? styles.changeNeutral : isUp ? styles.changeUp : styles.changeDown;
           return (
-            <div
-              key={`${item.symbol}-${idx}`}
-              className={`${styles.card} ${cardVariant}`}
-            >
+            <div key={`${item.symbol}-${idx}`} className={`${styles.card} ${cardVariant}`}>
               <p className={styles.label}>{item.name}</p>
               <p className={styles.value}>{item.value}</p>
               <div className={styles.changeRow}>
@@ -119,7 +97,7 @@ export function ForeignIndices() {
                   <TrendingDown className={`${styles.changeIcon} ${styles.changeIconDown}`} />
                 )}
                 <p className={`${styles.changeText} ${textVariant}`}>
-                  {item.change} ({item.percent})
+                  {item.percent}
                 </p>
               </div>
             </div>
