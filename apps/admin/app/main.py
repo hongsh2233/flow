@@ -26,7 +26,7 @@ from app import models
 from app.database import engine, get_db, SessionLocal
 from app import utils
 from app.config import ADMIN_EMAIL, ADMIN_PW, BASE_DIR, UPLOADS_DIR
-from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler, ricebowl_screening_scheduler, breakout_screening_scheduler, sentiment_scheduler, naver_trend_scheduler
+from app.services.scheduler_service import fsc_scheduler, krx_scheduler, naver_ranking_scheduler, yahoo_index_scheduler, exchange_rate_scheduler, naver_supply_scheduler, naver_news_scheduler, investment_bank_news_scheduler, target_price_news_scheduler, naver_rising_scheduler, stock_screening_scheduler, jongbe_screening_scheduler, ricebowl_screening_scheduler, breakout_screening_scheduler, sentiment_scheduler, naver_trend_scheduler, daily_fortune_scheduler
 from app.engine.services.scheduler_service import (
     schedule_alarm_scheduler,
     calendar_scheduler,
@@ -121,6 +121,7 @@ async def lifespan(app: FastAPI):
     breakout_screening_scheduler.start()
     sentiment_scheduler.start()
     naver_trend_scheduler.start()
+    daily_fortune_scheduler.start()
     yield
     # 종료 시
     print("\n🛑 애플리케이션 종료")
@@ -143,6 +144,7 @@ async def lifespan(app: FastAPI):
     breakout_screening_scheduler.shutdown()
     sentiment_scheduler.shutdown()
     naver_trend_scheduler.shutdown()
+    daily_fortune_scheduler.shutdown()
 
     # 풀에 남은 DB 연결을 정리해 재배포/스케일 다운 시
     # "Connection reset by peer" / "unexpected EOF ... open transaction" 로그를 줄임 (SIGKILL 시에는 불가)
@@ -662,6 +664,18 @@ def run_migrations():
         add_domestic_index_snapshots_migration()
     except Exception as e:
         print(f"⚠️ domestic_index_snapshots 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.add_mbti_zodiac_columns import upgrade as add_mbti_zodiac_migration
+        add_mbti_zodiac_migration()
+    except Exception as e:
+        print(f"⚠️ members mbti/zodiac 컬럼 마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+    try:
+        from app.migrations.create_daily_fortunes_table import upgrade as create_daily_fortunes_migration
+        create_daily_fortunes_migration()
+    except Exception as e:
+        print(f"⚠️ daily_fortunes 테이블 마이그레이션 실행 중 오류 (무시 가능): {e}")
 
 
 def init_admin_user():

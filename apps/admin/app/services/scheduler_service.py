@@ -1964,3 +1964,72 @@ class NaverTrendScheduler:
 
 
 naver_trend_scheduler = NaverTrendScheduler()
+
+
+class DailyFortuneScheduler:
+    """매일 01:00 KST 띠/별자리 운세 Gemini 생성"""
+
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            print("⚠️ 운세 스케줄러가 이미 실행 중입니다.")
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            self._generate,
+            trigger=CronTrigger(hour=1, minute=0, timezone=self.kst),
+            id="daily_fortune_generate",
+            name="오늘의 띠/별자리 운세 생성",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=3600,
+        )
+        self.scheduler.start()
+        print("✅ 운세 스케줄러 시작 (매일 01:00 KST)")
+        # 오늘 데이터가 없으면 시작 시 즉시 생성
+        import asyncio as _asyncio
+        try:
+            loop = _asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self._generate_if_needed())
+        except Exception:
+            pass
+
+    async def _generate_if_needed(self):
+        """오늘 운세가 없을 때만 생성 (서버 시작 시 호출)"""
+        try:
+            from datetime import datetime
+            from app.database import SessionLocal
+            from app.engine.models import DailyFortune
+            today = datetime.now(self.kst).date()
+            db = SessionLocal()
+            try:
+                count = db.query(DailyFortune).filter(DailyFortune.fortune_date == today).count()
+            finally:
+                db.close()
+            if count < 24:
+                print(f"ℹ️ 오늘({today}) 운세 데이터 {count}개 — 즉시 생성 시작")
+                await self._generate()
+        except Exception as e:
+            print(f"⚠️ 운세 시작 시 체크 오류: {e}")
+
+    async def _generate(self):
+        try:
+            from app.services.daily_fortune_gemini_service import generate_daily_fortunes
+            result = generate_daily_fortunes()
+            print(f"🔮 운세 생성 완료: {result}")
+        except Exception as e:
+            print(f"❌ 운세 스케줄러 오류: {e}")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+            print("✅ 운세 스케줄러 종료")
+
+
+daily_fortune_scheduler = DailyFortuneScheduler()

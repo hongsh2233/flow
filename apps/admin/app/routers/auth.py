@@ -33,6 +33,9 @@ from app.services.member_point_service import (
     grant_signup_bonus,
     grant_daily_login_bonus,
     grant_jubti_first_bonus,
+    grant_mbti_first_bonus,
+    grant_zodiac_animal_first_bonus,
+    grant_zodiac_sign_first_bonus,
     charge_screening_pick_if_needed,
 )
 
@@ -176,6 +179,53 @@ class JubtiUpdateRequest(BaseModel):
     def jubti_type_must_be_valid(cls, v: str) -> str:
         if v not in ("A", "D", "N", "I"):
             raise ValueError("jubti_type must be one of A, D, N, I")
+        return v
+
+
+VALID_MBTI = {
+    "INTJ", "INTP", "ENTJ", "ENTP",
+    "ISTJ", "ISFJ", "ESTJ", "ESFJ",
+    "ISTP", "ESTP", "ENFJ", "ENFP",
+    "INFJ", "INFP", "ESFP", "ISFP",
+}
+
+VALID_ZODIAC_ANIMALS = {"쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지"}
+
+VALID_ZODIAC_SIGNS = {
+    "양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리",
+    "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리",
+}
+
+
+class MbtiUpdateRequest(BaseModel):
+    email: str
+    mbti_type: str
+
+    @field_validator("mbti_type")
+    @classmethod
+    def mbti_must_be_valid(cls, v: str) -> str:
+        if v.upper() not in VALID_MBTI:
+            raise ValueError(f"mbti_type must be one of {VALID_MBTI}")
+        return v.upper()
+
+
+class ZodiacUpdateRequest(BaseModel):
+    email: str
+    zodiac_animal: Optional[str] = None
+    zodiac_sign: Optional[str] = None
+
+    @field_validator("zodiac_animal")
+    @classmethod
+    def animal_must_be_valid(cls, v):
+        if v is not None and v not in VALID_ZODIAC_ANIMALS:
+            raise ValueError(f"zodiac_animal must be one of {VALID_ZODIAC_ANIMALS}")
+        return v
+
+    @field_validator("zodiac_sign")
+    @classmethod
+    def sign_must_be_valid(cls, v):
+        if v is not None and v not in VALID_ZODIAC_SIGNS:
+            raise ValueError(f"zodiac_sign must be one of {VALID_ZODIAC_SIGNS}")
         return v
 
 
@@ -1037,16 +1087,91 @@ async def api_get_member_jubti(
     email: str,
     db: Session = Depends(get_db)
 ):
-    """
-    회원 주BTI(투자 성향) 조회 API
-    """
+    """회원 주BTI(투자 성향) 조회 API"""
     member = db.query(models.Member).filter(models.Member.email == email).first()
     if not member:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="회원을 찾을 수 없습니다."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
     return {"success": True, "jubti_type": member.jubti_type}
+
+
+@router.put("/api/auth/member/mbti")
+async def api_update_member_mbti(
+    request: MbtiUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """회원 MBTI 저장 API (최초 입력 시 +50P)"""
+    member = db.query(models.Member).filter(models.Member.email == request.email).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
+    had_mbti = bool(member.mbti_type)
+    member.mbti_type = request.mbti_type
+    db.commit()
+    db.refresh(member)
+    if not had_mbti:
+        grant_mbti_first_bonus(db, member)
+        db.refresh(member)
+    return {
+        "success": True,
+        "mbti_type": member.mbti_type,
+        "point_balance": int(member.point_balance or 0),
+    }
+
+
+@router.get("/api/auth/member/mbti")
+async def api_get_member_mbti(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """회원 MBTI 조회 API"""
+    member = db.query(models.Member).filter(models.Member.email == email).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
+    return {"success": True, "mbti_type": member.mbti_type}
+
+
+@router.put("/api/auth/member/zodiac")
+async def api_update_member_zodiac(
+    request: ZodiacUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """회원 띠/별자리 저장 API (각 최초 입력 시 +30P)"""
+    if request.zodiac_animal is None and request.zodiac_sign is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="zodiac_animal 또는 zodiac_sign 중 하나는 필수입니다.")
+    member = db.query(models.Member).filter(models.Member.email == request.email).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
+    had_animal = bool(member.zodiac_animal)
+    had_sign = bool(member.zodiac_sign)
+    if request.zodiac_animal is not None:
+        member.zodiac_animal = request.zodiac_animal
+    if request.zodiac_sign is not None:
+        member.zodiac_sign = request.zodiac_sign
+    db.commit()
+    db.refresh(member)
+    if not had_animal and member.zodiac_animal:
+        grant_zodiac_animal_first_bonus(db, member)
+        db.refresh(member)
+    if not had_sign and member.zodiac_sign:
+        grant_zodiac_sign_first_bonus(db, member)
+        db.refresh(member)
+    return {
+        "success": True,
+        "zodiac_animal": member.zodiac_animal,
+        "zodiac_sign": member.zodiac_sign,
+        "point_balance": int(member.point_balance or 0),
+    }
+
+
+@router.get("/api/auth/member/zodiac")
+async def api_get_member_zodiac(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """회원 띠/별자리 조회 API"""
+    member = db.query(models.Member).filter(models.Member.email == email).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="회원을 찾을 수 없습니다.")
+    return {"success": True, "zodiac_animal": member.zodiac_animal, "zodiac_sign": member.zodiac_sign}
 
 
 @router.get("/api/auth/member/info", response_model=SocialLoginResponse)

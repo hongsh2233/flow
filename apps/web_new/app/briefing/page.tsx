@@ -26,7 +26,7 @@ function BriefingContent() {
             이슈
           </TabsTrigger>
           <TabsTrigger value="report" className={styles.tab}>
-            시황/리포트
+            리포트
           </TabsTrigger>
         </TabsList>
 

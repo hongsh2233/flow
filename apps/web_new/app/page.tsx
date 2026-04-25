@@ -20,6 +20,7 @@ import { SentimentIndexCard } from "./components/module/home/SentimentIndexCard"
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
 import { RealtimeSearchSection } from "./components/module/home/RealtimeSearchSection";
 import { JubtiSection } from "./components/module/home/JubtiSection";
+import { FortuneSection } from "./components/module/home/FortuneSection";
 import { MarketTabSection } from "./components/module/home/MarketTabSection";
 const LazyStockDetailModal = dynamic(
   () => import("./components/module/StockDetailModal").then((m) => ({ default: m.StockDetailModal })),
@@ -111,18 +112,18 @@ export default function Home() {
 
   return (
     <div className="content__wrap">
+      <SentimentIndexCard />
       <SupplySummaryCard />
+      <MarketTabSection />
+      {/* [AD_ZONE B1 — 주요지수 아래 / 일반회원까지] */}
+      {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
+      <InvestorTrendChart defaultMarket="kospi" variant="main" hideMoreLink />
+      <MainCardNews />
       {/*
         홈→마켓: AI 추천 CTA. BO 배너만 쓰려면 제거하고 ManagedBannerSection에
         page_path=/, link_url=/market 로 등록 가능.
       */}
-      <SentimentIndexCard />
       <HomeMarketCta />
-      <MainCardNews />
-      {/* [AD_ZONE B1 — 이슈체크·주요지수 사이 / 일반회원까지] */}
-      {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
-      <MarketTabSection />
-      <InvestorTrendChart defaultMarket="kospi" variant="main" hideMoreLink />
 
       {status === "loading" ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
@@ -145,11 +146,27 @@ export default function Home() {
         </div>
       )}
 
-      {/* [AD_ZONE B2 — 관심종목 아래 / 일반회원까지] */}
+      {status === "loading" ? (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          로그인 정보 확인 중...
+        </div>
+      ) : status === "authenticated" ? (
+        <RealtimeSearchSection />
+      ) : (
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--app-text-muted)", fontSize: "0.875rem" }}>
+          <p>실시간 검색상위는 로그인 후 이용할 수 있습니다.</p>
+          <a href="/login" style={{ color: "var(--app-accent)", marginTop: "0.5rem", display: "inline-block" }}>
+            로그인하기
+          </a>
+        </div>
+      )}
+
+      {/* [AD_ZONE B2 — 실시간검색 아래 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B2" />}
-      <RealtimeSearchSection />
-      <JubtiSection />
+
       <StockTermBox wrapperClassName="home-term-wrap" />
+      <JubtiSection />
+      <FortuneSection />
       {bannerBottom.length > 0 && (
         <section style={{ margin: "1rem 0" }}>
           <AdBanner items={bannerBottom} autoSlide interval={5000} />
