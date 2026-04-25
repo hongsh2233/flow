@@ -45,11 +45,110 @@ def _ichimoku(high, low, close, tenkan=9, kijun=26, senkou_b=52):
     return tenkan_sen, kijun_sen, senkou_span_a, senkou_span_b
 
 
+def analyze_ichimoku_dataframe(df, symbol: str, name: str) -> Optional[Dict]:
+    """
+    일목·동일 조건검색 알고리즘 (admin/stock-screening과 동일).
+    df: pandas DataFrame, 컬럼 Open, High, Low, Close, Volume (250봉 이상 권장).
+    """
+    import pandas as pd
+
+    if df is None or len(df) < 250:
+        return None
+
+    df = df.copy()
+    if "Date" in df.columns:
+        df = df.sort_values("Date").reset_index(drop=True)
+    else:
+        try:
+            df = df.sort_index()
+        except TypeError:
+            df = df.reset_index(drop=True)
+
+    for col in ("Open", "High", "Low", "Close", "Volume"):
+        if col not in df.columns:
+            return None
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.dropna(subset=["Open", "High", "Low", "Close"])
+    df = df.sort_index()
+    if len(df) < 250:
+        return None
+
+    # --- 일목균형표 계산 (9, 26, 52) ---
+    tenkan_sen, kijun_sen, span_a, span_b = _ichimoku(df["High"], df["Low"], df["Close"])
+    df["tenkan_sen"] = tenkan_sen
+    df["kijun_sen"] = kijun_sen
+    df["span1"] = span_a
+    df["span2"] = span_b
+
+    df["high_120"] = df["High"].rolling(window=120).max()
+
+    df = df.dropna(subset=["tenkan_sen", "kijun_sen", "span1", "span2", "high_120"])
+    df = df.reset_index(drop=True)
+    if len(df) < 3:
+        return None
+
+    curr = df.iloc[-1]
+    prev2 = df.iloc[-3]
+
+    matched = []
+
+    if prev2["Close"] > prev2["tenkan_sen"]:
+        matched.append("A")
+
+    limit = curr["tenkan_sen"] * 0.01
+    if (abs(curr["Close"] - curr["tenkan_sen"]) <= limit) or (
+        abs(curr["Low"] - curr["tenkan_sen"]) <= limit
+    ):
+        matched.append("B")
+
+    if curr["Close"] > curr["span1"] and curr["Close"] > curr["span2"]:
+        matched.append("E")
+
+    if curr["Close"] > curr["Open"]:
+        matched.append("G")
+
+    current_high_120 = df["high_120"].iloc[-1]
+    recent_highs = df["High"].iloc[-20:]
+    if current_high_120 > 0 and recent_highs.max() >= current_high_120:
+        matched.append("J")
+
+    required = {"A", "B", "E", "G", "J"}
+    if not required.issubset(set(matched)):
+        return None
+
+    if len(df) >= 2:
+        prev_close = df.iloc[-2]["Close"]
+        change_pct = (
+            ((curr["Close"] - prev_close) / prev_close * 100) if prev_close > 0 else 0
+        )
+    else:
+        change_pct = 0
+
+    vol = curr["Volume"]
+    vol_s = str(int(vol)) if pd.notna(vol) else ""
+
+    return {
+        "stock_code": symbol,
+        "stock_name": name,
+        "current_price": str(int(curr["Close"])),
+        "change_percent": f"{change_pct:+.2f}%",
+        "volume": vol_s,
+        "tenkan_sen": str(int(curr["tenkan_sen"])),
+        "kijun_sen": str(int(curr["kijun_sen"])),
+        "cloud_position": "above",
+        "is_new_high_120": "J" in matched,
+        "matched_conditions": ",".join(matched),
+    }
+
+
 def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
     """
-    개별 종목에 대해 기술적 조건을 판정한다.
-    모든 조건 충족 시 결과 dict 반환, 미충족 시 None.
+    개별 종목에 대해 기술적 조건을 판정한다 (FinanceDataReader 일봉).
     """
+    from app.services.screening_price_source import warn_if_kiwoom_pending
+
+    warn_if_kiwoom_pending()
     import FinanceDataReader as fdr
 
     try:
@@ -60,76 +159,63 @@ def _analyze_stock(symbol: str, name: str) -> Optional[Dict]:
     if df is None or len(df) < 250:
         return None
 
-    # --- 일목균형표 계산 (9, 26, 52) ---
-    tenkan_sen, kijun_sen, span_a, span_b = _ichimoku(df["High"], df["Low"], df["Close"])
-    df["tenkan_sen"] = tenkan_sen
-    df["kijun_sen"] = kijun_sen
-    df["span1"] = span_a
-    df["span2"] = span_b
+    return analyze_ichimoku_dataframe(df, symbol, name)
 
-    # --- 120봉 신고가 ---
-    df["high_120"] = df["High"].rolling(window=120).max()
 
-    # NaN 행 제거 후 데이터 충분한지 확인
-    df = df.dropna(subset=["tenkan_sen", "kijun_sen", "span1", "span2", "high_120"])
-    df = df.reset_index(drop=True)  # iloc 안전성 보장
-    if len(df) < 3:
-        return None
+def list_top_symbols_by_market_cap(market: str, top_n: int = 500):
+    """
+    시총 상위 (코드 6자리, 종목명) 튜플 리스트. FDR StockListing 사용.
+    market: kospi | kosdaq
+    """
+    try:
+        import FinanceDataReader as fdr
+    except ImportError as e:
+        raise ImportError(
+            "FinanceDataReader 패키지가 없습니다. admin 폴더에서 "
+            "`pip install finance-datareader` 또는 `pip install -r requirements.txt` "
+            "를 실행하세요."
+        ) from e
 
-    curr = df.iloc[-1]
-    prev2 = df.iloc[-3]
+    listing_name = "KOSPI" if market == "kospi" else "KOSDAQ"
+    try:
+        listing = fdr.StockListing(listing_name)
+    except Exception as e:
+        print(f"[조건검색] {listing_name} 종목 리스트 조회 실패: {e}")
+        return []
 
-    matched = []
-
-    # [조건 A] 2봉전 종가 > 전환선
-    if prev2["Close"] > prev2["tenkan_sen"]:
-        matched.append("A")
-
-    # [조건 B/C/D] 현재가 또는 저가가 전환선 1% 이내 근접
-    limit = curr["tenkan_sen"] * 0.01
-    if (abs(curr["Close"] - curr["tenkan_sen"]) <= limit) or \
-       (abs(curr["Low"] - curr["tenkan_sen"]) <= limit):
-        matched.append("B")
-
-    # [조건 E/F] 구름대 위 (종가 > 선행스팬1 AND 선행스팬2)
-    if curr["Close"] > curr["span1"] and curr["Close"] > curr["span2"]:
-        matched.append("E")
-
-    # [조건 G] 양봉 (종가 > 시가)
-    if curr["Close"] > curr["Open"]:
-        matched.append("G")
-
-    # [조건 J] 최근 20봉 내 120봉 신고가 갱신 여부
-    # 현재 120봉 최고가와 최근 20봉 최고가를 비교
-    current_high_120 = df["high_120"].iloc[-1]
-    recent_highs = df["High"].iloc[-20:]
-    if current_high_120 > 0 and recent_highs.max() >= current_high_120:
-        matched.append("J")
-
-    # 모든 조건 충족 확인 (A, B, E, G, J)
-    required = {"A", "B", "E", "G", "J"}
-    if not required.issubset(set(matched)):
-        return None
-
-    # 등락률 계산
-    if len(df) >= 2:
-        prev_close = df.iloc[-2]["Close"]
-        change_pct = ((curr["Close"] - prev_close) / prev_close * 100) if prev_close > 0 else 0
+    marcap_col = None
+    for candidate in ["Marcap", "MarketCap", "marcap", "marketcap"]:
+        if candidate in listing.columns:
+            marcap_col = candidate
+            break
+    if marcap_col:
+        listing = listing.sort_values(marcap_col, ascending=False)
     else:
-        change_pct = 0
+        print(f"[조건검색] 경고: {listing_name} 시총 컬럼 없음. 컬럼: {listing.columns.tolist()}")
+    listing = listing.head(top_n)
 
-    return {
-        "stock_code": symbol,
-        "stock_name": name,
-        "current_price": str(int(curr["Close"])),
-        "change_percent": f"{change_pct:+.2f}%",
-        "volume": str(int(curr["Volume"])) if "Volume" in curr.index else "",
-        "tenkan_sen": str(int(curr["tenkan_sen"])),
-        "kijun_sen": str(int(curr["kijun_sen"])),
-        "cloud_position": "above",
-        "is_new_high_120": "J" in matched,
-        "matched_conditions": ",".join(matched),
-    }
+    code_col = None
+    for candidate in ["Code", "Symbol", "code", "symbol"]:
+        if candidate in listing.columns:
+            code_col = candidate
+            break
+    name_col = None
+    for candidate in ["Name", "name", "종목명"]:
+        if candidate in listing.columns:
+            name_col = candidate
+            break
+
+    if not code_col or not name_col:
+        print(f"[조건검색] {listing_name} 종목 리스트 컬럼을 찾을 수 없습니다.")
+        return []
+
+    out = []
+    for _, row in listing.iterrows():
+        symbol = str(row[code_col]).strip()
+        name = str(row[name_col]).strip()
+        if symbol and len(symbol) == 6 and symbol.isdigit():
+            out.append((symbol, name))
+    return out
 
 
 def _scan_market(market: str, top_n: int = 500) -> List[Dict]:

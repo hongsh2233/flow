@@ -101,6 +101,28 @@
       </div>
     </div>
 
+    <div class="menu-group menu-group-accordion {% if active_page in ['kiwoom-quotes', 'kiwoom-screening', 'kiwoom-mock', 'kiwoom-auto'] %}is-open{% endif %}">
+      <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['kiwoom-quotes', 'kiwoom-screening', 'kiwoom-mock', 'kiwoom-auto'] %}true{% else %}false{% endif %}">
+        키움 증권
+        <span class="menu-group-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="menu-group-body">
+        <a href="/admin/kiwoom/quotes" class="menu-item menu-sub {% if active_page == 'kiwoom-quotes' %}active{% endif %}">
+          <span class="menu-icon">📈</span> 시세조회
+        </a>
+        <a href="/admin/kiwoom/screening" class="menu-item menu-sub {% if active_page == 'kiwoom-screening' %}active{% endif %}">
+          <span class="menu-icon">🔍</span> 조건검색
+        </a>
+        <a href="/admin/kiwoom/mock" class="menu-item menu-sub {% if active_page == 'kiwoom-mock' %}active{% endif %}">
+          <span class="menu-icon">🧪</span> 모의매매
+        </a>
+        <a href="/admin/kiwoom/auto" class="menu-item menu-sub {% if active_page == 'kiwoom-auto' %}active{% endif %}">
+          <span class="menu-icon">🤖</span> 자동매매
+        </a>
+      </div>
+    </div>
+
+
     <div class="menu-group menu-group-accordion {% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report', 'sentiment'] %}is-open{% endif %}">
       <button type="button" class="menu-group-toggle" aria-expanded="{% if active_page in ['finance-data', 'finance-data2', 'yahoo-index', 'naver-ranking', 'stock-news', 'market-report', 'sentiment'] %}true{% else %}false{% endif %}">
         시장 데이터

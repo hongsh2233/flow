@@ -8,7 +8,7 @@ FastAPI 백엔드 REST API 명세. 전체 API 문서는 `/docs` (Swagger UI) 또
 - 프로덕션: Railway 배포 URL
 
 ## 인증
-
+https://github.com/dongbin300/KiwoomRestApi.Net.git
 ```
 # 서비스 간 인증 (프론트엔드 → 백엔드)
 X-API-KEY: your-api-key

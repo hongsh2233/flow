@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - Jurin-i BO{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ page_title }}</h1>
+  <p class="page-desc">
+    자동 주문은 <strong>KIWOOM_KILL_SWITCH</strong>·<strong>KIWOOM_AUTO_TRADING_ENABLED</strong>·사용자 확인(<code>confirmed</code>)을 모두 만족할 때만
+    API 레벨에서 확장할 수 있도록 스켈레톤만 두었습니다. 실주문 전에는 모의·모의 API로만 검증하세요.
+  </p>
+</div>
+
+{% if kill_switch %}
+<div style="padding:0.65rem 0.85rem; margin-bottom:1rem; background:#fff3e0; border:1px solid #ffb74d; border-radius:var(--radius-sm); font-size:var(--font-size-sm);">
+  <strong>KIWOOM_KILL_SWITCH</strong> 가 켜져 있어 <code>POST /api/kiwoom/strategies/…/execute</code> 가 거부됩니다.
+</div>
+{% endif %}
+{% if not auto_trading_enabled %}
+<div style="padding:0.65rem 0.85rem; margin-bottom:1rem; background:#e3f2fd; border:1px solid #64b5f6; border-radius:var(--radius-sm); font-size:var(--font-size-sm);">
+  <strong>KIWOOM_AUTO_TRADING_ENABLED</strong> 가 꺼져 있습니다. 실행 API는 403을 반환합니다.
+</div>
+{% endif %}
+{% if order_kill_switch %}
+<div style="padding:0.65rem 0.85rem; margin-bottom:1rem; background:#fce4ec; border:1px solid #f06292; border-radius:var(--radius-sm); font-size:var(--font-size-sm);">
+  <strong>KIWOOM_ORDER_KILL_SWITCH</strong> 가 켜져 있어 수동 모의 주문 API/폼이 차단됩니다.
+</div>
+{% endif %}
+
+{% if strategy_message %}
+<div style="padding:0.65rem 0.85rem; margin-bottom:1rem; background:#e8f5e9; border:1px solid #81c784; border-radius:var(--radius-sm); font-size:var(--font-size-sm);">{{ strategy_message }}</div>
+{% endif %}
+{% if strategy_error %}
+<div style="padding:0.65rem 0.85rem; margin-bottom:1rem; background:#ffebee; border:1px solid #e57373; border-radius:var(--radius-sm); font-size:var(--font-size-sm);">{{ strategy_error }}</div>
+{% endif %}
+
+<h2 style="font-size:var(--font-size-md); margin:1.25rem 0 0.5rem;">등록된 전략 (프로세스 메모리)</h2>
+{% if strategies %}
+<ul style="margin:0; padding-left:1.25rem;">
+  {% for s in strategies %}
+  <li><code>{{ s.id }}</code> — {{ s.name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="page-desc">아직 등록된 전략이 없습니다.</p>
+{% endif %}
+
+<div style="margin-top:1.25rem; max-width:24rem;">
+  <h2 style="font-size:var(--font-size-md); margin:0 0 0.5rem;">전략 이름만 등록 (스켈레톤)</h2>
+  <form method="post">
+    <label for="strategy_name" style="display:block; font-size:var(--font-size-sm); margin-bottom:0.35rem;">이름</label>
+    <input id="strategy_name" name="strategy_name" type="text" style="width:100%; padding:0.45rem 0.5rem; margin-bottom:0.65rem; border:1px solid var(--color-gray-300); border-radius:var(--radius-sm);" placeholder="예: rsi_mean_revert" />
+    <button type="submit" style="padding:0.45rem 0.85rem; border-radius:var(--radius-sm); border:none; background:var(--color-primary); color:#fff; cursor:pointer; font-family:inherit;">등록</button>
+  </form>
+</div>
+{% endblock %}

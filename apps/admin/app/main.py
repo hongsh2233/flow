@@ -53,6 +53,7 @@ from app.routers import (
     bo_events,
     grade_policies,
     market_report,
+    kiwoom,
 )
 try:
     from app.routers import profile
@@ -757,6 +758,7 @@ app.include_router(finance.router)   # 한국거래소 데이터
 app.include_router(market_report.router)  # 시장 데이터 — 보고서 작성
 app.include_router(fsc.router)       # 금융위원회 데이터
 app.include_router(api.router)       # REST API (외부 호출용)
+app.include_router(kiwoom.router)    # Kiwoom REST (health, mock, …)
 if profile:
     app.include_router(profile.router)   # 프로필 설정 관리 (캐릭터, 주식 단어)
 if stock_terms:
