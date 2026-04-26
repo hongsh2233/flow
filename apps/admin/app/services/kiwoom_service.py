@@ -276,12 +276,18 @@ class KiwoomService:
     async def fetch_realtime_lookup_rank(
         self,
         *,
+        qry_tp: str = "1",
         mrkt_tp: str = "000",
         start_rank: int = 1,
         end_rank: int = 50,
     ) -> dict[str, Any]:
-        """ka00198 realtime lookup rank. mrkt_tp: 000 all, 001 KOSPI, 101 KOSDAQ (3-digit)."""
+        """ka00198 realtime lookup rank.
+
+        qry_tp: 1=1분, 2=10분, 3=1시간, 4=일별합산, 5=30초
+        mrkt_tp: 000=전체, 001=KOSPI, 101=KOSDAQ
+        """
         body = {
+            "qry_tp": qry_tp,
             "mrkt_tp": mrkt_tp,
             "st_rnkg": str(start_rank),
             "ed_rnkg": str(end_rank),
