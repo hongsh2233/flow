@@ -746,6 +746,45 @@ class BreakoutScreeningResult(Base):
     )
 
 
+class LeaderScreeningResult(Base):
+    """
+    주도주 선정 검색식 결과 (업종 대장주 + 상한가 패턴 분석)
+    업종별 거래대금 상위 1~3 섹터의 대장주 스크리닝
+    평일 21:10 KST 1회 실행
+    """
+    __tablename__ = "leader_screening_results"
+    id = Column(Integer, primary_key=True, index=True)
+    market_type = Column(String(10), nullable=False, index=True)
+    rank = Column(Integer, nullable=False)
+    stock_code = Column(String(10), nullable=False, index=True)
+    stock_name = Column(String(100), nullable=False)
+    current_price = Column(String(20))
+    change_percent = Column(String(20))
+    volume = Column(String(30))
+    sector_name = Column(String(100))
+    sector_rank = Column(Integer)
+    sector_trading_value = Column(String(30))
+    sector_stock_count = Column(Integer)
+    trading_value = Column(String(30))
+    market_cap = Column(String(30))
+    upper_limit_pattern = Column(String(20))
+    upper_limit_price = Column(String(20))
+    volume_profile_score = Column(String(10))
+    volume_profile_detail = Column(String(200))
+    ma60 = Column(String(20))
+    ma120 = Column(String(20))
+    ma60_breakthrough = Column(String(10))
+    ma120_breakthrough = Column(String(10))
+    leader_score = Column(Integer)
+    matched_conditions = Column(String(50))
+    screening_date = Column(String(10), nullable=False, index=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint('market_type', 'rank', 'screening_date', name='uq_leader_screening'),
+    )
+
+
 class NaverSupplyData(Base):
     """
     네이버 수급 동향 데이터

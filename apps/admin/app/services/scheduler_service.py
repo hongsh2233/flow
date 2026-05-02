@@ -1793,6 +1793,59 @@ breakout_screening_scheduler = BreakoutScreeningScheduler()
 
 
 # =========================================================
+# 주도주 선정 (업종 주도주 + 상한가 패턴 분석)
+# 평일 21:10 KST
+# =========================================================
+
+async def collect_leader_screening():
+    if should_skip_today():
+        return
+    from app.database import SessionLocal
+    from app.services.leader_screening_service import collect_and_save_leader
+    db = SessionLocal()
+    try:
+        result = await collect_and_save_leader(db)
+        print(f"[주도주] 수집 완료: 코스피 {result.get('kospi', 0)}건, 코스닥 {result.get('kosdaq', 0)}건")
+    except Exception as e:
+        print(f"[주도주] 수집 오류: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
+
+class LeaderScreeningScheduler:
+    def __init__(self):
+        self.scheduler = None
+        self.kst = pytz.timezone("Asia/Seoul")
+
+    def start(self):
+        if self.scheduler is not None:
+            return
+        self.scheduler = AsyncIOScheduler(timezone=self.kst)
+        self.scheduler.add_job(
+            collect_leader_screening,
+            trigger=CronTrigger(day_of_week="mon-fri", hour=21, minute=10, timezone=self.kst),
+            id="leader_screening_2110",
+            name="주도주 선정 (21:10, 월~금)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
+        )
+        self.scheduler.start()
+        print("✅ 주도주 선정 스케줄러 시작 (21:10 KST, 평일)")
+
+    def shutdown(self):
+        if self.scheduler:
+            self.scheduler.shutdown()
+            self.scheduler = None
+
+
+leader_screening_scheduler = LeaderScreeningScheduler()
+
+
+# =========================================================
 # 투자자 심리지수
 # 평일 09:00, 13:00, 18:00 KST
 # =========================================================

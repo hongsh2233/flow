@@ -28,6 +28,18 @@ const SENSITIVE_KEYS = new Set([
   "box_low",
   "box_range_pct",
   "touch_count",
+  "sector_name",
+  "sector_rank",
+  "sector_trading_value",
+  "sector_stock_count",
+  "upper_limit_pattern",
+  "upper_limit_price",
+  "volume_profile_score",
+  "volume_profile_detail",
+  "ma120",
+  "ma60_breakthrough",
+  "ma120_breakthrough",
+  "leader_score",
 ]);
 
 function maskRow(row: ScreeningRow): ScreeningRow {
