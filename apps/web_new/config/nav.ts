@@ -40,7 +40,10 @@ export interface NavItem {
   headerSubtitle: string
 }
 
-export const navItems: NavItem[] = (navData as NavItemData[]).map((item) => ({
-  ...item,
-  icon: iconMap[item.id] ?? Home,
-}))
+// 'calendar' 탭은 하단 메뉴에서 임시 제외
+export const navItems: NavItem[] = (navData as NavItemData[])
+  .filter((item) => item.id !== 'calendar')
+  .map((item) => ({
+    ...item,
+    icon: iconMap[item.id] ?? Home,
+  }))
