@@ -77,4 +77,4 @@ npm run dev   # http://localhost:3000
 
 오류 발생 시:
 - `데이터베이스 연결 실패` → `.env.local`의 DB 설정 확인
-- API 401 오류 → `NEXT_PUBLIC_X_API_KEY`가 Web·Admin 양쪽에서 동일한지 확인
+- API 401 오류 → `X_API_KEY`가 Web·Admin 양쪽에서 동일한지 확인

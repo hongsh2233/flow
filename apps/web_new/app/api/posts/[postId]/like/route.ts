@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const { postId } = await params
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+    const apiSecretKey = process.env.X_API_KEY || ''
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${backendToken}`,

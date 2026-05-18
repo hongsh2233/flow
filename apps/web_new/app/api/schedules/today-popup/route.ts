@@ -11,7 +11,7 @@ function getApiBaseUrl(): string {
 export async function GET() {
   try {
     const apiSecretKey =
-      process.env.NEXT_PUBLIC_X_API_KEY ||
+      process.env.X_API_KEY ||
       process.env.X_API_KEY ||
       ''
 

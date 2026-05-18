@@ -3,7 +3,7 @@ import { API_BASE_URL } from '@/lib/config/api'
 
 export async function GET(_request: NextRequest) {
   try {
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+    const apiSecretKey = process.env.X_API_KEY || ''
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiSecretKey) headers['X-API-KEY'] = apiSecretKey
 

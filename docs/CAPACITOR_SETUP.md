@@ -165,7 +165,7 @@ npx cap open android
 | 변수명 | 설명 |
 |--------|------|
 | `NEXT_PUBLIC_API_BASE_URL` | Admin API URL |
-| `NEXT_PUBLIC_X_API_KEY` | API 시크릿 키 |
+| `X_API_KEY` | API 시크릿 키 |
 
 ---
 

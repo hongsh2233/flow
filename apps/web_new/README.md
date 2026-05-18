@@ -19,7 +19,7 @@ npm run dev   # http://localhost:3000
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-NEXT_PUBLIC_X_API_KEY=your-api-key
+X_API_KEY=your-api-key
 # 선택: 모바일 웹 앱 다운로드 모달 링크 (미설정 시 Google Drive 기본값)
 # NEXT_PUBLIC_APP_DOWNLOAD_URL=https://drive.google.com/file/d/.../view
 NEXTAUTH_SECRET=your-secret

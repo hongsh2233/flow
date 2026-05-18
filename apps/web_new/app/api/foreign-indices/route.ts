@@ -22,7 +22,7 @@ interface ForeignIndicesResponse {
  */
 export async function GET(_request: NextRequest) {
   try {
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || "";
+    const apiSecretKey = process.env.X_API_KEY || "";
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -30,7 +30,7 @@ export async function GET(_request: NextRequest) {
     if (apiSecretKey) {
       headers["X-API-KEY"] = apiSecretKey;
     } else {
-      console.warn("[해외지수 API] NEXT_PUBLIC_X_API_KEY가 설정되지 않았습니다.");
+      console.warn("[해외지수 API] X_API_KEY가 설정되지 않았습니다.");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/foreign-indices`, {

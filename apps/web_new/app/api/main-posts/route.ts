@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get("limit") || "10";
 
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || "";
+    const apiSecretKey = process.env.X_API_KEY || "";
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (apiSecretKey) headers["X-API-KEY"] = apiSecretKey;
 

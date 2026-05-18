@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+    const apiSecretKey = process.env.X_API_KEY || ''
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiSecretKey) headers['X-API-KEY'] = apiSecretKey
 

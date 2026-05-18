@@ -83,7 +83,7 @@ export async function GET(
     const queryString = searchParams.toString()
     const session = await getServerSession(authOptions)
 
-    const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+    const apiSecretKey = process.env.X_API_KEY || ''
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

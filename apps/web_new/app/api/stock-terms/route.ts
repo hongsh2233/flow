@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const sp = request.nextUrl.searchParams
     const qs = sp.toString()
-    const apiKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+    const apiKey = process.env.X_API_KEY || ''
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (apiKey) headers['X-API-KEY'] = apiKey

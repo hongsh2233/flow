@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { API_BASE_URL } from '@/lib/config/api'
 
 function makeHeaders() {
-  const apiSecretKey = process.env.NEXT_PUBLIC_X_API_KEY || ''
+  const apiSecretKey = process.env.X_API_KEY || ''
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (apiSecretKey) headers['X-API-KEY'] = apiSecretKey
   return headers

@@ -27,7 +27,7 @@ try {
     }
   }
   
-  // 디버깅: NEXT_PUBLIC_X_API_KEY 로드 확인 (개발 환경에서만)
+  // 디버깅: X_API_KEY 로드 확인 (개발 환경에서만)
   if (process.env.NODE_ENV !== 'production' && !loaded) {
     console.warn("[next.config] .env.local 파일을 찾을 수 없습니다. Next.js 기본 환경 변수 로딩을 사용합니다.");
   }

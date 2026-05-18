@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const queryString = searchParams.toString()
 
     const apiSecretKey =
-      process.env.NEXT_PUBLIC_X_API_KEY ||
+      process.env.X_API_KEY ||
       process.env.X_API_KEY ||
       ''
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: `Admin API 연결 실패: ${msg}. Railway 배포 시 web_new 서비스 Variables에 NEXT_PUBLIC_API_BASE_URL(Admin URL)과 NEXT_PUBLIC_X_API_KEY 설정 확인. (현재 base: ${baseUrl})`,
+        message: `Admin API 연결 실패: ${msg}. Railway 배포 시 web_new 서비스 Variables에 NEXT_PUBLIC_API_BASE_URL(Admin URL)과 X_API_KEY 설정 확인. (현재 base: ${baseUrl})`,
         data: [],
         count: 0,
       },
