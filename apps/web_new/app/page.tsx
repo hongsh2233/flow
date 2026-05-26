@@ -15,6 +15,7 @@ import { FavoriteStocks } from "./components/module/home/FavoriteStocks";
 import { InvestorTrendChart } from "./components/module/home/InvestorTrendChart";
 import { MainCardNews } from "./components/module/home/MainCardNews";
 import { SupplySummaryCard } from "./components/module/home/SupplySummaryCard";
+import { AdrIndicatorCard } from "./components/module/home/AdrIndicatorCard";
 import { HomeMarketCta } from "./components/module/home/HomeMarketCta";
 import { SentimentIndexCard } from "./components/module/home/SentimentIndexCard";
 import { RandomAffiliateCard } from "./components/module/affiliate/RandomAffiliateCard";
@@ -114,6 +115,7 @@ export default function Home() {
     <div className="content__wrap">
       <SentimentIndexCard />
       <SupplySummaryCard />
+      <AdrIndicatorCard />
       <MarketTabSection />
       {/* [AD_ZONE B1 — 주요지수 아래 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
