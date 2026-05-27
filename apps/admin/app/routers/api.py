@@ -3368,3 +3368,22 @@ async def api_get_today_fortune(
         return JSONResponse({"success": False, "message": "운세 정보를 찾을 수 없습니다."}, status_code=404)
     return {"success": True, **data}
 
+
+@router.get("/api/adr-indicator")
+async def get_adr_indicator(
+    market: Optional[str] = None,
+    date: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """ADR(상승/하락 지표) 조회"""
+    from app.services.adr_service import get_adr_indicator
+    try:
+        result = get_adr_indicator(db, date)
+        return result
+    except Exception as e:
+        print(f"❌ ADR 조회 오류: {e}")
+        return {
+            "success": False,
+            "message": f"ADR 조회 중 오류 발생: {str(e)}"
+        }
+

@@ -88,6 +88,9 @@ __all__ = [
     "BoEventParticipation",
     "GradePolicy",
     "GradePolicyLog",
+    "SentimentSnapshot",
+    "DailyFortune",
+    "AdvancingDecliningCount",
 ]
 
 
@@ -1123,5 +1126,22 @@ class DailyFortune(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
         UniqueConstraint("fortune_date", "fortune_type", "key", name="uq_daily_fortune"),
+    )
+
+
+class AdvancingDecliningCount(Base):
+    """상승/하락 종목 수 (ADR 계산용)"""
+    __tablename__ = "advancing_declining_count"
+    id = Column(Integer, primary_key=True, index=True)
+    bizdate = Column(String(8), nullable=False, index=True)           # YYYYMMDD
+    market = Column(String(10), nullable=False, index=True)           # 'kospi' | 'kosdaq'
+    advancing_count = Column(Integer, nullable=False)                 # 상승 종목 수
+    declining_count = Column(Integer, nullable=False)                 # 하락 종목 수
+    unchanged_count = Column(Integer, nullable=False, default=0)      # 보합 종목 수
+    collected_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("bizdate", "market", name="uq_advancing_declining"),
+        Index("ix_advancing_declining_date", "bizdate"),
     )
 

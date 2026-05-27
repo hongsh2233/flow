@@ -479,3 +479,114 @@ async def collect_investor_program_supply_data(
         await asyncio.sleep(0.5)  # 네이버 레이트리밋 방지
 
     return success
+
+
+async def collect_advancing_declining_count(db: Session = None) -> bool:
+    """
+    네이버 시가 총액 분석 페이지에서 상승/하락 종목 수 수집
+    URL: https://finance.naver.com/sise/market_summary.naver
+
+    코스피/코스닥별 상승/보합/하락 종목 수를 AdvancingDecliningCount 테이블에 저장
+    """
+    from app.engine.models import AdvancingDecliningCount
+    from sqlalchemy import and_
+
+    if db is None:
+        from app.engine.database import SessionLocal
+        db = SessionLocal()
+
+    kst = pytz.timezone("Asia/Seoul")
+    bizdate = get_last_trading_date()
+    collected_time = datetime.now(kst).strftime("%H:%M")
+    now = datetime.now(kst)
+
+    BASE_URL = "https://finance.naver.com"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+
+    # 코스피, 코스닥별로 수집
+    markets = [
+        ("kospi", "01"),
+        ("kosdaq", "02"),
+    ]
+
+    for market_name, sosok_code in markets:
+        try:
+            url = f"{BASE_URL}/sise/market_summary.naver"
+            params = {"sosok": sosok_code}
+
+            async with httpx.AsyncClient(headers=headers, timeout=20.0) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+
+            # EUC-KR 디코딩
+            try:
+                content = response.content.decode("euc-kr", errors="replace")
+            except Exception:
+                content = response.text
+
+            soup = BeautifulSoup(content, "html.parser")
+
+            # market_summary 테이블에서 상승/보합/하락 데이터 추출
+            import re
+            advancing = None
+            unchanged = None
+            declining = None
+
+            # 방법 1: HTML 구조 분석으로 데이터 추출
+            # 일반적으로 상승/보합/하락 정보는 특정 div나 span에 있음
+            info_text = soup.get_text()
+
+            # 패턴으로 숫자 찾기: "상승 XXX" 형식
+            adv_match = re.search(r"상승\s*(\d+)", info_text)
+            unch_match = re.search(r"보합\s*(\d+)", info_text)
+            dec_match = re.search(r"하락\s*(\d+)", info_text)
+
+            if adv_match:
+                advancing = int(adv_match.group(1))
+            if unch_match:
+                unchanged = int(unch_match.group(1))
+            if dec_match:
+                declining = int(dec_match.group(1))
+
+            # 데이터 없음 처리
+            if advancing is None or declining is None:
+                print(f"  ⚠️ [{market_name}] 상승/하락 종목 수 데이터를 찾을 수 없음")
+                continue
+
+            if unchanged is None:
+                unchanged = 0
+
+            # DB 저장 (upsert)
+            existing = db.query(AdvancingDecliningCount).filter(
+                and_(
+                    AdvancingDecliningCount.bizdate == bizdate,
+                    AdvancingDecliningCount.market == market_name,
+                )
+            ).first()
+
+            if existing:
+                existing.advancing_count = advancing
+                existing.declining_count = declining
+                existing.unchanged_count = unchanged
+                existing.collected_at = now
+            else:
+                new_record = AdvancingDecliningCount(
+                    bizdate=bizdate,
+                    market=market_name,
+                    advancing_count=advancing,
+                    declining_count=declining,
+                    unchanged_count=unchanged,
+                    collected_at=now,
+                )
+                db.add(new_record)
+
+            db.commit()
+            print(f"  ✅ [{market_name}] 상승:{advancing} 보합:{unchanged} 하락:{declining}")
+
+        except Exception as e:
+            print(f"  ❌ [{market_name}] 수집 오류: {e}")
+            db.rollback()
+
+    return True
