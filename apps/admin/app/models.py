@@ -4,6 +4,7 @@ Re-export from engine (PostgreSQL 호환 모델).
 """
 from app.engine.models import (
     Base,
+    PasswordResetCode,
     Poll,
     PollOption,
     PollVote,
@@ -49,17 +50,20 @@ from app.engine.models import (
     PersonMaster,
     MarketVoice,
     InvestmentBankNews,
+    MarketMorningAiSummary,
+    SupplySummaryAi,
     AliexpressAffiliateProduct,
     BoEvent,
     BoEventParticipation,
     GradePolicy,
     GradePolicyLog,
+    SentimentSnapshot,
     DailyFortune,
     AdvancingDecliningCount,
 )
 
 __all__ = [
-    "Base", "Poll", "PollOption", "PollVote", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post", "PostLike",
+    "Base", "PasswordResetCode", "Poll", "PollOption", "PollVote", "ExchangeRateSnapshot", "CollectedData", "AdminUser", "Schedule", "Board", "BoardCategory", "Post", "PostLike",
     "KrxData", "FscStockPrice",     "FscRisingStock", "RefreshToken", "Member", "MemberPointLedger",
     "Character", "StockWord", "MainPageItem", "Banner", "Popup", "Notification", "NotificationRead",
     "ScheduleAlarmSubscription", "MemberFcmToken", "NaverSupplyData",
@@ -67,11 +71,13 @@ __all__ = [
     "YahooIndexSnapshot", "YahooIndexDaily", "DomesticIndexSnapshot", "StockTerm",
     "FaqCategory", "FaqItem", "LegalDocument", "MasterPerson", "MasterQuote", "MasterQuoteLike",
     "PollVote", "NaverStockNews", "PersonMaster", "MarketVoice", "InvestmentBankNews",
+    "MarketMorningAiSummary", "SupplySummaryAi",
     "AliexpressAffiliateProduct",
     "BoEvent",
     "BoEventParticipation",
     "GradePolicy",
     "GradePolicyLog",
+    "SentimentSnapshot",
     "DailyFortune",
     "AdvancingDecliningCount",
 ]
