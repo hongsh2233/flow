@@ -55,6 +55,7 @@ from app.engine.models import (
     GradePolicy,
     GradePolicyLog,
     DailyFortune,
+    AdvancingDecliningCount,
 )
 
 __all__ = [
@@ -72,4 +73,5 @@ __all__ = [
     "GradePolicy",
     "GradePolicyLog",
     "DailyFortune",
+    "AdvancingDecliningCount",
 ]
