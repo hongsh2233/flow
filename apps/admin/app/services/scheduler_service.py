@@ -1124,6 +1124,32 @@ async def collect_naver_supply_daily():
     print(f"{'='*60}\n")
 
 
+async def collect_advancing_declining_count_scheduled():
+    """
+    네이버 상승/하락 종목 수 수집 (ADR 지표 계산용).
+    08:40 ~ 15:40: 30분 간격 (장중) 실행
+    """
+    from app.services.naver_supply_service import collect_advancing_declining_count
+    kst = pytz.timezone("Asia/Seoul")
+    now = datetime.now(kst)
+
+    if should_skip_today():
+        return
+
+    print(f"📈 ADR 데이터 수집: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    db = SessionLocal()
+    try:
+        await collect_advancing_declining_count(db)
+        print(f"✅ ADR 데이터 수집 완료")
+    except Exception as e:
+        import traceback
+        print(f"❌ ADR 데이터 수집 오류: {e}")
+        print(traceback.format_exc())
+    finally:
+        db.close()
+
+
 class NaverSupplyScheduler:
     """
     네이버 수급 동향 데이터 수집 스케줄러
@@ -1187,9 +1213,30 @@ class NaverSupplyScheduler:
             coalesce=True,
             misfire_grace_time=300,
         )
+        # 08:40 ~ 15:40: 30분 간격 (ADR 지표 수집)
+        self.scheduler.add_job(
+            collect_advancing_declining_count_scheduled,
+            trigger=CronTrigger(hour=8, minute=40, timezone=self.kst),
+            id="adr_advancing_0840",
+            name="ADR 데이터 수집 (08:40)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
+        self.scheduler.add_job(
+            collect_advancing_declining_count_scheduled,
+            trigger=CronTrigger(hour="9-15", minute="10,40", timezone=self.kst),
+            id="adr_advancing_intraday",
+            name="ADR 데이터 수집 (09:10~15:40, 30분 간격)",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=300,
+        )
 
         self.scheduler.start()
-        print("✅ 네이버 수급 동향 스케줄러 시작 (08:40~15:40 30분 / 16:10 일자별 / 16:40~20:40 1시간, 월~금)")
+        print("✅ 네이버 수급 동향 스케줄러 시작 (08:40~15:40 30분 / 16:10 일자별 / 16:40~20:40 1시간, ADR 추가, 월~금)")
 
     def shutdown(self):
         if self.scheduler:
