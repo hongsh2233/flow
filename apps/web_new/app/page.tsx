@@ -115,7 +115,7 @@ export default function Home() {
     <div className="content__wrap">
       <SentimentIndexCard />
       <SupplySummaryCard />
-      <AdrIndicatorCard />
+      {/* <AdrIndicatorCard /> */}
       <MarketTabSection />
       {/* [AD_ZONE B1 — 주요지수 아래 / 일반회원까지] */}
       {shouldShowAdZoneB_regular(session, status) && <AdZoneSlot zone="B1" />}
