@@ -409,7 +409,7 @@
         </div>
         <div class="post-actions">
           {% if (post.status|default('approved')) == 'pending' %}
-          <button class="btn-approve" onclick="approvePost({{ post.id }}, this)">승인</button>
+          <button class="btn-approve" onclick="approvePost({{ post.id }}, this, '{{ board.id }}')">승인</button>
           <button class="btn-reject" onclick="rejectPost({{ post.id }}, this)">거절</button>
           {% endif %}
           <a href="/admin/board/{{ board.id }}/post/{{ post.id }}" class="btn-edit" style="background: #27ae60;">보기</a>
@@ -491,21 +491,28 @@
     syncButtonState();
   })();
 
-  async function approvePost(postId, btn) {
-    if (!confirm('이 게시글을 승인하시겠습니까?\n승인 시 알림 및 FCM 푸시가 발송됩니다.')) return;
+  async function approvePost(postId, btn, boardId) {
+    const isTargetBoard = boardId === 'B002';
+    if (!isTargetBoard && !confirm('이 게시글을 승인하시겠습니까?\n승인 시 알림 및 FCM 푸시가 발송됩니다.')) return;
     btn.disabled = true;
     try {
       const res = await fetch(`/api/admin/board/posts/${postId}/approve`, { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        alert('승인되었습니다.');
+        if (!isTargetBoard) {
+          alert('승인되었습니다.');
+        }
         location.reload();
       } else {
-        alert('오류: ' + data.message);
+        if (!isTargetBoard) {
+          alert('오류: ' + data.message);
+        }
         btn.disabled = false;
       }
     } catch (e) {
-      alert('요청 중 오류가 발생했습니다.');
+      if (!isTargetBoard) {
+        alert('요청 중 오류가 발생했습니다.');
+      }
       btn.disabled = false;
     }
   }
