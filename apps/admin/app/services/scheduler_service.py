@@ -786,12 +786,13 @@ async def collect_market_closing_summary():
         )
         print(f"  오늘 수급 deal_rank 데이터: {supply_count}건")
 
-        from app.services.market_closing_gemini_service import generate_and_post_closing_summary
-        ok = generate_and_post_closing_summary(db, now.date())
-        if ok:
-            print("✅ 장마감 시황 게시 완료 (pending 상태 - 관리자 승인 후 알림 발송)")
-        else:
-            print("⚠️ 장마감 시황 생성 실패 (KR지수 없음 또는 Gemini 오류)")
+        # [2026-07-08 Gemini 제거] 장마감 시황 AI 생성 비활성화 (비용 절감)
+        # from app.services.market_closing_gemini_service import generate_and_post_closing_summary
+        # ok = generate_and_post_closing_summary(db, now.date())
+        # if ok:
+        #     print("✅ 장마감 시황 게시 완료 (pending 상태 - 관리자 승인 후 알림 발송)")
+        # else:
+        #     print("⚠️ 장마감 시황 생성 실패 (KR지수 없음 또는 Gemini 오류)")
     except Exception as e:
         import traceback
         print(f"❌ 장마감 시황 생성 오류: {e}")
@@ -1055,7 +1056,8 @@ async def collect_naver_supply_data():
     (`all`은 합산 시장 페이지 등 다른 용도·백워드 호환용으로 동일 스케줄에서 함께 수집.)
     """
     from app.services.naver_supply_service import collect_investor_program_supply_data
-    from app.services.supply_summary_gemini_service import generate_and_save_supply_summary
+    # [2026-07-08 Gemini 제거] 수급 Gemini 요약 서비스 비활성화
+    # from app.services.supply_summary_gemini_service import generate_and_save_supply_summary
     kst = pytz.timezone("Asia/Seoul")
     now = datetime.now(kst)
     bizdate = now.strftime("%Y%m%d")
@@ -1075,15 +1077,16 @@ async def collect_naver_supply_data():
         count = await collect_investor_program_supply_data(db, bizdate, collected_time)
         print(f"✅ 수급 동향 수집 완료: {count}건")
 
-        if count > 0:
-            try:
-                n_ai = generate_and_save_supply_summary(db, bizdate, collected_time)
-                if n_ai:
-                    print(f"✅ 수급 Gemini AI 요약 저장: {n_ai}건 (코스피·코스닥)")
-            except Exception as gemini_err:
-                import traceback
-                print(f"⚠️ 수급 Gemini AI 요약 오류: {gemini_err}")
-                print(traceback.format_exc())
+        # [2026-07-08 Gemini 제거] 수급 Gemini AI 요약 비활성화 (비용 절감)
+        # if count > 0:
+        #     try:
+        #         n_ai = generate_and_save_supply_summary(db, bizdate, collected_time)
+        #         if n_ai:
+        #             print(f"✅ 수급 Gemini AI 요약 저장: {n_ai}건 (코스피·코스닥)")
+        #     except Exception as gemini_err:
+        #         import traceback
+        #         print(f"⚠️ 수급 Gemini AI 요약 오류: {gemini_err}")
+        #         print(traceback.format_exc())
     except Exception as e:
         import traceback
         print(f"❌ 수급 동향 수집 오류: {e}")
@@ -1285,18 +1288,19 @@ async def collect_naver_stock_news():
 
         naver_news_service.cleanup_old_news(db)
 
-        try:
-            from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
-
-            if generate_and_save_daily_issue_summary(db, now.date()):
-                print("✅ 금일 이슈 Gemini 요약 저장 (뉴스 수집 직후)")
-            else:
-                print("ℹ️ 금일 이슈 요약 스킵 (당일 뉴스 없음 또는 Gemini 실패)")
-        except Exception as issue_err:
-            import traceback
-
-            print(f"⚠️ 금일 이슈 요약 오류: {issue_err}")
-            print(traceback.format_exc())
+        # [2026-07-08 Gemini 제거] 금일 이슈 AI 요약 비활성화 (비용 절감)
+        # try:
+        #     from app.services.daily_issue_gemini_service import generate_and_save_daily_issue_summary
+        #
+        #     if generate_and_save_daily_issue_summary(db, now.date()):
+        #         print("✅ 금일 이슈 Gemini 요약 저장 (뉴스 수집 직후)")
+        #     else:
+        #         print("ℹ️ 금일 이슈 요약 스킵 (당일 뉴스 없음 또는 Gemini 실패)")
+        # except Exception as issue_err:
+        #     import traceback
+        #
+        #     print(f"⚠️ 금일 이슈 요약 오류: {issue_err}")
+        #     print(traceback.format_exc())
 
         # 비활성화: 시장의 목소리 AI 요약(Gemini) — 토큰 소모 큼. 재개 시 아래 주석 해제.
         # try:
@@ -2022,12 +2026,14 @@ class DailyFortuneScheduler:
             print(f"⚠️ 운세 시작 시 체크 오류: {e}")
 
     async def _generate(self):
-        try:
-            from app.services.daily_fortune_gemini_service import generate_daily_fortunes
-            result = generate_daily_fortunes()
-            print(f"🔮 운세 생성 완료: {result}")
-        except Exception as e:
-            print(f"❌ 운세 스케줄러 오류: {e}")
+        # [2026-07-08 Gemini 제거] 오늘의 띠/별자리 운세 AI 생성 비활성화 (비용 절감)
+        print("ℹ️ 운세 생성 비활성화 (Gemini 비용 절감 중)")
+        # try:
+        #     from app.services.daily_fortune_gemini_service import generate_daily_fortunes
+        #     result = generate_daily_fortunes()
+        #     print(f"🔮 운세 생성 완료: {result}")
+        # except Exception as e:
+        #     print(f"❌ 운세 스케줄러 오류: {e}")
 
     def shutdown(self):
         if self.scheduler:

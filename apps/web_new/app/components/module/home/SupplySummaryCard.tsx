@@ -90,13 +90,15 @@ export function SupplySummaryCard() {
 
   if (loading || !data) return null;
 
+  // [2026-07-08 Gemini 제거] AI 요약 표시 비활성화 (비용 절감)
   // market=all 또는 kospi 중 있는 요약을 코스피 위에 한 번만 표시
-  const sharedSummary = data.kospi.aiSummary || data.kosdaq.aiSummary;
+  // const sharedSummary = data.kospi.aiSummary || data.kosdaq.aiSummary;
 
   const cardContent = (
     <>
       <h2 className={styles.title}>{data.timeLabel}</h2>
-      {sharedSummary ? <p className={styles.excerpt}>{sharedSummary}</p> : null}
+      {/* [2026-07-08 Gemini 제거] AI 수급 요약 표시 비활성화 */}
+      {/* {sharedSummary ? <p className={styles.excerpt}>{sharedSummary}</p> : null} */}
       <MarketSection title="코스피" slice={data.kospi} />
       <MarketSection title="코스닥" slice={data.kosdaq} />
       <p className={styles.unitHint} role="note">

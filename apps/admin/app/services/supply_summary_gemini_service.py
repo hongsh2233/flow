@@ -258,56 +258,58 @@ def _time_label_for_collected_time(bizdate: str, collected_time: str) -> str:
     return f"현재 {prev_h:02d}:{prev_m:02d}~{curr_h:02d}:{curr_m:02d} 기준"
 
 
-def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: str) -> int:
-    """
-    코스피·코스닥 각각 investor_time + program_time을 Gemini로 요약해 저장.
-
-    Returns:
-        저장에 성공한 시장 수 (0~2)
-    """
-    if not GEMINI_API_KEY:
-        print("[supply-gemini] ❌ GEMINI_API_KEY 환경변수 없음 — AI 요약 건너뜀")
-        return 0
-
-    time_label = _time_label_for_collected_time(bizdate, collected_time)
-    saved = 0
-    print(f"[supply-gemini] 시작: {bizdate} {collected_time}")
-
-    for market in (MARKET_KOSPI, MARKET_KOSDAQ):
-        nums = _get_supply_numbers(db, bizdate, collected_time, market)
-        if nums is None:
-            print(f"[supply-gemini] ⚠️ {bizdate} {collected_time} {market} — DB에서 수급 원본 못 찾음, 건너뜀")
-            continue
-        print(f"[supply-gemini] {market} 수치: {nums}")
-
-        prompt = _build_prompt(nums, time_label, market)
-        summary = _call_gemini(prompt)
-        if not summary:
-            print(f"[supply-gemini] {market} Gemini 응답 없음")
-            continue
-
-        existing = (
-            db.query(SupplySummaryAi)
-            .filter(
-                SupplySummaryAi.bizdate == bizdate,
-                SupplySummaryAi.collected_time == collected_time,
-                SupplySummaryAi.market == market,
-            )
-            .first()
-        )
-        if existing:
-            existing.ai_summary = summary
-        else:
-            db.add(
-                SupplySummaryAi(
-                    bizdate=bizdate,
-                    collected_time=collected_time,
-                    market=market,
-                    ai_summary=summary,
-                )
-            )
-        db.commit()
-        saved += 1
-        print(f"[supply-gemini] 수급 AI 요약 저장 완료 ({bizdate} {collected_time} {market})")
-
-    return saved
+# [2026-07-08 Gemini 제거] Phase 1-2 비용 절감을 위해 주석처리
+# 재활성화 시 /docs/gemini-removal-migration-guide.md 참조
+# def generate_and_save_supply_summary(db: Session, bizdate: str, collected_time: str) -> int:
+#     """
+#     코스피·코스닥 각각 investor_time + program_time을 Gemini로 요약해 저장.
+#
+#     Returns:
+#         저장에 성공한 시장 수 (0~2)
+#     """
+#     if not GEMINI_API_KEY:
+#         print("[supply-gemini] ❌ GEMINI_API_KEY 환경변수 없음 — AI 요약 건너뜀")
+#         return 0
+#
+#     time_label = _time_label_for_collected_time(bizdate, collected_time)
+#     saved = 0
+#     print(f"[supply-gemini] 시작: {bizdate} {collected_time}")
+#
+#     for market in (MARKET_KOSPI, MARKET_KOSDAQ):
+#         nums = _get_supply_numbers(db, bizdate, collected_time, market)
+#         if nums is None:
+#             print(f"[supply-gemini] ⚠️ {bizdate} {collected_time} {market} — DB에서 수급 원본 못 찾음, 건너뜀")
+#             continue
+#         print(f"[supply-gemini] {market} 수치: {nums}")
+#
+#         prompt = _build_prompt(nums, time_label, market)
+#         summary = _call_gemini(prompt)
+#         if not summary:
+#             print(f"[supply-gemini] {market} Gemini 응답 없음")
+#             continue
+#
+#         existing = (
+#             db.query(SupplySummaryAi)
+#             .filter(
+#                 SupplySummaryAi.bizdate == bizdate,
+#                 SupplySummaryAi.collected_time == collected_time,
+#                 SupplySummaryAi.market == market,
+#             )
+#             .first()
+#         )
+#         if existing:
+#             existing.ai_summary = summary
+#         else:
+#             db.add(
+#                 SupplySummaryAi(
+#                     bizdate=bizdate,
+#                     collected_time=collected_time,
+#                     market=market,
+#                     ai_summary=summary,
+#                 )
+#             )
+#         db.commit()
+#         saved += 1
+#         print(f"[supply-gemini] 수급 AI 요약 저장 완료 ({bizdate} {collected_time} {market})")
+#
+#     return saved

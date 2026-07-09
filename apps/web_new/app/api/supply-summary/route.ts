@@ -241,73 +241,80 @@ export async function GET() {
       progKosdaq.collected_time ??
       null;
 
-    let aiKospiJson = { success: false as boolean, ai_summary: null as string | null };
-    let aiKosdaqJson = { success: false as boolean, ai_summary: null as string | null };
-    let aiAnySummary: string | null = null;
+    // [2026-07-08 Gemini 제거] AI 수급 요약 조회 비활성화 (비용 절감)
+    const kospiSummary: string | null = null;
+    const kosdaqSummary: string | null = null;
+    const fallbackKospiSummary: string | null = null;
+    const fallbackKosdaqSummary: string | null = null;
+    const fallbackAllSummary: string | null = null;
 
-    if (bizdateForAi && collectedTimeForAi) {
-      const qKospi = new URLSearchParams({
-        bizdate: String(bizdateForAi),
-        collected_time: String(collectedTimeForAi),
-        market: "kospi",
-      });
-      const qKosdaq = new URLSearchParams({
-        bizdate: String(bizdateForAi),
-        collected_time: String(collectedTimeForAi),
-        market: "kosdaq",
-      });
-      const [aiKospiRes, aiKosdaqRes] = await Promise.all([
-        fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
-        fetch(`${base}/api/supply-summary-ai?${qKosdaq}`, { method: "GET", headers, cache: "no-store" }),
-      ]);
-      if (aiKospiRes.ok) {
-        aiKospiJson = await aiKospiRes.json();
-      }
-      if (aiKosdaqRes.ok) {
-        aiKosdaqJson = await aiKosdaqRes.json();
-      }
-    }
-
-    const kospiSummary = normalizeAiSummary(aiKospiJson.ai_summary);
-    const kosdaqSummary = normalizeAiSummary(aiKosdaqJson.ai_summary);
-
-    // Fallback 1: exact match 없으면 해당 market의 최신 요약
-    let fallbackKospiSummary: string | null = null;
-    let fallbackKosdaqSummary: string | null = null;
-    if (!kospiSummary || !kosdaqSummary) {
-      const [fbKospiRes, fbKosdaqRes] = await Promise.all([
-        !kospiSummary
-          ? fetch(`${base}/api/supply-summary-ai?market=kospi`, { method: "GET", headers, cache: "no-store" })
-          : Promise.resolve(null),
-        !kosdaqSummary
-          ? fetch(`${base}/api/supply-summary-ai?market=kosdaq`, { method: "GET", headers, cache: "no-store" })
-          : Promise.resolve(null),
-      ]);
-      if (fbKospiRes?.ok) {
-        const j = await fbKospiRes.json();
-        fallbackKospiSummary = normalizeAiSummary((j as any).ai_summary);
-      }
-      if (fbKosdaqRes?.ok) {
-        const j = await fbKosdaqRes.json();
-        fallbackKosdaqSummary = normalizeAiSummary((j as any).ai_summary);
-      }
-    }
-
-    // Fallback 2: kospi/kosdaq 요약이 아예 없으면 market=all 최신 요약 (구형 데이터 호환)
-    let fallbackAllSummary: string | null = null;
-    const needAllFallback =
-      (!kospiSummary && !fallbackKospiSummary) || (!kosdaqSummary && !fallbackKosdaqSummary);
-    if (needAllFallback) {
-      const fbAllRes = await fetch(`${base}/api/supply-summary-ai?market=all`, {
-        method: "GET",
-        headers,
-        cache: "no-store",
-      });
-      if (fbAllRes.ok) {
-        const j = await fbAllRes.json();
-        fallbackAllSummary = normalizeAiSummary((j as any).ai_summary);
-      }
-    }
+    // let aiKospiJson = { success: false as boolean, ai_summary: null as string | null };
+    // let aiKosdaqJson = { success: false as boolean, ai_summary: null as string | null };
+    // let aiAnySummary: string | null = null;
+    //
+    // if (bizdateForAi && collectedTimeForAi) {
+    //   const qKospi = new URLSearchParams({
+    //     bizdate: String(bizdateForAi),
+    //     collected_time: String(collectedTimeForAi),
+    //     market: "kospi",
+    //   });
+    //   const qKosdaq = new URLSearchParams({
+    //     bizdate: String(bizdateForAi),
+    //     collected_time: String(collectedTimeForAi),
+    //     market: "kosdaq",
+    //   });
+    //   const [aiKospiRes, aiKosdaqRes] = await Promise.all([
+    //     fetch(`${base}/api/supply-summary-ai?${qKospi}`, { method: "GET", headers, cache: "no-store" }),
+    //     fetch(`${base}/api/supply-summary-ai?${qKosdaq}`, { method: "GET", headers, cache: "no-store" }),
+    //   ]);
+    //   if (aiKospiRes.ok) {
+    //     aiKospiJson = await aiKospiRes.json();
+    //   }
+    //   if (aiKosdaqRes.ok) {
+    //     aiKosdaqJson = await aiKosdaqRes.json();
+    //   }
+    // }
+    //
+    // const kospiSummary = normalizeAiSummary(aiKospiJson.ai_summary);
+    // const kosdaqSummary = normalizeAiSummary(aiKosdaqJson.ai_summary);
+    //
+    // // Fallback 1: exact match 없으면 해당 market의 최신 요약
+    // let fallbackKospiSummary: string | null = null;
+    // let fallbackKosdaqSummary: string | null = null;
+    // if (!kospiSummary || !kosdaqSummary) {
+    //   const [fbKospiRes, fbKosdaqRes] = await Promise.all([
+    //     !kospiSummary
+    //       ? fetch(`${base}/api/supply-summary-ai?market=kospi`, { method: "GET", headers, cache: "no-store" })
+    //       : Promise.resolve(null),
+    //     !kosdaqSummary
+    //       ? fetch(`${base}/api/supply-summary-ai?market=kosdaq`, { method: "GET", headers, cache: "no-store" })
+    //       : Promise.resolve(null),
+    //   ]);
+    //   if (fbKospiRes?.ok) {
+    //     const j = await fbKospiRes.json();
+    //     fallbackKospiSummary = normalizeAiSummary((j as any).ai_summary);
+    //   }
+    //   if (fbKosdaqRes?.ok) {
+    //     const j = await fbKosdaqRes.json();
+    //     fallbackKosdaqSummary = normalizeAiSummary((j as any).ai_summary);
+    //   }
+    // }
+    //
+    // // Fallback 2: kospi/kosdaq 요약이 아예 없으면 market=all 최신 요약 (구형 데이터 호환)
+    // let fallbackAllSummary: string | null = null;
+    // const needAllFallback =
+    //   (!kospiSummary && !fallbackKospiSummary) || (!kosdaqSummary && !fallbackKosdaqSummary);
+    // if (needAllFallback) {
+    //   const fbAllRes = await fetch(`${base}/api/supply-summary-ai?market=all`, {
+    //     method: "GET",
+    //     headers,
+    //     cache: "no-store",
+    //   });
+    //   if (fbAllRes.ok) {
+    //     const j = await fbAllRes.json();
+    //     fallbackAllSummary = normalizeAiSummary((j as any).ai_summary);
+    //   }
+    // }
 
     const numsKospi = parseNumbersFromTables(invKospi.data, progKospi.data);
     const numsKosdaq = parseNumbersFromTables(invKosdaq.data, progKosdaq.data);

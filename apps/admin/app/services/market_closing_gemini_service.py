@@ -574,97 +574,99 @@ def _make_closing_title(target_date: date, investor_summary: Dict[str, dict]) ->
     return f"{', '.join(parts)} | {date_str}"
 
 
-def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
-    """
-    장마감 시황을 Gemini로 생성하고 board/B001에 Post로 등록(upsert)한다.
-
-    Returns:
-        True if saved, False on failure
-    """
-    bizdate = _resolve_naver_bizdate(db, target_date)
-
-    # 데이터 수집
-    kr_indices       = _get_kr_indices(db, target_date)
-    exchange_rates   = _get_exchange_rate(db)
-    investor_summary = _get_investor_summary(db, bizdate)
-    supply_ai        = _get_latest_supply_ai_summaries(db, bizdate)
-    upper_limit      = _get_upper_limit_stocks(db, bizdate)
-    news             = _get_top_news(db, target_date)
-    issue_summary    = _get_issue_summary(db, target_date)
-
-    if not kr_indices:
-        print("[closing-gemini] KR 지수 데이터 없음, 건너뜀")
-        return False
-
-    if issue_summary:
-        print(f"[closing-gemini] 이슈 AI요약 포함 ({len(issue_summary)}자)")
-    else:
-        print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
-
-    if supply_ai:
-        print(f"[closing-gemini] 수급 AI요약 포함 (kospi={bool(supply_ai.get('kospi'))}, kosdaq={bool(supply_ai.get('kosdaq'))})")
-    else:
-        print("[closing-gemini] 수급 AI요약 없음 — supply_summary_ai_summaries 확인 (장중 수급 요약 스케줄)")
-
-    # Gemini 호출
-    prompt = _build_prompt(kr_indices, exchange_rates, upper_limit, news, issue_summary, supply_ai)
-    ai = _call_gemini(prompt)
-    if not ai:
-        return False
-
-    # 제목 생성 (investor_day 코스피 — 제목 줄만)
-    title = _make_closing_title(target_date, investor_summary)
-
-    # 게시글 내용 조립
-    content = _build_post_content(
-        kr_indices, exchange_rates, news, ai, upper_limit, issue_summary, supply_ai
-    )
-
-    # "시황" 카테고리 ID 조회
-    category_id = None
-    try:
-        cat = (
-            db.query(BoardCategory)
-            .filter(BoardCategory.board_id == "B001", BoardCategory.name == "시황")
-            .first()
-        )
-        if cat:
-            category_id = cat.id
-            print(f"[closing-gemini] 시황 카테고리 ID: {category_id}")
-        else:
-            print("[closing-gemini] 시황 카테고리 없음 (category_id=None으로 등록)")
-    except Exception as e:
-        print(f"[closing-gemini] 카테고리 조회 오류: {e}")
-
-    # B001 게시판에 upsert: 날짜 기준으로 조회 (제목 숫자가 달라도 당일 재실행 시 덮어씀)
-    date_keyword = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
-    existing = (
-        db.query(Post)
-        .filter(Post.board_id == "B001", Post.title.like(f"%{date_keyword}%"))
-        .first()
-    )
-    kst = pytz.timezone("Asia/Seoul")
-    now_kst = datetime.now(kst)
-    if existing:
-        existing.title = title
-        existing.content = content
-        if category_id is not None:
-            existing.category_id = category_id
-        existing.updated_at = now_kst
-        existing.created_at = now_kst
-    else:
-        db.add(
-            Post(
-                board_id="B001",
-                title=title,
-                content=content,
-                author="플로우Ai",
-                status="pending",
-                category_id=category_id,
-                created_at=now_kst,
-                updated_at=now_kst,
-            )
-        )
-    db.commit()
-    print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date}, category_id={category_id})")
-    return True
+# [2026-07-08 Gemini 제거] Phase 1-2 비용 절감을 위해 주석처리
+# 재활성화 시 /docs/gemini-removal-migration-guide.md 참조
+# def generate_and_post_closing_summary(db: Session, target_date: date) -> bool:
+#     """
+#     장마감 시황을 Gemini로 생성하고 board/B001에 Post로 등록(upsert)한다.
+#
+#     Returns:
+#         True if saved, False on failure
+#     """
+#     bizdate = _resolve_naver_bizdate(db, target_date)
+#
+#     # 데이터 수집
+#     kr_indices       = _get_kr_indices(db, target_date)
+#     exchange_rates   = _get_exchange_rate(db)
+#     investor_summary = _get_investor_summary(db, bizdate)
+#     supply_ai        = _get_latest_supply_ai_summaries(db, bizdate)
+#     upper_limit      = _get_upper_limit_stocks(db, bizdate)
+#     news             = _get_top_news(db, target_date)
+#     issue_summary    = _get_issue_summary(db, target_date)
+#
+#     if not kr_indices:
+#         print("[closing-gemini] KR 지수 데이터 없음, 건너뜀")
+#         return False
+#
+#     if issue_summary:
+#         print(f"[closing-gemini] 이슈 AI요약 포함 ({len(issue_summary)}자)")
+#     else:
+#         print("[closing-gemini] 이슈 AI요약 없음 (건너뜀)")
+#
+#     if supply_ai:
+#         print(f"[closing-gemini] 수급 AI요약 포함 (kospi={bool(supply_ai.get('kospi'))}, kosdaq={bool(supply_ai.get('kosdaq'))})")
+#     else:
+#         print("[closing-gemini] 수급 AI요약 없음 — supply_summary_ai_summaries 확인 (장중 수급 요약 스케줄)")
+#
+#     # Gemini 호출
+#     prompt = _build_prompt(kr_indices, exchange_rates, upper_limit, news, issue_summary, supply_ai)
+#     ai = _call_gemini(prompt)
+#     if not ai:
+#         return False
+#
+#     # 제목 생성 (investor_day 코스피 — 제목 줄만)
+#     title = _make_closing_title(target_date, investor_summary)
+#
+#     # 게시글 내용 조립
+#     content = _build_post_content(
+#         kr_indices, exchange_rates, news, ai, upper_limit, issue_summary, supply_ai
+#     )
+#
+#     # "시황" 카테고리 ID 조회
+#     category_id = None
+#     try:
+#         cat = (
+#             db.query(BoardCategory)
+#             .filter(BoardCategory.board_id == "B001", BoardCategory.name == "시황")
+#             .first()
+#         )
+#         if cat:
+#             category_id = cat.id
+#             print(f"[closing-gemini] 시황 카테고리 ID: {category_id}")
+#         else:
+#             print("[closing-gemini] 시황 카테고리 없음 (category_id=None으로 등록)")
+#     except Exception as e:
+#         print(f"[closing-gemini] 카테고리 조회 오류: {e}")
+#
+#     # B001 게시판에 upsert: 날짜 기준으로 조회 (제목 숫자가 달라도 당일 재실행 시 덮어씀)
+#     date_keyword = f"{target_date.year}년 {target_date.month}월 {target_date.day}일 마감시황"
+#     existing = (
+#         db.query(Post)
+#         .filter(Post.board_id == "B001", Post.title.like(f"%{date_keyword}%"))
+#         .first()
+#     )
+#     kst = pytz.timezone("Asia/Seoul")
+#     now_kst = datetime.now(kst)
+#     if existing:
+#         existing.title = title
+#         existing.content = content
+#         if category_id is not None:
+#             existing.category_id = category_id
+#         existing.updated_at = now_kst
+#         existing.created_at = now_kst
+#     else:
+#         db.add(
+#             Post(
+#                 board_id="B001",
+#                 title=title,
+#                 content=content,
+#                 author="플로우Ai",
+#                 status="pending",
+#                 category_id=category_id,
+#                 created_at=now_kst,
+#                 updated_at=now_kst,
+#             )
+#         )
+#     db.commit()
+#     print(f"[closing-gemini] 장마감 시황 게시 완료 ({target_date}, category_id={category_id})")
+#     return True

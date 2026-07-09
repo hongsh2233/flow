@@ -87,32 +87,34 @@ class CreatePostRequest(BaseModel):
 # 이렇게 하면 환경 변수(NEXT_PUBLIC_X_API_KEY)를 일관되게 사용할 수 있습니다.
 
 
-def _summarize_content_with_gemini(content: str) -> Optional[str]:
-    """Gemini API로 게시글 내용 요약"""
-    from app.config import GEMINI_API_KEY, GEMINI_MODEL
-    if not GEMINI_API_KEY:
-        print("[AI요약] GEMINI_API_KEY 없음, 건너뜀")
-        return None
-    try:
-        from google import genai
-        from app.services.gemini_response_utils import extract_text_from_generate_content_response
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        prompt = (
-            "다음 글의 핵심 내용을 간결하게 요약해주세요. "
-            "한국어로 작성하고, 원문의 주요 정보와 의미를 보존해주세요.\n\n"
-            f"{content}"
-        )
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
-        text = extract_text_from_generate_content_response(
-            response, log_prefix="post-summary", log_if_empty=True
-        )
-        return text if text else None
-    except Exception as e:
-        print(f"[AI요약] Gemini 호출 실패: {e}")
-        return None
+# [2026-07-08 Gemini 제거] Phase 1-2 비용 절감을 위해 주석처리
+# 재활성화 시 /docs/gemini-removal-migration-guide.md 참조
+# def _summarize_content_with_gemini(content: str) -> Optional[str]:
+#     """Gemini API로 게시글 내용 요약"""
+#     from app.config import GEMINI_API_KEY, GEMINI_MODEL
+#     if not GEMINI_API_KEY:
+#         print("[AI요약] GEMINI_API_KEY 없음, 건너뜀")
+#         return None
+#     try:
+#         from google import genai
+#         from app.services.gemini_response_utils import extract_text_from_generate_content_response
+#         client = genai.Client(api_key=GEMINI_API_KEY)
+#         prompt = (
+#             "다음 글의 핵심 내용을 간결하게 요약해주세요. "
+#             "한국어로 작성하고, 원문의 주요 정보와 의미를 보존해주세요.\n\n"
+#             f"{content}"
+#         )
+#         response = client.models.generate_content(
+#             model=GEMINI_MODEL,
+#             contents=prompt,
+#         )
+#         text = extract_text_from_generate_content_response(
+#             response, log_prefix="post-summary", log_if_empty=True
+#         )
+#         return text if text else None
+#     except Exception as e:
+#         print(f"[AI요약] Gemini 호출 실패: {e}")
+#         return None
 
 
 def serialize_datetime(dt: Optional[datetime]) -> Optional[str]:
@@ -1101,11 +1103,12 @@ async def create_board_post(
     if not content:
         raise HTTPException(status_code=400, detail="내용을 입력해 주세요.")
 
+    # [2026-07-08 Gemini 제거] AI 요약 기능 비활성화 (비용 절감)
     # AI 요약: 참고 문구가 없고 use_ai_summary가 True인 경우 Gemini로 요약
-    if body.use_ai_summary and not (body.reference_text or "").strip():
-        summarized = _summarize_content_with_gemini(content)
-        if summarized:
-            content = summarized
+    # if body.use_ai_summary and not (body.reference_text or "").strip():
+    #     summarized = _summarize_content_with_gemini(content)
+    #     if summarized:
+    #         content = summarized
 
     # 방명록: 제목 자동 생성
     title = body.title

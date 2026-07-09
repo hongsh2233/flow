@@ -80,42 +80,44 @@ def _call_gemini(prompt: str) -> Optional[str]:
         return None
 
 
-def generate_and_save_daily_issue_summary(db: Session, target_date: date) -> bool:
-    """
-    오늘 뉴스를 Gemini로 요약하고 daily_issue_summaries에 누적 저장한다.
-    - collected_time: 실행 시각 (HH:MM, KST)
-    - 2일치 보관 후 3일째 자동 삭제
-
-    Returns:
-        True if saved, False on failure
-    """
-    from datetime import timedelta
-    from sqlalchemy import text
-
-    news_list = _get_today_news(db, target_date)
-    if not news_list:
-        print(f"[daily-issue-gemini] {target_date} 뉴스 없음, 건너뜀")
-        return False
-
-    prompt = _build_prompt(news_list)
-    summary = _call_gemini(prompt)
-    if not summary:
-        return False
-
-    kst = pytz.timezone("Asia/Seoul")
-    now_kst = datetime.now(kst)
-    collected_time = now_kst.strftime("%H:%M")
-
-    # 누적 INSERT (기존 데이터 유지)
-    db.execute(text("""
-        INSERT INTO daily_issue_summaries (date, collected_time, summary)
-        VALUES (:date, :collected_time, :summary)
-    """), {"date": target_date, "collected_time": collected_time, "summary": summary})
-
-    # 2일치만 보관 (3일 이전 데이터 삭제)
-    cutoff = target_date - timedelta(days=2)
-    db.execute(text("DELETE FROM daily_issue_summaries WHERE date < :cutoff"), {"cutoff": cutoff})
-
-    db.commit()
-    print(f"[daily-issue-gemini] 금일 이슈 요약 저장 완료 ({target_date} {collected_time})")
-    return True
+# [2026-07-08 Gemini 제거] Phase 1-2 비용 절감을 위해 주석처리
+# 재활성화 시 /docs/gemini-removal-migration-guide.md 참조
+# def generate_and_save_daily_issue_summary(db: Session, target_date: date) -> bool:
+#     """
+#     오늘 뉴스를 Gemini로 요약하고 daily_issue_summaries에 누적 저장한다.
+#     - collected_time: 실행 시각 (HH:MM, KST)
+#     - 2일치 보관 후 3일째 자동 삭제
+#
+#     Returns:
+#         True if saved, False on failure
+#     """
+#     from datetime import timedelta
+#     from sqlalchemy import text
+#
+#     news_list = _get_today_news(db, target_date)
+#     if not news_list:
+#         print(f"[daily-issue-gemini] {target_date} 뉴스 없음, 건너뜀")
+#         return False
+#
+#     prompt = _build_prompt(news_list)
+#     summary = _call_gemini(prompt)
+#     if not summary:
+#         return False
+#
+#     kst = pytz.timezone("Asia/Seoul")
+#     now_kst = datetime.now(kst)
+#     collected_time = now_kst.strftime("%H:%M")
+#
+#     # 누적 INSERT (기존 데이터 유지)
+#     db.execute(text("""
+#         INSERT INTO daily_issue_summaries (date, collected_time, summary)
+#         VALUES (:date, :collected_time, :summary)
+#     """), {"date": target_date, "collected_time": collected_time, "summary": summary})
+#
+#     # 2일치만 보관 (3일 이전 데이터 삭제)
+#     cutoff = target_date - timedelta(days=2)
+#     db.execute(text("DELETE FROM daily_issue_summaries WHERE date < :cutoff"), {"cutoff": cutoff})
+#
+#     db.commit()
+#     print(f"[daily-issue-gemini] 금일 이슈 요약 저장 완료 ({target_date} {collected_time})")
+#     return True

@@ -130,58 +130,60 @@ def _upsert_fortunes(db: Session, fortune_date: date, fortune_type: str, items: 
     return saved
 
 
-def generate_daily_fortunes(target_date: Optional[date] = None) -> dict:
-    """
-    띠 12개 + 별자리 12개 운세를 Gemini로 생성하여 DB에 저장.
-    이미 오늘 데이터가 24개 모두 있으면 스킵.
-    """
-    if not GEMINI_API_KEY:
-        print("⚠️ GEMINI_API_KEY 없음 — 운세 생성 스킵")
-        return {"skipped": True, "reason": "no_api_key"}
-
-    today = target_date or _today_kst()
-    date_str = today.strftime("%Y년 %m월 %d일")
-    result = {"date": today.isoformat(), "animal_saved": 0, "sign_saved": 0, "skipped": False}
-
-    db: Session = SessionLocal()
-    try:
-        existing_count = (
-            db.query(DailyFortune)
-            .filter(DailyFortune.fortune_date == today)
-            .count()
-        )
-        if existing_count >= 24:
-            print(f"ℹ️ {today} 운세 이미 {existing_count}개 존재 — 스킵")
-            result["skipped"] = True
-            return result
-
-        # 띠 운세 생성
-        print(f"🔮 {date_str} 띠 운세 생성 중...")
-        animal_raw = _call_gemini(_build_animal_prompt(date_str))
-        animal_items = _extract_json_array(animal_raw)
-        if animal_items:
-            result["animal_saved"] = _upsert_fortunes(db, today, "animal", animal_items)
-            print(f"✅ 띠 운세 {result['animal_saved']}개 저장")
-        else:
-            print("❌ 띠 운세 JSON 파싱 실패")
-
-        # 별자리 운세 생성
-        print(f"🔮 {date_str} 별자리 운세 생성 중...")
-        sign_raw = _call_gemini(_build_sign_prompt(date_str))
-        sign_items = _extract_json_array(sign_raw)
-        if sign_items:
-            result["sign_saved"] = _upsert_fortunes(db, today, "sign", sign_items)
-            print(f"✅ 별자리 운세 {result['sign_saved']}개 저장")
-        else:
-            print("❌ 별자리 운세 JSON 파싱 실패")
-
-        return result
-    except Exception as e:
-        print(f"❌ 운세 생성 오류: {e}")
-        db.rollback()
-        return {**result, "error": str(e)}
-    finally:
-        db.close()
+# [2026-07-08 Gemini 제거] Phase 1-2 비용 절감을 위해 주석처리
+# 재활성화 시 /docs/gemini-removal-migration-guide.md 참조
+# def generate_daily_fortunes(target_date: Optional[date] = None) -> dict:
+#     """
+#     띠 12개 + 별자리 12개 운세를 Gemini로 생성하여 DB에 저장.
+#     이미 오늘 데이터가 24개 모두 있으면 스킵.
+#     """
+#     if not GEMINI_API_KEY:
+#         print("⚠️ GEMINI_API_KEY 없음 — 운세 생성 스킵")
+#         return {"skipped": True, "reason": "no_api_key"}
+#
+#     today = target_date or _today_kst()
+#     date_str = today.strftime("%Y년 %m월 %d일")
+#     result = {"date": today.isoformat(), "animal_saved": 0, "sign_saved": 0, "skipped": False}
+#
+#     db: Session = SessionLocal()
+#     try:
+#         existing_count = (
+#             db.query(DailyFortune)
+#             .filter(DailyFortune.fortune_date == today)
+#             .count()
+#         )
+#         if existing_count >= 24:
+#             print(f"ℹ️ {today} 운세 이미 {existing_count}개 존재 — 스킵")
+#             result["skipped"] = True
+#             return result
+#
+#         # 띠 운세 생성
+#         print(f"🔮 {date_str} 띠 운세 생성 중...")
+#         animal_raw = _call_gemini(_build_animal_prompt(date_str))
+#         animal_items = _extract_json_array(animal_raw)
+#         if animal_items:
+#             result["animal_saved"] = _upsert_fortunes(db, today, "animal", animal_items)
+#             print(f"✅ 띠 운세 {result['animal_saved']}개 저장")
+#         else:
+#             print("❌ 띠 운세 JSON 파싱 실패")
+#
+#         # 별자리 운세 생성
+#         print(f"🔮 {date_str} 별자리 운세 생성 중...")
+#         sign_raw = _call_gemini(_build_sign_prompt(date_str))
+#         sign_items = _extract_json_array(sign_raw)
+#         if sign_items:
+#             result["sign_saved"] = _upsert_fortunes(db, today, "sign", sign_items)
+#             print(f"✅ 별자리 운세 {result['sign_saved']}개 저장")
+#         else:
+#             print("❌ 별자리 운세 JSON 파싱 실패")
+#
+#         return result
+#     except Exception as e:
+#         print(f"❌ 운세 생성 오류: {e}")
+#         db.rollback()
+#         return {**result, "error": str(e)}
+#     finally:
+#         db.close()
 
 
 def get_today_fortune(fortune_type: str, key: str) -> Optional[dict]:
