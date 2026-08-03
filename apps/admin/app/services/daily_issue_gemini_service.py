@@ -61,6 +61,8 @@ def _build_prompt(news_list: list[dict]) -> str:
 
 
 def _call_gemini(prompt: str) -> Optional[str]:
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    return None
     if not GEMINI_API_KEY:
         print("[daily-issue-gemini] GEMINI_API_KEY 없음, 건너뜀")
         return None

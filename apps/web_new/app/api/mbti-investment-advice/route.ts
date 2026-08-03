@@ -15,6 +15,12 @@ const TYPE_CONTEXT: Record<string, { label: string; style: string }> = {
 };
 
 export async function POST(req: NextRequest) {
+  // [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+  return NextResponse.json(
+    { success: false, message: "현재 AI 투자 조언 기능이 일시 중단되었습니다. 빠른 시일 내에 다시 제공될 예정입니다." },
+    { status: 503 }
+  );
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ success: false, message: "로그인 후 이용 가능합니다." }, { status: 401 });

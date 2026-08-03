@@ -112,6 +112,8 @@ def _parse_translation_json(text: str) -> Optional[Tuple[str, str]]:
 
 def _translate_with_gemini(title: str, summary: str) -> Optional[Tuple[str, str]]:
     """영어 뉴스 제목·요약을 Gemini로 한글로 번역. Returns (translated_title, translated_summary) or None"""
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    return None
     if not GEMINI_API_KEY:
         return None
     prompt = f"""다음 영어 뉴스의 제목과 요약을 자연스러운 한국어로 번역해주세요.

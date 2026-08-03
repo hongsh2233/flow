@@ -115,6 +115,8 @@ def _normalize_price(raw: str) -> str:
 
 def _process_with_gemini(title: str, description: str) -> Optional[Dict]:
     """Gemini로 목표가 상향/조정 정보 추출"""
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    return None
     if not GEMINI_API_KEY:
         return None
     try:

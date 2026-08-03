@@ -85,6 +85,8 @@ async def _search_news_by_keyword(keyword: str, display: int = MAX_NEWS_PER_PERS
 
 def _summarize_with_gemini(person_name: str, title: str, description: str) -> Optional[str]:
     """Gemini API로 '누가 어떤 핵심 발언을 했는지' 50자 이내 요약"""
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    return None
     if not GEMINI_API_KEY:
         return None
     try:
