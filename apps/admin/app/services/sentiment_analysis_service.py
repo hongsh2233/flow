@@ -326,6 +326,9 @@ def _build_gemini_prompt(community: dict, news: list[dict]) -> str:
 
 def _call_gemini_sentiment(prompt: str) -> Optional[dict]:
     """Gemini API 호출 → JSON 파싱"""
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    print("[심리지수] Gemini 호출 차단됨 (비용 절감)")
+    return None
     if not GEMINI_API_KEY:
         print("[심리지수] GEMINI_API_KEY 없음, AI 분석 건너뜀")
         return None

@@ -32,6 +32,8 @@ def _today_kst() -> date:
 
 def _call_gemini(prompt: str) -> str:
     """Gemini API 호출 → 텍스트 반환 (google-genai SDK)"""
+    # [2026-08-03 Gemini 제거] 비용 절감 — 모든 Gemini 호출 차단
+    return ""
     try:
         from google import genai as google_genai
         client = google_genai.Client(api_key=GEMINI_API_KEY)
@@ -213,9 +215,10 @@ def get_today_fortune(fortune_type: str, key: str) -> Optional[dict]:
                 "fortune_type": row.fortune_type,
             }
 
-        # DB에 없으면 전체 배치 생성 후 재조회
-        print(f"⚠️ {today} {fortune_type}/{key} 운세 없음 — 실시간 생성")
-        generate_daily_fortunes(today)
+        # [2026-08-03 Gemini 제거] DB에 운세 없으면 None 반환 (Gemini 호출 차단)
+        print(f"⚠️ {today} {fortune_type}/{key} 운세 없음 — Gemini 비활성화로 생성 불가")
+        return None
+        # generate_daily_fortunes(today)
         db.expire_all()  # 다른 세션이 커밋한 데이터 반영
 
         row = (
