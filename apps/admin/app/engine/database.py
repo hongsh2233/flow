@@ -20,7 +20,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 # .env 로드: 1) 루트 .env.local, 2) apps/admin/.env
 _admin_dir = Path(__file__).resolve().parent.parent.parent  # apps/admin
-_root = _admin_dir.parent.parent  # jurin-i 루트
+_root = _admin_dir.parent.parent  # flow 루트
 _env_local = _root / ".env.local"
 _env_file = _admin_dir / ".env"
 if _env_local.exists():

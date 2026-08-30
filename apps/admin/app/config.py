@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 # 프로젝트 디렉토리: admin (BASE_DIR), 모노레포 루트 (ROOT)
 BASE_DIR = Path(__file__).resolve().parent.parent
-ROOT = BASE_DIR.parent.parent  # jurin-i 루트
+ROOT = BASE_DIR.parent.parent  # flow 루트
 
 # 업로드 파일 루트 (빌드/실행 경로와 무관하게 동일한 경로 사용 → 이미지 엑박 방지)
 UPLOADS_DIR = BASE_DIR / "uploads"

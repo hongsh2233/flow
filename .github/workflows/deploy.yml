@@ -24,7 +24,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
             set -e
-            cd /opt/jurin-i
+            cd /opt/flow
 
             echo "=== git pull ==="
             git fetch origin live
