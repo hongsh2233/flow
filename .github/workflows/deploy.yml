@@ -1,8 +1,12 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [live]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: '배포 확인 (yes 입력)'
+        required: true
+        default: 'no'
 
 jobs:
   deploy:
