@@ -35,7 +35,7 @@ export default function MastersPage() {
       const res = await fetch("/api/master-quotes?limit=30");
       if (!res.ok) return;
       const data = await res.json();
-      const list: Quote[] = data.quotes || data || [];
+      const list: Quote[] = data.items || [];
       setQuotes(list);
       if (list.length > 0) setCurrent(list[Math.floor(Math.random() * list.length)]);
     } catch {
