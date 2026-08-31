@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ZODIAC_ANIMAL_EMOJI, ZODIAC_SIGN_EMOJI } from "@/lib/utils/zodiacUtils";
+import { getLocalFortune } from "@/lib/data/fortunePool";
 
 type FortuneType = "animal" | "zodiac" | "mbti";
 
@@ -12,9 +13,14 @@ interface FortuneData {
   investment_tip?: string;
   stars?: number;
   score?: number;
-  /* upstream 필드 fallback */
   fortune?: string;
   tip?: string;
+}
+
+interface NewsItem {
+  title: string;
+  link: string;
+  pubDate: string;
 }
 
 const MBTI_INVEST_STYLE: Record<string, string> = {
@@ -45,6 +51,7 @@ export default function FortunePage() {
   const [selectedSign, setSelectedSign] = useState<string>("");
   const [fortune, setFortune] = useState<FortuneData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [news, setNews] = useState<NewsItem[]>([]);
 
   const member = session?.user as { zodiac_animal?: string; zodiac_sign?: string; mbti_type?: string } | undefined;
   const animal = member?.zodiac_animal || selectedAnimal;
@@ -56,16 +63,33 @@ export default function FortunePage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/fortune/today?fortune_type=${type}&key=${encodeURIComponent(key)}`);
-      const data = await res.json();
-      if (data.success !== false) setFortune(data);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success !== false && (data.fortune_text || data.fortune)) {
+          setFortune(data);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch { /* fall through to local fallback */ }
+    const local = getLocalFortune(type, key);
+    if (local) {
+      setFortune({ fortune_text: local.fortune, investment_tip: local.investment_tip });
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (activeTab === "animal" && animal) fetchFortune("animal", animal);
     if (activeTab === "zodiac" && sign) fetchFortune("zodiac", sign);
   }, [activeTab, animal, sign, fetchFortune]);
+
+  useEffect(() => {
+    fetch("/api/naver-news?query=주식&display=3&sort=date")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.data?.length) setNews(d.data.slice(0, 3)); })
+      .catch(() => {});
+  }, []);
 
   function handleAnimalSelect(a: string) {
     setSelectedAnimal(a);
@@ -85,6 +109,24 @@ export default function FortunePage() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--app-bg)", padding: "0 0 6rem" }}>
+      {/* 운세 헤더 배너 */}
+      <div style={{
+        background: "linear-gradient(135deg, #1A1A3E 0%, #2D2D6B 100%)",
+        padding: "1.25rem 1rem 1rem",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{
+          position: "absolute", top: "-20px", right: "-10px",
+          fontSize: "5rem", opacity: 0.08, pointerEvents: "none", userSelect: "none",
+        }}>✨</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.25rem" }}>
+          <span style={{ fontSize: "1.4rem" }}>🔮</span>
+          <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "#F59E0B" }}>오늘의 투자 운세</span>
+        </div>
+        <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)", margin: 0 }}>{TODAY}</p>
+      </div>
+
       {/* 지수 한 줄 */}
       <div style={{
         backgroundColor: "var(--app-card-bg)",
@@ -99,8 +141,6 @@ export default function FortunePage() {
       </div>
 
       <div style={{ padding: "1rem" }}>
-        <p style={{ color: "var(--app-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>{TODAY}</p>
-
         {/* 유형 탭 */}
         <div style={{
           display: "flex", gap: "0.5rem", marginBottom: "1.5rem",
@@ -126,7 +166,7 @@ export default function FortunePage() {
         {/* 운세 카드 — 띠 */}
         {activeTab === "animal" && (
           <FortuneCard
-            emoji={animal ? ZODIAC_ANIMAL_EMOJI[animal as keyof typeof ZODIAC_ANIMAL_EMOJI] : "🐉"}
+            emoji={animal ? ZODIAC_ANIMAL_EMOJI[animal as keyof typeof ZODIAC_ANIMAL_EMOJI] : "✨"}
             title={animal ? `${animal}띠` : "내 띠 선택"}
             hasValue={!!animal}
             loading={loading}
@@ -239,18 +279,27 @@ export default function FortunePage() {
             backgroundColor: "var(--app-card-bg)", border: "1px solid var(--app-border)",
             borderRadius: "12px", overflow: "hidden",
           }}>
-            {["삼성전자, 3분기 실적 발표 예정…시장 기대 상회 전망", "코스피, 외국인 순매수 지속…2,620선 안착", "반도체 업황 회복 신호, HBM 수요 증가세"].map((title, i) => (
-              <div
+            {news.length > 0 ? news.map((item, i) => (
+              <a
                 key={i}
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
+                  display: "block",
                   padding: "0.85rem 1rem",
-                  borderBottom: i < 2 ? "1px solid var(--app-border-light)" : "none",
+                  borderBottom: i < news.length - 1 ? "1px solid var(--app-border-light)" : "none",
                   fontSize: "0.9rem", color: "var(--app-text-secondary)", lineHeight: 1.5,
+                  textDecoration: "none",
                 }}
               >
-                · {title}
+                · {item.title}
+              </a>
+            )) : (
+              <div style={{ padding: "0.85rem 1rem", fontSize: "0.85rem", color: "var(--app-text-muted)" }}>
+                <Link href="/news" style={{ color: "var(--app-accent)" }}>뉴스 탭</Link>에서 오늘의 주식 뉴스를 확인하세요
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
