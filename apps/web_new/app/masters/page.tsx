@@ -6,11 +6,13 @@ import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Favorite from "@mui/icons-material/Favorite";
 import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
 import { JUBTI_MASTER_BY_TYPE, MBTI_TO_JUBTI, type JubtiDimension } from "@/lib/jubti/jubtiMasters";
+import { FALLBACK_QUOTES } from "@/lib/data/masterQuotesPool";
 
 interface Quote {
   id: number;
   name: string;
   quote: string;
+  likes?: number;
   like_count?: number;
 }
 
@@ -30,17 +32,26 @@ export default function MastersPage() {
   const myMaster = jubtiKey ? JUBTI_MASTER_BY_TYPE[jubtiKey as JubtiDimension] : null;
 
   const fetchQuotes = useCallback(async () => {
+    setLoading(true);
+    let loaded = false;
     try {
-      setLoading(true);
-      const res = await fetch("/api/master-quotes?limit=30");
-      if (!res.ok) return;
-      const data = await res.json();
-      const list: Quote[] = data.items || [];
-      setQuotes(list);
-      if (list.length > 0) setCurrent(list[Math.floor(Math.random() * list.length)]);
+      const res = await fetch("/api/master-quotes?limit=50");
+      if (res.ok) {
+        const data = await res.json();
+        const list: Quote[] = data.items || [];
+        if (list.length > 0) {
+          setQuotes(list);
+          setCurrent(list[Math.floor(Math.random() * list.length)]);
+          loaded = true;
+        }
+      }
     } catch {
-      /* network error — keep previous state */
+      /* fall through to fallback */
     } finally {
+      if (!loaded) {
+        setQuotes(FALLBACK_QUOTES);
+        setCurrent(FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)]);
+      }
       setLoading(false);
     }
   }, []);
@@ -174,9 +185,9 @@ export default function MastersPage() {
                     }}>내 대가</span>
                   )}
                 </span>
-                {current.like_count != null && (
+                {(current.likes ?? current.like_count) != null && (current.likes ?? current.like_count)! > 0 && (
                   <span style={{ fontSize: "0.78rem", color: "var(--app-text-muted)" }}>
-                    좋아요 {current.like_count.toLocaleString()}
+                    좋아요 {(current.likes ?? current.like_count)!.toLocaleString()}
                   </span>
                 )}
               </div>
